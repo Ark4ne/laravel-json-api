@@ -1,0 +1,41 @@
+{
+  "name": "ark4ne/laravel-json-api",
+  "description": "A Lightweight JSON:API Resource for Laravel",
+  "keywords": [
+    "laravel",
+    "laravel-json",
+    "laravel-resource",
+    "json-api",
+    "json:api",
+    "jsonapi.org"
+  ],
+  "type": "library",
+  "require": {
+    "php": "^7.4|^8.0",
+    "illuminate/http": "^8.0|^9.0",
+    "illuminate/support": "^8.0|^9.0"
+  },
+  "require-dev": {
+    "laravel/framework": "^8.0|^9.0",
+    "phpunit/phpunit": "^9.5.10",
+    "orchestra/testbench": "^7.0"
+  },
+  "license": "MIT",
+  "autoload": {
+    "psr-4": {
+      "Ark4ne\\JsonApi\\Resource\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Test\\": "tests/"
+    }
+  },
+  "authors": [
+    {
+      "name": "ark4ne",
+      "email": "gui.allegret@gmail.com"
+    }
+  ],
+  "minimum-stability": "dev"
+}
