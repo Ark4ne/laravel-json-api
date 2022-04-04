@@ -2,10 +2,14 @@
 
 namespace Ark4ne\JsonApi\Resource;
 
+use Ark4ne\JsonApi\Resource\Concerns\AsRelationship;
+use Ark4ne\JsonApi\Resource\Support\Arr;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 
-class JsonApiCollection extends ResourceCollection
+class JsonApiCollection extends ResourceCollection implements Resourceable
 {
+    use AsRelationship;
+
     public $collects;
 
     /**
@@ -23,7 +27,7 @@ class JsonApiCollection extends ResourceCollection
         parent::__construct($resource);
     }
 
-    public function toArray($request, bool $minimal = false)
+    public function toArray($request, bool $minimal = false): array
     {
         $data = [];
 
@@ -35,7 +39,7 @@ class JsonApiCollection extends ResourceCollection
                 foreach ($with as $key => $value) {
                     $this->with[$key] = array_merge(
                         $this->with[$key] ?? [],
-                        is_array($value) ? $value : [$value]
+                       collect($value)->all()
                     );
                 }
             }
@@ -46,11 +50,11 @@ class JsonApiCollection extends ResourceCollection
 
     public function with($request)
     {
-        return array_filter(array_map(
-            static fn($value) => is_array($value)
-                ? array_unique($value, SORT_REGULAR)
-                : $value,
-            $this->with
-        ));
+        return collect($this->with)
+            ->map(static fn($value) => is_iterable($value)
+                ? collect($value)->unique()->all()
+                : $value)
+            ->filter()
+            ->all();
     }
 }

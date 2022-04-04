@@ -2,13 +2,15 @@
 
 namespace Ark4ne\JsonApi\Resource;
 
+use Ark4ne\JsonApi\Resource\Support\Arr;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-abstract class JsonApiResource extends JsonResource
+abstract class JsonApiResource extends JsonResource implements Resourceable
 {
-    use Concerns\Identifier,
+    use Concerns\AsRelationship,
+        Concerns\Identifier,
         Concerns\Attributes,
         Concerns\Relationships,
         Concerns\Links,
@@ -40,14 +42,18 @@ abstract class JsonApiResource extends JsonResource
 
     public function with($request)
     {
-        $this->with['meta'] = array_merge($this->with['meta'] ?? [], (array)$this->toMeta($request));
+        $with = collect($this->with);
 
-        return array_filter(array_map(
-            static fn($value) => is_array($value)
-                ? array_unique($value, SORT_REGULAR)
-                : $value,
-            $this->with
-        ));
+        if ($meta = $this->toMeta($request)) {
+            $with['meta'] = collect($with['meta'])->merge($meta);
+        }
+
+        return collect($this->with)
+            ->map(static fn($value) => is_iterable($value)
+                ? collect($value)->unique()->all()
+                : $value)
+            ->filter()
+            ->toArray();
     }
 
     /**

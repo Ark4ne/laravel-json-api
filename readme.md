@@ -27,14 +27,12 @@ protected function toAttributes(Request $request): iterable;
 
 protected function toRelationships(Request $request): iterable;
 
-protected function toRelationshipLinks(string $relation, JsonApiCollection|JsonApiResource $resource): ?iterable;
-
 protected function toResourceMeta(Request $request): ?iterable;
 
 protected function toMeta(Request $request): ?iterable;
 ```
 
-Example: 
+Example:
 
 ```php
 use Ark4ne\JsonApi\Resource\JsonApiCollection;
@@ -63,20 +61,12 @@ class UserResource extends JsonApiResource
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'posts' => fn() => PostResource::collection($this->whenLoaded('posts')),
-            'comments' => fn() => CommentResource::collection($this->comments)
+            'posts' => fn() => PostResource::collection($this->posts)->asRelationship([
+                'self' => "https://api.example.com/user/{$this->id}/relationships/posts",
+                'related' => "https://api.example.com/user/{$this->id}/posts",
+            ]),
+            'comments' => fn() => CommentResource::collection($this->whenLoaded('comments')),
         ];
-    }
-
-    protected function toRelationshipLinks(string $relation, JsonApiCollection|JsonApiResource $resource): ?iterable
-    {
-        return match($relation) {
-            'comments' => [
-                'self' => "https://api.example.com/user/{$this->id}/relationships/$relation",
-                'related' => "https://api.example.com/user/{$this->id}/$relation",
-            ],
-            default => null
-        };
     }
 }
 ```
@@ -159,7 +149,12 @@ protected function toRelationships(Request $request): array
     return [
         'avatar' => AvatarResource::make($this->avatar),
         // with lazy evaluation
-        'posts' => fn () => PostResource::collection($this->posts),
+        'comments' => fn() => CommentResource::collection($this->whenLoaded('comments')),
+        // with relationship (allow to include links and meta on relation)
+        'posts' => fn() => PostResource::collection($this->posts)->asRelationship([
+            'self' => "https://api.example.com/user/{$this->id}/relationships/posts",
+            'related' => "https://api.example.com/user/{$this->id}/posts",
+        ]),
     ];
 }
 ```
@@ -184,23 +179,65 @@ protected function toRelationships(Request $request): array
 }
 ```
 
-#### Relation links
-_**@see** [{json:api}: relation-linkage](https://jsonapi.org/format/#document-resource-object-related-resource-links)_
+#### Relation links and meta
+_**@see** [{json:api}: relation-linkage](https://jsonapi.org/format/#document-resource-object-related-resource-links)_  
+_**@see** [{json:api}: relation-meta](https://jsonapi.org/format/#document-resource-object-relationships)_
 
-Returns relationship links, for a relation.
+Returns links and meta for a relation.
 
 ```php
-protected function toRelationshipLinks(string $relation, JsonApiCollection|JsonApiResource $resource): ?array
+protected function toRelationships(Request $request): array
 {
-    return match($relation) {
-        'posts', 'comments' => [
-            // https://example.com/user/1/relationships/posts
-            'self' => route('api.user.relationships', ['id' => $this->id, 'relationships' => $relation]),
-            // https://example.com/user/1/posts
-            'related' => route('api.user.related', ['id' => $this->id, 'relationships' => $relation]),
-        ],
-        default => null
-    };
+    return [
+        'posts' => fn () => PostResource::collection($this->posts)->asRelationship([
+            // links
+            'self' => "https://api.example.com/user/{$this->id}/relationships/posts",
+            'related' => "https://api.example.com/user/{$this->id}/posts",
+        ], [
+            // meta
+            'creator' => $this->name,
+        ]),
+    ];
+}
+```
+
+Define with a Closure :
+
+```php
+protected function toRelationships(Request $request): array
+{
+    return [
+        'posts' => fn () => PostResource::collection($this->posts)->asRelationship(
+            // links
+            fn($collection) => [
+                'self' => "https://api.example.com/user/{$this->id}/relationships/posts",
+                'related' => "https://api.example.com/user/{$this->id}/posts",
+            ],
+            // meta
+            fn($collection) => [
+                'creator' => $this->name,
+            ]
+        ),
+    ];
+}
+```
+
+Define with methods :
+
+```php
+protected function toRelationships(Request $request): array
+{
+    return [
+        'posts' => fn () => PostResource::collection($this->posts)
+            ->asRelationship()
+            ->withLinks([
+                'self' => "https://api.example.com/user/{$this->id}/relationships/posts",
+                'related' => "https://api.example.com/user/{$this->id}/posts",
+            ])
+            ->withMeta([
+                'creator' => $this->name,
+            ]),
+    ];
 }
 ```
 
@@ -248,4 +285,12 @@ protected function toMeta(Request $request): ?iterable
 ```
 
 ## Collection
+_**@see** [laravel: resource-collection](https://laravel.com/docs/9.x/eloquent-resources#resource-collections)_
 
+Collection are implemented in `JsonApiCollection`.
+
+Usage is the same as laravel collections.
+
+```php
+UserResource::collection(User::all()); // => JsonApiCollection
+```

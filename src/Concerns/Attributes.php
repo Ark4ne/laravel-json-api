@@ -2,6 +2,7 @@
 
 namespace Ark4ne\JsonApi\Resource\Concerns;
 
+use Ark4ne\JsonApi\Resource\Support\Arr;
 use Ark4ne\JsonApi\Resource\Support\Fields;
 use Illuminate\Http\Request;
 
@@ -34,7 +35,7 @@ trait Attributes
      */
     private function requestedAttributes(Request $request): array
     {
-        $attributes = $this->filter((array)$this->toAttributes($request));
+        $attributes = $this->filter(collect($this->toAttributes($request))->toArray());
 
         $fields = Fields::get($request, $this->toType($request));
 
