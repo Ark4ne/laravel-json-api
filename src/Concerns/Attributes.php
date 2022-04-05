@@ -38,7 +38,7 @@ trait Attributes
 
         $fields = Fields::get($request, $this->toType($request));
 
-        $attributes = empty($fields)
+        $attributes = null === $fields
             ? $attributes
             : array_intersect_key($attributes, array_fill_keys($fields, true));
 

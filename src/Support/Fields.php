@@ -6,10 +6,12 @@ use Illuminate\Http\Request;
 
 class Fields
 {
-    public static function get(Request $request, string $type): array
+    public static function get(Request $request, string $type): ?array
     {
         $fields = $request->input('fields', []);
 
-        return explode(',', $fields[$type] ?? '');
+        return isset($fields[$type])
+            ? array_filter(explode(',', $fields[$type]))
+            : null;
     }
 }
