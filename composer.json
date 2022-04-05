@@ -6,7 +6,6 @@
     "laravel-json",
     "laravel-resource",
     "json-api",
-    "json:api",
     "jsonapi.org"
   ],
   "type": "library",
