@@ -1,0 +1,14 @@
+language: php
+
+php:
+  - 8.0
+  - 8.1
+
+install:
+  - travis_retry composer install --no-interaction
+
+script:
+  - vendor/bin/phpunit --configuration ./phpunit.xml --coverage-clover coverage.xml
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
