@@ -20,7 +20,7 @@ trait Identifier
      */
     protected function toType(Request $request): string
     {
-        return Str::kebab(substr($this->resource::class, strrpos($this->resource::class, "\\") + 1));
+        return Str::kebab(Str::afterLast($this->resource::class, "\\"));
     }
 
     /**
