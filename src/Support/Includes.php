@@ -32,10 +32,15 @@ class Includes
                 ->map(fn($included) => Str::substr($included, Str::length("$prefix.")))
             )
             ->filter(fn($included) => $included)
-            ->map(fn($include): string => Str::before(Str::after($include, $prefix), '.'))
+            ->map(fn($include): string => explode('.', $include)[0])
             ->uniqueStrict()
             ->values()
             ->all());
+    }
+
+    public static function flush(): void
+    {
+        self::$cache = [];
     }
 
     private static function cache(string $prefix, callable $callable): array
