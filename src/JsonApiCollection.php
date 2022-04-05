@@ -3,7 +3,6 @@
 namespace Ark4ne\JsonApi\Resource;
 
 use Ark4ne\JsonApi\Resource\Concerns\AsRelationship;
-use Ark4ne\JsonApi\Resource\Support\Arr;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 
 class JsonApiCollection extends ResourceCollection implements Resourceable

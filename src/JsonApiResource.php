@@ -2,7 +2,6 @@
 
 namespace Ark4ne\JsonApi\Resource;
 
-use Ark4ne\JsonApi\Resource\Support\Arr;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;

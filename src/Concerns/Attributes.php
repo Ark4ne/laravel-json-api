@@ -2,7 +2,6 @@
 
 namespace Ark4ne\JsonApi\Resource\Concerns;
 
-use Ark4ne\JsonApi\Resource\Support\Arr;
 use Ark4ne\JsonApi\Resource\Support\Fields;
 use Illuminate\Http\Request;
 
