@@ -4,7 +4,10 @@ php:
   - 8.0
   - 8.1
 
-install:
+env:
+  - XDEBUG_MODE=coverage
+
+before_script:
   - travis_retry composer install --no-interaction
 
 script:
