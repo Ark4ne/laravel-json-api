@@ -3,8 +3,7 @@
 namespace Ark4ne\JsonApi\Resource\Concerns;
 
 use Ark4ne\JsonApi\Resource\Relationship;
-use Ark4ne\JsonApi\Resource\Support\Arr;
-use Ark4ne\JsonApi\Resource\Support\Included;
+use Ark4ne\JsonApi\Resource\Support\Includes;
 use Illuminate\Http\Request;
 
 trait Relationships
@@ -33,7 +32,7 @@ trait Relationships
 
     private function requestedRelationships(Request $request): array
     {
-        $included = Included::get($request);
+        $included = Includes::get($request);
 
         $relations = [];
         $relationships = $this->toRelationships($request);
@@ -45,7 +44,7 @@ trait Relationships
                 $relationship = new Relationship($relationship);
             }
 
-            $relations[$name] = Included::through($name, fn() => $this->mapRelationship(
+            $relations[$name] = Includes::through($name, fn() => $this->mapRelationship(
                 !in_array($name, $included, true),
                 $request,
                 $relationship

@@ -83,7 +83,7 @@ protected function toType(Request $request): string
 }
 ```
 
-Default returns model class in case of kebab : `App\Models\MyPost` => `my-post`
+Default returns model class in kebab case : `App\Models\MyPost` => `my-post`
 
 ### toIdentifier
 _**@see** [{json:api} resource-identifier](https://jsonapi.org/format/#document-resource-object-identification)_
@@ -256,7 +256,8 @@ protected function toLinks(Request $request): ?array
 ```
 
 ### toResourceMeta
-_**@see** [{json:api}: resource-meta](https://jsonapi.org/format/#document-resource-objects), [{json:api}: document-meta](https://jsonapi.org/format/#document-meta)_
+_**@see** [{json:api}: resource-meta](https://jsonapi.org/format/#document-resource-objects)_  
+_**@see** [{json:api}: document-meta](https://jsonapi.org/format/#document-meta)_
 
 Returns resource meta.
 

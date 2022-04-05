@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
-class Included
+class Includes
 {
     private static array $stack = [];
 
@@ -26,9 +26,9 @@ class Included
     public static function get(Request $request): array
     {
         return self::cache(implode('.', self::$stack), static fn($prefix) => Collection
-            ::make(explode(',', $request->input('included', '')))
+            ::make(explode(',', $request->input('include', '')))
             ->when($prefix, fn($collect) => $collect
-                ->filter(fn($included) => Str::startsWith($included, $prefix))
+                ->filter(fn($included) => Str::startsWith($included, "$prefix."))
                 ->map(fn($included) => Str::substr($included, Str::length("$prefix.")))
             )
             ->filter(fn($included) => $included)
