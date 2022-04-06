@@ -6,6 +6,7 @@ use Ark4ne\JsonApi\Resource\Concerns\Relationships;
 use Ark4ne\JsonApi\Resource\Relationship;
 use Ark4ne\JsonApi\Resource\Resourceable;
 use Ark4ne\JsonApi\Resource\Support\Includes;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Test\Support\Reflect;
@@ -13,7 +14,39 @@ use Test\TestCase;
 
 class RelationshipsTest extends TestCase
 {
-    public function testMapRelationship()
+    public function testMapRelationshipMinimal()
+    {
+        $stub = new class(null) extends JsonResource {
+            use Relationships;
+        };
+
+        $minimal = true;
+        $request = new Request();
+        $relationship = $this->createMock(Relationship::class);
+        $relationship
+            ->expects($this->once())
+            ->method('toArray')
+            ->with($request, $minimal)
+            ->willReturn([
+                'data' => [
+                    'data' => [['id' => 'abc-123', 'type' => 'child']],
+                    'links' => ['self' => "://api.com/child/abc-123"],
+                    'meta' => ['total' => 1],
+                ],
+            ]);
+
+        $actual = Reflect::invoke($stub, 'mapRelationship', $minimal, $request, $relationship);
+
+        $this->assertEquals([
+            'data' => [['id' => 'abc-123', 'type' => 'child']],
+            'links' => ['self' => "://api.com/child/abc-123"],
+            'meta' => ['total' => 1],
+        ], $actual);
+
+        $this->assertEquals([], $stub->with($request));
+    }
+
+    public function testMapRelationshipFull()
     {
         $stub = new class(null) extends JsonResource {
             use Relationships;
@@ -61,38 +94,22 @@ class RelationshipsTest extends TestCase
                 ]
             ]
         ], $stub->with($request));
+    }
 
-        $stub = new class(null) extends JsonResource {
+    public function testRequestedRelationshipsNoRelations()
+    {
+        Includes::flush();
+        $resource = new class(collect()) extends JsonResource {
             use Relationships;
         };
 
-        $minimal = true;
-        $request = new Request();
-        $relationship = $this->createMock(Relationship::class);
-        $relationship
-            ->expects($this->once())
-            ->method('toArray')
-            ->with($request, $minimal)
-            ->willReturn([
-                'data' => [
-                    'data' => [['id' => 'abc-123', 'type' => 'child']],
-                    'links' => ['self' => "://api.com/child/abc-123"],
-                    'meta' => ['total' => 1],
-                ],
-            ]);
+        $actual = Reflect::invoke($resource, 'requestedRelationships', new Request());
 
-        $actual = Reflect::invoke($stub, 'mapRelationship', $minimal, $request, $relationship);
-
-        $this->assertEquals([
-            'data' => [['id' => 'abc-123', 'type' => 'child']],
-            'links' => ['self' => "://api.com/child/abc-123"],
-            'meta' => ['total' => 1],
-        ], $actual);
-
-        $this->assertEquals([], $stub->with($request));
+        $this->assertEquals([], $actual);
+        $this->assertEquals([], $resource->with);
     }
 
-    public function testRequestedRelationships()
+    public function testRequestedRelationshipsNoInclude()
     {
         Includes::flush();
         $stub = $this->getStub();
@@ -109,7 +126,10 @@ class RelationshipsTest extends TestCase
             ],
         ], $actual);
         $this->assertEquals([], $stub->with);
+    }
 
+    public function testRequestedRelationshipsOneDepthInclude()
+    {
         Includes::flush();
         $stub = $this->getStub();
 
@@ -144,7 +164,10 @@ class RelationshipsTest extends TestCase
                 ]
             ]
         ], $stub->with);
+    }
 
+    public function testRequestedRelationshipsTwoDepthInclude()
+    {
         Includes::flush();
         $stub = $this->getStub();
 
@@ -193,6 +216,63 @@ class RelationshipsTest extends TestCase
                 ]
             ]
         ], $stub->with);
+    }
+
+    public function testRequestedRelationshipsWithMissingValue()
+    {
+        $model = new class(['id' => 1]) extends Model {
+            protected $fillable = ['id'];
+        };
+
+        Reflect::set($model, 'relations', ['loadedRelation' => (object)['id' => 3]]);
+
+        $resource = new class($model) extends JsonResource {
+            use Relationships;
+
+            public function toRelationships(Request $request): iterable
+            {
+                return [
+                    'foo' => new class((object)['id' => 2]) extends JsonResource implements Resourceable {
+                        public function toArray($request, bool $minimal = false): array
+                        {
+                            return [
+                                'id' => $this->id,
+                                'type' => 'foo'
+                            ];
+                        }
+                    },
+                    'bar' => $this->when(false, fn() => JsonResource::make(collect())),
+                    'baz' => JsonResource::collection($this->whenLoaded('not-loaded-relation')),
+                    'tar' => new class($this->whenLoaded('loadedRelation')) extends JsonResource implements
+                        Resourceable {
+                        public function toArray($request, bool $minimal = false): array
+                        {
+                            return [
+                                'id' => $this->id,
+                                'type' => 'tar'
+                            ];
+                        }
+                    },
+                ];
+            }
+        };
+
+        $actual = Reflect::invoke($resource, 'requestedRelationships', new Request());
+
+        $this->assertEquals([
+            'foo' => [
+                'data' => [
+                    'id' => 2,
+                    'type' => 'foo'
+                ]
+            ],
+            'tar' => [
+                'data' => [
+                    'id' => 3,
+                    'type' => 'tar'
+                ]
+            ]
+        ], $actual);
     }
 
     private function getStub()
