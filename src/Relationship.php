@@ -4,6 +4,7 @@ namespace Ark4ne\JsonApi\Resource;
 
 use Closure;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Http\Resources\PotentiallyMissing;
 
 use function value;
@@ -39,6 +40,7 @@ class Relationship implements Resourceable
             'meta' => value($this->meta, $this->resource),
         ];
 
+        /** @var Resourceable $resource */
         $resource = value($this->resource);
 
         if ($this->isMissing($resource)) {
@@ -51,7 +53,7 @@ class Relationship implements Resourceable
 
         $datum = $resource->toArray($request, $minimal);
 
-        if ($resource instanceof JsonApiCollection) {
+        if ($resource instanceof ResourceCollection) {
             foreach ($datum as $value) {
                 $data['data'][] = [
                     'type' => $value['type'],
