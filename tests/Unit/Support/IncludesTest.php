@@ -24,39 +24,52 @@ class IncludesTest extends TestCase
             ])
         ]);
 
-        $this->assert(['foo', 'bar'], Includes::get($request));
+        $expected = [
+            // [ expected, through ]
+            ['foo', 'bar'], // root
+            ['bar', 'foo', 'foo-bar'], // foo
+            ['baz'], // foo.bar
+            ['foo'], // foo.foo
+            [], // foo.foo.foo
+            [], // foo.tar
+            ['tar'], // bar
+            ['foo', 'bar'], // root
+            'final'
+        ];
 
-        Includes::through('foo', function () use ($request) {
-            $this->assert(['bar', 'foo', 'foo-bar'], Includes::get($request));
+        $this->assert(array_shift($expected), Includes::get($request), 'root');
 
-            Includes::through('bar', function () use ($request) {
-                $this->assert(['baz'], Includes::get($request));
+        Includes::through('foo', function () use (&$expected, $request) {
+            $this->assert(array_shift($expected), Includes::get($request), 'root.foo');
+
+            Includes::through('bar', function () use (&$expected, $request) {
+                $this->assert(array_shift($expected), Includes::get($request), 'root.foo.bar');
             });
 
-            Includes::through('foo', function () use ($request) {
-                $this->assert(['foo'], Includes::get($request));
+            Includes::through('foo', function () use (&$expected, $request) {
+                $this->assert(array_shift($expected), Includes::get($request), 'root.foo.foo');
 
-                Includes::through('foo', function () use ($request) {
-                    $this->assert([], Includes::get($request));
+                Includes::through('foo', function () use (&$expected, $request) {
+                    $this->assert(array_shift($expected), Includes::get($request), 'root.foo.foo.foo');
                 });
             });
 
-            Includes::through('tar', function () use ($request) {
-                $this->assert([], Includes::get($request));
+            Includes::through('tar', function () use (&$expected, $request) {
+                $this->assert(array_shift($expected), Includes::get($request), 'root.foo.tar');
             });
         });
 
-        Includes::through('bar', function () use ($request) {
-            $this->assert(['tar'], Includes::get($request));
+        Includes::through('bar', function () use (&$expected, $request) {
+            $this->assert(array_shift($expected), Includes::get($request), 'root.foo.bar');
         });
 
-        $this->assert(['foo', 'bar'], Includes::get($request));
-        $this->assertEquals(8, $this->count);
+        $this->assert(array_shift($expected), Includes::get($request), 'root');
+        $this->assertEquals('final', array_shift($expected));
     }
 
-    public function assert($expected, $actual)
+    public function assert($expected, $actual, $message = '')
     {
-        $this->assertEquals($expected, $actual);
+        $this->assertEquals($expected, $actual, $message);
         $this->count++;
     }
 }
