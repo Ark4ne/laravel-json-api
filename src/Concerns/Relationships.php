@@ -32,8 +32,6 @@ trait Relationships
 
     private function requestedRelationships(Request $request): array
     {
-        $included = Includes::get($request);
-
         $relations = [];
         $relationships = $this->toRelationships($request);
 
@@ -44,8 +42,10 @@ trait Relationships
                 $relationship = new Relationship($relationship);
             }
 
+            $minimal = !Includes::include($request, $name);
+
             $relations[$name] = Includes::through($name, fn() => $this->mapRelationship(
-                !in_array($name, $included, true),
+                $minimal,
                 $request,
                 $relationship
             ));

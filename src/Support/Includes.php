@@ -38,6 +38,11 @@ class Includes
             ->all());
     }
 
+    public static function include(Request $request, string $type): bool
+    {
+        return in_array($type, self::get($request), true);
+    }
+
     public static function flush(): void
     {
         self::$cache = [];
