@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Test\Support\Reflect;
+use Test\Support\Stub;
 use Test\TestCase;
 
 class RelationshipsTest extends TestCase
@@ -220,9 +221,7 @@ class RelationshipsTest extends TestCase
 
     public function testRequestedRelationshipsWithMissingValue()
     {
-        $model = new class(['id' => 1]) extends Model {
-            protected $fillable = ['id'];
-        };
+        $model = Stub::model(['id' => 1]);
 
         Reflect::set($model, 'relations', ['loadedRelation' => (object)['id' => 3]]);
 
