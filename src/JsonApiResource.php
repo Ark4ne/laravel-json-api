@@ -2,8 +2,7 @@
 
 namespace Ark4ne\JsonApi\Resource;
 
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
+use Ark4ne\JsonApi\Resource\Support\With;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 abstract class JsonApiResource extends JsonResource implements Resourceable
@@ -15,11 +14,6 @@ abstract class JsonApiResource extends JsonResource implements Resourceable
         Concerns\Links,
         Concerns\Meta;
 
-    /**
-     * @param \Illuminate\Http\Request $request
-     *
-     * @return array
-     */
     public function toArray($request, bool $minimal = false): array
     {
         $data = [
@@ -44,15 +38,10 @@ abstract class JsonApiResource extends JsonResource implements Resourceable
         $with = collect($this->with);
 
         if ($meta = $this->toMeta($request)) {
-            $with['meta'] = collect($with['meta'])->merge($meta);
+            $with = With::merge($with, ['meta' => $meta]);
         }
 
-        return collect($this->with)
-            ->map(static fn($value) => is_iterable($value)
-                ? collect($value)->unique()->all()
-                : $value)
-            ->filter()
-            ->toArray();
+        return With::wash($with);
     }
 
     /**
@@ -69,15 +58,5 @@ abstract class JsonApiResource extends JsonResource implements Resourceable
                     $collection->preserveKeys = (new static([]))->preserveKeys === true;
                 }
             });
-    }
-
-    /**
-     * @param Request $request
-     */
-    public function toResponse($request): JsonResponse
-    {
-        return parent
-            ::toResponse($request)
-            ->header('Content-type', 'application/vnd.api+json');
     }
 }
