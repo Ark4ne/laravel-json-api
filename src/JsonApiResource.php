@@ -7,12 +7,13 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 abstract class JsonApiResource extends JsonResource implements Resourceable
 {
-    use Concerns\AsRelationship,
+    use Concerns\Relationize,
         Concerns\Identifier,
         Concerns\Attributes,
         Concerns\Relationships,
         Concerns\Links,
-        Concerns\Meta;
+        Concerns\Meta,
+        Concerns\ToResponse;
 
     public function toArray($request, bool $minimal = false): array
     {

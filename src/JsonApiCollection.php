@@ -2,14 +2,15 @@
 
 namespace Ark4ne\JsonApi\Resource;
 
-use Ark4ne\JsonApi\Resource\Concerns\AsRelationship;
+use Ark4ne\JsonApi\Resource\Concerns;
 use Ark4ne\JsonApi\Resource\Support\With;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 
 class JsonApiCollection extends ResourceCollection implements Resourceable
 {
-    use AsRelationship;
+    use Concerns\Relationize,
+        Concerns\ToResponse;
 
     public $collects;
 
