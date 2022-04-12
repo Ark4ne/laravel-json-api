@@ -27,17 +27,28 @@ class With
             ->toArray();
     }
 
-    private static function uniqueRecursive($value)
+    private static function uniqueRecursive($value): array
     {
         return array_map(static function ($value) {
             if (is_iterable($value)) {
-                $value = collect($value)->all();
-                $isAssoc = Arr::isAssoc($value);
-                $value = array_unique($value, SORT_REGULAR);
-                return self::uniqueRecursive($isAssoc ? $value : array_values($value));
+                return self::uniqueRecursive(self::uniqueKeyPreserved(collect($value)->all()));
             }
 
             return $value;
         }, collect($value)->all());
+    }
+
+    private static function uniqueKeyPreserved(array $value): array
+    {
+        if (Arr::isAssoc($value)) {
+            $entries = array_map(static fn($k, $v) => [$k, $v], array_keys($value), array_values($value));
+            $entries = array_values(array_unique($entries, SORT_REGULAR));
+            return array_combine(
+                array_column($entries, 0),
+                array_column($entries, 1)
+            );
+        }
+
+        return array_values(array_unique($value, SORT_REGULAR));
     }
 }

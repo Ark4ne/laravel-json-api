@@ -75,6 +75,7 @@ class WithTest extends TestCase
             [[], []],
             [[], ['foo' => []]],
             [['foo' => [1]], ['foo' => [1, 1, 1]]],
+            [['foo' => ['a' => 1, 'b' => 1]], ['foo' => ['a' => 1, 'b' => 1]]],
             [
                 [
                     'included' => [['id' => 1, 'attributes' => []]]
