@@ -7,7 +7,6 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Test\app\Http\Resources\CommentResource;
 use Test\app\Http\Resources\PostResource;
-use Test\app\Http\Resources\UserResource;
 use Test\app\Models\Comment;
 use Test\app\Models\Post;
 use Test\app\Models\User;
@@ -102,10 +101,10 @@ class ResourceTest extends TestCase
 
     private function getJsonResult(User $user, ?array $attributes = null, ?array $relationships = null)
     {
-        $request = new Request([
-            ...($attributes !== null ? ['fields' => ['user' => implode(',', $attributes)]] : []),
-            ...($relationships !== null ? ['include' => implode(',', $relationships)] : []),
-        ]);
+        $request = new Request(array_merge(
+            ($attributes !== null ? ['fields' => ['user' => implode(',', $attributes)]] : []),
+            ($relationships !== null ? ['include' => implode(',', $relationships)] : []),
+        ));
 
         return array_filter([
             'data' => [
@@ -142,14 +141,18 @@ class ResourceTest extends TestCase
                     'updated_at' => $user->updated_at->format(DateTimeInterface::ATOM),
                 ],
             ],
-            'included' => array_filter([
-                ...(in_array('posts', $relationships ?? [])
-                    ? $user->posts->mapInto(PostResource::class)->map->toArray($request)
-                    : []),
-                ...(in_array('comments', $relationships ?? [])
-                    ? $user->comments->mapInto(CommentResource::class)->map->toArray($request)
-                    : []),
-            ])
+            'included' => collect()
+                ->merge(
+                    in_array('posts', $relationships ?? [])
+                        ? $user->posts->mapInto(PostResource::class)->map->toArray($request)
+                        : []
+                )
+                ->merge(
+                    in_array('comments', $relationships ?? [])
+                        ? $user->comments->mapInto(CommentResource::class)->map->toArray($request)
+                        : []
+                )
+                ->toArray()
         ]);
     }
 }
