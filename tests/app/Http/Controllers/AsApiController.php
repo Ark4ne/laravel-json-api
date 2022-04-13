@@ -15,7 +15,7 @@ trait AsApiController
      *
      * @return \Illuminate\Http\Response
      */
-    public function index($request)
+    public function index(Request $request)
     {
         $modelClass = $this->getModelClass();
 
