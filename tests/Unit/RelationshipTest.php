@@ -140,6 +140,28 @@ class RelationshipTest extends TestCase
         ], $relation->toArray(new Request(), true));
     }
 
+    public function testCustomValue()
+    {
+        $resource = $this->getJsonResourceMissingValue();
+        $relation = (new Relationship([
+            'foo' => 'bar'
+        ]))->withLinks([
+            'self' => 'link'
+        ])->withMeta([
+            'hash' => 'azerty'
+        ]);
+
+        $this->assertEquals([
+            'data' => [
+                'data' => [
+                    'foo' => 'bar'
+                ],
+                'links' => ['self' => 'link'],
+                'meta' => ['hash' => 'azerty'],
+            ],
+        ], $relation->toArray(new Request(), true));
+    }
+
     private function getJsonResource()
     {
         return new class((object)['id' => 1]) extends JsonResource implements Resourceable {

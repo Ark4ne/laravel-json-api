@@ -49,7 +49,7 @@ class Relationship implements Resourceable
             ];
         }
 
-        if (method_exists($resource, 'toArray')) {
+        if (is_object($resource) && method_exists($resource, 'toArray')) {
             $datum = $resource->toArray($request, $minimal);
         } else {
             $datum = collect($resource)->toArray();
@@ -67,7 +67,7 @@ class Relationship implements Resourceable
                     $included[] = $value;
                 }
             }
-        } else {
+        } elseif ($resource instanceof JsonResource) {
             $data['data'] = [
                 'type' => $datum['type'],
                 'id' => $datum['id']
@@ -75,12 +75,16 @@ class Relationship implements Resourceable
             if (!$minimal) {
                 $included[] = $datum;
             }
+        } else {
+            $data['data'] = $datum;
         }
 
         return array_filter([
             'data' => array_filter($data),
             'included' => $included,
-            'with' => method_exists($resource, 'with') ? $resource->with($request) : null
+            'with' => is_object($resource) && method_exists($resource, 'with')
+                ? $resource->with($request)
+                : null
         ]);
     }
 
