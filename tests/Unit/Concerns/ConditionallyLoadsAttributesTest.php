@@ -11,7 +11,7 @@ use Test\TestCase;
 
 class ConditionallyLoadsAttributesTest extends TestCase
 {
-    private function dataWhenInclude()
+    public function dataWhenInclude()
     {
         return [
             [false, 'test', []],
