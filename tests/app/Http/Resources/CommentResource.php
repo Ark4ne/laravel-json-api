@@ -29,8 +29,16 @@ class CommentResource extends JsonApiResource
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'user' => fn() => new UserResource($this->user),
-            'post' => fn() => new PostResource($this->post),
+            'user' => fn() => UserResource::make($this->whenIncluded($request, 'user', $this->user))
+                ->asRelationship([
+                    'self' => "https://api.example.com/comment/{$this->id}/relationships/user",
+                    'related' => "https://api.example.com/comment/{$this->id}/user",
+                ]),
+            'post' => fn() => PostResource::make($this->whenIncluded($request, 'post', $this->post))
+                ->asRelationship([
+                    'self' => "https://api.example.com/comment/{$this->id}/relationships/post",
+                    'related' => "https://api.example.com/comment/{$this->id}/post",
+                ]),
         ];
     }
 }

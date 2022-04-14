@@ -1,28 +1,18 @@
 <?php
 
-namespace Test\Feature;
+namespace Test\Feature\User;
 
 use DateTimeInterface;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Test\app\Http\Resources\CommentResource;
 use Test\app\Http\Resources\PostResource;
 use Test\app\Models\Comment;
 use Test\app\Models\Post;
 use Test\app\Models\User;
-use Test\Support\UseLocalApp;
-use Test\TestCase;
+use Test\Feature\FeatureTestCase;
 
-class ResourceTest extends TestCase
+class ResourceTest extends FeatureTestCase
 {
-    use RefreshDatabase, UseLocalApp;
-
-    public function setUp(): void
-    {
-        parent::setUp();
-        $this->useLocalApp();
-    }
-
     public function testShowBasic()
     {
         $user = $this->dataSeed();
