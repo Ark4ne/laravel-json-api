@@ -12,7 +12,7 @@ use function value;
 class Relationship implements Resourceable
 {
     public function __construct(
-        protected Resourceable $resource,
+        protected $resource,
         protected iterable|Closure $links = [],
         protected iterable|Closure $meta = []
     ) {
@@ -49,9 +49,13 @@ class Relationship implements Resourceable
             ];
         }
 
-        $included = [];
+        if (method_exists($resource, 'toArray')) {
+            $datum = $resource->toArray($request, $minimal);
+        } else {
+            $datum = collect($resource)->toArray();
+        }
 
-        $datum = $resource->toArray($request, $minimal);
+        $included = [];
 
         if ($resource instanceof ResourceCollection) {
             foreach ($datum as $value) {
@@ -76,7 +80,7 @@ class Relationship implements Resourceable
         return array_filter([
             'data' => array_filter($data),
             'included' => $included,
-            'with' => $resource->with($request)
+            'with' => method_exists($resource, 'with') ? $resource->with($request) : null
         ]);
     }
 
