@@ -17,14 +17,14 @@ class JsonApiCollection extends ResourceCollection implements Resourceable
     /**
      * Create a new anonymous resource collection.
      *
-     * @param mixed        $resource
-     * @param class-string $collects
+     * @param mixed             $resource
+     * @param null|class-string $collects
      *
      * @return void
      */
-    public function __construct($resource, $collects)
+    public function __construct($resource, ?string $collects = null)
     {
-        $this->collects = $collects;
+        $this->collects = $collects ?: $this->collects;
 
         parent::__construct($resource);
     }
