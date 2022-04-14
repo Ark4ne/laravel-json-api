@@ -10,6 +10,7 @@ use Illuminate\Http\Resources\Json\ResourceCollection;
 class JsonApiCollection extends ResourceCollection implements Resourceable
 {
     use Concerns\Relationize,
+        Concerns\ConditionallyLoadsAttributes,
         Concerns\ToResponse;
 
     public $collects;

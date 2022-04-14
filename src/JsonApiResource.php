@@ -8,6 +8,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 abstract class JsonApiResource extends JsonResource implements Resourceable
 {
     use Concerns\Relationize,
+        Concerns\ConditionallyLoadsAttributes,
         Concerns\Identifier,
         Concerns\Attributes,
         Concerns\Relationships,
