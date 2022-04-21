@@ -64,11 +64,11 @@ class UserResource extends JsonApiResource
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'posts' => fn() => PostResource::collection($this->posts)->asRelationship([
+            'posts' => PostResource::relationship(fn() => $this->posts, fn() => [
                 'self' => "https://api.example.com/user/{$this->id}/relationships/posts",
                 'related' => "https://api.example.com/user/{$this->id}/posts",
             ]),
-            'comments' => fn() => CommentResource::collection($this->whenLoaded('comments')),
+            'comments' => CommentResource::relationship(fn() => $this->whenLoaded('comments')),
         ];
     }
 }
@@ -150,14 +150,14 @@ Returns resource relationships.
 protected function toRelationships(Request $request): array
 {
     return [
-        'avatar' => AvatarResource::make($this->avatar),
-        // with lazy evaluation
-        'comments' => fn() => CommentResource::collection($this->whenLoaded('comments')),
+        'avatar' => AvatarResource::relationship($this->avatar),
+        // as collection, with condition
+        'comments' => CommentResource::relationship(fn() => $this->whenLoaded('comments'))->asCollection(),
         // with relationship (allow to include links and meta on relation)
-        'posts' => fn() => PostResource::collection($this->posts)->asRelationship([
+        'posts' => PostResource::relationship(fn() => $this->posts)->withLinks(fn() => [
             'self' => "https://api.example.com/user/{$this->id}/relationships/posts",
             'related' => "https://api.example.com/user/{$this->id}/posts",
-        ]),
+        ])->asCollection(),
     ];
 }
 ```
@@ -173,11 +173,11 @@ Support laravel conditional relationships.
 protected function toRelationships(Request $request): array
 {
     return [
-        'avatar' => AvatarResource::make($this->avatar),
-        // with lazy evaluation
-        'posts' => fn () => PostResource::collection($this->posts),
-        // with laravel conditional relationships
-        'comments' => fn() => CommentResource::collection($this->whenLoaded('comments')),
+        'avatar' => AvatarResource::relationship($this->avatar),
+        // as collection, with condition
+        'comments' => CommentResource::relationship(fn() => $this->whenLoaded('comments'))->asCollection(),
+        // with relationship (allow to include links and meta on relation)
+        'posts' => PostResource::relationship(fn() => $this->posts)->asCollection(),
     ];
 }
 ```
@@ -192,54 +192,15 @@ Returns links and meta for a relation.
 protected function toRelationships(Request $request): array
 {
     return [
-        'posts' => fn () => PostResource::collection($this->posts)->asRelationship([
+        'posts' => PostResource::relationship(fn() => $this->posts)->withLinks(fn() => [
             // links
             'self' => "https://api.example.com/user/{$this->id}/relationships/posts",
             'related' => "https://api.example.com/user/{$this->id}/posts",
-        ], [
+        ])->withMeta(fn() => [
             // meta
             'creator' => $this->name,
-        ]),
-    ];
-}
-```
-
-Define with a Closure :
-
-```php
-protected function toRelationships(Request $request): array
-{
-    return [
-        'posts' => fn () => PostResource::collection($this->posts)->asRelationship(
-            // links
-            fn($collection) => [
-                'self' => "https://api.example.com/user/{$this->id}/relationships/posts",
-                'related' => "https://api.example.com/user/{$this->id}/posts",
-            ],
-            // meta
-            fn($collection) => [
-                'creator' => $this->name,
-            ]
-        ),
-    ];
-}
-```
-
-Define with methods :
-
-```php
-protected function toRelationships(Request $request): array
-{
-    return [
-        'posts' => fn () => PostResource::collection($this->posts)
-            ->asRelationship()
-            ->withLinks([
-                'self' => "https://api.example.com/user/{$this->id}/relationships/posts",
-                'related' => "https://api.example.com/user/{$this->id}/posts",
-            ])
-            ->withMeta([
-                'creator' => $this->name,
-            ]),
+        ])
+        ->asCollection(),
     ];
 }
 ```
