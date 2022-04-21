@@ -22,11 +22,6 @@ abstract class JsonApiResource extends JsonResource implements Resourceable
     /** @var T */
     public $resource;
 
-    final public function __construct($resource)
-    {
-        parent::__construct($resource);
-    }
-
     public function toArray($request, bool $included = true): array
     {
         $data = [

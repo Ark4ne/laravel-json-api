@@ -31,7 +31,7 @@ class JsonApiCollection extends ResourceCollection implements Resourceable
      *
      * @return void
      */
-    final public function __construct($resource, ?string $collects = null)
+    public function __construct($resource, ?string $collects = null)
     {
         $this->collects = $collects ?: $this->collects;
 
