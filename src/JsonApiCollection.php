@@ -7,12 +7,20 @@ use Ark4ne\JsonApi\Resource\Support\With;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 
+/**
+ * @template T
+ * @template R
+ * @template-extends JsonApiResource<R>
+ */
 class JsonApiCollection extends ResourceCollection implements Resourceable
 {
     use Concerns\Relationize,
         Concerns\Schema,
         Concerns\ToResponse;
 
+    /**
+     * @var class-string<T>
+     */
     public $collects;
 
     /**

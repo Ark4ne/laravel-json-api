@@ -7,7 +7,7 @@ use DateTimeInterface;
 use Illuminate\Http\Request;
 
 /**
- * @mixin \Test\app\Models\Post
+ * @extends JsonApiResource<\Test\app\Models\Post>
  */
 class PostResource extends JsonApiResource
 {
@@ -19,28 +19,28 @@ class PostResource extends JsonApiResource
     protected function toAttributes(Request $request): iterable
     {
         return [
-            'title' => fn() => $this->title,
-            'content' => fn() => $this->content,
+            'title' => fn() => $this->resource->title,
+            'content' => fn() => $this->resource->content,
         ];
     }
 
     protected function toResourceMeta(Request $request): ?iterable
     {
         return [
-            'created_at' => $this->created_at->format(DateTimeInterface::ATOM),
-            'updated_at' => $this->updated_at->format(DateTimeInterface::ATOM),
+            'created_at' => $this->resource->created_at->format(DateTimeInterface::ATOM),
+            'updated_at' => $this->resource->updated_at->format(DateTimeInterface::ATOM),
         ];
     }
 
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'user' => UserResource::relationship(fn() => $this->user, fn() => [
-                'self' => "https://api.example.com/posts/{$this->id}/relationships/user",
+            'user' => UserResource::relationship(fn() => $this->resource->user, fn() => [
+                'self' => "https://api.example.com/posts/{$this->resource->id}/relationships/user",
             ]),
-            'comments' => CommentResource::relationship(fn() => $this->comments, fn() => [
-                'self' => "https://api.example.com/posts/{$this->id}/relationships/comments",
-                'related' => "https://api.example.com/posts/{$this->id}/comments",
+            'comments' => CommentResource::relationship(fn() => $this->resource->comments, fn() => [
+                'self' => "https://api.example.com/posts/{$this->resource->id}/relationships/comments",
+                'related' => "https://api.example.com/posts/{$this->resource->id}/comments",
             ])->asCollection(),
         ];
     }

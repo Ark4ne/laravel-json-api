@@ -5,6 +5,9 @@ namespace Ark4ne\JsonApi\Resource;
 use Ark4ne\JsonApi\Resource\Support\With;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @template T
+ */
 abstract class JsonApiResource extends JsonResource implements Resourceable
 {
     use Concerns\Relationize,
@@ -15,6 +18,9 @@ abstract class JsonApiResource extends JsonResource implements Resourceable
         Concerns\Meta,
         Concerns\Schema,
         Concerns\ToResponse;
+
+    /** @var T */
+    public $resource;
 
     final public function __construct($resource)
     {

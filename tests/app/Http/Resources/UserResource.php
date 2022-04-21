@@ -7,13 +7,10 @@ use DateTimeInterface;
 use Illuminate\Http\Request;
 
 /**
- * @mixin \Test\App\Models\User
+ * @extends JsonApiResource<\Test\app\Models\User>
  */
 class UserResource extends JsonApiResource
 {
-    /** @var \Test\app\Models\User $resource */
-    public $resource;
-
     protected function toType(Request $request): string
     {
         return 'user';
@@ -22,33 +19,31 @@ class UserResource extends JsonApiResource
     protected function toAttributes(Request $request): iterable
     {
         return [
-            'name' => $this->name,
-            'email' => $this->email,
+            'name' => $this->resource->name,
+            'email' => $this->resource->email,
         ];
     }
 
     protected function toResourceMeta(Request $request): ?iterable
     {
         return [
-            'created_at' => $this->created_at->format(DateTimeInterface::ATOM),
-            'updated_at' => $this->updated_at->format(DateTimeInterface::ATOM),
+            'created_at' => $this->resource->created_at->format(DateTimeInterface::ATOM),
+            'updated_at' => $this->resource->updated_at->format(DateTimeInterface::ATOM),
         ];
     }
 
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'posts' => PostResource::relationship(fn() => $this->posts, fn() => [
-                'self' => "https://api.example.com/user/{$this->id}/relationships/posts",
-                'related' => "https://api.example.com/user/{$this->id}/posts",
+            'posts' => PostResource::relationship(fn() => $this->resource->posts, fn() => [
+                'self' => "https://api.example.com/user/{$this->resource->id}/relationships/posts",
+                'related' => "https://api.example.com/user/{$this->resource->id}/posts",
             ])->asCollection(),
-            'comments' => CommentResource
-                ::relationship(fn() => $this->whenLoaded('comments'))
-                ->withLinks(fn() => [
-                    'self' => "https://api.example.com/user/{$this->id}/relationships/comments",
-                    'related' => "https://api.example.com/user/{$this->id}/comments",
-                ])
-                ->asCollection()
+            'comments' => CommentResource::relationship(fn() => $this->whenLoaded('comments'), fn() => [
+                'self' => "https://api.example.com/user/{$this->resource->id}/relationships/comments",
+                'related' => "https://api.example.com/user/{$this->resource->id}/comments",
+            ])
+            ->asCollection()
         ];
     }
 }
