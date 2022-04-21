@@ -12,7 +12,7 @@ trait Attributes
      *
      * @param \Illuminate\Http\Request $request
      *
-     * @return array<string, Closure>
+     * @return array<string, Closure|mixed>
      *
      * ```
      * return [
