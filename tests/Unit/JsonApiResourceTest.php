@@ -41,9 +41,9 @@ class JsonApiResourceTest extends TestCase
     {
         $model = Stub::model(['id' => 1]);
         $resource = new class($model) extends JsonApiResource {
-            public function toArray($request, bool $minimal = false): array
+            public function toArray($request, bool $included = true): array
             {
-                return parent::toArray($request, true);
+                return parent::toArray($request, false);
             }
 
             public function toType(Request $request): string
@@ -75,12 +75,12 @@ class JsonApiResourceTest extends TestCase
                 return 'my-model';
             }
 
-            protected function toResourceMeta(Request $request): ?iterable
+            public function toResourceMeta(Request $request): ?iterable
             {
                 return ['self' => $this->id];
             }
 
-            protected function toMeta(Request $request): ?iterable
+            public function toMeta(Request $request): ?iterable
             {
                 return ['hash' => 'azerty'];
             }
@@ -113,9 +113,9 @@ class JsonApiResourceTest extends TestCase
     {
         $model = Stub::model(['id' => 1]);
         $resource = new class($model) extends JsonApiResource {
-            public function toArray($request, bool $minimal = false): array
+            public function toArray($request, bool $included = true): array
             {
-                return parent::toArray($request, true);
+                return parent::toArray($request, false);
             }
 
             public function toType(Request $request): string
@@ -123,12 +123,12 @@ class JsonApiResourceTest extends TestCase
                 return 'my-model';
             }
 
-            protected function toResourceMeta(Request $request): ?iterable
+            public function toResourceMeta(Request $request): ?iterable
             {
                 return ['self' => $this->id];
             }
 
-            protected function toMeta(Request $request): ?iterable
+            public function toMeta(Request $request): ?iterable
             {
                 return ['hash' => 'azerty'];
             }

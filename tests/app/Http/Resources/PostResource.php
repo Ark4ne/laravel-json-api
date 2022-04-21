@@ -11,11 +11,16 @@ use Illuminate\Http\Request;
  */
 class PostResource extends JsonApiResource
 {
+    protected function toType(Request $request): string
+    {
+        return 'post';
+    }
+
     protected function toAttributes(Request $request): iterable
     {
         return [
-            'title' => $this->title,
-            'content' => $this->content,
+            'title' => fn() => $this->title,
+            'content' => fn() => $this->content,
         ];
     }
 
@@ -30,13 +35,13 @@ class PostResource extends JsonApiResource
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'user' => fn() => UserResource::make($this->user)->asRelationship([
+            'user' => UserResource::relationship(fn() => $this->user, fn() => [
                 'self' => "https://api.example.com/posts/{$this->id}/relationships/user",
             ]),
-            'comments' => fn() => CommentResource::collection($this->comments)->asRelationship([
+            'comments' => CommentResource::relationship(fn() => $this->comments, fn() => [
                 'self' => "https://api.example.com/posts/{$this->id}/relationships/comments",
                 'related' => "https://api.example.com/posts/{$this->id}/comments",
-            ]),
+            ])->asCollection(),
         ];
     }
 }

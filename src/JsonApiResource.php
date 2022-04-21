@@ -8,22 +8,27 @@ use Illuminate\Http\Resources\Json\JsonResource;
 abstract class JsonApiResource extends JsonResource implements Resourceable
 {
     use Concerns\Relationize,
-        Concerns\ConditionallyLoadsAttributes,
         Concerns\Identifier,
         Concerns\Attributes,
         Concerns\Relationships,
         Concerns\Links,
         Concerns\Meta,
+        Concerns\Schema,
         Concerns\ToResponse;
 
-    public function toArray($request, bool $minimal = false): array
+    final public function __construct($resource)
+    {
+        parent::__construct($resource);
+    }
+
+    public function toArray($request, bool $included = true): array
     {
         $data = [
             'id' => $this->toIdentifier($request),
             'type' => $this->toType($request),
         ];
 
-        if (!$minimal) {
+        if ($included) {
             $data += [
                 'attributes' => $this->requestedAttributes($request),
                 'relationships' => $this->requestedRelationships($request),

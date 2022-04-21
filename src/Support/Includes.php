@@ -25,6 +25,15 @@ class Includes
 
     public static function get(Request $request): array
     {
+        return collect(self::depth($request))
+            ->map(fn($include): string => explode('.', $include, 2)[0])
+            ->uniqueStrict()
+            ->values()
+            ->all();
+    }
+
+    public static function depth(Request $request): array
+    {
         return self::cache(implode('.', self::$stack), static fn($prefix) => Collection
             ::make(explode(',', $request->input('include', '')))
             ->when($prefix, fn($collect) => $collect
@@ -32,7 +41,6 @@ class Includes
                 ->map(fn($included) => Str::substr($included, Str::length("$prefix.")))
             )
             ->filter(fn($included) => $included)
-            ->map(fn($include): string => explode('.', $include)[0])
             ->uniqueStrict()
             ->values()
             ->all());

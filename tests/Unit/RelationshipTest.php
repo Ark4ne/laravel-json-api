@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Http\Resources\MissingValue;
+use Illuminate\Support\Collection;
 use Test\TestCase;
 
 class RelationshipTest extends TestCase
@@ -16,7 +17,7 @@ class RelationshipTest extends TestCase
     {
         $resource = $this->getJsonResource();
 
-        $relation = new Relationship($resource);
+        $relation = new Relationship($resource::class, fn() => $resource->resource);
 
         $this->assertEquals([
             'data' => [
@@ -41,9 +42,9 @@ class RelationshipTest extends TestCase
     {
         $resource = $this->getJsonResource();
 
-        $relation = (new Relationship($resource))->withLinks([
+        $relation = (new Relationship($resource::class, fn() => $resource->resource))->withLinks(fn() => [
             'self' => 'link'
-        ])->withMeta([
+        ])->withMeta(fn() => [
             'hash' => 'azerty'
         ]);
 
@@ -56,13 +57,13 @@ class RelationshipTest extends TestCase
                 'links' => ['self' => 'link'],
                 'meta' => ['hash' => 'azerty'],
             ],
-        ], $relation->toArray(new Request(), true));
+        ], $relation->toArray(new Request(), false));
     }
 
     public function testToArrayCollection()
     {
         $resource = $this->getResourceCollection();
-        $relation = new Relationship($resource);
+        $relation = new Relationship($resource::class, fn() => $resource->resource);
 
         $this->assertEquals([
             'data' => [
@@ -99,11 +100,12 @@ class RelationshipTest extends TestCase
     public function testToArrayCollectionMinimal()
     {
         $resource = $this->getResourceCollection();
-        $relation = (new Relationship($resource))->withLinks([
-            'self' => 'link'
-        ])->withMeta([
-            'total' => 2
-        ]);
+        $relation = (new Relationship($resource::class, fn() => $resource->resource))
+            ->withLinks(fn() => [
+                'self' => 'link'
+            ])->withMeta(fn() => [
+                'total' => 2
+            ]);
 
         $this->assertEquals([
             'data' => [
@@ -120,15 +122,15 @@ class RelationshipTest extends TestCase
                 'links' => ['self' => 'link'],
                 'meta' => ['total' => 2],
             ],
-        ], $relation->toArray(new Request(), true));
+        ], $relation->toArray(new Request(), false));
     }
 
     public function testToArrayMissingValue()
     {
         $resource = $this->getJsonResourceMissingValue();
-        $relation = (new Relationship($resource))->withLinks([
+        $relation = (new Relationship($resource::class, fn() => $resource->resource))->withLinks(fn() => [
             'self' => 'link'
-        ])->withMeta([
+        ])->withMeta(fn() => [
             'hash' => 'azerty'
         ]);
 
@@ -137,19 +139,18 @@ class RelationshipTest extends TestCase
                 'links' => ['self' => 'link'],
                 'meta' => ['hash' => 'azerty'],
             ],
-        ], $relation->toArray(new Request(), true));
+        ], $relation->toArray(new Request(), false));
     }
 
     public function testCustomValue()
     {
-        $resource = $this->getJsonResourceMissingValue();
-        $relation = (new Relationship([
-            'foo' => 'bar'
-        ]))->withLinks([
-            'self' => 'link'
-        ])->withMeta([
-            'hash' => 'azerty'
-        ]);
+        $relation = (new Relationship(Collection::class, fn() => ['foo' => 'bar']))
+            ->withLinks(fn() => [
+                'self' => 'link'
+            ])
+            ->withMeta(fn() => [
+                'hash' => 'azerty'
+            ]);
 
         $this->assertEquals([
             'data' => [
@@ -159,7 +160,27 @@ class RelationshipTest extends TestCase
                 'links' => ['self' => 'link'],
                 'meta' => ['hash' => 'azerty'],
             ],
-        ], $relation->toArray(new Request(), true));
+        ], $relation->toArray(new Request()));
+
+        $relation = (new Relationship((new class {
+            public function __construct(public $obj = null) { }
+        })::class, fn() => ['foo' => 'bar']))
+            ->withLinks(fn() => [
+                'self' => 'link'
+            ])
+            ->withMeta(fn() => [
+                'hash' => 'azerty'
+            ]);
+
+        $this->assertEquals([
+            'data' => [
+                'data' => [
+                    'obj' => ['foo' => 'bar']
+                ],
+                'links' => ['self' => 'link'],
+                'meta' => ['hash' => 'azerty'],
+            ],
+        ], $relation->toArray(new Request()));
     }
 
     private function getJsonResource()

@@ -10,7 +10,7 @@ use Illuminate\Http\Resources\Json\ResourceCollection;
 class JsonApiCollection extends ResourceCollection implements Resourceable
 {
     use Concerns\Relationize,
-        Concerns\ConditionallyLoadsAttributes,
+        Concerns\Schema,
         Concerns\ToResponse;
 
     public $collects;
@@ -23,25 +23,25 @@ class JsonApiCollection extends ResourceCollection implements Resourceable
      *
      * @return void
      */
-    public function __construct($resource, ?string $collects = null)
+    final public function __construct($resource, ?string $collects = null)
     {
         $this->collects = $collects ?: $this->collects;
 
         parent::__construct($resource);
     }
 
-    public function toArray($request, bool $minimal = false): array
+    public function toArray($request, bool $included = true): array
     {
         $data = [];
 
         $base = collect($this->with)->toArray();
         foreach ($this->collection as $resource) {
-            $data[] = $resource->toArray($request, $minimal);
+            $data[] = $resource->toArray($request, $included);
 
             if ($resource instanceof JsonResource) {
                 $with = collect($resource->with($request))->toArray();
 
-                if ($minimal) {
+                if (!$included) {
                     unset($with['included']);
                 }
 

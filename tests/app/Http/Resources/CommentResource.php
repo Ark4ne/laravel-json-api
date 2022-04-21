@@ -11,10 +11,15 @@ use Illuminate\Http\Request;
  */
 class CommentResource extends JsonApiResource
 {
+    protected function toType(Request $request): string
+    {
+        return 'comment';
+    }
+
     protected function toAttributes(Request $request): iterable
     {
         return [
-            'content' => $this->content,
+            'content' => fn() => $this->content,
         ];
     }
 
@@ -29,16 +34,18 @@ class CommentResource extends JsonApiResource
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'user' => fn() => UserResource::make($this->whenIncluded($request, 'user', $this->user))
-                ->asRelationship([
+            'user' => UserResource::relationship(fn() => $this->user)
+                ->withLinks(fn() => [
                     'self' => "https://api.example.com/comment/{$this->id}/relationships/user",
                     'related' => "https://api.example.com/comment/{$this->id}/user",
-                ]),
-            'post' => fn() => PostResource::make($this->whenIncluded($request, 'post', $this->post))
-                ->asRelationship([
+                ])
+                ->whenIncluded(),
+            'post' => PostResource::relationship(fn() => $this->post)
+                ->withLinks(fn() => [
                     'self' => "https://api.example.com/comment/{$this->id}/relationships/post",
                     'related' => "https://api.example.com/comment/{$this->id}/post",
-                ]),
+                ])
+                ->whenIncluded(),
         ];
     }
 }

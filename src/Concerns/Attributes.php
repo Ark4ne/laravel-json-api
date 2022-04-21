@@ -12,13 +12,13 @@ trait Attributes
      *
      * @param \Illuminate\Http\Request $request
      *
-     * @return array<string, mixed>
+     * @return array<string, Closure>
      *
      * ```
      * return [
-     *     'name' => $this->name,
+     *     'name' => fn() => $this->name,
      *     // with laravel conditional attributes
-     *     'secret' => $this->when($request->user()->isAdmin(), 'secret-value'),
+     *     'secret' => fn() => $this->when($request->user()->isAdmin(), 'secret-value'),
      * ];
      * ```
      */
@@ -34,7 +34,11 @@ trait Attributes
      */
     private function requestedAttributes(Request $request): array
     {
-        $attributes = $this->filter(collect($this->toAttributes($request))->toArray());
+        $attributes = collect($this->toAttributes($request))
+            ->map(fn($value) => value($value))
+            ->toArray();
+
+        $attributes = $this->filter($attributes);
 
         $fields = Fields::get($request, $this->toType($request));
 

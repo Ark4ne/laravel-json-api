@@ -13,15 +13,15 @@ trait Relationships
      *
      * @param \Illuminate\Http\Request $request
      *
-     * @return array<string, <Closure():<Relationship> | Relationship>>
+     * @return array<string, Relationship>
      *
      * ```
      * return [
-     *     'avatar' => AvatarResource::make($this->avatar),
-     *     // with lazy evaluation
-     *     'posts' => fn () => PostResource::collection($this->posts),
+     *     'avatar' => AvatarResource::relationship(fn() => $this->avatar),
+     *     // as collection
+     *     'posts' => PostResource::relationship(fn() => $this->posts)->asCollection(),
      *     // with laravel conditional relationships
-     *     'comments' => $this->when($this->canComments(), fn() => fn() => CommentResource::collection($this->comments),
+     *     'comments' => CommentResource::relationship(fn() => $this->when($this->canComments(), fn() => $this->comments))->asCollection(),
      * ];
      * ```
      */
@@ -33,19 +33,14 @@ trait Relationships
     private function requestedRelationships(Request $request): array
     {
         $relations = [];
-        $relationships = $this->toRelationships($request);
 
-        foreach ($this->filter($relationships) as $name => $relationship) {
-            $relationship = value($relationship);
+        foreach ($this->toRelationships($request) as $name => $relationship) {
+            $relationship->forRelation($name);
 
-            if (!($relationship instanceof Relationship)) {
-                $relationship = new Relationship($relationship);
-            }
-
-            $minimal = !Includes::include($request, $name);
+            $included = Includes::include($request, $name);
 
             $relations[$name] = Includes::through($name, fn() => $this->mapRelationship(
-                $minimal,
+                $included,
                 $request,
                 $relationship
             ));
@@ -55,11 +50,11 @@ trait Relationships
     }
 
     private function mapRelationship(
-        bool $minimal,
+        bool $included,
         Request $request,
         Relationship $relationship
     ): array {
-        $resource = $relationship->toArray($request, $minimal);
+        $resource = $relationship->toArray($request, $included);
 
         if (isset($resource['included'])) {
             $this->with['included'] = array_merge(

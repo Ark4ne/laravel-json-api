@@ -2,6 +2,7 @@
 
 namespace Ark4ne\JsonApi\Resource\Concerns;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -36,6 +37,10 @@ trait Identifier
      */
     protected function toIdentifier(Request $request): int|string
     {
+        if ($this->resource instanceof Model) {
+            return $this->resource->getKey();
+        }
+
         return $this->id;
     }
 

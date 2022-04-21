@@ -72,10 +72,10 @@ class JsonApiCollectionTest extends TestCase
         }
 
         $collection = new class(collect($resources), null) extends JsonApiCollection {
-            public function toArray($request, bool $minimal = false): array
+            public function toArray($request, bool $included = true): array
             {
                 $this->with = ['other' => 'slug'];
-                return parent::toArray($request, true);
+                return parent::toArray($request, false);
             }
         };
 

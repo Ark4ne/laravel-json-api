@@ -8,17 +8,17 @@ use Closure;
 trait Relationize
 {
     /**
-     * Transform JSON:API resource as relationship
+     * @param \Closure      $value
+     * @param \Closure|null $links
+     * @param \Closure|null $meta
      *
-     * @param iterable|\Closure $links
-     * @param iterable|\Closure $meta
-     *
-     * @return \Ark4ne\JsonApi\Resource\Relationship
+     * @return \Ark4ne\JsonApi\Resource\Relationship<static>
      */
-    public function asRelationship(
-        iterable|Closure $links = [],
-        iterable|Closure $meta = []
+    public static function relationship(
+        Closure $value,
+        ?Closure $links = null,
+        ?Closure $meta = null
     ): Relationship {
-        return new Relationship($this, $links, $meta);
+        return new Relationship(static::class, $value, $links, $meta);
     }
 }

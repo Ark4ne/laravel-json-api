@@ -11,6 +11,14 @@ use Illuminate\Http\Request;
  */
 class UserResource extends JsonApiResource
 {
+    /** @var \Test\app\Models\User $resource */
+    public $resource;
+
+    protected function toType(Request $request): string
+    {
+        return 'user';
+    }
+
     protected function toAttributes(Request $request): iterable
     {
         return [
@@ -30,16 +38,17 @@ class UserResource extends JsonApiResource
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'posts' => fn() => PostResource::collection($this->posts)
-                ->asRelationship([
-                    'self' => "https://api.example.com/user/{$this->id}/relationships/posts",
-                    'related' => "https://api.example.com/user/{$this->id}/posts",
-                ]),
-            'comments' => fn() => CommentResource::collection($this->whenLoaded('comments'))
-                ->asRelationship([
+            'posts' => PostResource::relationship(fn() => $this->posts, fn() => [
+                'self' => "https://api.example.com/user/{$this->id}/relationships/posts",
+                'related' => "https://api.example.com/user/{$this->id}/posts",
+            ])->asCollection(),
+            'comments' => CommentResource
+                ::relationship(fn() => $this->whenLoaded('comments'))
+                ->withLinks(fn() => [
                     'self' => "https://api.example.com/user/{$this->id}/relationships/comments",
                     'related' => "https://api.example.com/user/{$this->id}/comments",
                 ])
+                ->asCollection()
         ];
     }
 }

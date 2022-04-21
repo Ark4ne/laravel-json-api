@@ -6,7 +6,6 @@ use Ark4ne\JsonApi\Resource\Concerns\Relationships;
 use Ark4ne\JsonApi\Resource\Relationship;
 use Ark4ne\JsonApi\Resource\Resourceable;
 use Ark4ne\JsonApi\Resource\Support\Includes;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Test\Support\Reflect;
@@ -143,8 +142,8 @@ class RelationshipsTest extends TestCase
                 'data' => ['id' => 2, 'type' => 'my-type']
             ],
             'clone-links' => [
-                'data' => ['id' => 3, 'type' => 'my-type'],
-                'links' => ['self' => "://api.com/my-type/3"],
+                'data' => ['id' => 5, 'type' => 'my-type'],
+                'links' => ['self' => "://api.com/my-type/5"],
             ],
         ], $actual);
         $this->assertEquals([
@@ -155,11 +154,11 @@ class RelationshipsTest extends TestCase
                     'attributes' => ['foo' => 'bar'],
                     'relationships' => [
                         'clone' => [
-                            'data' => ['id' => 4, 'type' => 'my-type']
+                            'data' => ['id' => 3, 'type' => 'my-type']
                         ],
                         'clone-links' => [
-                            'data' => ['id' => 5, 'type' => 'my-type'],
-                            'links' => ['self' => "://api.com/my-type/5"],
+                            'data' => ['id' => 4, 'type' => 'my-type'],
+                            'links' => ['self' => "://api.com/my-type/4"],
                         ],
                     ]
                 ]
@@ -181,8 +180,8 @@ class RelationshipsTest extends TestCase
                 'data' => ['id' => 2, 'type' => 'my-type']
             ],
             'clone-links' => [
-                'data' => ['id' => 3, 'type' => 'my-type'],
-                'links' => ['self' => "://api.com/my-type/3"],
+                'data' => ['id' => 7, 'type' => 'my-type'],
+                'links' => ['self' => "://api.com/my-type/7"],
             ],
         ], $actual);
         $this->assertEquals([
@@ -193,25 +192,25 @@ class RelationshipsTest extends TestCase
                     'attributes' => ['foo' => 'bar'],
                     'relationships' => [
                         'clone' => [
-                            'data' => ['id' => 4, 'type' => 'my-type']
+                            'data' => ['id' => 3, 'type' => 'my-type']
                         ],
                         'clone-links' => [
-                            'data' => ['id' => 5, 'type' => 'my-type'],
-                            'links' => ['self' => "://api.com/my-type/5"],
+                            'data' => ['id' => 4, 'type' => 'my-type'],
+                            'links' => ['self' => "://api.com/my-type/4"],
                         ],
                     ]
                 ],
                 [
-                    'id' => 5,
+                    'id' => 4,
                     'type' => 'my-type',
                     'attributes' => ['foo' => 'bar'],
                     'relationships' => [
                         'clone' => [
-                            'data' => ['id' => 6, 'type' => 'my-type']
+                            'data' => ['id' => 5, 'type' => 'my-type']
                         ],
                         'clone-links' => [
-                            'data' => ['id' => 7, 'type' => 'my-type'],
-                            'links' => ['self' => "://api.com/my-type/7"],
+                            'data' => ['id' => 6, 'type' => 'my-type'],
+                            'links' => ['self' => "://api.com/my-type/6"],
                         ],
                     ]
                 ]
@@ -223,35 +222,19 @@ class RelationshipsTest extends TestCase
     {
         $model = Stub::model(['id' => 1]);
 
-        Reflect::set($model, 'relations', ['loadedRelation' => (object)['id' => 3]]);
+        Reflect::set($model, 'relations', ['loadedRelation' => collect(['type' => 'tar', 'id' => 3])]);
 
         $resource = new class($model) extends JsonResource {
             use Relationships;
 
             public function toRelationships(Request $request): iterable
             {
+                $resource = fn($value) => new Relationship(JsonResource::class, fn() => $value);
                 return [
-                    'foo' => new class((object)['id' => 2]) extends JsonResource implements Resourceable {
-                        public function toArray($request, bool $minimal = false): array
-                        {
-                            return [
-                                'id' => $this->id,
-                                'type' => 'foo'
-                            ];
-                        }
-                    },
-                    'bar' => $this->when(false, fn() => JsonResource::make(collect())),
-                    'baz' => JsonResource::collection($this->whenLoaded('not-loaded-relation')),
-                    'tar' => new class($this->whenLoaded('loadedRelation')) extends JsonResource implements
-                        Resourceable {
-                        public function toArray($request, bool $minimal = false): array
-                        {
-                            return [
-                                'id' => $this->id,
-                                'type' => 'tar'
-                            ];
-                        }
-                    },
+                    'foo' => $resource(collect(['id' => 2, 'type' => 'foo'])),
+                    'bar' => $resource($this->when(false, fn() => collect())),
+                    'baz' => $resource($this->whenLoaded('not-loaded-relation')),
+                    'tar' => $resource($this->whenLoaded('loadedRelation')),
                 ];
             }
         };
@@ -265,37 +248,38 @@ class RelationshipsTest extends TestCase
                     'type' => 'foo'
                 ]
             ],
+            'bar' => [],
             'tar' => [
                 'data' => [
                     'id' => 3,
                     'type' => 'tar'
                 ]
-            ]
+            ],
+            'baz' => [],
         ], $actual);
     }
 
     private function getStub()
     {
-        return new class((object)[]) extends JsonResource implements Resourceable {
-            use Relationships;
+        $resource = new class {
+            private static int $count;
+            public int $id = 1;
 
-            public static int $count = 0;
-
-            public function __construct($resource)
+            public function __construct()
             {
-                self::$count = 1;
-                $resource->id = self::$count;
-                parent::__construct($resource);
+                self::$count = $this->id;
             }
 
             public function __clone()
             {
-                self::$count++;
-                $this->resource = clone $this->resource;
-                $this->resource->id = self::$count;
+                $this->id = ++self::$count;
             }
+        };
 
-            public function toArray($request, bool $minimal = false): array
+        return new class($resource) extends JsonResource implements Resourceable {
+            use Relationships;
+
+            public function toArray($request, bool $included = true): array
             {
                 $value = [
                     'id' => $this->id,
@@ -305,7 +289,7 @@ class RelationshipsTest extends TestCase
                     ]
                 ];
 
-                if (!$minimal) {
+                if ($included) {
                     $value['relationships'] = $this->requestedRelationships($request);
                 }
 
@@ -315,10 +299,16 @@ class RelationshipsTest extends TestCase
             protected function toRelationships(Request $request): iterable
             {
                 return [
-                    'clone' => new Relationship(clone $this),
-                    'clone-links' => new Relationship(clone $this, fn($resource) => [
-                        'self' => "://api.com/my-type/{$resource->id}"
-                    ]),
+                    'clone' => new Relationship(
+                        $this::class,
+                        fn() => clone $this->resource
+                    ),
+                    'clone-links' => new Relationship(
+                        $this::class,
+                        fn() => clone $this->resource,
+                        fn(self $resource) => [
+                            'self' => "://api.com/my-type/{$resource->id}"
+                        ]),
                 ];
             }
         };

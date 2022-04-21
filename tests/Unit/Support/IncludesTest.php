@@ -72,4 +72,43 @@ class IncludesTest extends TestCase
         $this->assertEquals($expected, $actual, $message);
         $this->count++;
     }
+
+    public function testDepth()
+    {
+        $request = new Request([
+            'include' => implode(',', [
+                'foo',
+                'foo.bar',
+                'foo.foo',
+                'foo.foo.foo',
+                'foo.foo-bar',
+                'foo.bar.baz',
+                'bar.tar'
+            ])
+        ]);
+
+
+        Includes::through('foo', function () use ($request) {
+            $this->assertEquals([
+                'bar',
+                'foo',
+                'foo.foo',
+                'foo-bar',
+                'bar.baz'
+            ], Includes::depth($request));
+
+            Includes::through('foo', function () use ($request) {
+                $this->assertEquals([
+                    'foo',
+                ], Includes::depth($request));
+            });
+-
+            Includes::through('bar', function () use ($request) {
+                $this->assertEquals([
+                    'baz',
+                ], Includes::depth($request));
+            });
+        });
+
+    }
 }
