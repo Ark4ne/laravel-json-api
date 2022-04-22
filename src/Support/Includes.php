@@ -25,9 +25,10 @@ class Includes
 
     public static function get(Request $request): array
     {
-        $prefix = implode('.', self::$stack);
-        return self::cache("get:$prefix", static fn() => array_keys(
-            Arr::get(self::parse($request->input('include', '')), $prefix ?: null, [])
+        return array_keys(Arr::get(
+            self::parse($request->input('include', '')),
+            implode('.', self::$stack) ?: null,
+            []
         ));
     }
 
