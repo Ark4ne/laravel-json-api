@@ -16,6 +16,64 @@ This package is an specialisation of Laravel's `JsonResource` class.
 All the underlying API's are still there, thus in your controller you can still interact
 with `JsonApiResource` classes as you would with the base `JsonResource` class
 
+## Request
+This package allows the reading and dynamic inclusion of resources that will be requested in the requests via the "include" parameter.  
+**@see** _[{json:api} fetching-includes](https://jsonapi.org/format/#fetching-includes)_
+
+Resource attributes will also be filtered according to the "fields" parameter.  
+**@see** _[{json:api} fetching-fields](https://jsonapi.org/format/#fetching-sparse-fieldsets)_  
+
+You can also very simply validate your requests for a given resource via the rules `Rules\Includes` and `Rules\Fields`.
+
+### Include validation
+
+```php
+use \Ark4ne\JsonApi\Requests\Rules\Includes;
+use \Illuminate\Foundation\Http\FormRequest;
+
+class UserFetchRequest extends FormRequest
+{
+    public function rules()
+    {
+        return [
+            'include' => [new Includes(UserResource::class)],
+        ]
+    }
+}
+```
+
+`Rules\Includes` will validate the include to exactly match the UserResource schema (determined by the relationships).
+
+
+### Fields validation
+
+```php
+use \Ark4ne\JsonApi\Requests\Rules\Fields;
+use \Illuminate\Foundation\Http\FormRequest;
+
+class UserFetchRequest extends FormRequest
+{
+    public function rules()
+    {
+        return [
+            'include' => [new Fields(UserResource::class)],
+        ]
+    }
+}
+```
+
+`Rules\Fields` will validate the fields to exactly match the UserResource schema (determined by the attributes and relationships).
+
+
+### Customize validation message
+| Trans key                                             | default                                              |
+|-------------------------------------------------------|------------------------------------------------------|
+| `validation.custom.jsonapi.fields.invalid`            | The selected :attribute is invalid.                  |
+| `validation.custom.jsonapi.fields.invalid_fields`     | ":resource" doesn \' t have fields ":fields".        |
+| `validation.custom.jsonapi.fields.invalid_resource`   | ":resource" doesn \' t exists.                       |
+| `validation.custom.jsonapi.includes.invalid`          | The selected :attribute is invalid.                  |
+| `validation.custom.jsonapi.includes.invalid_includes` | ":include" doesn \' t have relationship ":relation". |
+
 ## Resource
 **@see** _[{json:api} resource-type](https://jsonapi.org/format/#document-resource-objects)_
 
@@ -144,6 +202,13 @@ protected function toAttributes(Request $request): array
 _**@see** [{json:api} resources-relationships](https://jsonapi.org/format/#document-resource-object-relationships)_
 
 Returns resource relationships.
+
+All relationships **must** be created with `ModelResource::relationship`. 
+This allows the generation of the schema representing the resource and thus the validation of request includes.
+
+If your relation should have been a collection created via the `::collection(...)` method, you can simply use `->asCollection()`.
+
+If you want the relation data to be loaded only when it is present in the request include, you can use the `->whenIncluded()` method.
 
 ```php
 protected function toRelationships(Request $request): array

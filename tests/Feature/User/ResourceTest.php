@@ -74,6 +74,67 @@ class ResourceTest extends FeatureTestCase
         $response->assertExactJson($expected);
     }
 
+    public function testShowFailWithAttributes()
+    {
+        $user = $this->dataSeed();
+
+        $response = $this->getJson("user/{$user->id}?fields[user]=name,unknown&fields[foo]=bar");
+
+        $response->assertUnprocessable();
+        $response->assertJsonValidationErrors([
+            'fields' => [
+                'The selected fields is invalid.',
+                '"user" doesn\'t have fields "unknown".',
+                '"foo" doesn\'t exists.'
+            ]
+        ]);
+    }
+
+    public function testShowFailWithIncludes()
+    {
+        $user = $this->dataSeed();
+
+        $response = $this->getJson("user/{$user->id}?include=unknown");
+
+        $response->assertUnprocessable();
+        $response->assertJsonValidationErrors(['include' => [
+            'The selected include is invalid.',
+            '"user" doesn\'t have relationship "unknown".'
+        ]]);
+    }
+
+    public function testShowFailWithIncludesSub()
+    {
+        $user = $this->dataSeed();
+
+        $response = $this->getJson("user/{$user->id}?include=posts.unknown");
+
+        $response->assertUnprocessable();
+        $response->assertJsonValidationErrors(['include' => [
+            'The selected include is invalid.',
+            '"posts" doesn\'t have relationship "unknown"'
+        ]]);
+    }
+
+    public function testShowMultipleFailures()
+    {
+        $user = $this->dataSeed();
+
+        $response = $this->getJson("user/{$user->id}?include=posts.one,two&fields[user]=name,one_field&fields[unknown]=some");
+
+        $response->assertUnprocessable();
+        $response->assertJsonValidationErrors(['include' => [
+            'The selected include is invalid.',
+            '"posts" doesn\'t have relationship "one"',
+            '"user" doesn\'t have relationship "two"',
+        ], 'fields' => [
+            'The selected fields is invalid.',
+            '"user" doesn\'t have relationship "one_field"',
+            '"unknown" doesn\'t exists.',
+        ]]);
+    }
+
+
     private function dataSeed()
     {
         /** @var User $user */
