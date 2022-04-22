@@ -8,6 +8,7 @@ use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Http\Resources\MissingValue;
 use Illuminate\Http\Resources\PotentiallyMissing;
 
+use function collect;
 use function value;
 
 /**

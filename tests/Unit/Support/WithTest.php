@@ -2,7 +2,7 @@
 
 namespace Test\Unit\Support;
 
-use Ark4ne\JsonApi\Resource\Support\With;
+use Ark4ne\JsonApi\Support\With;
 use Test\TestCase;
 
 class WithTest extends TestCase

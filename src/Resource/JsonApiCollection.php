@@ -2,15 +2,14 @@
 
 namespace Ark4ne\JsonApi\Resource;
 
-use Ark4ne\JsonApi\Resource\Concerns;
-use Ark4ne\JsonApi\Resource\Support\With;
+use Ark4ne\JsonApi\Support\With;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 
+use function collect;
+
 /**
- * @template T
- * @template R
- * @template-extends JsonApiResource<R>
+ * @template T as JsonApiResource
  */
 class JsonApiCollection extends ResourceCollection implements Resourceable
 {
@@ -27,7 +26,7 @@ class JsonApiCollection extends ResourceCollection implements Resourceable
      * Create a new anonymous resource collection.
      *
      * @param mixed             $resource
-     * @param null|class-string $collects
+     * @param null|class-string<T> $collects
      *
      * @return void
      */

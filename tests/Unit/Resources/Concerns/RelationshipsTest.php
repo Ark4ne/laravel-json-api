@@ -1,11 +1,11 @@
 <?php
 
-namespace Test\Unit\Concerns;
+namespace Test\Unit\Resources\Concerns;
 
 use Ark4ne\JsonApi\Resource\Concerns\Relationships;
 use Ark4ne\JsonApi\Resource\Relationship;
 use Ark4ne\JsonApi\Resource\Resourceable;
-use Ark4ne\JsonApi\Resource\Support\Includes;
+use Ark4ne\JsonApi\Support\Includes;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Test\Support\Reflect;

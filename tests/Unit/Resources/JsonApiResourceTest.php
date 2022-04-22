@@ -1,12 +1,14 @@
 <?php
 
-namespace Test\Unit;
+namespace Test\Unit\Resources;
 
 use Ark4ne\JsonApi\Resource\JsonApiCollection;
 use Ark4ne\JsonApi\Resource\JsonApiResource;
 use Illuminate\Http\Request;
 use Test\Support\Stub;
 use Test\TestCase;
+
+use function collect;
 
 class JsonApiResourceTest extends TestCase
 {

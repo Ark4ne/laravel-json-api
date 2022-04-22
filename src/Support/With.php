@@ -1,8 +1,10 @@
 <?php
 
-namespace Ark4ne\JsonApi\Resource\Support;
+namespace Ark4ne\JsonApi\Support;
 
 use Illuminate\Support\Arr;
+
+use function collect;
 
 class With
 {

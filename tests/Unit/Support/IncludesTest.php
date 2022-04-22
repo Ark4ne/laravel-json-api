@@ -2,7 +2,7 @@
 
 namespace Test\Unit\Support;
 
-use Ark4ne\JsonApi\Resource\Support\Includes;
+use Ark4ne\JsonApi\Support\Includes;
 use Illuminate\Http\Request;
 use Test\TestCase;
 
@@ -73,42 +73,28 @@ class IncludesTest extends TestCase
         $this->count++;
     }
 
-    public function testDepth()
+    public function testParse()
     {
-        $request = new Request([
-            'include' => implode(',', [
-                'foo',
-                'foo.bar',
-                'foo.foo',
-                'foo.foo.foo',
-                'foo.foo-bar',
-                'foo.bar.baz',
-                'bar.tar'
-            ])
-        ]);
+        $parsed = Includes::parse(implode(',', [
+            'user',
+            'posts',
+            'posts.user',
+            'posts.user.comment',
+            'posts',
+            'posts.user',
+            'posts.user.posts',
+            'posts.test',
+        ]));
 
-
-        Includes::through('foo', function () use ($request) {
-            $this->assertEquals([
-                'bar',
-                'foo',
-                'foo.foo',
-                'foo-bar',
-                'bar.baz'
-            ], Includes::depth($request));
-
-            Includes::through('foo', function () use ($request) {
-                $this->assertEquals([
-                    'foo',
-                ], Includes::depth($request));
-            });
--
-            Includes::through('bar', function () use ($request) {
-                $this->assertEquals([
-                    'baz',
-                ], Includes::depth($request));
-            });
-        });
-
+        $this->assertEquals([
+            'user' => [],
+            'posts' => [
+                'user' => [
+                    'comment' => [],
+                    'posts' => [],
+                ],
+                'test' => []
+            ],
+        ], $parsed);
     }
 }

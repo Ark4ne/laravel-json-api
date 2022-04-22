@@ -3,7 +3,7 @@
 namespace Ark4ne\JsonApi\Resource\Concerns;
 
 use Ark4ne\JsonApi\Resource\JsonApiCollection;
-use Ark4ne\JsonApi\Resource\Support\FakeModel;
+use Ark4ne\JsonApi\Support\FakeModel;
 use Illuminate\Http\Request;
 
 trait Schema

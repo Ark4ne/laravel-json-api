@@ -17,12 +17,13 @@
   },
   "require-dev": {
     "phpunit/phpunit": "^9.5.10",
-    "orchestra/testbench": "^7.0"
+    "orchestra/testbench": "^7.0",
+    "phpstan/phpstan": "1.6.x-dev"
   },
   "license": "MIT",
   "autoload": {
     "psr-4": {
-      "Ark4ne\\JsonApi\\Resource\\": "src/"
+      "Ark4ne\\JsonApi\\": "src/"
     }
   },
   "autoload-dev": {

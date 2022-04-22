@@ -3,7 +3,7 @@
 namespace Ark4ne\JsonApi\Resource\Concerns;
 
 use Ark4ne\JsonApi\Resource\Relationship;
-use Ark4ne\JsonApi\Resource\Support\Includes;
+use Ark4ne\JsonApi\Support\Includes;
 use Illuminate\Http\Request;
 
 trait Relationships

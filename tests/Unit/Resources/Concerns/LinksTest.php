@@ -1,6 +1,6 @@
 <?php
 
-namespace Test\Unit\Concerns;
+namespace Test\Unit\Resources\Concerns;
 
 use Ark4ne\JsonApi\Resource\Concerns\Links;
 use Illuminate\Http\Request;

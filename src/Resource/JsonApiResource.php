@@ -2,11 +2,16 @@
 
 namespace Ark4ne\JsonApi\Resource;
 
-use Ark4ne\JsonApi\Resource\Support\With;
+use Ark4ne\JsonApi\Resource\Concerns;
+use Ark4ne\JsonApi\Support\With;
 use Illuminate\Http\Resources\Json\JsonResource;
+
+use function collect;
+use function tap;
 
 /**
  * @template T
+ * @property T $resource
  */
 abstract class JsonApiResource extends JsonResource implements Resourceable
 {

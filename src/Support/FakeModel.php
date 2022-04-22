@@ -1,6 +1,6 @@
 <?php
 
-namespace Ark4ne\JsonApi\Resource\Support;
+namespace Ark4ne\JsonApi\Support;
 
 use ArrayAccess;
 use ArrayIterator;
@@ -9,13 +9,14 @@ use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Contracts\Support\Jsonable;
 use IteratorAggregate;
 use JsonSerializable;
+use Traversable;
 
 /**
  * @codeCoverageIgnore
  */
 class FakeModel implements Arrayable, ArrayAccess, Countable, IteratorAggregate, Jsonable, JsonSerializable
 {
-    public function __get($name)
+    public function __get($name): self
     {
         return new self;
     }
@@ -30,12 +31,12 @@ class FakeModel implements Arrayable, ArrayAccess, Countable, IteratorAggregate,
         //
     }
 
-    public function __call($name, $args)
+    public function __call($name, $args): self
     {
         return new self;
     }
 
-    public static function __callStatic($name, $args)
+    public static function __callStatic($name, $args): self
     {
         return new self;
     }
@@ -45,12 +46,12 @@ class FakeModel implements Arrayable, ArrayAccess, Countable, IteratorAggregate,
         return '';
     }
 
-    public function toArray()
+    public function toArray(): array
     {
         return [];
     }
 
-    public function offsetExists(mixed $offset)
+    public function offsetExists(mixed $offset): bool
     {
         return $this->__isset($offset);
     }
@@ -60,32 +61,32 @@ class FakeModel implements Arrayable, ArrayAccess, Countable, IteratorAggregate,
         return $this->__get($offset);
     }
 
-    public function offsetSet(mixed $offset, mixed $value)
+    public function offsetSet(mixed $offset, mixed $value): void
     {
         //
     }
 
-    public function offsetUnset(mixed $offset)
+    public function offsetUnset(mixed $offset): void
     {
         //
     }
 
-    public function toJson($options = 0)
+    public function toJson($options = 0): string
     {
         return json_encode($this->jsonSerialize(), $options);
     }
 
-    public function jsonSerialize()
+    public function jsonSerialize(): array
     {
         return [];
     }
 
-    public function getIterator()
+    public function getIterator(): Traversable
     {
         return new ArrayIterator([]);
     }
 
-    public function count()
+    public function count(): int
     {
         return 0;
     }

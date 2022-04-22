@@ -1,6 +1,6 @@
 <?php
 
-namespace Test\Unit;
+namespace Test\Unit\Resources;
 
 use Ark4ne\JsonApi\Resource\Relationship;
 use Ark4ne\JsonApi\Resource\Resourceable;
@@ -10,6 +10,8 @@ use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Http\Resources\MissingValue;
 use Illuminate\Support\Collection;
 use Test\TestCase;
+
+use function collect;
 
 class RelationshipTest extends TestCase
 {

@@ -38,10 +38,9 @@ protected function toMeta(Request $request): ?iterable;
 Example:
 
 ```php
-use Ark4ne\JsonApi\Resource\JsonApiCollection;
 use Ark4ne\JsonApi\Resource\JsonApiResource;
-use DateTimeInterface;
 use Illuminate\Http\Request;
+use DateTimeInterface;
 
 class UserResource extends JsonApiResource
 {

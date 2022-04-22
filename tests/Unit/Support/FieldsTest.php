@@ -2,7 +2,7 @@
 
 namespace Test\Unit\Support;
 
-use Ark4ne\JsonApi\Resource\Support\Fields;
+use Ark4ne\JsonApi\Support\Fields;
 use Illuminate\Http\Request;
 use Test\TestCase;
 

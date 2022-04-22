@@ -1,16 +1,16 @@
 <?php
 
-namespace Ark4ne\JsonApi\Resource\Support;
+namespace Ark4ne\JsonApi\Support;
 
+use Ark4ne\JsonApi\Support\Traits\HasLocalCache;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Str;
+use Illuminate\Support\Arr;
 
 class Includes
 {
-    private static array $stack = [];
+    use HasLocalCache;
 
-    private static array $cache = [];
+    private static array $stack = [];
 
     public static function through(string $type, callable $callable)
     {
@@ -25,39 +25,21 @@ class Includes
 
     public static function get(Request $request): array
     {
-        return collect(self::depth($request))
-            ->map(fn($include): string => explode('.', $include, 2)[0])
-            ->uniqueStrict()
-            ->values()
-            ->all();
+        $prefix = implode('.', self::$stack);
+        return self::cache("get:$prefix", static fn() => array_keys(
+            Arr::get(self::parse($request->input('include', '')), $prefix ?: null, [])
+        ));
     }
 
-    public static function depth(Request $request): array
+    public static function parse(string $include): array
     {
-        return self::cache(implode('.', self::$stack), static fn($prefix) => Collection
-            ::make(explode(',', $request->input('include', '')))
-            ->when($prefix, fn($collect) => $collect
-                ->filter(fn($included) => Str::startsWith($included, "$prefix."))
-                ->map(fn($included) => Str::substr($included, Str::length("$prefix.")))
-            )
-            ->filter(fn($included) => $included)
-            ->uniqueStrict()
-            ->values()
-            ->all());
+        return self::cache("parse:$include", static fn() => Arr::undot(
+            array_fill_keys(explode(',', $include), []))
+        );
     }
 
     public static function include(Request $request, string $type): bool
     {
         return in_array($type, self::get($request), true);
-    }
-
-    public static function flush(): void
-    {
-        self::$cache = [];
-    }
-
-    private static function cache(string $prefix, callable $callable): array
-    {
-        return self::$cache[$prefix] ??= $callable($prefix);
     }
 }

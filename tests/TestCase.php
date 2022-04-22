@@ -2,7 +2,7 @@
 
 namespace Test;
 
-use Ark4ne\JsonApi\Resource\Support\Includes;
+use Ark4ne\JsonApi\Support\Includes;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Orchestra\Testbench\TestCase as BaseTestCase;
 
