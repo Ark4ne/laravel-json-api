@@ -56,7 +56,7 @@ class UserFetchRequest extends FormRequest
     public function rules()
     {
         return [
-            'include' => [new Fields(UserResource::class)],
+            'fields' => [new Fields(UserResource::class)],
         ]
     }
 }
