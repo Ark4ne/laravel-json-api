@@ -2,7 +2,7 @@
 
 namespace Test\Unit\Resources\Concerns;
 
-use Ark4ne\JsonApi\Resource\Concerns\Meta;
+use Ark4ne\JsonApi\Resources\Concerns\Meta;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Test\Support\Reflect;

@@ -1,6 +1,6 @@
 <?php
 
-namespace Ark4ne\JsonApi\Resource;
+namespace Ark4ne\JsonApi\Resources;
 
 use Closure;
 use Illuminate\Http\Resources\Json\JsonResource;

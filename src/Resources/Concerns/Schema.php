@@ -1,8 +1,8 @@
 <?php
 
-namespace Ark4ne\JsonApi\Resource\Concerns;
+namespace Ark4ne\JsonApi\Resources\Concerns;
 
-use Ark4ne\JsonApi\Resource\JsonApiCollection;
+use Ark4ne\JsonApi\Resources\JsonApiCollection;
 use Ark4ne\JsonApi\Support\FakeModel;
 use Illuminate\Http\Request;
 

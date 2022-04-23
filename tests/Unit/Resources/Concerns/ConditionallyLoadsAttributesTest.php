@@ -2,7 +2,7 @@
 
 namespace Test\Unit\Resources\Concerns;
 
-use Ark4ne\JsonApi\Resource\Concerns\ConditionallyLoadsAttributes;
+use Ark4ne\JsonApi\Resources\Concerns\ConditionallyLoadsAttributes;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\MissingValue;

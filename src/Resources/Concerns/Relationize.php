@@ -1,8 +1,8 @@
 <?php
 
-namespace Ark4ne\JsonApi\Resource\Concerns;
+namespace Ark4ne\JsonApi\Resources\Concerns;
 
-use Ark4ne\JsonApi\Resource\Relationship;
+use Ark4ne\JsonApi\Resources\Relationship;
 use Closure;
 
 trait Relationize
@@ -12,7 +12,7 @@ trait Relationize
      * @param \Closure|null $links
      * @param \Closure|null $meta
      *
-     * @return \Ark4ne\JsonApi\Resource\Relationship<static>
+     * @return \Ark4ne\JsonApi\Resources\Relationship<static>
      */
     public static function relationship(
         Closure $value,

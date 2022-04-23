@@ -1,6 +1,6 @@
 <?php
 
-namespace Ark4ne\JsonApi\Resource\Concerns;
+namespace Ark4ne\JsonApi\Resources\Concerns;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;

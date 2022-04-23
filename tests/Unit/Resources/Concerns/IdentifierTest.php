@@ -2,7 +2,7 @@
 
 namespace Test\Unit\Resources\Concerns;
 
-use Ark4ne\JsonApi\Resource\Concerns\Identifier;
+use Ark4ne\JsonApi\Resources\Concerns\Identifier;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Str;

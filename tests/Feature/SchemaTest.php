@@ -2,7 +2,7 @@
 
 namespace Test\Feature;
 
-use Ark4ne\JsonApi\Resource\JsonApiCollection;
+use Ark4ne\JsonApi\Resources\JsonApiCollection;
 use Test\app\Http\Resources\CommentResource;
 use Test\app\Http\Resources\PostResource;
 use Test\app\Http\Resources\UserResource;

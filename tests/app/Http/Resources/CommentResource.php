@@ -2,7 +2,7 @@
 
 namespace Test\app\Http\Resources;
 
-use Ark4ne\JsonApi\Resource\JsonApiResource;
+use Ark4ne\JsonApi\Resources\JsonApiResource;
 use DateTimeInterface;
 use Illuminate\Http\Request;
 

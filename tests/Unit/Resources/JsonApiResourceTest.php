@@ -2,8 +2,8 @@
 
 namespace Test\Unit\Resources;
 
-use Ark4ne\JsonApi\Resource\JsonApiCollection;
-use Ark4ne\JsonApi\Resource\JsonApiResource;
+use Ark4ne\JsonApi\Resources\JsonApiCollection;
+use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Http\Request;
 use Test\Support\Stub;
 use Test\TestCase;

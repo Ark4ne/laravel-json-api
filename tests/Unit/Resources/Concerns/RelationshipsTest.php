@@ -2,9 +2,9 @@
 
 namespace Test\Unit\Resources\Concerns;
 
-use Ark4ne\JsonApi\Resource\Concerns\Relationships;
-use Ark4ne\JsonApi\Resource\Relationship;
-use Ark4ne\JsonApi\Resource\Resourceable;
+use Ark4ne\JsonApi\Resources\Concerns\Relationships;
+use Ark4ne\JsonApi\Resources\Relationship;
+use Ark4ne\JsonApi\Resources\Resourceable;
 use Ark4ne\JsonApi\Support\Includes;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;

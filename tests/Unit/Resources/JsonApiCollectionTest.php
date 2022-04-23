@@ -2,8 +2,8 @@
 
 namespace Test\Unit\Resources;
 
-use Ark4ne\JsonApi\Resource\JsonApiCollection;
-use Ark4ne\JsonApi\Resource\Resourceable;
+use Ark4ne\JsonApi\Resources\JsonApiCollection;
+use Ark4ne\JsonApi\Resources\Resourceable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
