@@ -1,6 +1,10 @@
 Release note
 ============
 
+# v1.1.2
+### Fixes
+- phpstan annotations for rules
+
 # v1.1.1
 ### Fixes
 - rename namespace `Resource` to `Resources`
