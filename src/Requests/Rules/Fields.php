@@ -7,7 +7,7 @@ use Ark4ne\JsonApi\Support\Fields as SupportFields;
 use Illuminate\Contracts\Validation\Rule;
 
 /**
- * @template T as \Ark4ne\JsonApi\Resource\JsonApiResource
+ * @template T as \Ark4ne\JsonApi\Resources\JsonApiResource
  */
 class Fields implements Rule
 {

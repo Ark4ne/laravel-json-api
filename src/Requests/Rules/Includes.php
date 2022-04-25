@@ -7,7 +7,7 @@ use Ark4ne\JsonApi\Support\Includes as SupportIncludes;
 use Illuminate\Contracts\Validation\Rule;
 
 /**
- * @template T as \Ark4ne\JsonApi\Resource\JsonApiResource
+ * @template T as \Ark4ne\JsonApi\Resources\JsonApiResource
  */
 class Includes implements Rule
 {
