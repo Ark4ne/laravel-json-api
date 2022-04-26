@@ -10,7 +10,7 @@ class IncludesTest extends TestCase
 {
     public $count = 0;
 
-    public function testIncludes()
+    public function testCyclelife()
     {
         $request = new Request([
             'include' => implode(',', [
@@ -96,5 +96,36 @@ class IncludesTest extends TestCase
                 'test' => []
             ],
         ], $parsed);
+    }
+
+    public function testIncludes()
+    {
+        $request = new Request([
+            'include' => implode(',', [
+                'user',
+                'posts',
+                'posts.user',
+                'posts.user.comment',
+                'posts',
+                'posts.user',
+                'posts.user.posts',
+                'posts.test',
+            ])
+        ]);
+
+        $this->assertEquals([
+            'user',
+            'posts.user.comment',
+            'posts.user.posts',
+            'posts.test',
+        ], Includes::includes($request));
+
+        Includes::through('posts', function () use ($request) {
+            $this->assertEquals([
+                'user.comment',
+                'user.posts',
+                'test',
+            ], Includes::includes($request));
+        });
     }
 }

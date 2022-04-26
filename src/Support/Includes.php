@@ -12,7 +12,15 @@ class Includes
 
     private static array $stack = [];
 
-    public static function through(string $type, callable $callable)
+    /**
+     * Defined current resource-type/relation through callback
+     *
+     * @param string   $type
+     * @param callable $callable
+     *
+     * @return mixed
+     */
+    public static function through(string $type, callable $callable): mixed
     {
         try {
             self::$stack[] = $type;
@@ -23,13 +31,41 @@ class Includes
         }
     }
 
+    /**
+     * Return remaining includes for current resource
+     *
+     * @param \Illuminate\Http\Request $request
+     *
+     * @return array
+     */
     public static function get(Request $request): array
     {
-        return array_keys(Arr::get(
-            self::parse($request->input('include', '')),
-            implode('.', self::$stack) ?: null,
-            []
-        ));
+        return array_keys(self::currentStack($request));
+    }
+
+    /**
+     * Return if a resource-type/relation is included
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param string                   $type
+     *
+     * @return bool
+     */
+    public static function include(Request $request, string $type): bool
+    {
+        return in_array($type, self::get($request), true);
+    }
+
+    /**
+     * Return remaining includes
+     *
+     * @param \Illuminate\Http\Request $request
+     *
+     * @return array
+     */
+    public static function includes(Request $request): array
+    {
+        return array_keys(Arr::dot(self::currentStack($request)));
     }
 
     public static function parse(string $include): array
@@ -39,8 +75,12 @@ class Includes
         );
     }
 
-    public static function include(Request $request, string $type): bool
+    private static function currentStack(Request $request): array
     {
-        return in_array($type, self::get($request), true);
+        return Arr::get(
+            self::parse($request->input('include', '')),
+            implode('.', self::$stack) ?: null,
+            []
+        );
     }
 }
