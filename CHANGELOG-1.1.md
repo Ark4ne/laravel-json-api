@@ -1,6 +1,10 @@
 Release note
 ============
 
+# v1.1.3
+### Fixes
+- FakeModel implement correctly ArrayAccess (add missing return type on offsetGet)
+
 # v1.1.2
 ### Fixes
 - phpstan annotations for rules
