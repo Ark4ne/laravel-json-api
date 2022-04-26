@@ -2,6 +2,8 @@ Release note
 ============
 
 # v1.1.3
+### Added 
+- `Includes::includes` return the remaining includes for current resource
 ### Fixes
 - FakeModel implement correctly ArrayAccess (add missing return type on offsetGet)
 
