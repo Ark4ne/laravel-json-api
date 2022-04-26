@@ -5,10 +5,10 @@ namespace Ark4ne\JsonApi\Resources;
 interface Resourceable
 {
     /**
-     * @param      $request
-     * @param bool $included
+     * @param \Illuminate\Http\Request $request
+     * @param bool                     $included
      *
-     * @return array{type: string, id: string}|array<int, array{type: string, id: string}>
+     * @return array<mixed>
      */
-    public function toArray($request, bool $included = true): array;
+    public function toArray(mixed $request, bool $included = true): array;
 }

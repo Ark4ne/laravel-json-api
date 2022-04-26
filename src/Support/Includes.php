@@ -10,6 +10,9 @@ class Includes
 {
     use HasLocalCache;
 
+    /**
+     * @var string[]
+     */
     private static array $stack = [];
 
     /**
@@ -36,7 +39,7 @@ class Includes
      *
      * @param \Illuminate\Http\Request $request
      *
-     * @return array
+     * @return string[]
      */
     public static function get(Request $request): array
     {
@@ -61,13 +64,18 @@ class Includes
      *
      * @param \Illuminate\Http\Request $request
      *
-     * @return array
+     * @return string[]
      */
     public static function includes(Request $request): array
     {
         return array_keys(Arr::dot(self::currentStack($request)));
     }
 
+    /**
+     * @param string $include
+     *
+     * @return array<string, mixed>
+     */
     public static function parse(string $include): array
     {
         return self::cache("parse:$include", static fn() => Arr::undot(
@@ -75,6 +83,11 @@ class Includes
         );
     }
 
+    /**
+     * @param \Illuminate\Http\Request $request
+     *
+     * @return array<string, mixed>
+     */
     private static function currentStack(Request $request): array
     {
         return Arr::get(

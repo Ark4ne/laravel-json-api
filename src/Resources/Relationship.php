@@ -7,12 +7,12 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Http\Resources\MissingValue;
 use Illuminate\Http\Resources\PotentiallyMissing;
+use Illuminate\Support\Collection;
 
-use function collect;
 use function value;
 
 /**
- * @template T
+ * @template T as JsonApiResource|JsonApiCollection
  */
 class Relationship implements Resourceable
 {
@@ -24,9 +24,9 @@ class Relationship implements Resourceable
 
     /**
      * @param class-string<T> $resource
-     * @param \Closure        $value
-     * @param \Closure|null   $links
-     * @param \Closure|null   $meta
+     * @param Closure         $value
+     * @param Closure|null    $links
+     * @param Closure|null    $meta
      */
     public function __construct(
         protected string $resource,
@@ -39,7 +39,7 @@ class Relationship implements Resourceable
     /**
      * Set callback for links for relation
      *
-     * @param \Closure $links
+     * @param Closure $links
      *
      * @return $this
      */
@@ -53,7 +53,7 @@ class Relationship implements Resourceable
     /**
      * Set callback for meta for relation
      *
-     * @param string $relation
+     * @param Closure $meta
      *
      * @return $this
      */
@@ -113,13 +113,19 @@ class Relationship implements Resourceable
         return $this;
     }
 
-    public function toArray($request, bool $included = true): array
+    /**
+     * @param \Illuminate\Http\Request $request
+     * @param bool                     $included
+     *
+     * @return array{data: array{data?:mixed, links?:mixed, meta?:mixed}, included?: mixed, with?: mixed}
+     */
+    public function toArray(mixed $request, bool $included = true): array
     {
         $value = $this->whenIncluded && !$included
             ? new MissingValue
             : value($this->value);
 
-        if ($this->asCollection && !is_a($this->resource, ResourceCollection::class)) {
+        if ($this->asCollection && !is_subclass_of($this->resource, ResourceCollection::class)) {
             $resource = $this->resource::collection($value);
         } else {
             $resource = new $this->resource($value);
@@ -140,7 +146,7 @@ class Relationship implements Resourceable
         if (is_object($resource) && method_exists($resource, 'toArray')) {
             $datum = $resource->toArray($request, $included);
         } else {
-            $datum = collect($resource)->toArray();
+            $datum = (new Collection($resource))->toArray();
         }
 
         $includes = [];
@@ -163,7 +169,7 @@ class Relationship implements Resourceable
             if ($included) {
                 $includes[] = $datum;
             }
-        } else {
+        } else { // @phpstan-ignore-line
             $data['data'] = $datum;
         }
 
@@ -176,7 +182,12 @@ class Relationship implements Resourceable
         ]);
     }
 
-    private function isMissing($resource): bool
+    /**
+     * @param mixed|PotentiallyMissing|JsonResource $resource
+     *
+     * @return bool
+     */
+    private function isMissing(mixed $resource): bool
     {
         return ($resource instanceof PotentiallyMissing && $resource->isMissing())
             || ($resource instanceof JsonResource &&

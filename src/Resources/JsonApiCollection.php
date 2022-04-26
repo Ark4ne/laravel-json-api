@@ -5,8 +5,7 @@ namespace Ark4ne\JsonApi\Resources;
 use Ark4ne\JsonApi\Support\With;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\Json\ResourceCollection;
-
-use function collect;
+use Illuminate\Support\Collection;
 
 /**
  * @template T as JsonApiResource
@@ -14,7 +13,7 @@ use function collect;
 class JsonApiCollection extends ResourceCollection implements Resourceable
 {
     use Concerns\Relationize,
-        Concerns\Schema,
+        Concerns\SchemaCollection,
         Concerns\ToResponse;
 
     /**
@@ -25,7 +24,7 @@ class JsonApiCollection extends ResourceCollection implements Resourceable
     /**
      * Create a new anonymous resource collection.
      *
-     * @param mixed             $resource
+     * @param mixed                $resource
      * @param null|class-string<T> $collects
      *
      * @return void
@@ -37,16 +36,22 @@ class JsonApiCollection extends ResourceCollection implements Resourceable
         parent::__construct($resource);
     }
 
-    public function toArray($request, bool $included = true): array
+    /**
+     * @param \Illuminate\Http\Request $request
+     * @param bool                     $included
+     *
+     * @return array<int, array{id: int|string}>
+     */
+    public function toArray(mixed $request, bool $included = true): array
     {
         $data = [];
 
-        $base = collect($this->with)->toArray();
+        $base = (new Collection($this->with))->toArray();
         foreach ($this->collection as $resource) {
             $data[] = $resource->toArray($request, $included);
 
             if ($resource instanceof JsonResource) {
-                $with = collect($resource->with($request))->toArray();
+                $with = (new Collection($resource->with($request)))->toArray();
 
                 if (!$included) {
                     unset($with['included']);
@@ -60,7 +65,12 @@ class JsonApiCollection extends ResourceCollection implements Resourceable
         return $data;
     }
 
-    public function with($request)
+    /**
+     * @param \Illuminate\Http\Request|mixed $request
+     *
+     * @return array<mixed>
+     */
+    public function with($request): array
     {
         return With::wash($this->with);
     }

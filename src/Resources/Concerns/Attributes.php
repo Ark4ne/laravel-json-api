@@ -4,8 +4,8 @@ namespace Ark4ne\JsonApi\Resources\Concerns;
 
 use Ark4ne\JsonApi\Support\Fields;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
-use function collect;
 use function value;
 
 trait Attributes
@@ -15,7 +15,7 @@ trait Attributes
      *
      * @param \Illuminate\Http\Request $request
      *
-     * @return array<string, Closure|mixed>
+     * @return iterable<string, Closure|mixed>
      *
      * ```
      * return [
@@ -33,11 +33,11 @@ trait Attributes
     /**
      * @param \Illuminate\Http\Request $request
      *
-     * @return array
+     * @return array<string, mixed>
      */
     private function requestedAttributes(Request $request): array
     {
-        $attributes = collect($this->toAttributes($request))
+        $attributes = (new Collection($this->toAttributes($request)))
             ->map(fn($value) => value($value))
             ->toArray();
 

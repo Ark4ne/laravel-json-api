@@ -1,6 +1,13 @@
 Release note
 ============
 
+# v1.1.4
+### Changes
+- phpstan lvl 6 compliant
+- Schema safe instantiate self for structure generation
+### Fixes
+- Schema correct handle attributes
+
 # v1.1.3
 ### Added 
 - `Includes::includes` return the remaining includes for current resource

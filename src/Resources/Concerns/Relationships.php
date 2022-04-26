@@ -5,6 +5,7 @@ namespace Ark4ne\JsonApi\Resources\Concerns;
 use Ark4ne\JsonApi\Resources\Relationship;
 use Ark4ne\JsonApi\Support\Includes;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 trait Relationships
 {
@@ -13,7 +14,7 @@ trait Relationships
      *
      * @param \Illuminate\Http\Request $request
      *
-     * @return array<string, Relationship>
+     * @return array<string, Relationship>|iterable<Relationship>
      *
      * ```
      * return [
@@ -30,6 +31,11 @@ trait Relationships
         return [];
     }
 
+    /**
+     * @param \Illuminate\Http\Request $request
+     *
+     * @return array<string, array{data?: mixed, links?: mixed, meta?: mixed}>
+     */
     private function requestedRelationships(Request $request): array
     {
         $relations = [];
@@ -49,6 +55,13 @@ trait Relationships
         return $relations;
     }
 
+    /**
+     * @param bool                                   $included
+     * @param \Illuminate\Http\Request               $request
+     * @param \Ark4ne\JsonApi\Resources\Relationship $relationship
+     *
+     * @return array{data?: mixed, links?: mixed, meta?: mixed}
+     */
     private function mapRelationship(
         bool $included,
         Request $request,
@@ -67,11 +80,11 @@ trait Relationships
             foreach ($resource['with'] as $key => $value) {
                 $this->with[$key] = array_merge(
                     $this->with[$key] ?? [],
-                    collect($value)->all()
+                    (new Collection($value))->all()
                 );
             }
         }
 
-        return $resource['data'] ?? [];
+        return $resource['data'];
     }
 }

@@ -8,7 +8,14 @@ use function trans;
 
 trait UseTrans
 {
-    protected function trans($key, $default, array $replace = []): array
+    /**
+     * @param string|null           $key
+     * @param string                $default
+     * @param array<string, string> $replace
+     *
+     * @return array<string>
+     */
+    protected function trans(?string $key, string $default, array $replace = []): array
     {
         $message = trans($key);
 

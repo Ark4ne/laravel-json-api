@@ -5,9 +5,7 @@ namespace Ark4ne\JsonApi\Resources;
 use Ark4ne\JsonApi\Resources\Concerns;
 use Ark4ne\JsonApi\Support\With;
 use Illuminate\Http\Resources\Json\JsonResource;
-
-use function collect;
-use function tap;
+use Illuminate\Support\Collection;
 
 /**
  * @template T
@@ -27,7 +25,13 @@ abstract class JsonApiResource extends JsonResource implements Resourceable
     /** @var T */
     public $resource;
 
-    public function toArray($request, bool $included = true): array
+    /**
+     * @param \Illuminate\Http\Request $request
+     * @param bool                     $included
+     *
+     * @return array{id: int|string, type: string, attributes?:array<string, string>, relationships?:array<string, mixed>, links?:mixed, meta?:mixed}
+     */
+    public function toArray(mixed $request, bool $included = true): array
     {
         $data = [
             'id' => $this->toIdentifier($request),
@@ -46,9 +50,14 @@ abstract class JsonApiResource extends JsonResource implements Resourceable
         return array_filter($data);
     }
 
-    public function with($request)
+    /**
+     * @param \Illuminate\Http\Request|mixed $request
+     *
+     * @return array<mixed>
+     */
+    public function with($request): array
     {
-        $with = collect($this->with);
+        $with = new Collection($this->with);
 
         if ($meta = $this->toMeta($request)) {
             $with = With::merge($with, ['meta' => $meta]);
@@ -60,16 +69,19 @@ abstract class JsonApiResource extends JsonResource implements Resourceable
     /**
      * @param mixed $resource
      *
-     * @return JsonApiCollection
+     * @return JsonApiCollection<static>
      */
     public static function collection($resource): JsonApiCollection
     {
-        return tap(new JsonApiCollection($resource, static::class),
-            static function (JsonApiCollection $collection): void {
-                if (property_exists(static::class, 'preserveKeys')) {
-                    /** @phpstan-ignore-next-line */
-                    $collection->preserveKeys = (new static([]))->preserveKeys === true;
-                }
-            });
+        /** @var \Ark4ne\JsonApi\Resources\JsonApiCollection<static> $collection */
+        $collection = new class($resource, static::class) extends JsonApiCollection {
+        };
+
+        if (property_exists(static::class, 'preserveKeys')) {
+            // @phpstan-ignore-next-line
+            $collection->preserveKeys = (new static([]))->preserveKeys === true;
+        }
+
+        return $collection;
     }
 }

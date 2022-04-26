@@ -13,6 +13,9 @@ class Fields implements Rule
 {
     use UseTrans;
 
+    /**
+     * @var array<int, array{":resource": string, ":fields": ?string}>>
+     */
     protected array $failures;
 
     /**
@@ -31,7 +34,10 @@ class Fields implements Rule
         return $this->assert($schema, $desired);
     }
 
-    public function message()
+    /**
+     * @return array<string>
+     */
+    public function message(): array
     {
         $base = 'validation.custom.jsonapi.fields';
         $message = $this->trans(
@@ -55,6 +61,12 @@ class Fields implements Rule
         ));
     }
 
+    /**
+     * @param object                  $schema
+     * @param array<string, string[]> $desired
+     *
+     * @return bool
+     */
     private function assert(object $schema, array $desired): bool
     {
         $resources = $this->extractSchemaFields($schema);
@@ -75,6 +87,12 @@ class Fields implements Rule
         return empty($this->failures);
     }
 
+    /**
+     * @param object                  $schema
+     * @param array<string, string[]> $resources
+     *
+     * @return array<string, string[]>
+     */
     private function extractSchemaFields(object $schema, array $resources = []): array
     {
         if (isset($resources[$schema->type])) {

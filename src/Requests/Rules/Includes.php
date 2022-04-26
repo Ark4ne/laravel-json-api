@@ -13,6 +13,9 @@ class Includes implements Rule
 {
     use UseTrans;
 
+    /**
+     * @var array<int, array{":include": string, ":relation": string}>>
+     */
     protected array $failures;
 
     /**
@@ -31,7 +34,10 @@ class Includes implements Rule
         return $this->assert($schema, $desired);
     }
 
-    public function message()
+    /**
+     * @return array<string>
+     */
+    public function message(): array
     {
         $base = 'validation.custom.jsonapi.includes';
         $message = $this->trans(
@@ -49,7 +55,13 @@ class Includes implements Rule
         ));
     }
 
-
+    /**
+     * @param object               $schema
+     * @param array<string, mixed> $desired
+     * @param string               $pretend
+     *
+     * @return bool
+     */
     private function assert(object $schema, array $desired, string $pretend = ''): bool
     {
         foreach ($desired as $relation => $sub) {

@@ -41,7 +41,7 @@ trait Identifier
             return $this->resource->getKey();
         }
 
-        return $this->id;
+        return $this->resource->id;
     }
 
 }

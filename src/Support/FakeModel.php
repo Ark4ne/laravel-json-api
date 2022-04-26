@@ -13,27 +13,39 @@ use Traversable;
 
 class FakeModel implements Arrayable, ArrayAccess, Countable, IteratorAggregate, Jsonable, JsonSerializable
 {
-    public function __get($name): self
+    public function __get(string $name): self
     {
         return new self;
     }
 
-    public function __isset($name)
+    public function __isset(string $name)
     {
         return false;
     }
 
-    public function __set($name, $value)
+    public function __set(string $name, mixed $value): void
     {
         //
     }
 
-    public function __call($name, $args): self
+    /**
+     * @param string       $name
+     * @param array<mixed> $args
+     *
+     * @return self
+     */
+    public function __call(string $name, array $args): self
     {
         return new self;
     }
 
-    public static function __callStatic($name, $args): self
+    /**
+     * @param string       $name
+     * @param array<mixed> $args
+     *
+     * @return self
+     */
+    public static function __callStatic(string $name, array $args): self
     {
         return new self;
     }
@@ -78,6 +90,9 @@ class FakeModel implements Arrayable, ArrayAccess, Countable, IteratorAggregate,
         return json_encode($this->jsonSerialize(), $options);
     }
 
+    /**
+     * @return array<null>
+     */
     public function jsonSerialize(): array
     {
         return [];

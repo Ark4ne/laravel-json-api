@@ -8,9 +8,9 @@ use Closure;
 trait Relationize
 {
     /**
-     * @param \Closure      $value
-     * @param \Closure|null $links
-     * @param \Closure|null $meta
+     * @param Closure      $value
+     * @param Closure|null $links
+     * @param Closure|null $meta
      *
      * @return \Ark4ne\JsonApi\Resources\Relationship<static>
      */

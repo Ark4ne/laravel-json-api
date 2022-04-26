@@ -12,7 +12,7 @@ trait Meta
      *
      * @param \Illuminate\Http\Request $request
      *
-     * @return iterable|null
+     * @return iterable<string, mixed>|null
      *
      * ```
      * return [
@@ -31,7 +31,7 @@ trait Meta
      *
      * @param \Illuminate\Http\Request $request
      *
-     * @return iterable|null
+     * @return iterable<string, string>|null
      */
     protected function toMeta(Request $request): ?iterable
     {
