@@ -18,17 +18,17 @@ class CommentResource extends JsonApiResource
 
     protected function toAttributes(Request $request): iterable
     {
-        return [
+        return collect([
             'content' => fn() => $this->resource->content,
-        ];
+        ]);
     }
 
     protected function toResourceMeta(Request $request): ?iterable
     {
-        return [
+        return collect([
             'created_at' => $this->resource->created_at->format(DateTimeInterface::ATOM),
             'updated_at' => $this->resource->updated_at->format(DateTimeInterface::ATOM),
-        ];
+        ]);
     }
 
     protected function toRelationships(Request $request): iterable

@@ -5,6 +5,7 @@ namespace Ark4ne\JsonApi\Resources\Concerns;
 use Ark4ne\JsonApi\Resources\JsonApiCollection;
 use Ark4ne\JsonApi\Support\FakeModel;
 use Illuminate\Http\Request;
+use ReflectionClass;
 
 trait Schema
 {
@@ -12,17 +13,17 @@ trait Schema
 
     public static function schema(Request $request = null): object
     {
-        $request ??= new Request;
+        if (isset(self::$schemas[static::class])) {
+            return self::$schemas[static::class];
+        }
 
-        $resource = new static(new FakeModel);
+        $resource = self::new();
 
         if ($resource instanceof JsonApiCollection) {
             return $resource->collects::schema($request);
         }
 
-        if (isset(self::$schemas[static::class])) {
-            return self::$schemas[static::class];
-        }
+        $request ??= new Request;
 
         $schema = (object)[
             'type' => null,
@@ -33,12 +34,21 @@ trait Schema
         self::$schemas[static::class] = $schema;
 
         $schema->type = $resource->toType($request);
-        $schema->fields = array_keys($resource->toAttributes($request));
+        $schema->fields = collect($resource->toAttributes($request))->keys()->all();
 
         foreach ($resource->toRelationships($request) as $name => $relation) {
             $schema->relationships[$name] = $relation->getResource()::schema();
         }
 
         return self::$schemas[static::class];
+    }
+
+    private static function new(): self
+    {
+        /** @var self $instance */
+        $instance = (new ReflectionClass(static::class))->newInstanceWithoutConstructor();
+        $instance->resource = new FakeModel;
+
+        return $instance;
     }
 }
