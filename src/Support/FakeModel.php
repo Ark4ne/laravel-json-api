@@ -11,9 +11,6 @@ use IteratorAggregate;
 use JsonSerializable;
 use Traversable;
 
-/**
- * @codeCoverageIgnore
- */
 class FakeModel implements Arrayable, ArrayAccess, Countable, IteratorAggregate, Jsonable, JsonSerializable
 {
     public function __get($name): self
@@ -41,6 +38,11 @@ class FakeModel implements Arrayable, ArrayAccess, Countable, IteratorAggregate,
         return new self;
     }
 
+    public function __invoke(): self
+    {
+        return new self;
+    }
+
     public function __toString()
     {
         return '';
@@ -56,7 +58,7 @@ class FakeModel implements Arrayable, ArrayAccess, Countable, IteratorAggregate,
         return $this->__isset($offset);
     }
 
-    public function offsetGet(mixed $offset)
+    public function offsetGet(mixed $offset): mixed
     {
         return $this->__get($offset);
     }
