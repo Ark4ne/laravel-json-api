@@ -214,7 +214,9 @@ protected function toRelationships(Request $request): array
 {
     return [
         'avatar' => AvatarResource::relationship($this->avatar),
-        // as collection, with condition
+        // with conditional relationship
+        'administrator' => $this->when($request->user()->isAdmin(), UserResource::relationship(fn() => $this->administrator),
+        // as collection, with conditional value
         'comments' => CommentResource::relationship(fn() => $this->whenLoaded('comments'))->asCollection(),
         // with relationship (allow to include links and meta on relation)
         'posts' => PostResource::relationship(fn() => $this->posts)->withLinks(fn() => [

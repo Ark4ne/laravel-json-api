@@ -14,7 +14,7 @@ trait Relationships
      *
      * @param \Illuminate\Http\Request $request
      *
-     * @return array<string, Relationship>|iterable<Relationship>
+     * @return iterable<string, Relationship|\Illuminate\Http\Resources\PotentiallyMissing>
      *
      * ```
      * return [
@@ -39,8 +39,10 @@ trait Relationships
     private function requestedRelationships(Request $request): array
     {
         $relations = [];
+        $relationships = $this->toRelationships($request);
+        $relationships = $this->filter($relationships);
 
-        foreach ($this->toRelationships($request) as $name => $relationship) {
+        foreach ($relationships as $name => $relationship) {
             $relationship->forRelation($name);
 
             $included = Includes::include($request, $name);
