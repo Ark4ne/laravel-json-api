@@ -5,6 +5,7 @@ Release note
 ### Changes
 - phpstan lvl 6 compliant
 - Schema safe instantiate self for structure generation
+- Relationships allow conditional relation
 ### Fixes
 - Schema correct handle attributes
 
