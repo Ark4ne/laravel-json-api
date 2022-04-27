@@ -20,7 +20,7 @@ class Comment extends Model
 {
     use HasFactory;
 
-    protected static function newFactory()
+    protected static function newFactory(): CommentFactory
     {
         return new CommentFactory();
     }

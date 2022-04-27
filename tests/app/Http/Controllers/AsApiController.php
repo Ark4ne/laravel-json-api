@@ -2,20 +2,26 @@
 
 namespace Test\app\Http\Controllers;
 
+use Ark4ne\JsonApi\Resources\JsonApiCollection;
+use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Http\Request;
 
 trait AsApiController
 {
+    /**
+     * @return class-string<\Illuminate\Database\Eloquent\Model>
+     */
     abstract protected function getModelClass(): string;
 
+    /**
+     * @return class-string<\Ark4ne\JsonApi\Resources\JsonApiResource>
+     */
     abstract protected function getResourceClass(): string;
 
     /**
      * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
      */
-    public function index(Request $request)
+    public function index(Request $request): JsonApiCollection
     {
         $modelClass = $this->getModelClass();
 
@@ -42,12 +48,8 @@ trait AsApiController
 
     /**
      * Display the specified resource.
-     *
-     * @param int $id
-     *
-     * @return \Illuminate\Http\Response
      */
-    public function show(Request $request, $id)
+    public function show(Request $request, string $id): JsonApiResource
     {
         $modelClass = $this->getModelClass();
 

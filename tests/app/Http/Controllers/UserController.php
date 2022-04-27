@@ -2,6 +2,8 @@
 
 namespace Test\app\Http\Controllers;
 
+use Ark4ne\JsonApi\Resources\JsonApiCollection;
+use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Routing\Controller;
 use Test\app\Http\Requests\UserRequest;
 use Test\app\Http\Resources\UserResource;
@@ -24,12 +26,12 @@ class UserController extends Controller
         return UserResource::class;
     }
 
-    public function index(UserRequest $request)
+    public function index(UserRequest $request): JsonApiCollection
     {
         return $this->apiIndex($request);
     }
 
-    public function show(UserRequest $request, $id)
+    public function show(UserRequest $request, string $id): JsonApiResource
     {
         return $this->apiShow($request, $id);
     }

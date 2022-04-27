@@ -21,7 +21,7 @@ class User extends Model
 {
     use HasFactory;
 
-    protected static function newFactory()
+    protected static function newFactory(): UserFactory
     {
         return new UserFactory();
     }

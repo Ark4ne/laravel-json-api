@@ -1,5 +1,9 @@
 parameters:
     paths:
         - src
+        - tests/app
+    excludePaths:
+        - tests/app/migrations.php
+        - tests/app/routes.php
     level: 6
     checkGenericClassInNonGenericObjectType: false

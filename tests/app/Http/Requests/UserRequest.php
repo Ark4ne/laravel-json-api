@@ -9,12 +9,15 @@ use Test\app\Http\Resources\UserResource;
 
 class UserRequest extends FormRequest
 {
-    public function authorize()
+    public function authorize(): bool
     {
         return true;
     }
 
-    public function rules()
+    /**
+     * @return array{fields: array<mixed>, include: array<mixed>}
+     */
+    public function rules(): array
     {
         return [
             'fields' => [new Fields(UserResource::class)],

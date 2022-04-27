@@ -9,12 +9,15 @@ use Test\app\Http\Resources\PostResource;
 
 class PostRequest extends FormRequest
 {
-    public function authorize()
+    public function authorize(): bool
     {
         return true;
     }
 
-    public function rules()
+    /**
+     * @return array{fields: array<mixed>, include: array<mixed>}
+     */
+    public function rules(): array
     {
         return [
             'fields' => [new Fields(PostResource::class)],

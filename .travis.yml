@@ -11,6 +11,7 @@ before_script:
   - travis_retry composer install --no-interaction
 
 script:
+  - vendor/bin/phpstan analyze
   - vendor/bin/phpunit --coverage-clover coverage.xml
 
 after_success:

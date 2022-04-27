@@ -22,7 +22,7 @@ class Post extends Model
 {
     use HasFactory;
 
-    protected static function newFactory()
+    protected static function newFactory(): PostFactory
     {
         return new PostFactory();
     }
