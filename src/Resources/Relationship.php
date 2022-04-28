@@ -117,7 +117,7 @@ class Relationship implements Resourceable
      * @param \Illuminate\Http\Request $request
      * @param bool                     $included
      *
-     * @return array{data: array{data?:mixed, links?:mixed, meta?:mixed}, included?: mixed, with?: mixed}
+     * @return array{data?: array{data?:mixed, links?:mixed, meta?:mixed}, included?: mixed, with?: mixed}
      */
     public function toArray(mixed $request, bool $included = true): array
     {

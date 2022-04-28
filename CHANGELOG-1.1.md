@@ -1,6 +1,10 @@
 Release note
 ============
 
+# v1.1.5
+### Fixes
+- `Relationships::mapRelationships` when data is empty
+
 # v1.1.4
 ### Changes
 - phpstan lvl 6 compliant

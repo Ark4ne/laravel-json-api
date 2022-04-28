@@ -87,6 +87,6 @@ trait Relationships
             }
         }
 
-        return $resource['data'];
+        return $resource['data'] ?? [];
     }
 }
