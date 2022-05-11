@@ -12,6 +12,13 @@ class IncludesTest extends TestCase
     {
         $rule = new Includes(UserResource::class);
 
+        $this->assertFalse($rule->passes(null, [
+            'posts',
+            'posts.user',
+            'posts.user.comments',
+            'posts.user.posts'
+        ]));
+
         $this->assertTrue($rule->passes(null, implode(',', [
             'posts',
             'posts.user',

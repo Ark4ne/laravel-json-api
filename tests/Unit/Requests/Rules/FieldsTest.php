@@ -12,6 +12,8 @@ class FieldsTest extends TestCase
     {
         $rule = new Fields(UserResource::class);
 
+        $this->assertFalse($rule->passes(null, 'user,post'));
+
         $this->assertTrue($rule->passes(null, [
             'user' => 'name,email',
             'post' => 'content',

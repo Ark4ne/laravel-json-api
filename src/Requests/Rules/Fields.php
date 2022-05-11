@@ -28,6 +28,10 @@ class Fields implements Rule
 
     public function passes($attribute, $value): bool
     {
+        if (!is_array($value)) {
+            return false;
+        }
+
         $desired = SupportFields::parse($value);
         $schema = $this->resource::schema();
 
