@@ -1,6 +1,10 @@
 Release note
 ============
 
+# v1.1.6
+### Fixes
+- Request rules: check type of value before assert
+
 # v1.1.5
 ### Fixes
 - `Relationships::mapRelationships` when data is empty
