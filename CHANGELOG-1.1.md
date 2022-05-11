@@ -1,6 +1,10 @@
 Release note
 ============
 
+# v1.1.7
+### Fixes
+- Request rules: fix `$failures` not initialized
+
 # v1.1.6
 ### Fixes
 - Request rules: check type of value before assert

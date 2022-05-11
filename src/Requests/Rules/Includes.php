@@ -16,7 +16,7 @@ class Includes implements Rule
     /**
      * @var array<int, array{":include": string, ":relation": string}>>
      */
-    protected array $failures;
+    protected array $failures = [];
 
     /**
      * @param class-string<T> $resource

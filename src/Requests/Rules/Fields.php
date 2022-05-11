@@ -16,7 +16,7 @@ class Fields implements Rule
     /**
      * @var array<int, array{":resource": string, ":fields": ?string}>>
      */
-    protected array $failures;
+    protected array $failures = [];
 
     /**
      * @param class-string<T> $resource
