@@ -3,7 +3,7 @@ JsonApi - Laravel Resource
 
 A Lightweight [{JSON:API}](https://jsonapi.org/) Resource for Laravel.
 
-[![Build Status](https://app.travis-ci.com/Ark4ne/laravel-json-api.svg?branch=master)](https://app.travis-ci.com/Ark4ne/laravel-json-api)
+![example branch parameter](https://github.com/Ark4ne/laravel-json-api/actions/workflows/php.yml/badge.svg)
 [![codecov](https://codecov.io/gh/Ark4ne/laravel-json-api/branch/master/graph/badge.svg?token=F7XBLAGTDP)](https://codecov.io/gh/Ark4ne/laravel-json-api)
 
 # Installation
