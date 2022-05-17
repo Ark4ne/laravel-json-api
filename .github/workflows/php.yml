@@ -1,4 +1,4 @@
-name: PHP Composer
+name: build
 
 on:
   push:
@@ -17,10 +17,10 @@ jobs:
     strategy:
       matrix:
         php_version: ['8.0', '8.1']
-        
+
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Setup PHP with PECL extension
       uses: shivammathur/setup-php@v2
       with:
@@ -37,7 +37,7 @@ jobs:
 
     - name: Install dependencies
       run: composer install --prefer-dist --no-progress
-      
+
     - name: PHPStan
       run: vendor/bin/phpstan analyze
 
