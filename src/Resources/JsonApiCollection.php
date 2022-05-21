@@ -2,10 +2,9 @@
 
 namespace Ark4ne\JsonApi\Resources;
 
-use Ark4ne\JsonApi\Support\With;
+use Ark4ne\JsonApi\Support\Arr;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\Json\ResourceCollection;
-use Illuminate\Support\Collection;
 
 /**
  * @template T as JsonApiResource
@@ -46,18 +45,18 @@ class JsonApiCollection extends ResourceCollection implements Resourceable
     {
         $data = [];
 
-        $base = (new Collection($this->with))->toArray();
+        $base = $this->with;
         foreach ($this->collection as $resource) {
             $data[] = $resource->toArray($request, $included);
 
             if ($resource instanceof JsonResource) {
-                $with = (new Collection($resource->with($request)))->toArray();
+                $with = $resource->with($request);
 
                 if (!$included) {
                     unset($with['included']);
                 }
 
-                $base = With::merge($base, $with);
+                $base = Arr::merge($base, $with);
             }
         }
         $this->with = $base;
@@ -72,6 +71,6 @@ class JsonApiCollection extends ResourceCollection implements Resourceable
      */
     public function with($request): array
     {
-        return With::wash($this->with);
+        return Arr::wash($this->with);
     }
 }

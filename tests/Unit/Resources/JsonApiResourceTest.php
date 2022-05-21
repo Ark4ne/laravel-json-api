@@ -173,6 +173,7 @@ class JsonApiResourceTest extends TestCase
     {
         $resource = new class(null) extends JsonApiResource {
             public $preserveKeys = true;
+
             public function toType(Request $request): string
             {
                 return 'my-model';
@@ -184,5 +185,107 @@ class JsonApiResourceTest extends TestCase
         $this->assertInstanceOf(JsonApiCollection::class, $collection);
         $this->assertEquals($resource::class, $collection->collects);
         $this->assertTrue(property_exists($collection, 'preserveKeys'));
+    }
+
+    public function testReturnArray()
+    {
+        $resource = new class(null) extends JsonApiResource {
+            public function toIdentifier(Request $request): string
+            {
+                return 1;
+            }
+
+            public function toType(Request $request): string
+            {
+                return 'my-model';
+            }
+
+            public function toAttributes(Request $request): iterable
+            {
+                $data = [
+                    'int' => 123,
+                    'str' => 'abc',
+                ];
+
+                return collect($data)->merge([
+                    'data' => collect($data)->merge([
+                        'data' => collect($data)
+                    ])->all()
+                ]);
+            }
+
+            public function toLinks(Request $request): iterable
+            {
+                $data = [
+                    'int' => 123,
+                    'str' => 'abc',
+                ];
+
+                return collect($data)->merge([
+                    'data' => collect($data)->merge([
+                        'data' => collect($data)
+                    ])->all()
+                ]);
+            }
+
+            public function toResourceMeta(Request $request): iterable
+            {
+                $data = [
+                    'int' => 123,
+                    'str' => 'abc',
+                ];
+
+                return collect($data)->merge([
+                    'data' => collect($data)->merge([
+                        'data' => collect($data)
+                    ])->all()
+                ]);
+            }
+        };
+
+        $actual = $resource->toArray(new Request);
+
+        $expected = [
+            'id' => 1,
+            'type' => 'my-model',
+            'attributes' => [
+                'int' => 123,
+                'str' => 'abc',
+                'data' => [
+                    'int' => 123,
+                    'str' => 'abc',
+                    'data' => [
+                        'int' => 123,
+                        'str' => 'abc',
+                    ]
+                ]
+            ],
+            'links' => [
+                'int' => 123,
+                'str' => 'abc',
+                'data' => [
+                    'int' => 123,
+                    'str' => 'abc',
+                    'data' => [
+                        'int' => 123,
+                        'str' => 'abc',
+                    ]
+                ]
+            ],
+            'meta' => [
+                'int' => 123,
+                'str' => 'abc',
+                'data' => [
+                    'int' => 123,
+                    'str' => 'abc',
+                    'data' => [
+                        'int' => 123,
+                        'str' => 'abc',
+                    ]
+                ]
+            ]
+        ];
+
+        $this->assertEquals($expected, $actual);
     }
 }

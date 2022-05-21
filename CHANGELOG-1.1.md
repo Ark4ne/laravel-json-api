@@ -1,6 +1,13 @@
 Release note
 ============
 
+# v1.1.8
+### Changes
+- **@deprecated** `Support\With` is replaced by `Support\Arr`
+
+### Fixes
+- `JsonApiResource::toArray` return true deep array
+
 # v1.1.7
 ### Fixes
 - Request rules: fix `$failures` not initialized

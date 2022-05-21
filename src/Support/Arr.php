@@ -2,31 +2,47 @@
 
 namespace Ark4ne\JsonApi\Support;
 
-use Illuminate\Support\Arr;
+use Illuminate\Contracts\Support\Arrayable;
+use Illuminate\Support\Arr as SupportArr;
 use Illuminate\Support\Collection;
 
-/**
- * @deprecated Will be replaced by Arr::class.
- * @see \Ark4ne\JsonApi\Support\Arr
- */
-class With
+class Arr
 {
     /**
      * @template TKey as array-key
      * @template TValue
+     *
+     * @param iterable<TKey, TValue> $iterator
+     *
+     * @return array<TKey, TValue>
+     */
+    public static function toArray(iterable $iterator): array
+    {
+        return (new Collection($iterator))->map(function ($value) {
+            if ($value instanceof Arrayable) {
+                $value = $value->toArray();
+            }
+
+            return is_array($value) ? self::toArray($value) : $value;
+        })->all();
+    }
+
+    /**
+     * @template TKey as array-key
      * @template UKey as array-key
+     * @template TValue
      * @template UValue
      *
      * @param iterable<TKey, TValue> $base
      * @param iterable<UKey, UValue> $with
      *
-     * @return array<TKey & UKey, TValue & UValue>
+     * @return array<TKey | UKey, TValue | UValue>
      */
     public static function merge(iterable $base, iterable $with): array
     {
-        $base = (new Collection($base))->toArray();
+        $base = self::toArray($base);
 
-        foreach ((new Collection($with))->toArray() as $key => $value) {
+        foreach (self::toArray($with) as $key => $value) {
             $base[$key] = array_merge_recursive(
                 $base[$key] ?? [],
                 $value
@@ -46,28 +62,25 @@ class With
      */
     public static function wash(iterable $with): array
     {
-        return (new Collection(self::uniqueRecursive($with)))
-            ->filter()
-            ->toArray();
+        return array_filter(self::uniqueRecursive(self::toArray($with)));
     }
 
     /**
      * @template TKey as array-key
      * @template TValue
      *
-     * @param iterable<TKey, TValue> $value
+     * @param array<TKey, TValue> $value
      *
      * @return array<TKey, TValue>
      */
-    private static function uniqueRecursive(iterable $value): array
+    private static function uniqueRecursive(array $value): array
     {
-        return array_map(static function ($value) {
-            if (is_iterable($value)) {
-                return self::uniqueRecursive(self::uniqueKeyPreserved((new Collection($value))->all()));
-            }
-
-            return $value;
-        }, (new Collection($value))->all());
+        return array_map(
+            static fn($value) => is_array($value)
+                ? self::uniqueRecursive(self::uniqueKeyPreserved($value))
+                : $value,
+            $value
+        );
     }
 
     /**
@@ -80,7 +93,7 @@ class With
      */
     private static function uniqueKeyPreserved(array $value): array
     {
-        if (Arr::isAssoc($value)) {
+        if (SupportArr::isAssoc($value)) {
             $entries = array_map(static fn($k, $v) => [$k, $v], array_keys($value), array_values($value));
             $entries = array_values(array_unique($entries, SORT_REGULAR));
             return array_combine(
