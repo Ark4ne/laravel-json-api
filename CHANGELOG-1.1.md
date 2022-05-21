@@ -2,8 +2,13 @@ Release note
 ============
 
 # v1.1.8
+### Add
+- `Skeleton::class` present skeleton of a `JsonApiResource::class`
+
 ### Changes
 - **@deprecated** `Support\With` is replaced by `Support\Arr`
+- `Resources\Schema::schema` return `Skeleton`
+- `Resources\SchemaCollection::schema` return `Skeleton`
 
 ### Fixes
 - `JsonApiResource::toArray` return true deep array

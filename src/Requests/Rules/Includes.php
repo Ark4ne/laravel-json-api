@@ -3,6 +3,7 @@
 namespace Ark4ne\JsonApi\Requests\Rules;
 
 use Ark4ne\JsonApi\Requests\Rules\Traits\UseTrans;
+use Ark4ne\JsonApi\Resources\Skeleton;
 use Ark4ne\JsonApi\Support\Includes as SupportIncludes;
 use Illuminate\Contracts\Validation\Rule;
 
@@ -60,13 +61,13 @@ class Includes implements Rule
     }
 
     /**
-     * @param object               $schema
+     * @param Skeleton             $schema
      * @param array<string, mixed> $desired
      * @param string               $pretend
      *
      * @return bool
      */
-    private function assert(object $schema, array $desired, string $pretend = ''): bool
+    private function assert(Skeleton $schema, array $desired, string $pretend = ''): bool
     {
         foreach ($desired as $relation => $sub) {
             if (!isset($schema->relationships[$relation])) {

@@ -3,6 +3,7 @@
 namespace Ark4ne\JsonApi\Requests\Rules;
 
 use Ark4ne\JsonApi\Requests\Rules\Traits\UseTrans;
+use Ark4ne\JsonApi\Resources\Skeleton;
 use Ark4ne\JsonApi\Support\Fields as SupportFields;
 use Illuminate\Contracts\Validation\Rule;
 
@@ -66,12 +67,12 @@ class Fields implements Rule
     }
 
     /**
-     * @param object                  $schema
+     * @param Skeleton                $schema
      * @param array<string, string[]> $desired
      *
      * @return bool
      */
-    private function assert(object $schema, array $desired): bool
+    private function assert(Skeleton $schema, array $desired): bool
     {
         $resources = $this->extractSchemaFields($schema);
 
@@ -92,12 +93,12 @@ class Fields implements Rule
     }
 
     /**
-     * @param object                  $schema
+     * @param Skeleton                $schema
      * @param array<string, string[]> $resources
      *
      * @return array<string, string[]>
      */
-    private function extractSchemaFields(object $schema, array $resources = []): array
+    private function extractSchemaFields(Skeleton $schema, array $resources = []): array
     {
         if (isset($resources[$schema->type])) {
             return $resources;

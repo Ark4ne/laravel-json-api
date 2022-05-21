@@ -2,12 +2,13 @@
 
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
+use Ark4ne\JsonApi\Resources\Skeleton;
 use Illuminate\Http\Request;
 use ReflectionClass;
 
 trait SchemaCollection
 {
-    public static function schema(Request $request = null): object
+    public static function schema(Request $request = null): Skeleton
     {
         return self::new()->collects::schema($request);
     }
