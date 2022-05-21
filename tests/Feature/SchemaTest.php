@@ -3,6 +3,7 @@
 namespace Test\Feature;
 
 use Ark4ne\JsonApi\Resources\JsonApiCollection;
+use Ark4ne\JsonApi\Resources\Skeleton;
 use Test\app\Http\Resources\CommentResource;
 use Test\app\Http\Resources\PostResource;
 use Test\app\Http\Resources\UserResource;
@@ -11,32 +12,9 @@ class SchemaTest extends FeatureTestCase
 {
     public function testSchema()
     {
-        $user = (object)[
-            'type' => 'user',
-            'fields' => ['name', 'email'],
-            'relationships' => [
-                'posts' => null,
-                'comments' => null,
-            ]
-        ];
-
-        $post = (object)[
-            'type' => 'post',
-            'fields' => ['title', 'content'],
-            'relationships' => [
-                'user' => null,
-                'comments' => null,
-            ]
-        ];
-
-        $comment = (object)[
-            'type' => 'comment',
-            'fields' => ['content'],
-            'relationships' => [
-                'user' => null,
-                'post' => null,
-            ]
-        ];
+        $user = new Skeleton(UserResource::class, 'user', ['name', 'email']);
+        $post = new Skeleton(PostResource::class, 'post', ['title', 'content']);
+        $comment = new Skeleton(CommentResource::class, 'comment', ['content']);
 
         $user->relationships['posts'] = $post;
         $user->relationships['comments'] = $comment;
