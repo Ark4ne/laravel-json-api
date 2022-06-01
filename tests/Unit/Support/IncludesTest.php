@@ -75,6 +75,8 @@ class IncludesTest extends TestCase
 
     public function testParse()
     {
+        $this->assertEquals([], Includes::parse(''));
+
         $parsed = Includes::parse(implode(',', [
             'user',
             'posts',
@@ -96,6 +98,25 @@ class IncludesTest extends TestCase
                 'test' => []
             ],
         ], $parsed);
+    }
+
+    public function testGet()
+    {
+        $request = new Request();
+
+        $this->assertEquals([], Includes::get($request));
+
+        $request = new Request(['include' => null]);
+
+        $this->assertEquals([], Includes::get($request));
+
+        $request = new Request(['include' => '']);
+
+        $this->assertEquals([], Includes::get($request));
+
+        $request = new Request(['include' => 'foo.bar,baz']);
+
+        $this->assertEquals(['foo', 'baz'], Includes::get($request));
     }
 
     public function testIncludes()
