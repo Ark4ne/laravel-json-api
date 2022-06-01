@@ -12,6 +12,7 @@ Release note
 
 ### Fixes
 - `JsonApiResource::toArray` return true deep array
+- `Support\Includes` when request has empty parameter `include`
 
 # v1.1.7
 ### Fixes
