@@ -1,6 +1,10 @@
 Release note
 ============
 
+# v1.1.9
+### Fixes
+- `JsonApiResource::toArray` don't filter on `type` and `id`
+
 # v1.1.8
 ### Add
 - `Skeleton::class` present skeleton of a `JsonApiResource::class`

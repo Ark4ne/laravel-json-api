@@ -38,15 +38,15 @@ abstract class JsonApiResource extends JsonResource implements Resourceable
         ];
 
         if ($included) {
-            $data += [
+            $data += Arr::toArray(array_filter([
                 'attributes' => $this->requestedAttributes($request),
                 'relationships' => $this->requestedRelationships($request),
                 'links' => $this->toLinks($request),
                 'meta' => $this->toResourceMeta($request)
-            ];
+            ]));
         }
 
-        return Arr::toArray(array_filter($data));
+        return $data;
     }
 
     /**
