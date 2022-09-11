@@ -35,4 +35,26 @@ class ConditionallyLoadsAttributesTest extends TestCase
             Reflect::invoke($stub, 'whenIncluded', $request, $property, true)
         );
     }
+
+    /**
+     * @dataProvider dataWhenInclude
+     */
+    public function testWhenInFields($expected, $property, $query)
+    {
+        $request = new Request(['fields' => ['type' => implode(',', $query)]]);
+
+        $stub = new class(null) extends JsonResource {
+            use ConditionallyLoadsAttributes;
+
+            protected function toType()
+            {
+                return 'type';
+            }
+        };
+
+        $this->assertEquals(
+            $expected ?: new MissingValue,
+            Reflect::invoke($stub, 'whenInFields', $request, $property, true)
+        );
+    }
 }

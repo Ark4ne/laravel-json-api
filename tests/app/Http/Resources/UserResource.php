@@ -2,6 +2,7 @@
 
 namespace Test\app\Http\Resources;
 
+use Ark4ne\JsonApi\Resources\Concerns\ConditionallyLoadsAttributes;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use DateTimeInterface;
 use Illuminate\Http\Request;
@@ -11,6 +12,8 @@ use Illuminate\Http\Request;
  */
 class UserResource extends JsonApiResource
 {
+    use ConditionallyLoadsAttributes;
+
     protected function toType(Request $request): string
     {
         return 'user';
@@ -21,6 +24,7 @@ class UserResource extends JsonApiResource
         return [
             'name' => $this->resource->name,
             'email' => $this->resource->email,
+            'only-with-fields' => $this->whenInFields($request, 'only-with-fields', fn() => 'huge-data-set'),
         ];
     }
 
