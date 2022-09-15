@@ -8,6 +8,10 @@ use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 
+/**
+ * @template T as \Illuminate\Database\Eloquent\Model
+ * @extends Valuable<T>
+ */
 abstract class Relation extends Valuable
 {
     protected ?Closure $links = null;
