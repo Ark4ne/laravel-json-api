@@ -17,13 +17,7 @@ class IdentifierTest extends TestCase
             use Identifier;
         };
 
-        $this->assertEquals("collection", Reflect::invoke($stub, 'toType', new Request()));
-
-        $stub = new class(new JsonResource(null)) extends JsonResource {
-            use Identifier;
-        };
-
-        $this->assertEquals("json-resource", Reflect::invoke($stub, 'toType', new Request()));
+        $this->assertEquals('anonymous', Reflect::invoke($stub, 'toType', new Request()));
 
         $stub = new class(new JsonResource(null)) extends JsonResource {
             use Identifier;
