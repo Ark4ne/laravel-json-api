@@ -2,6 +2,7 @@
 
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
+use Ark4ne\JsonApi\Descriptors\Resolver;
 use Ark4ne\JsonApi\Resources\Relationship;
 use Ark4ne\JsonApi\Support\Includes;
 use Illuminate\Http\Request;
@@ -9,12 +10,14 @@ use Illuminate\Support\Collection;
 
 trait Relationships
 {
+    use Resolver;
+
     /**
      * @see https://jsonapi.org/format/#document-resource-object-relationships
      *
      * @param \Illuminate\Http\Request $request
      *
-     * @return iterable<string, Relationship|\Illuminate\Http\Resources\PotentiallyMissing>
+     * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Relations\Relation|Relationship|\Illuminate\Http\Resources\PotentiallyMissing>|iterable<array-key, \Ark4ne\JsonApi\Descriptors\Relations\Relation>
      *
      * ```
      * return [
@@ -40,6 +43,7 @@ trait Relationships
     {
         $relations = [];
         $relationships = $this->toRelationships($request);
+        $relationships = $this->resolveValues($request, $relationships);
         $relationships = $this->filter($relationships);
 
         foreach ($relationships as $name => $relationship) {

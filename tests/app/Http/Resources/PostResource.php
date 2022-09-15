@@ -16,32 +16,32 @@ class PostResource extends JsonApiResource
         return 'post';
     }
 
-    protected function toAttributes(Request $request): iterable
-    {
-        return [
-            'title' => fn() => $this->resource->title,
-            'content' => fn() => $this->resource->content,
-        ];
-    }
+protected function toAttributes(Request $request): iterable
+{
+    return [
+        'title' => $this->string(),
+        'content' => $this->string()->whenInFields(),
+    ];
+}
 
     protected function toResourceMeta(Request $request): ?iterable
     {
         return [
-            'created_at' => $this->resource->created_at->format(DateTimeInterface::ATOM),
-            'updated_at' => $this->resource->updated_at->format(DateTimeInterface::ATOM),
+            $this->date('created_at')->format(DateTimeInterface::ATOM),
+            $this->date('updated_at')->format(DateTimeInterface::ATOM),
         ];
     }
 
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'user' => UserResource::relationship(fn() => $this->resource->user, fn() => [
+            $this->one(UserResource::class, 'user')->links(fn() => [
                 'self' => "https://api.example.com/posts/{$this->resource->id}/relationships/user",
             ]),
-            'comments' => CommentResource::relationship(fn() => $this->resource->comments, fn() => [
+            $this->many(CommentResource::class, 'comments')->links(fn() => [
                 'self' => "https://api.example.com/posts/{$this->resource->id}/relationships/comments",
                 'related' => "https://api.example.com/posts/{$this->resource->id}/comments",
-            ])->asCollection(),
+            ]),
         ];
     }
 }

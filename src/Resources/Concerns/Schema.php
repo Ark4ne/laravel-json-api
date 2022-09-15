@@ -2,6 +2,9 @@
 
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
+use Ark4ne\JsonApi\Descriptors\Relations\Relation;
+use Ark4ne\JsonApi\Descriptors\Resolver;
+use Ark4ne\JsonApi\Descriptors\Values\Value;
 use Ark4ne\JsonApi\Resources\Skeleton;
 use Ark4ne\JsonApi\Support\FakeModel;
 use Illuminate\Http\Request;
@@ -10,6 +13,8 @@ use ReflectionClass;
 
 trait Schema
 {
+    use Resolver;
+
     /**
      * @var array<class-string, Skeleton>
      */
@@ -30,10 +35,22 @@ trait Schema
             $resource->toType($request)
         );
 
-        $schema->fields = (new Collection($resource->toAttributes($request)))->keys()->all();
+        $schema->fields = (new Collection($resource->toAttributes($request)))->map(fn(
+            $value,
+            $key
+        ) => is_int($key) && ($value instanceof Value) && is_string($value->retriever())
+            ? $value->retriever()
+            : $key
+        )->values()->all();
 
         foreach ($resource->toRelationships($request) as $name => $relation) {
-            $schema->relationships[$name] = $relation->getResource()::schema();
+            if ($relation instanceof Relation) {
+                $relationship = $relation->related();
+                $name = is_int($name) && is_string($relation->retriever()) ? $relation->retriever() : $name;
+            } else {
+                $relationship = $relation->getResource();
+            }
+            $schema->relationships[$name] = $relationship::schema();
         }
 
         return self::$schemas[static::class];

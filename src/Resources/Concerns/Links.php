@@ -2,16 +2,19 @@
 
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
+use Ark4ne\JsonApi\Descriptors\Resolver;
 use Illuminate\Http\Request;
 
 trait Links
 {
+    use Resolver;
+
     /**
      * @see https://jsonapi.org/format/#document-resource-object-links
      *
      * @param \Illuminate\Http\Request $request
      *
-     * @return array<string, string>|null
+     * @return iterable<string, string>|iterable<array-key, \Ark4ne\JsonApi\Descriptors\Values\Value>|null
      *
      * ```
      * return [
@@ -22,5 +25,15 @@ trait Links
     protected function toLinks(Request $request): ?iterable
     {
         return null;
+    }
+
+    /**
+     * @param \Illuminate\Http\Request $request
+     *
+     * @return array<string, mixed>|null
+     */
+    private function requestedLinks(Request $request): ?array
+    {
+        return $this->resolveValues($request, $this->toLinks($request));
     }
 }

@@ -24,15 +24,15 @@ class UserResource extends JsonApiResource
         return [
             'name' => $this->resource->name,
             'email' => $this->resource->email,
-            'only-with-fields' => $this->whenInFields($request, 'only-with-fields', fn() => 'huge-data-set'),
+            'only-with-fields' => $this->string(fn() => 'huge-data-set')->whenInFields(),
         ];
     }
 
     protected function toResourceMeta(Request $request): ?iterable
     {
         return [
-            'created_at' => $this->resource->created_at->format(DateTimeInterface::ATOM),
-            'updated_at' => $this->resource->updated_at->format(DateTimeInterface::ATOM),
+            'created_at' => $this->date()->format(DateTimeInterface::ATOM),
+            'updated_at' => $this->date()->format(DateTimeInterface::ATOM),
         ];
     }
 

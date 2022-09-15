@@ -21,7 +21,9 @@ trait Identifier
      */
     protected function toType(Request $request): string
     {
-        return Str::kebab(Str::afterLast($this->resource::class, "\\"));
+        return str_contains($this::class, '@anonymous')
+            ? 'anonymous'
+            : Str::kebab(Str::beforeLast(Str::afterLast($this::class, "\\"), 'Resource'));
     }
 
     /**

@@ -10,17 +10,63 @@ class Fields
 {
     use HasLocalCache;
 
+    public static ?string $current = null;
+
+    /**
+     * Defined current resource-type/relation through callback
+     *
+     * @param string   $type
+     * @param callable $callable
+     *
+     * @return mixed
+     */
+    public static function through(string $type, callable $callable): mixed
+    {
+        try {
+            self::$current = $type;
+
+            return $callable();
+        } finally {
+            self::$current = null;
+        }
+    }
+
     /**
      * @param \Illuminate\Http\Request $request
-     * @param string                   $type
+     * @param string|null              $type
      *
      * @return string[]|null
      */
-    public static function get(Request $request, string $type): ?array
+    public static function get(Request $request, string $type = null): ?array
     {
+        $type ??= self::$current;
+
+        if ($type === null) {
+            throw new \BadMethodCallException(__METHOD__ . ':$type must not be null when not current stack');
+        }
+
         $fields = self::parse($request->input('fields', []));
 
         return $fields[$type] ?? null;
+    }
+
+    /**
+     * @param \Illuminate\Http\Request $request
+     * @param string                   $field
+     * @param string|null              $type
+     *
+     * @return bool
+     */
+    public static function has(Request $request, string $field, string $type =null): bool  {
+        $type ??= self::$current;
+
+        if ($type === null) {
+            throw new \BadMethodCallException(__METHOD__ . ':$type must not be null when not current stack');
+        }
+
+        $fields = self::get($request, $type);
+
+        return $fields !== null && in_array($field, $fields, true);
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace Ark4ne\JsonApi\Resources;
 
 use Ark4ne\JsonApi\Resources\Concerns;
+use Ark4ne\JsonApi\Descriptors\Descriptors;
 use Ark4ne\JsonApi\Support\Arr;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -12,7 +13,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 abstract class JsonApiResource extends JsonResource implements Resourceable
 {
-    use Concerns\Relationize,
+    use Descriptors,
+        Concerns\Relationize,
         Concerns\Identifier,
         Concerns\Attributes,
         Concerns\Relationships,
@@ -41,8 +43,8 @@ abstract class JsonApiResource extends JsonResource implements Resourceable
             $data += Arr::toArray(array_filter([
                 'attributes' => $this->requestedAttributes($request),
                 'relationships' => $this->requestedRelationships($request),
-                'links' => $this->toLinks($request),
-                'meta' => $this->toResourceMeta($request)
+                'links' => $this->requestedLinks($request),
+                'meta' => $this->requestedResourceMeta($request)
             ]));
         }
 
@@ -58,7 +60,7 @@ abstract class JsonApiResource extends JsonResource implements Resourceable
     {
         $with = $this->with;
 
-        if ($meta = $this->toMeta($request)) {
+        if ($meta = $this->requestedMeta($request)) {
             $with = Arr::merge($with, ['meta' => $meta]);
         }
 
