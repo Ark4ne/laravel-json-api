@@ -71,7 +71,7 @@ trait Descriptors
     }
 
     /**
-     * @param null|string|Closure(T):array $attribute
+     * @param null|string|Closure(T):array<mixed> $attribute
      *
      * @return \Ark4ne\JsonApi\Descriptors\Values\ValueArray<T>
      */

@@ -5,6 +5,10 @@ namespace Ark4ne\JsonApi\Descriptors\Values;
 use DateTime;
 use DateTimeInterface;
 
+/**
+ * @template T as \Illuminate\Database\Eloquent\Model
+ * @extends Value<T>
+ */
 class ValueDate extends Value
 {
     protected string $format = DateTimeInterface::ATOM;

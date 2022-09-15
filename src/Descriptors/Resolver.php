@@ -9,9 +9,9 @@ trait Resolver
 {
     /**
      * @param \Illuminate\Http\Request $request
-     * @param iterable|null            $values
+     * @param iterable<mixed>|null            $values
      *
-     * @return array|null
+     * @return array<mixed>|null
      */
     protected function resolveValues(Request $request, ?iterable $values): ?array
     {

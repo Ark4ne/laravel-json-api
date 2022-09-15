@@ -3,6 +3,7 @@
 namespace Test\app\Http\Controllers;
 
 use Ark4ne\JsonApi\Resources\JsonApiCollection;
+use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Routing\Controller;
 use Test\app\Http\Requests\PostRequest;
 use Test\app\Http\Resources\PostResource;
@@ -30,7 +31,7 @@ class PostController extends Controller
         return $this->apiIndex($request);
     }
 
-    public function show(PostRequest $request, string $id): PostResource
+    public function show(PostRequest $request, string $id): JsonApiResource
     {
         return $this->apiShow($request, $id);
     }

@@ -4,6 +4,10 @@ namespace Ark4ne\JsonApi\Descriptors\Values;
 
 use Illuminate\Support\Collection;
 
+/**
+ * @template T as \Illuminate\Database\Eloquent\Model
+ * @extends Value<T>
+ */
 class ValueArray extends Value
 {
     /**
