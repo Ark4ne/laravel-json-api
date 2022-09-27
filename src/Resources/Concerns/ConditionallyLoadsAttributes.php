@@ -13,13 +13,13 @@ trait ConditionallyLoadsAttributes
     /**
      * Retrieve a relationship if it has been present in fields.
      *
-     * @template T
+     * @template K
      *
      * @param \Illuminate\Http\Request $request
      * @param string                   $attribute
-     * @param T                        $value
+     * @param K                        $value
      *
-     * @return \Illuminate\Http\Resources\MissingValue|T
+     * @return \Illuminate\Http\Resources\MissingValue|K
      */
     protected function whenInFields(Request $request, string $attribute, mixed $value)
     {
@@ -29,13 +29,13 @@ trait ConditionallyLoadsAttributes
     /**
      * Retrieve a relationship if it has been included.
      *
-     * @template T
+     * @template K
      *
      * @param \Illuminate\Http\Request $request
      * @param string                   $type
-     * @param T                        $value
+     * @param K                        $value
      *
-     * @return \Illuminate\Http\Resources\MissingValue|T
+     * @return \Illuminate\Http\Resources\MissingValue|K
      */
     protected function whenIncluded(Request $request, string $type, mixed $value)
     {

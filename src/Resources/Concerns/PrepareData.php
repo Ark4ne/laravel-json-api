@@ -12,10 +12,11 @@ trait PrepareData
     use Resolver;
 
     /**
-     * @template TKey extends array-key
+     * @template TKey as array-key
      * @template TValue
      *
-     * @param iterable<TKey, TValue> $data
+     * @param \Illuminate\Http\Request    $request
+     * @param iterable<TKey, TValue>|null $data
      *
      * @return iterable<TKey, TValue>
      */
@@ -25,7 +26,7 @@ trait PrepareData
     }
 
     /**
-     * @template TKey extends array-key
+     * @template TKey as array-key
      * @template TValue
      *
      * @param iterable<TKey, TValue> $data

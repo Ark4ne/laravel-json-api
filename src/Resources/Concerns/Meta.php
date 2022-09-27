@@ -43,9 +43,9 @@ trait Meta
     /**
      * @param \Illuminate\Http\Request $request
      *
-     * @return array<string, mixed>|null
+     * @return array<string, mixed>
      */
-    private function requestedResourceMeta(Request $request): ?array
+    private function requestedResourceMeta(Request $request): array
     {
         return $this->prepareData($request, $this->toResourceMeta($request));
     }
@@ -53,9 +53,9 @@ trait Meta
     /**
      * @param \Illuminate\Http\Request $request
      *
-     * @return array<string, mixed>|null
+     * @return array<string, mixed>
      */
-    private function requestedMeta(Request $request): ?array
+    private function requestedMeta(Request $request): array
     {
         return $this->prepareData($request, $this->toMeta($request));
     }

@@ -42,7 +42,7 @@ class PostResource extends JsonApiResource
                 'self' => "https://api.example.com/posts/{$this->resource->id}/relationships/comments",
                 'related' => "https://api.example.com/posts/{$this->resource->id}/comments",
             ])->meta(fn() => [
-                'total' => $this->resource->comments()->count(),
+                'total' => $this->resource->comments()->getQuery()->count(),
             ]),
         ];
     }
