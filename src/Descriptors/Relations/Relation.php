@@ -53,7 +53,7 @@ abstract class Relation extends Describer
 
     public function meta(Closure $meta): static
     {
-        $this->links = $meta;
+        $this->meta = $meta;
         return $this;
     }
 

@@ -160,6 +160,9 @@ class ResourceTest extends FeatureTestCase
                         'links' => [
                             'self' => "https://api.example.com/user/{$user->id}/relationships/posts",
                             'related' => "https://api.example.com/user/{$user->id}/posts",
+                        ],
+                        'meta' => [
+                            'total' => $user->posts->count()
                         ]
                     ]),
                     'comments' => array_filter([
@@ -173,6 +176,9 @@ class ResourceTest extends FeatureTestCase
                         'links' => [
                             'self' => "https://api.example.com/user/{$user->id}/relationships/comments",
                             'related' => "https://api.example.com/user/{$user->id}/comments",
+                        ],
+                        'meta' => [
+                            'total' => $user->comments->count()
                         ]
                     ]),
                 ],

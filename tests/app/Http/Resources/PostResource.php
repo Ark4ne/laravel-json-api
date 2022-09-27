@@ -41,6 +41,8 @@ class PostResource extends JsonApiResource
             'comments' => $this->many(CommentResource::class)->links(fn() => [
                 'self' => "https://api.example.com/posts/{$this->resource->id}/relationships/comments",
                 'related' => "https://api.example.com/posts/{$this->resource->id}/comments",
+            ])->meta(fn() => [
+                'total' => $this->resource->comments()->count(),
             ]),
         ];
     }
