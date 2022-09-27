@@ -134,20 +134,9 @@ class ResourceTest extends FeatureTestCase
         ]]);
     }
 
-
     private function dataSeed()
     {
-        /** @var User $user */
-        $user = User::factory()->create();
-        $posts = Post::factory()->for($user)->count(3)->create();
-        $users = User::factory()->count(9)->create();
-        foreach ($posts as $post) {
-            foreach ($users->random(5) as $u) {
-                Comment::factory()->for($post)->for($u)->create();
-            }
-        }
-
-        return $user;
+        return User::first();
     }
 
     private function getJsonResult(User $user, ?array $attributes = null, ?array $relationships = null)
