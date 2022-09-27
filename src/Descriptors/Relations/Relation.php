@@ -63,22 +63,37 @@ abstract class Relation extends Describer
         return $this;
     }
 
+    /**
+     * @see \Illuminate\Http\Resources\ConditionallyLoadsAttributes::whenLoaded
+     *
+     * @param string|null $relation
+     *
+     * @return $this
+     */
     public function whenLoaded(string $relation = null): static
     {
         return $this->when(fn(
             Request $request,
             Model $model,
             string $attribute
-        ): bool => $model->relationLoaded($relation ?? $this->relation ?? $attribute));
+        ): bool => $model->relationLoaded($relation ?? (is_string($this->relation) ? $this->relation : $attribute)));
     }
 
+    /**
+     * @see \Illuminate\Http\Resources\ConditionallyLoadsAttributes::whenPivotLoadedAs
+     *
+     * @param string      $table
+     * @param string|null $accessor
+     *
+     * @return $this
+     */
     public function whenPivotLoaded(string $table, string $accessor = null): static
     {
         return $this->when(fn(
             Request $request,
             Model $model,
             string $attribute
-        ): bool => ($pivot = $model->{$accessor ?? $this->relation ?? $attribute})
+        ): bool => ($pivot = $model->{$accessor ?? (is_string($this->relation) ? $this->relation : $attribute)})
             && (
                 $pivot instanceof $table ||
                 $pivot->getTable() === $table

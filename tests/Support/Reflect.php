@@ -23,4 +23,13 @@ class Reflect
 
         $reflectProperty->setValue($object, $value);
     }
+
+    public static function get($object, string $property): mixed
+    {
+        $reflect = new ReflectionClass($object);
+        $reflectProperty = $reflect->getProperty($property);
+        $reflectProperty->setAccessible(true);
+
+        return $reflectProperty->getValue($object);
+    }
 }
