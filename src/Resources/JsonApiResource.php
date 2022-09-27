@@ -17,6 +17,7 @@ abstract class JsonApiResource extends JsonResource implements Resourceable
         Concerns\Relationize,
         Concerns\Identifier,
         Concerns\Attributes,
+        Concerns\ConditionallyLoadsAttributes,
         Concerns\Relationships,
         Concerns\Links,
         Concerns\Meta,
