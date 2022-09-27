@@ -2,12 +2,11 @@
 
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
-use Ark4ne\JsonApi\Descriptors\Resolver;
 use Illuminate\Http\Request;
 
 trait Links
 {
-    use Resolver;
+    use PrepareData;
 
     /**
      * @see https://jsonapi.org/format/#document-resource-object-links
@@ -34,6 +33,6 @@ trait Links
      */
     private function requestedLinks(Request $request): ?array
     {
-        return $this->resolveValues($request, $this->toLinks($request));
+        return $this->prepareData($request, $this->toLinks($request));
     }
 }
