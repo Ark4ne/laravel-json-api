@@ -189,9 +189,34 @@ protected function toAttributes(Request $request): array
         // Conditional attribute
         'secret' => $this->when($request->user()->isAdmin(), 'secret-value'),       
         // Merging Conditional Attributes
-        $this->mergeWhen($request->user()->isAdmin(), [
-            'first-secret' => 'value',
-            'second-secret' => 'value',
+        // use applyWhen insteadof mergeWhen for keep fields
+        // useful for fields request rules validation
+        $this->applyWhen($request->user()->isAdmin(), [
+            'first-secret' => 123,
+            'second-secret' => 456.789,
+        ]),
+    ];
+}
+```
+
+#### Described attributes
+_**@see** [described notation](##described-notation)_
+
+```php
+protected function toAttributes(Request $request): array
+{
+    return [
+        'name' => $this->string(),
+        // pass key to describer
+        $this->string('email'),
+        // with lazy evaluation
+        'hash64' => $this->string(fn() => base64_encode("{$this->id}-{$this->email}")),
+        // Conditional attribute
+        $this->string('secret')->when($request->user()->isAdmin(), 'secret-value'),       
+        // Merging Conditional Attributes
+        $this->applyWhen($request->user()->isAdmin(), [
+            'first-secret' => $this->integer(fn() => 123),
+            'second-secret' => $this->float(fn() => 456.789),
         ]),
     ];
 }
@@ -242,7 +267,34 @@ protected function toRelationships(Request $request): array
         // as collection, with condition
         'comments' => CommentResource::relationship(fn() => $this->whenLoaded('comments'))->asCollection(),
         // with relationship (allow to include links and meta on relation)
-        'posts' => PostResource::relationship(fn() => $this->posts)->asCollection(),
+        'posts' => PostResource::relationship(fn() => $this->posts)
+                ->asCollection(),
+    ];
+}
+```
+
+#### Described attributes
+_**@see** [described notation](##described-notation)_
+
+```php
+protected function toRelationships(Request $request): array
+{
+    return [
+        'avatar' => $this->one(AvatarResource::class),
+        // custom relation name
+        'my-avatar' => $this->one(AvatarResource::class, 'avatar'),
+        // as collection, with condition
+        'comments' => $this->many(CommentResource::class)
+                           ->whenLoaded(),
+        // with relationship (allow to include links and meta on relation)
+        'posts' => $this->many(PostResource::class)
+                ->links(fn() => [
+                    'self' => "https://api.example.com/posts/{$this->resource->id}/relationships/posts",
+                    'related' => "https://api.example.com/posts/{$this->resource->id}/posts",
+                ])
+                ->meta(fn() => [
+                    'total' => $this->integer(fn() => $this->resource->posts()->count()),
+                ]),
     ];
 }
 ```
@@ -324,3 +376,21 @@ Usage is the same as laravel collections.
 ```php
 UserResource::collection(User::all()); // => JsonApiCollection
 ```
+
+
+## Described notation
+
+### Value methods
+| Method    | Description              |
+|-----------|--------------------------|
+| `bool`    | Cast to boolean          |
+| `integer` | Cast to integer          |
+| `float`   | Cast to float            |
+| `array`   | Cast to array            |
+| `mixed`   | Don't cast, return as is |
+
+### Relation methods
+| Method  | Description                                                       |
+|---------|-------------------------------------------------------------------|
+| `one`   | For relationship with a single value: `HasOne`, `BelongsTo`, ...  |
+| `many`  | For relationship with many value: `HasMany`, `BelongsToMany`, ... |
