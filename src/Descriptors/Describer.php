@@ -124,4 +124,19 @@ abstract class Describer
      * @return string|Closure|null
      */
     abstract public function retriever(): null|string|Closure;
+
+    /**
+     * @param mixed      $value
+     * @param int|string $key
+     *
+     * @return int|string
+     */
+    public static function retrieveName(mixed $value, int|string $key): int|string
+    {
+        if (is_int($key) && $value instanceof self && is_string($retriever = $value->retriever())) {
+            return $retriever;
+        }
+
+        return $key;
+    }
 }
