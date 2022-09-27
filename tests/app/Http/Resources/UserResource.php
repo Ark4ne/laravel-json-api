@@ -43,7 +43,7 @@ class UserResource extends JsonApiResource
                 'self' => "https://api.example.com/user/{$this->resource->id}/relationships/posts",
                 'related' => "https://api.example.com/user/{$this->resource->id}/posts",
             ], fn() => [
-                'total' => $this->resource->posts()->count(),
+                'total' => $this->resource->posts()->getQuery()->count(),
             ])
                 ->asCollection(),
 
@@ -54,7 +54,7 @@ class UserResource extends JsonApiResource
                     'related' => "https://api.example.com/user/{$this->resource->id}/comments",
                 ])
                 ->meta(fn() => [
-                    'total' => $this->resource->comments()->count(),
+                    'total' => $this->resource->comments()->getQuery()->count(),
                 ]),
         ];
     }

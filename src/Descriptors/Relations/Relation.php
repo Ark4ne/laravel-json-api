@@ -68,9 +68,9 @@ abstract class Relation extends Describer
      *
      * @param string|null $relation
      *
-     * @return $this
+     * @return static
      */
-    public function whenLoaded(string $relation = null): static
+    public function whenLoaded(string $relation = null): self
     {
         return $this->when(fn(
             Request $request,
@@ -85,9 +85,9 @@ abstract class Relation extends Describer
      * @param string      $table
      * @param string|null $accessor
      *
-     * @return $this
+     * @return static
      */
-    public function whenPivotLoaded(string $table, string $accessor = null): static
+    public function whenPivotLoaded(string $table, string $accessor = null): self
     {
         return $this->when(fn(
             Request $request,

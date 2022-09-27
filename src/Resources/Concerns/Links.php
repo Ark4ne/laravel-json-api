@@ -29,9 +29,9 @@ trait Links
     /**
      * @param \Illuminate\Http\Request $request
      *
-     * @return array<string, mixed>|null
+     * @return array<string, mixed>
      */
-    private function requestedLinks(Request $request): ?array
+    private function requestedLinks(Request $request): array
     {
         return $this->prepareData($request, $this->toLinks($request));
     }
