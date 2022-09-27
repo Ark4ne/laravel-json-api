@@ -2,13 +2,12 @@
 
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
-use Ark4ne\JsonApi\Descriptors\Resolver;
 use Ark4ne\JsonApi\Support\Fields;
 use Illuminate\Http\Request;
 
 trait Attributes
 {
-    use Resolver;
+    use PrepareData;
 
     /**
      * @see https://jsonapi.org/format/#document-resource-object-attributes
@@ -42,7 +41,8 @@ trait Attributes
     private function requestedAttributes(Request $request): array
     {
         return Fields::through($this->toType($request), function () use ($request) {
-            $attributes = $this->resolveValues($request, $this->toAttributes($request));
+            $attributes = $this->toAttributes($request);
+            $attributes = $this->prepareData($request, $attributes);
             $attributes = $this->filter($attributes);
 
             $fields = Fields::get($request);

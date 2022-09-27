@@ -2,12 +2,11 @@
 
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
-use Ark4ne\JsonApi\Descriptors\Resolver;
 use Illuminate\Http\Request;
 
 trait Meta
 {
-    use Resolver;
+    use PrepareData;
 
     /**
      * @see https://jsonapi.org/format/#document-resource-objects
@@ -48,7 +47,7 @@ trait Meta
      */
     private function requestedResourceMeta(Request $request): ?array
     {
-        return $this->resolveValues($request, $this->toResourceMeta($request));
+        return $this->prepareData($request, $this->toResourceMeta($request));
     }
 
     /**
@@ -58,6 +57,6 @@ trait Meta
      */
     private function requestedMeta(Request $request): ?array
     {
-        return $this->resolveValues($request, $this->toMeta($request));
+        return $this->prepareData($request, $this->toMeta($request));
     }
 }
