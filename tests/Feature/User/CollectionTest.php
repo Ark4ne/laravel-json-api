@@ -5,6 +5,8 @@ namespace Test\Feature\User;
 use DateTimeInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Test\app\Http\Resources\CommentResource;
 use Test\app\Http\Resources\PostResource;
 use Test\app\Models\Comment;
@@ -16,28 +18,12 @@ class CollectionTest extends FeatureTestCase
 {
     public function testGetIndex()
     {
-        $users = $this->dataSeed();
+        $users = User::all();
 
         $expected = $this->getJsonResult($users);
 
         $response = $this->get('user');
         $response->assertJson($expected);
-    }
-
-    private function dataSeed()
-    {
-        $users = User::factory()->count(10)->create();
-
-        foreach ($users as $udx => $user) {
-            $posts = Post::factory()->for($user)->count(3)->create();
-            foreach ($posts as $post) {
-                foreach ($users->except($udx)->random(5) as $u) {
-                    Comment::factory()->for($post)->for($u)->create();
-                }
-            }
-        }
-
-        return $users;
     }
 
     private function getJsonResult(Collection $users, ?array $attributes = null, ?array $relationships = null)

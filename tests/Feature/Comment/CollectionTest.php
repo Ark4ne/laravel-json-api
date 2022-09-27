@@ -16,34 +16,16 @@ class CollectionTest extends FeatureTestCase
 {
     public function testIndexBasic()
     {
-        $user = $this->dataSeed();
-
         $response = $this->get("comment");
 
-        $response->assertExactJson($this->getJsonResult($user));
+        $response->assertExactJson($this->getJsonResult(Comment::query()->limit(15)->get()));
     }
 
     public function testIndexWithInclude()
     {
-        $user = $this->dataSeed();
-
         $response = $this->get("comment?include=post");
 
-        $response->assertExactJson($this->getJsonResult($user, null, ['post']));
-    }
-
-    private function dataSeed()
-    {
-        $user = User::factory()->create();
-        $posts = Post::factory()->for($user)->count(3)->create();
-        $users = User::factory()->count(9)->create();
-        foreach ($posts as $post) {
-            foreach ($users->random(5) as $u) {
-                Comment::factory()->for($post)->for($u)->create();
-            }
-        }
-
-        return Comment::all();
+        $response->assertExactJson($this->getJsonResult(Comment::query()->limit(15)->get(), null, ['post']));
     }
 
     private function getJsonResult(Collection $comments, ?array $attributes = null, ?array $relationships = null)
@@ -105,14 +87,14 @@ class CollectionTest extends FeatureTestCase
             'included' => $include->uniqueStrict()->values()->all(),
             "links" => [
                 "first" => "http://localhost/comment?page=1",
-                "last" => "http://localhost/comment?page=1",
-                "next" => null,
+                "last" => "http://localhost/comment?page=10",
+                "next" => "http://localhost/comment?page=2",
                 "prev" => null
             ],
             "meta" => [
                 'current_page' => 1,
                 'from' => 1,
-                'last_page' => 1,
+                'last_page' => 10,
                 'links' => [
                     [
                         'active' => false,
@@ -124,16 +106,21 @@ class CollectionTest extends FeatureTestCase
                         'label' => '1',
                         'url' => "http://localhost/comment?page=1",
                     ],
+                    ...(array_map(static fn($value) => [
+                        'active' => false,
+                        'label' => (string)$value,
+                        'url' => "http://localhost/comment?page=$value",
+                        ], range(2, 10))),
                     [
                         'active' => false,
                         'label' => "Next &raquo;",
-                        'url' => null,
+                        'url' => "http://localhost/comment?page=2",
                     ],
                 ],
                 'path' => 'http://localhost/comment',
                 'per_page' => 15,
                 'to' => 15,
-                'total' => 15,
+                'total' => 150,
             ],
         ]))
             ->toArray();

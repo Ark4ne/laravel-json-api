@@ -16,13 +16,13 @@ class PostResource extends JsonApiResource
         return 'post';
     }
 
-protected function toAttributes(Request $request): iterable
-{
-    return [
-        'title' => $this->string(),
-        'content' => $this->string()->whenInFields(),
-    ];
-}
+    protected function toAttributes(Request $request): iterable
+    {
+        return [
+            'title' => $this->string(),
+            'content' => $this->string()->whenInFields(),
+        ];
+    }
 
     protected function toResourceMeta(Request $request): ?iterable
     {
@@ -35,10 +35,10 @@ protected function toAttributes(Request $request): iterable
     protected function toRelationships(Request $request): iterable
     {
         return [
-            $this->one(UserResource::class, 'user')->links(fn() => [
+            'user' => $this->one(UserResource::class)->links(fn() => [
                 'self' => "https://api.example.com/posts/{$this->resource->id}/relationships/user",
             ]),
-            $this->many(CommentResource::class, 'comments')->links(fn() => [
+            'comments' => $this->many(CommentResource::class)->links(fn() => [
                 'self' => "https://api.example.com/posts/{$this->resource->id}/relationships/comments",
                 'related' => "https://api.example.com/posts/{$this->resource->id}/comments",
             ]),
