@@ -21,9 +21,7 @@ trait Resolver
 
         return (new Collection($values))
             ->reduce(function (Collection $fields, $value, int|string $key) use ($request) {
-                if (is_int($key) && ($value instanceof Describer) && is_string($value->retriever())) {
-                    $key = $value->retriever();
-                }
+                $key = Describer::retrieveName($value, $key);
 
                 $fields[$key] = value(
                     $value instanceof Describer
