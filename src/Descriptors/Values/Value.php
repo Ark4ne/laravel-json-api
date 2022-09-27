@@ -2,7 +2,7 @@
 
 namespace Ark4ne\JsonApi\Descriptors\Values;
 
-use Ark4ne\JsonApi\Descriptors\Valuable;
+use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Support\Fields;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
@@ -10,9 +10,9 @@ use Illuminate\Http\Request;
 
 /**
  * @template T as \Illuminate\Database\Eloquent\Model
- * @extends Valuable<T>
+ * @extends Describer<T>
  */
-abstract class Value extends Valuable
+abstract class Value extends Describer
 {
     protected bool $nullable = true;
 

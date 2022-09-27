@@ -10,7 +10,7 @@ use Illuminate\Http\Resources\MissingValue;
 /**
  * @template T as \Illuminate\Database\Eloquent\Model
  */
-abstract class Valuable
+abstract class Describer
 {
     /**
      * @var array<Closure(Request, T, string): bool>
@@ -46,7 +46,7 @@ abstract class Valuable
             Request $request,
             Model $model,
             string $attribute
-        ): bool => null !== $this->valueForModel($model, $attribute));
+        ): bool => null !== $this->retrieveValue($model, $attribute));
     }
 
     /**
@@ -60,27 +60,7 @@ abstract class Valuable
             Request $request,
             Model $model,
             string $attribute
-        ): bool => filled($this->valueForModel($model, $attribute)));
-    }
-
-    /**
-     * Checks if the field should be displayed
-     *
-     * @param \Illuminate\Http\Request            $request
-     * @param \Illuminate\Database\Eloquent\Model $model
-     * @param string                              $attribute
-     *
-     * @return bool
-     */
-    public function check(Request $request, Model $model, string $attribute): bool
-    {
-        foreach ($this->rules as $rule) {
-            if (!$rule($request, $model, $attribute)) {
-                return false;
-            }
-        }
-
-        return true;
+        ): bool => filled($this->retrieveValue($model, $attribute)));
     }
 
     /**
@@ -99,7 +79,27 @@ abstract class Valuable
         return $this->resolveFor($request, $model, $field);
     }
 
-    private function valueForModel(Model $model, string $attribute): mixed
+    /**
+     * Checks if the field should be displayed
+     *
+     * @param \Illuminate\Http\Request            $request
+     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param string                              $attribute
+     *
+     * @return bool
+     */
+    protected function check(Request $request, Model $model, string $attribute): bool
+    {
+        foreach ($this->rules as $rule) {
+            if (!$rule($request, $model, $attribute)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function retrieveValue(Model $model, string $attribute): mixed
     {
         $retriever = $this->retriever();
         if ($retriever === null) {

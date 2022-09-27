@@ -2,17 +2,18 @@
 
 namespace Ark4ne\JsonApi\Descriptors\Relations;
 
-use Ark4ne\JsonApi\Descriptors\Valuable;
+use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Resources\Relationship;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\MissingValue;
 
 /**
  * @template T as \Illuminate\Database\Eloquent\Model
- * @extends Valuable<T>
+ * @extends Describer<T>
  */
-abstract class Relation extends Valuable
+abstract class Relation extends Describer
 {
     protected ?Closure $links = null;
     protected ?Closure $meta = null;
@@ -87,19 +88,33 @@ abstract class Relation extends Valuable
 
     public function resolveFor(Request $request, Model $model, string $field): Relationship
     {
-        if ($this->relation instanceof Closure) {
-            $value = fn() => ($this->relation)($model, $field);
+        $retriever = $this->retriever();
+
+        if ($retriever instanceof Closure) {
+            $value = static fn() => $retriever($model, $field);
         } else {
-            $value = fn() => $model->getRelationValue($this->relation ?? $field);
+            $value = static fn() => $model->getRelationValue($retriever ?? $field);
         }
 
-        $relation = $this->value($value);
+        $relation = $this->value(fn() => $this->check($request, $model, $field) ? $value() : new MissingValue());
 
         if ($this->whenIncluded) {
             $relation->whenIncluded();
         }
 
         return $relation;
+    }
+
+    /**
+     * @param \Illuminate\Http\Request $request
+     * @param T                        $model
+     * @param string                   $field
+     *
+     * @return mixed
+     */
+    public function valueFor(Request $request, Model $model, string $field): mixed
+    {
+        return $this->resolveFor($request, $model, $field);
     }
 
     abstract protected function value(Closure $value): Relationship;
