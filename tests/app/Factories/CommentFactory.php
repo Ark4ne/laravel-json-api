@@ -12,7 +12,7 @@ class CommentFactory extends Factory
     public function definition()
     {
         return [
-            'content' => $this->faker->text
+            'content' => $this->faker->text()
         ];
     }
 }
