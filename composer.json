@@ -37,5 +37,12 @@
       "email": "gui.allegret@gmail.com"
     }
   ],
+  "extra": {
+    "laravel": {
+      "providers": [
+        "Ark4ne\\JsonApi\\Providers\\LaravelJsonApiProvider"
+      ]
+    }
+  },
   "minimum-stability": "dev"
 }

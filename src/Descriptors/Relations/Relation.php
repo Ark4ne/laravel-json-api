@@ -4,6 +4,7 @@ namespace Ark4ne\JsonApi\Descriptors\Relations;
 
 use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Resources\Relationship;
+use Ark4ne\JsonApi\Support\Config;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -17,7 +18,7 @@ abstract class Relation extends Describer
 {
     protected ?Closure $links = null;
     protected ?Closure $meta = null;
-    protected bool $whenIncluded = false;
+    protected bool $whenIncluded;
 
     /**
      * @param class-string<\Ark4ne\JsonApi\Resources\JsonApiResource|\Ark4ne\JsonApi\Resources\JsonApiCollection> $related
@@ -27,6 +28,7 @@ abstract class Relation extends Describer
         protected string $related,
         protected null|string|Closure $relation
     ) {
+        $this->whenIncluded = Config::$whenIncluded;
     }
 
     /**

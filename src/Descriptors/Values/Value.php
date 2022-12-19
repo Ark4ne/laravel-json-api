@@ -3,6 +3,7 @@
 namespace Ark4ne\JsonApi\Descriptors\Values;
 
 use Ark4ne\JsonApi\Descriptors\Describer;
+use Ark4ne\JsonApi\Support\Config;
 use Ark4ne\JsonApi\Support\Fields;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
@@ -14,11 +15,12 @@ use Illuminate\Http\Request;
  */
 abstract class Value extends Describer
 {
-    protected bool $nullable = true;
+    protected bool $nullable;
 
     public function __construct(
         protected null|string|Closure $attribute
     ) {
+        $this->nullable = Config::$nullable;
     }
 
     public function retriever(): string|Closure|null
