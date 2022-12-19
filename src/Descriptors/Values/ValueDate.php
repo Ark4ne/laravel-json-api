@@ -2,6 +2,8 @@
 
 namespace Ark4ne\JsonApi\Descriptors\Values;
 
+use Ark4ne\JsonApi\Support\Config;
+use Closure;
 use DateTime;
 use DateTimeInterface;
 
@@ -11,7 +13,14 @@ use DateTimeInterface;
  */
 class ValueDate extends Value
 {
-    protected string $format = DateTimeInterface::ATOM;
+    protected string $format;
+
+    public function __construct(string|Closure|null $attribute)
+    {
+        parent::__construct($attribute);
+
+        $this->format = Config::$date;
+    }
 
     public function format(string $format): static
     {
@@ -24,7 +33,7 @@ class ValueDate extends Value
      */
     public function value(mixed $of): string
     {
-        if($of === null) {
+        if ($of === null) {
             return (new DateTime("@0"))->format($this->format);
         }
         if ($of instanceof DateTimeInterface) {

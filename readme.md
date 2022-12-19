@@ -11,8 +11,16 @@ A Lightweight [{JSON:API}](https://jsonapi.org/) Resource for Laravel.
 composer require ark4ne/laravel-json-api
 ```
 
+# Config
+| Path                         | Type                     | Description                                                                             |
+|------------------------------|--------------------------|-----------------------------------------------------------------------------------------|
+| `describer.nullable`         | `bool`                   | For describer notation, defined if a value is nullable by default.                      |
+| `describer.date`             | `string` datetime format | For describer notation, defined default date time format.                               |
+| `describer.precision`        | `int` \ `null`           | For describer notation, decimal precision for float value. `null` for disable rounding. |
+| `relationship.when-included` | `bool`                   | Allow to disabled by default the loading of relationship data.                          |
+
 # Usage
-This package is an specialisation of Laravel's `JsonResource` class.
+This package is a specialisation of Laravel's `JsonResource` class.
 All the underlying API's are still there, thus in your controller you can still interact
 with `JsonApiResource` classes as you would with the base `JsonResource` class
 
@@ -42,7 +50,7 @@ class UserFetchRequest extends FormRequest
 }
 ```
 
-`Rules\Includes` will validate the include to exactly match the UserResource schema (determined by the relationships).
+`Rules\Includes` will validate the `include` to exactly match the UserResource schema (determined by the relationships).
 
 
 ### Fields validation
@@ -62,7 +70,7 @@ class UserFetchRequest extends FormRequest
 }
 ```
 
-`Rules\Fields` will validate the fields to exactly match the UserResource schema (determined by the attributes and relationships).
+`Rules\Fields` will validate the `fields` to exactly match the UserResource schema (determined by the attributes and relationships).
 
 
 ### Customize validation message
@@ -381,13 +389,15 @@ UserResource::collection(User::all()); // => JsonApiCollection
 ## Described notation
 
 ### Value methods
-| Method    | Description              |
-|-----------|--------------------------|
-| `bool`    | Cast to boolean          |
-| `integer` | Cast to integer          |
-| `float`   | Cast to float            |
-| `array`   | Cast to array            |
-| `mixed`   | Don't cast, return as is |
+| Method    | Description                              |
+|-----------|------------------------------------------|
+| `bool`    | Cast to boolean                          |
+| `integer` | Cast to integer                          |
+| `float`   | Cast to float                            |
+| `string`  | Cast to string                           |
+| `date`    | Cast to date, allow to use custom format |
+| `array`   | Cast to array                            |
+| `mixed`   | Don't cast, return as is                 |
 
 ### Relation methods
 | Method  | Description                                                       |

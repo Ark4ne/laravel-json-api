@@ -2,13 +2,23 @@
 
 namespace Ark4ne\JsonApi\Descriptors\Values;
 
+use Ark4ne\JsonApi\Support\Config;
+use Closure;
+
 /**
  * @template T as \Illuminate\Database\Eloquent\Model
  * @extends Value<T>
  */
 class ValueFloat extends Value
 {
-    protected int $precision;
+    protected int|null $precision;
+
+    public function __construct(string|Closure|null $attribute)
+    {
+        parent::__construct($attribute);
+
+        $this->precision = Config::$precision;
+    }
 
     public function precision(int $precision): static
     {
