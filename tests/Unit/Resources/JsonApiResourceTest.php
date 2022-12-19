@@ -166,7 +166,7 @@ class JsonApiResourceTest extends TestCase
 
         $this->assertInstanceOf(JsonApiCollection::class, $collection);
         $this->assertEquals($resource::class, $collection->collects);
-        $this->assertFalse(property_exists($collection, 'preserveKeys'));
+        $this->assertNull($collection->preserveKeys);
     }
 
     public function testToCollectionPreserveKeys()
