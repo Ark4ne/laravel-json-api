@@ -4,6 +4,7 @@ namespace Ark4ne\JsonApi\Resources\Concerns;
 
 use Ark4ne\JsonApi\Descriptors\Resolver;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\MergeValue;
 use Illuminate\Http\Resources\PotentiallyMissing;
 use Illuminate\Support\Arr;
@@ -69,14 +70,19 @@ trait PrepareData
     /**
      * Merge two array without erase concrete value by missing value.
      *
-     * @param array $array
-     * @param array $merge
-     * @return array
+     * @template TKey1 as array-key
+     * @template TValue1
+     * @template TKey2 as array-key
+     * @template TValue2
+     *
+     * @param array<TKey1, TValue1> $array
+     * @param array<TKey2, TValue2> $merge
+     * @return array<TKey1&TKey2, TValue1&TValue2>
      */
     private function mergeIgnoreMissing(array $array, array $merge): array
     {
         foreach ($merge as $key => $item) {
-            if (!isset($array[$key]) || $this->isValueMissing($array[$key]) || !$this->isValueMissing($item)) {
+            if (!isset($array[$key]) || $this->isMissing($array[$key]) || !$this->isMissing($item)) {
                 $array[$key] = $item;
             }
         }
@@ -85,16 +91,15 @@ trait PrepareData
     }
 
     /**
-     * Check if a value is missing
+     * @param mixed|PotentiallyMissing|JsonResource $resource
      *
-     * @param $value
      * @return bool
      */
-    protected function isValueMissing($value): bool
+    private function isMissing(mixed $resource): bool
     {
-        return ($value instanceof PotentiallyMissing && $value->isMissing()) ||
-            ($value instanceof self &&
-                $value->resource instanceof PotentiallyMissing &&
-                $value->isMissing());
+        return ($resource instanceof PotentiallyMissing && $resource->isMissing())
+            || ($resource instanceof JsonResource &&
+                $resource->resource instanceof PotentiallyMissing &&
+                $resource->resource->isMissing());
     }
 }
