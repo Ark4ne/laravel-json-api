@@ -77,11 +77,12 @@ abstract class JsonApiResource extends JsonResource implements Resourceable
     {
         /** @var \Ark4ne\JsonApi\Resources\JsonApiCollection<static> $collection */
         $collection = new class($resource, static::class) extends JsonApiCollection {
+            public ?bool $preserveKeys = null;
         };
 
         if (property_exists(static::class, 'preserveKeys')) {
             // @phpstan-ignore-next-line
-            $collection->preserveKeys = (new static([]))->preserveKeys === true;
+            $collection->preserveKeys = (new static([]))->preserveKeys;
         }
 
         return $collection;
