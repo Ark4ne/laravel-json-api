@@ -51,8 +51,20 @@ class PrepareDataTest extends TestCase
                     'k' => [
                         new MergeValue([1, 2, 3]),
                         new MergeValue([4, 5, 6])
-                    ]
-                ])
+                    ],
+                    new MergeValue([
+                        'self' => new MissingValue()
+                    ]),
+                    new MergeValue([
+                        'self' => new MissingValue()
+                    ]),
+                    new MergeValue([
+                        'self' => 'three'
+                    ]),
+                    new MergeValue([
+                        'self' => new MissingValue()
+                    ]),
+                ]),
             ]
         );
         $this->assertEquals($sample + [
@@ -69,7 +81,8 @@ class PrepareDataTest extends TestCase
                     4,
                     5,
                     6
-                ]
+                ],
+                'self' => 'three',
             ], $actual);
     }
 }
