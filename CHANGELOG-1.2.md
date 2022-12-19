@@ -1,6 +1,10 @@
 Release note
 ============
 
+# v1.2.1
+### Fixes
+- Merge values: don't erase concrete values by missing value when merge values
+
 # v1.2.0
 ### Added
 - Implement described notation
