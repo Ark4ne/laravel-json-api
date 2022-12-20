@@ -10,7 +10,7 @@ use Illuminate\Support\Collection;
 
 trait Relationships
 {
-    use Resolver;
+    use PrepareData, Resolver;
 
     /**
      * @see https://jsonapi.org/format/#document-resource-object-relationships
@@ -43,6 +43,7 @@ trait Relationships
     {
         $relations = [];
         $relationships = $this->toRelationships($request);
+        $relationships = $this->mergeValues($relationships);
         $relationships = $this->resolveValues($request, $relationships);
         $relationships = $this->filter($relationships);
 

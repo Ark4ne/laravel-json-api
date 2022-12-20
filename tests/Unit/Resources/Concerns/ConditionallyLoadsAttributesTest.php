@@ -2,6 +2,8 @@
 
 namespace Test\Unit\Resources\Concerns;
 
+use Ark4ne\JsonApi\Descriptors\Relations\RelationOne;
+use Ark4ne\JsonApi\Descriptors\Values\ValueMixed;
 use Ark4ne\JsonApi\Resources\Concerns\ConditionallyLoadsAttributes;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -79,6 +81,18 @@ class ConditionallyLoadsAttributesTest extends TestCase
         $this->assertEquals(new MergeValue([
             'present.1' => 'abc',
             'present.2' => 123,
+        ]), $actual);
+        $actual = Reflect::invoke($stub, 'applyWhen', true, [
+            'present.1' => (new ValueMixed(fn() => 'abc')),
+            'present.2' => (new ValueMixed(fn() => 123)),
+            'present.3' => (new RelationOne('present', fn() => 'abc')),
+            'present.4' => (new RelationOne('present', fn() => 123)),
+        ]);
+        $this->assertEquals(new MergeValue([
+            'present.1' => (new ValueMixed(fn() => 'abc')),
+            'present.2' => (new ValueMixed(fn() => 123)),
+            'present.3' => (new RelationOne('present', fn() => 'abc')),
+            'present.4' => (new RelationOne('present', fn() => 123)),
         ]), $actual);
     }
 }
