@@ -2,6 +2,8 @@
 
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
+use Ark4ne\JsonApi\Descriptors\Relations\Relation;
+use Ark4ne\JsonApi\Resources\Relationship;
 use Ark4ne\JsonApi\Support\Fields;
 use Ark4ne\JsonApi\Support\Includes;
 use Illuminate\Http\Request;
@@ -50,9 +52,27 @@ trait ConditionallyLoadsAttributes
      */
     protected function applyWhen(bool $condition, iterable $data): MergeValue
     {
-        return new MergeValue($condition
-            ? $data
-            : collect($data)->map(fn() => new MissingValue)
-        );
+        if ($condition) {
+            return new MergeValue($data);
+        }
+
+        return new MergeValue(collect($data)->map(function ($raw) {
+            if ($raw instanceof Relationship) {
+                $relation = new class ($raw->getResource(), fn () => $raw) extends Relation {
+                    protected function value(\Closure $value): Relationship
+                    {
+                        return ($this->relation)();
+                    }
+                };
+
+                return $relation->when(false);
+            }
+
+            if ($raw instanceof Relation) {
+                return $raw->when(false);
+            }
+
+            return new MissingValue();
+        }));
     }
 }
