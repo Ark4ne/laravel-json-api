@@ -37,13 +37,15 @@ class PostResource extends JsonApiResource
         return [
             'user' => $this->one(UserResource::class)->links(fn() => [
                 'self' => "https://api.example.com/posts/{$this->resource->id}/relationships/user",
-            ]),
+            ])->withLoad(true),
             'comments' => $this->many(CommentResource::class)->links(fn() => [
                 'self' => "https://api.example.com/posts/{$this->resource->id}/relationships/comments",
                 'related' => "https://api.example.com/posts/{$this->resource->id}/comments",
             ])->meta(fn() => [
-                'total' => $this->resource->comments()->getQuery()->count(),
-            ]),
+                'total' => $this->resource->relationLoaded('comments')
+                    ? $this->resource->comments->count()
+                    : $this->resource->comments()->getQuery()->count(),
+            ])->withLoad('comments'),
         ];
     }
 }

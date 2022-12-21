@@ -4,6 +4,7 @@ namespace Ark4ne\JsonApi\Descriptors\Relations;
 
 use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Resources\Relationship;
+use Ark4ne\JsonApi\Traits\HasRelationLoad;
 use Ark4ne\JsonApi\Support\Config;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
@@ -16,6 +17,8 @@ use Illuminate\Http\Resources\MissingValue;
  */
 abstract class Relation extends Describer
 {
+    use HasRelationLoad;
+
     protected ?Closure $links = null;
     protected ?Closure $meta = null;
     protected bool $whenIncluded;

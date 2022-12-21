@@ -6,6 +6,7 @@ use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Descriptors\Relations\Relation;
 use Ark4ne\JsonApi\Descriptors\Resolver;
 use Ark4ne\JsonApi\Resources\Skeleton;
+use Ark4ne\JsonApi\Support\Arr;
 use Ark4ne\JsonApi\Support\FakeModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -48,6 +49,23 @@ trait Schema
                 $relationship = $relation->getResource();
             }
             $schema->relationships[$name] = $relationship::schema();
+
+            $load = $relation->load();
+
+            if ($load === false) {
+                $schema->loads[$name] = false;
+            }
+            elseif ($load === true) {
+                $schema->loads[$name] = $name;
+            }
+            elseif (is_string($load)) {
+                $schema->loads[$name] = $load;
+            }
+            elseif (is_array($load)) {
+                foreach ($load as $key => $value) {
+                    $schema->loads[$name][$key] = $value;
+                }
+            }
         }
 
         return self::$schemas[static::class];
