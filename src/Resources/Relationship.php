@@ -2,6 +2,7 @@
 
 namespace Ark4ne\JsonApi\Resources;
 
+use Ark4ne\JsonApi\Traits\HasRelationLoad;
 use Closure;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\Json\ResourceCollection;
@@ -16,6 +17,8 @@ use function value;
  */
 class Relationship implements Resourceable
 {
+    use HasRelationLoad;
+
     protected string $relation;
 
     protected bool $asCollection = false;
@@ -24,13 +27,13 @@ class Relationship implements Resourceable
 
     /**
      * @param class-string<T> $resource
-     * @param Closure         $value
-     * @param Closure|null    $links
-     * @param Closure|null    $meta
+     * @param Closure $value
+     * @param Closure|null $links
+     * @param Closure|null $meta
      */
     public function __construct(
-        protected string $resource,
-        protected Closure $value,
+        protected string   $resource,
+        protected Closure  $value,
         protected ?Closure $links = null,
         protected ?Closure $meta = null
     ) {
@@ -115,7 +118,7 @@ class Relationship implements Resourceable
 
     /**
      * @param \Illuminate\Http\Request $request
-     * @param bool                     $included
+     * @param bool $included
      *
      * @return array{data?: array{data?:mixed, links?:mixed, meta?:mixed}, included?: mixed, with?: mixed}
      */

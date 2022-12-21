@@ -6,6 +6,7 @@ use Ark4ne\JsonApi\Descriptors\Resolver;
 use Ark4ne\JsonApi\Resources\Relationship;
 use Ark4ne\JsonApi\Support\Includes;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 
 trait Relationships
@@ -32,6 +33,40 @@ trait Relationships
     protected function toRelationships(Request $request): iterable
     {
         return [];
+    }
+
+    /**
+     * @internal
+     *
+     * @return array<string, string|callable>
+     */
+    public function requestedRelationshipsLoad(Request $request): array
+    {
+        $schema = self::schema($request);
+
+        $walk = static function ($schema) use (&$walk, $request) {
+            $loads = [];
+
+            foreach ($schema->loads as $name => $load) {
+                if ($load && Includes::include($request, $name)) {
+                    $include = Includes::through($name, static fn() => $walk($schema->relationships[$name]));
+                    foreach ((array)$load as $key => $value) {
+                        if (is_string($value)) {
+                            $loads[$value] = $include;
+                        } elseif (is_string($key)) {
+                            $loads[$key] = $value;
+                            foreach (Arr::dot(Arr::undot($include), "$key.") as $inc => $item) {
+                                $loads[$inc] = $item;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return $loads;
+        };
+
+        return Arr::dot($walk($schema));
     }
 
     /**
@@ -63,15 +98,15 @@ trait Relationships
     }
 
     /**
-     * @param bool                                   $included
-     * @param \Illuminate\Http\Request               $request
+     * @param bool $included
+     * @param \Illuminate\Http\Request $request
      * @param \Ark4ne\JsonApi\Resources\Relationship $relationship
      *
      * @return array{data?: mixed, links?: mixed, meta?: mixed}
      */
     private function mapRelationship(
-        bool $included,
-        Request $request,
+        bool         $included,
+        Request      $request,
         Relationship $relationship
     ): array {
         $resource = $relationship->toArray($request, $included);

@@ -3,6 +3,8 @@
 namespace Ark4ne\JsonApi\Resources;
 
 use Ark4ne\JsonApi\Support\Arr;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 
@@ -23,7 +25,7 @@ class JsonApiCollection extends ResourceCollection implements Resourceable
     /**
      * Create a new anonymous resource collection.
      *
-     * @param mixed                $resource
+     * @param mixed $resource
      * @param null|class-string<T> $collects
      *
      * @return void
@@ -37,12 +39,26 @@ class JsonApiCollection extends ResourceCollection implements Resourceable
 
     /**
      * @param \Illuminate\Http\Request $request
-     * @param bool                     $included
+     * @param bool $included
      *
      * @return array<int, array{id: int|string}>
      */
     public function toArray(mixed $request, bool $included = true): array
     {
+        if (collect($this->collection)->every(fn($value) => $value instanceof JsonApiResource)) {
+            $collection = collect($this->collection);
+
+            // @phpstan-ignore-next-line
+            $loads = array_merge(...$collection->map->requestedRelationshipsLoad($request));
+
+            // @phpstan-ignore-next-line
+            $resources = $collection->map->resource;
+
+            if (!empty($loads) && $resources->every(fn($resource) => $resource instanceof Model)) {
+                (new Collection($resources))->loadMissing($loads);
+            }
+        }
+
         $data = [];
 
         $base = $this->with;

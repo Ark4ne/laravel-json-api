@@ -9,7 +9,7 @@ trait Resolver
 {
     /**
      * @param \Illuminate\Http\Request $request
-     * @param iterable<mixed>|null            $values
+     * @param iterable<mixed>|null $values
      *
      * @return array<mixed>|null
      */
@@ -31,6 +31,6 @@ trait Resolver
 
                 return $fields;
             }, new Collection)
-            ->toArray();
+            ->all();
     }
 }

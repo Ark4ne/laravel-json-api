@@ -26,7 +26,6 @@ trait AsApiController
         $modelClass = $this->getModelClass();
 
         $models = $modelClass::query()
-            ->with(array_filter(explode(',', $request->input('include', ''))))
             ->paginate();
 
         $resourceClass = $this->getResourceClass();
@@ -53,8 +52,7 @@ trait AsApiController
     {
         $modelClass = $this->getModelClass();
 
-        $model = $modelClass
-            ::with(array_filter(explode(',', $request->input('include', ''))))
+        $model = $modelClass::query()
             ->find($id);
 
         $resourceClass = $this->getResourceClass();

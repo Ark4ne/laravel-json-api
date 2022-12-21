@@ -45,7 +45,8 @@ class UserResource extends JsonApiResource
             ], fn() => [
                 'total' => $this->resource->posts()->getQuery()->count(),
             ])
-                ->asCollection(),
+                ->asCollection()
+                ->withLoad(true),
 
             'comments' => $this->many(CommentResource::class)
                 ->whenLoaded()
@@ -55,7 +56,8 @@ class UserResource extends JsonApiResource
                 ])
                 ->meta(fn() => [
                     'total' => $this->resource->comments()->getQuery()->count(),
-                ]),
+                ])
+                ->withLoad(['comments' => fn($q) => $q->where('content', 'like', '%e%')])
         ];
     }
 }
