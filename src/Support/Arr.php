@@ -131,10 +131,6 @@ class Arr
      */
     public static function apply(array &$array, string $path, mixed $value, string $saveKey = null): mixed
     {
-        if (is_null($path)) {
-            return $array = $value;
-        }
-
         $keys = explode('.', $path);
 
         $keysCount = count($keys);
