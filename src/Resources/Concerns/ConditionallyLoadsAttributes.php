@@ -3,6 +3,7 @@
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
 use Ark4ne\JsonApi\Descriptors\Relations\Relation;
+use Ark4ne\JsonApi\Descriptors\Relations\RelationMissing;
 use Ark4ne\JsonApi\Resources\Relationship;
 use Ark4ne\JsonApi\Support\Fields;
 use Ark4ne\JsonApi\Support\Includes;
@@ -58,14 +59,7 @@ trait ConditionallyLoadsAttributes
 
         return new MergeValue(collect($data)->map(function ($raw) {
             if ($raw instanceof Relationship) {
-                $relation = new class ($raw->getResource(), fn () => $raw) extends Relation {
-                    protected function value(\Closure $value): Relationship
-                    {
-                        return ($this->relation)();
-                    }
-                };
-
-                return $relation->when(false);
+                return RelationMissing::fromRelationship($raw);
             }
 
             if ($raw instanceof Relation) {

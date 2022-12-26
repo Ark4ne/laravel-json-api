@@ -2,12 +2,12 @@
 
 namespace Ark4ne\JsonApi\Resources;
 
+use Ark4ne\JsonApi\Support\Values;
 use Ark4ne\JsonApi\Traits\HasRelationLoad;
 use Closure;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Http\Resources\MissingValue;
-use Illuminate\Http\Resources\PotentiallyMissing;
 use Illuminate\Support\Collection;
 
 use function value;
@@ -37,6 +37,20 @@ class Relationship implements Resourceable
         protected ?Closure $links = null,
         protected ?Closure $meta = null
     ) {
+    }
+
+    /**
+     * Re-set value for relation
+     *
+     * @param Closure $value
+     *
+     * @return $this
+     */
+    public function withValue(Closure $value): self
+    {
+        $this->value = $value;
+
+        return $this;
     }
 
     /**
@@ -140,7 +154,7 @@ class Relationship implements Resourceable
             'meta' => value($this->meta, $resource),
         ];
 
-        if ($this->isMissing($resource)) {
+        if (Values::isMissing($resource)) {
             return [
                 'data' => array_filter($data)
             ];
@@ -183,18 +197,5 @@ class Relationship implements Resourceable
                 ? $resource->with($request)
                 : null
         ]);
-    }
-
-    /**
-     * @param mixed|PotentiallyMissing|JsonResource $resource
-     *
-     * @return bool
-     */
-    private function isMissing(mixed $resource): bool
-    {
-        return ($resource instanceof PotentiallyMissing && $resource->isMissing())
-            || ($resource instanceof JsonResource &&
-                $resource->resource instanceof PotentiallyMissing &&
-                $resource->resource->isMissing());
     }
 }
