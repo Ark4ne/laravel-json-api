@@ -122,4 +122,88 @@ class ArrTest extends TestCase
     {
         $this->assertEquals($expected, Arr::toArray($base));
     }
+
+    public function testUndot()
+    {
+        $stub = [
+            'test.a' => [
+                '1' => 'test.a.1',
+                '2' => [
+                    '1' => 'test.a.2.1'
+                ],
+                '2.2' => 'test.a.2.2',
+                '3' => 'test.a.3',
+                '3.1' => [
+                    '1' => 'test.a.3.1.1'
+                ],
+                '3.2' => 'test.a.3.2',
+            ],
+            'test' => 'test',
+        ];
+
+        $expected = [
+            'test' => [
+                '--saved--' => 'test',
+                'a' => [
+                    '1' => 'test.a.1',
+                    '2' => [
+                        '1' => 'test.a.2.1',
+                        '2' => 'test.a.2.2',
+                    ],
+                    '3' => [
+                        '--saved--' => 'test.a.3',
+                        '1' => [
+                            '1' => 'test.a.3.1.1'
+                        ],
+                        '2' => 'test.a.3.2',
+                    ],
+                ]
+            ]
+        ];
+
+        $this->assertEquals($expected, Arr::undot($stub, '--saved--'));
+    }
+
+    public function testFlatDot() {
+
+        $stub = [
+            'test.a' => [
+                '1' => 'test.a.1',
+                '2' => [
+                    '1' => 'test.a.2.1'
+                ],
+                '2.2' => 'test.a.2.2',
+                '3' => 'test.a.3',
+                '3.1' => [
+                    '1' => 'test.a.3.1.1'
+                ],
+                '3.2' => 'test.a.3.2',
+            ],
+            'test' => 'test',
+        ];
+
+        $expected = [
+            'test' => 'test',
+            'test.a.1' => 'test.a.1',
+            'test.a.2.1' => 'test.a.2.1',
+            'test.a.2.2' => 'test.a.2.2',
+            'test.a.3' => 'test.a.3',
+            'test.a.3.1.1' => 'test.a.3.1.1',
+            'test.a.3.2' => 'test.a.3.2',
+        ];
+
+        $this->assertEquals($expected, Arr::flatDot($stub));
+
+        $expected = [
+            'key.test' => 'test',
+            'key.test.a.1' => 'test.a.1',
+            'key.test.a.2.1' => 'test.a.2.1',
+            'key.test.a.2.2' => 'test.a.2.2',
+            'key.test.a.3' => 'test.a.3',
+            'key.test.a.3.1.1' => 'test.a.3.1.1',
+            'key.test.a.3.2' => 'test.a.3.2',
+        ];
+
+        $this->assertEquals($expected, Arr::flatDot($stub, 'key'));
+    }
 }

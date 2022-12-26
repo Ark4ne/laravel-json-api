@@ -4,9 +4,10 @@ namespace Ark4ne\JsonApi\Resources\Concerns;
 
 use Ark4ne\JsonApi\Descriptors\Resolver;
 use Ark4ne\JsonApi\Resources\Relationship;
+use Ark4ne\JsonApi\Support\Arr;
 use Ark4ne\JsonApi\Support\Includes;
+use Ark4ne\JsonApi\Support\Values;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 
 trait Relationships
@@ -55,7 +56,7 @@ trait Relationships
                             $loads[$value] = $include;
                         } elseif (is_string($key)) {
                             $loads[$key] = $value;
-                            foreach (Arr::dot(Arr::undot($include), "$key.") as $inc => $item) {
+                            foreach (Arr::flatDot($include, $key) as $inc => $item) {
                                 $loads[$inc] = $item;
                             }
                         }
@@ -66,7 +67,7 @@ trait Relationships
             return $loads;
         };
 
-        return Arr::dot($walk($schema));
+        return Arr::flatDot($walk($schema));
     }
 
     /**
@@ -78,7 +79,7 @@ trait Relationships
     {
         $relations = [];
         $relationships = $this->toRelationships($request);
-        $relationships = $this->mergeValues($relationships);
+        $relationships = Values::mergeValues($relationships);
         $relationships = $this->resolveValues($request, $relationships);
         $relationships = $this->filter($relationships);
 

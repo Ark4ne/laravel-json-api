@@ -6,8 +6,8 @@ use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Descriptors\Relations\Relation;
 use Ark4ne\JsonApi\Descriptors\Resolver;
 use Ark4ne\JsonApi\Resources\Skeleton;
-use Ark4ne\JsonApi\Support\Arr;
 use Ark4ne\JsonApi\Support\FakeModel;
+use Ark4ne\JsonApi\Support\Values;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use ReflectionClass;
@@ -36,12 +36,12 @@ trait Schema
             $resource->toType($request)
         );
 
-        $schema->fields = (new Collection($resource->mergeValues($resource->toAttributes($request))))
+        $schema->fields = (new Collection(Values::mergeValues($resource->toAttributes($request))))
             ->map(fn($value, $key) => Describer::retrieveName($value, $key))
             ->values()
             ->all();
 
-        foreach ($resource->toRelationships($request) as $name => $relation) {
+        foreach (Values::mergeValues($resource->toRelationships($request)) as $name => $relation) {
             if ($relation instanceof Relation) {
                 $relationship = $relation->related();
                 $name = Describer::retrieveName($relation, $name);
@@ -61,8 +61,8 @@ trait Schema
             elseif (is_string($load)) {
                 $schema->loads[$name] = $load;
             }
-            elseif (is_array($load)) {
-                foreach ($load as $key => $value) {
+            else {
+                foreach ((array)$load as $key => $value) {
                     $schema->loads[$name][$key] = $value;
                 }
             }

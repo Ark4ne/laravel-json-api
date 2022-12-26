@@ -2,6 +2,7 @@
 
 namespace Test\Unit\Descriptors;
 
+use Ark4ne\JsonApi\Descriptors\Relations\RelationMissing;
 use Ark4ne\JsonApi\Descriptors\Relations\RelationOne;
 use Ark4ne\JsonApi\Resources\Relationship;
 use Illuminate\Database\Eloquent\Model;
@@ -70,7 +71,8 @@ class RelationTest extends TestCase
         $this->assertEquals(['test'], Reflect::get($relation, 'links')());
     }
 
-    public function dataWhenLoaded() {
+    public function dataWhenLoaded()
+    {
         return [
             ['attr', null, 'attr'],
             ['attr', fn() => null, 'attr'],
@@ -93,7 +95,8 @@ class RelationTest extends TestCase
         $this->assertFalse($check);
     }
 
-    public function dataWhenPivotLoaded() {
+    public function dataWhenPivotLoaded()
+    {
         return [
             ['attr', null, 'attr'],
             ['attr', fn() => null, 'attr'],
@@ -106,7 +109,8 @@ class RelationTest extends TestCase
      */
     public function testWhenPivotLoaded($expectedAttr, $relation, $invokedAttr)
     {
-        $model = new class extends Model {};
+        $model = new class extends Model {
+        };
 
         $model->$expectedAttr = new stdClass;
         $stub = new RelationOne(UserResource::class, $relation);
@@ -114,5 +118,19 @@ class RelationTest extends TestCase
 
         $check = Reflect::invoke($stub, 'check', new Request, $model, $invokedAttr);
         $this->assertTrue($check);
+    }
+
+    public function testRelationMissing()
+    {
+        $missing = RelationMissing::fromRelationship(new Relationship(UserResource::class, fn() => null));
+
+        $model = new class extends Model {
+        };
+        $check = Reflect::invoke($missing, 'check', new Request, $model, 'any');
+        $value = Reflect::invoke($missing, 'valueFor', new Request, $model, 'any');
+
+        $this->assertFalse($check);
+        $this->assertInstanceOf(Relationship::class, $value);
+        $this->assertInstanceOf(MissingValue::class, value(Reflect::get($value, 'value')));
     }
 }
