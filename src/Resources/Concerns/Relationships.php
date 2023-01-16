@@ -4,6 +4,7 @@ namespace Ark4ne\JsonApi\Resources\Concerns;
 
 use Ark4ne\JsonApi\Descriptors\Resolver;
 use Ark4ne\JsonApi\Resources\Relationship;
+use Ark4ne\JsonApi\Resources\Skeleton;
 use Ark4ne\JsonApi\Support\Arr;
 use Ark4ne\JsonApi\Support\Includes;
 use Ark4ne\JsonApi\Support\Values;
@@ -43,31 +44,49 @@ trait Relationships
      */
     public function requestedRelationshipsLoad(Request $request): array
     {
-        $schema = self::schema($request);
+        return Arr::flatDot($this->requestedRelationshipsLoadFromSchema($request, self::schema($request)));
+    }
 
-        $walk = static function ($schema) use (&$walk, $request) {
-            $loads = [];
+    private function requestedRelationshipsLoadFromSchema(Request $request, Skeleton $schema): array
+    {
+        $loads = [];
 
-            foreach ($schema->loads as $name => $load) {
-                if ($load && Includes::include($request, $name)) {
-                    $include = Includes::through($name, static fn() => $walk($schema->relationships[$name]));
+        foreach ($schema->loads as $name => $load) {
+            if ($load && Includes::include($request, $name)) {
+                $include = Includes::through($name, fn() => $this->requestedRelationshipsLoadFromSchema($request, $schema->relationships[$name]));
+
+                $apply = static function ($load, string $pre = null) use (&$loads, &$apply) {
                     foreach ((array)$load as $key => $value) {
                         if (is_string($value)) {
-                            $loads[$value] = $include;
+                            $loads["$pre.$value"] = [];
                         } elseif (is_string($key)) {
-                            $loads[$key] = $value;
-                            foreach (Arr::flatDot($include, $key) as $inc => $item) {
-                                $loads[$inc] = $item;
+                            if (is_array($value)) {
+                                $apply($value, "$pre.$key");
+                            } else {
+                                $loads["$pre.$key"] = $value;
                             }
+                        }
+                    }
+                };
+
+                foreach ((array)$load as $key => $value) {
+                    if (is_string($value)) {
+                        $loads[$value] = $include;
+                    } elseif (is_string($key)) {
+                        if (is_array($value)) {
+                            $apply($value, $key);
+                        } else {
+                            $loads[$key] = $value;
+                        }
+                        foreach (Arr::flatDot($include, $key) as $inc => $item) {
+                            $loads[$inc] = $item;
                         }
                     }
                 }
             }
+        }
 
-            return $loads;
-        };
-
-        return Arr::flatDot($walk($schema));
+        return $loads;
     }
 
     /**
