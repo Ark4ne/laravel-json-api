@@ -38,15 +38,20 @@ trait Relationships
     }
 
     /**
-     * @internal
-     *
      * @return array<string, string|callable>
+     * @internal
      */
     public function requestedRelationshipsLoad(Request $request): array
     {
         return Arr::flatDot($this->requestedRelationshipsLoadFromSchema($request, self::schema($request)));
     }
 
+    /**
+     * @param Request $request
+     * @param Skeleton $schema
+     *
+     * @return array<mixed>
+     */
     private function requestedRelationshipsLoadFromSchema(Request $request, Skeleton $schema): array
     {
         $loads = [];
@@ -128,7 +133,8 @@ trait Relationships
         bool         $included,
         Request      $request,
         Relationship $relationship
-    ): array {
+    ): array
+    {
         $resource = $relationship->toArray($request, $included);
 
         if (isset($resource['included'])) {
