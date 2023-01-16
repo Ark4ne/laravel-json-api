@@ -5,6 +5,8 @@ namespace Test\Unit\Resources\Concerns;
 use Ark4ne\JsonApi\Resources\Concerns\Relationships;
 use Ark4ne\JsonApi\Resources\Relationship;
 use Ark4ne\JsonApi\Resources\Resourceable;
+use Ark4ne\JsonApi\Resources\Skeleton;
+use Ark4ne\JsonApi\Support\Arr;
 use Ark4ne\JsonApi\Support\Includes;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -257,6 +259,38 @@ class RelationshipsTest extends TestCase
             ],
             'baz' => [],
         ], $actual);
+    }
+
+    public function testRequestedRelationshipsLoadFromSchema()
+    {
+        $r1 = new Skeleton('r1', 'r1');
+        $r1->loads = [
+            '_2' => 'r2',
+            '_3' => 'r3'
+        ];
+
+        $r2 = new Skeleton('r2', 'r2');
+        $r2->loads = ['_3' => ['r3' => ['r1']]];
+
+        $r3 = new Skeleton('r3', 'r3');
+        $r3->loads = ['_1' => 'r1'];
+
+        $r1->relationships['_2'] = $r2;
+        $r2->relationships['_3'] = $r3;
+        $r3->relationships['_1'] = $r1;
+
+        $model = Stub::model(['id' => 1]);
+        $resource = new class($model) extends JsonResource {
+            use Relationships;
+        };
+
+        $request = new Request([
+            'include' => '_2._3'
+        ]);
+
+        $actual = Reflect::invoke($resource, 'requestedRelationshipsLoadFromSchema', $request, $r1);
+
+        $this->assertEquals(['r2.r3.r1' => []], Arr::flatDot($actual));
     }
 
     private function getStub()

@@ -7,11 +7,11 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 
 trait HasRelationLoad
 {
-    /** @var bool|string|array<string, callable(Builder|Relation):mixed>|array<array-key, string> */
+    /** @var bool|string|array<string, callable(Builder|Relation):mixed>|array<array-key, string|string[]|mixed> */
     protected bool|string|array $load = false;
 
     /**
-     * @param bool|string|array<string, callable(Builder|Relation):mixed>|array<array-key, string> $load
+     * @param bool|string|array<string, callable(Builder|Relation):mixed>|array<array-key, string|string[]|mixed> $load
      * @return $this
      */
     public function withLoad(bool|string|array $load): static
@@ -21,7 +21,7 @@ trait HasRelationLoad
     }
 
     /**
-     * @return bool|string|array<string, callable(Builder|Relation):mixed>|array<array-key, string>
+     * @return bool|string|array<string, callable(Builder|Relation):mixed>|array<array-key, string|string[]|mixed>
      */
     public function load(): bool|string|array
     {
