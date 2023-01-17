@@ -21,7 +21,7 @@ use Closure;
 trait Descriptors
 {
     /**
-     * @param null|string|Closure(T):bool $attribute
+     * @param null|string|Closure(T):mixed $attribute
      *
      * @return \Ark4ne\JsonApi\Descriptors\Values\ValueBool<T>
      */
@@ -31,7 +31,7 @@ trait Descriptors
     }
 
     /**
-     * @param null|string|Closure(T):int $attribute
+     * @param null|string|Closure(T):mixed $attribute
      *
      * @return \Ark4ne\JsonApi\Descriptors\Values\ValueInteger<T>
      */
@@ -41,7 +41,7 @@ trait Descriptors
     }
 
     /**
-     * @param null|string|Closure(T):float $attribute
+     * @param null|string|Closure(T):mixed $attribute
      *
      * @return \Ark4ne\JsonApi\Descriptors\Values\ValueFloat<T>
      */
@@ -51,7 +51,7 @@ trait Descriptors
     }
 
     /**
-     * @param null|string|Closure(T):string $attribute
+     * @param null|string|Closure(T):mixed $attribute
      *
      * @return \Ark4ne\JsonApi\Descriptors\Values\ValueString<T>
      */
@@ -61,7 +61,7 @@ trait Descriptors
     }
 
     /**
-     * @param null|string|Closure(T):\DateTimeInterface $attribute
+     * @param null|string|Closure(T):(\DateTimeInterface|string|int|null) $attribute
      *
      * @return \Ark4ne\JsonApi\Descriptors\Values\ValueDate<T>
      */
@@ -71,7 +71,7 @@ trait Descriptors
     }
 
     /**
-     * @param null|string|Closure(T):array<mixed> $attribute
+     * @param null|string|Closure(T):(array<mixed>|null) $attribute
      *
      * @return \Ark4ne\JsonApi\Descriptors\Values\ValueArray<T>
      */
@@ -81,7 +81,7 @@ trait Descriptors
     }
 
     /**
-     * @param null|string|Closure(T):object $attribute
+     * @param null|string|Closure(T):(object|null) $attribute
      *
      * @return \Ark4ne\JsonApi\Descriptors\Values\ValueMixed<T>
      */
