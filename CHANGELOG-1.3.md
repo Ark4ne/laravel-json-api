@@ -1,6 +1,10 @@
 Release note
 ============
 
+# v1.3.3
+### Fixes
+- PhpStan for Descriptors
+
 # v1.3.2
 ### Improve
 - Autoload improve inclusion
