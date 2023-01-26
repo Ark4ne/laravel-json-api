@@ -6,7 +6,7 @@ use Ark4ne\JsonApi\Support\Config;
 use Closure;
 
 /**
- * @template T as \Illuminate\Database\Eloquent\Model
+ * @template T
  * @extends Value<T>
  */
 class ValueFloat extends Value

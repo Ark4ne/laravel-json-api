@@ -3,14 +3,16 @@
 namespace Ark4ne\JsonApi\Descriptors\Values;
 
 use Ark4ne\JsonApi\Descriptors\Describer;
+use Ark4ne\JsonApi\Support\Arr;
 use Ark4ne\JsonApi\Support\Config;
 use Ark4ne\JsonApi\Support\Fields;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr as IlluminateArr;
 
 /**
- * @template T as \Illuminate\Database\Eloquent\Model
+ * @template T
  * @extends Describer<T>
  */
 abstract class Value extends Describer
@@ -67,12 +69,16 @@ abstract class Value extends Describer
         ): bool => Fields::has($request, $attribute));
     }
 
-    public function resolveFor(Request $request, Model $model, string $field): mixed
+    public function resolveFor(Request $request, mixed $model, string $field): mixed
     {
         if ($this->attribute instanceof Closure) {
             $value = ($this->attribute)($model, $field);
-        } else {
+        } elseif ($model instanceof Model) {
             $value = $model->getAttribute($this->attribute ?? $field);
+        } elseif (IlluminateArr::accessible($model)) {
+            $value = $model[$this->attribute ?? $field] ?? null;
+        } else {
+            $value = $model->{$this->attribute ?? $field} ?? null;
         }
 
         return $value === null && $this->nullable

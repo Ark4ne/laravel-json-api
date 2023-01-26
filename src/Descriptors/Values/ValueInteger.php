@@ -3,7 +3,7 @@
 namespace Ark4ne\JsonApi\Descriptors\Values;
 
 /**
- * @template T as \Illuminate\Database\Eloquent\Model
+ * @template T
  * @extends Value<T>
  */
 class ValueInteger extends Value

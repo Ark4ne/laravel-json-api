@@ -106,7 +106,7 @@ abstract class Relation extends Describer
         );
     }
 
-    public function resolveFor(Request $request, Model $model, string $field): Relationship
+    public function resolveFor(Request $request, mixed $model, string $field): Relationship
     {
         $retriever = $this->retriever();
 
@@ -132,7 +132,7 @@ abstract class Relation extends Describer
      *
      * @return mixed
      */
-    public function valueFor(Request $request, Model $model, string $field): mixed
+    public function valueFor(Request $request, mixed $model, string $field): mixed
     {
         return $this->resolveFor($request, $model, $field);
     }

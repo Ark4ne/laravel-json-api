@@ -2,9 +2,10 @@
 
 namespace Test\Unit\Descriptors;
 
-use Ark4ne\JsonApi\Descriptors\Descriptors;
+use Ark4ne\JsonApi\Descriptors\Relations;
 use Ark4ne\JsonApi\Descriptors\Relations\RelationMany;
 use Ark4ne\JsonApi\Descriptors\Relations\RelationOne;
+use Ark4ne\JsonApi\Descriptors\Values;
 use Ark4ne\JsonApi\Descriptors\Values\ValueArray;
 use Ark4ne\JsonApi\Descriptors\Values\ValueBool;
 use Ark4ne\JsonApi\Descriptors\Values\ValueDate;
@@ -41,7 +42,8 @@ class DescriptorsTraitTest extends TestCase
     public function testDescriptorTrait($expected, $method, ...$args)
     {
         $mock = new class {
-            use Descriptors;
+            use Values;
+            use Relations;
         };
         /** @var \Ark4ne\JsonApi\Descriptors\Describer $descriptor */
         $descriptor = Reflect::invoke($mock, $method, ...$args);
