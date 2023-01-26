@@ -2,8 +2,8 @@
 
 namespace Ark4ne\JsonApi\Resources;
 
+use Ark4ne\JsonApi\Descriptors;
 use Ark4ne\JsonApi\Resources\Concerns;
-use Ark4ne\JsonApi\Descriptors\Descriptors;
 use Ark4ne\JsonApi\Support\Arr;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -14,7 +14,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 abstract class JsonApiResource extends JsonResource implements Resourceable
 {
-    use Descriptors,
+    use Descriptors\Relations,
+        Descriptors\Values,
         Concerns\Relationize,
         Concerns\Identifier,
         Concerns\Attributes,

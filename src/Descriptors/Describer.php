@@ -3,12 +3,11 @@
 namespace Ark4ne\JsonApi\Descriptors;
 
 use Closure;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MissingValue;
 
 /**
- * @template T as \Illuminate\Database\Eloquent\Model
+ * @template T
  */
 abstract class Describer
 {
@@ -28,8 +27,8 @@ abstract class Describer
     {
         $this->rules[] = static fn(
             Request $request,
-            Model $model,
-            string $attribute
+            mixed   $model,
+            string  $attribute
         ): bool => value($condition, $request, $model, $attribute);
 
         return $this;
@@ -44,8 +43,8 @@ abstract class Describer
     {
         return $this->when(fn(
             Request $request,
-            Model $model,
-            string $attribute
+            mixed   $model,
+            string  $attribute
         ): bool => null !== $this->retrieveValue($model, $attribute));
     }
 
@@ -58,19 +57,19 @@ abstract class Describer
     {
         return $this->when(fn(
             Request $request,
-            Model $model,
-            string $attribute
+            mixed   $model,
+            string  $attribute
         ): bool => filled($this->retrieveValue($model, $attribute)));
     }
 
     /**
      * @param \Illuminate\Http\Request $request
-     * @param T                        $model
-     * @param string                   $field
+     * @param T $model
+     * @param string $field
      *
      * @return mixed
      */
-    public function valueFor(Request $request, Model $model, string $field): mixed
+    public function valueFor(Request $request, mixed $model, string $field): mixed
     {
         if (!$this->check($request, $model, $field)) {
             return new MissingValue();
@@ -82,13 +81,13 @@ abstract class Describer
     /**
      * Checks if the field should be displayed
      *
-     * @param \Illuminate\Http\Request            $request
-     * @param \Illuminate\Database\Eloquent\Model $model
-     * @param string                              $attribute
+     * @param \Illuminate\Http\Request $request
+     * @param T $model
+     * @param string $attribute
      *
      * @return bool
      */
-    protected function check(Request $request, Model $model, string $attribute): bool
+    protected function check(Request $request, mixed $model, string $attribute): bool
     {
         foreach ($this->rules as $rule) {
             if (!$rule($request, $model, $attribute)) {
@@ -99,7 +98,7 @@ abstract class Describer
         return true;
     }
 
-    private function retrieveValue(Model $model, string $attribute): mixed
+    private function retrieveValue(mixed $model, string $attribute): mixed
     {
         $retriever = $this->retriever();
         if ($retriever === null) {
@@ -113,12 +112,12 @@ abstract class Describer
 
     /**
      * @param \Illuminate\Http\Request $request
-     * @param T                        $model
-     * @param string                   $field
+     * @param T $model
+     * @param string $field
      *
      * @return mixed
      */
-    abstract protected function resolveFor(Request $request, Model $model, string $field): mixed;
+    abstract protected function resolveFor(Request $request, mixed $model, string $field): mixed;
 
     /**
      * @return string|Closure|null
@@ -126,7 +125,7 @@ abstract class Describer
     abstract public function retriever(): null|string|Closure;
 
     /**
-     * @param mixed      $value
+     * @param mixed $value
      * @param int|string $key
      *
      * @return int|string

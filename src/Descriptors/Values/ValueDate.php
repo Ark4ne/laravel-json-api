@@ -8,7 +8,7 @@ use DateTime;
 use DateTimeInterface;
 
 /**
- * @template T as \Illuminate\Database\Eloquent\Model
+ * @template T
  * @extends Value<T>
  */
 class ValueDate extends Value
