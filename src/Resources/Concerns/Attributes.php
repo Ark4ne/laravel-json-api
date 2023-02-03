@@ -64,7 +64,11 @@ trait Attributes
         });
     }
 
-    private function prepareAttributes(Request $request)
+    /**
+     * @param Request $request
+     * @return iterable<string, \Closure|mixed>|iterable<array-key, \Ark4ne\JsonApi\Descriptors\Values\Value>
+     */
+    private function prepareAttributes(Request $request): iterable
     {
         $attributes = $this->toAttributes($request);
         $attributes = $this->mergeValues($attributes);
@@ -72,7 +76,11 @@ trait Attributes
         return $this->autoWhenHas($attributes);
     }
 
-    private function resolveAttributes(Request $request)
+    /**
+     * @param Request $request
+     * @return iterable<string, \Closure|mixed>|iterable<array-key, \Ark4ne\JsonApi\Descriptors\Values\Value>
+     */
+    private function resolveAttributes(Request $request): iterable
     {
         $attributes = $this->prepareAttributes($request);
 

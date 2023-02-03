@@ -85,6 +85,7 @@ trait ConditionallyLoadsAttributes
     public function whenHas($attribute, $value = null, $default = null)
     {
         if (Supported::$whenHas) {
+            // @phpstan-ignore-next-line
             return parent::whenHas($attribute, $value, $default);
         }
 
@@ -115,6 +116,7 @@ trait ConditionallyLoadsAttributes
     public function unless($condition, $value, $default = null)
     {
         if (Supported::$whenHas) {
+            // @phpstan-ignore-next-line
             return parent::unless($condition, $value, $default);
         }
 
