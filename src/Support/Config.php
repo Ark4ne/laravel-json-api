@@ -10,7 +10,9 @@ class Config
 
     public static string $date = DateTimeInterface::ATOM;
 
-    public static bool $whenIncluded = false;
+    public static bool $autoWhenIncluded = false;
+
+    public static bool $autoWhenHas = false;
 
     public static int|null $precision = null;
 
@@ -19,6 +21,7 @@ class Config
         self::$nullable = config('jsonapi.describer.nullable', self::$nullable);
         self::$date = config('jsonapi.describer.date', self::$date);
         self::$precision = config('jsonapi.describer.precision', self::$precision);
-        self::$whenIncluded = config('jsonapi.relationship.when-included', self::$whenIncluded);
+        self::$autoWhenHas = config('jsonapi.attribute.when-has', self::$autoWhenHas);
+        self::$autoWhenIncluded = config('jsonapi.relationship.when-included', self::$autoWhenIncluded);
     }
 }

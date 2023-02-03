@@ -47,7 +47,10 @@ trait Meta
      */
     private function requestedResourceMeta(Request $request): array
     {
-        return $this->prepareData($request, $this->toResourceMeta($request));
+        $meta = $this->toResourceMeta($request) ?? [];
+        $meta = $this->mergeValues($meta);
+
+        return $this->resolveValues($request, $meta);
     }
 
     /**
@@ -57,6 +60,9 @@ trait Meta
      */
     private function requestedMeta(Request $request): array
     {
-        return $this->prepareData($request, $this->toMeta($request));
+        $meta = $this->toMeta($request) ?? [];
+        $meta = $this->mergeValues($meta);
+
+        return $this->resolveValues($request, $meta);
     }
 }

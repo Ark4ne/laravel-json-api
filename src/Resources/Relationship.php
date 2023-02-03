@@ -38,7 +38,7 @@ class Relationship implements Resourceable
         protected ?Closure $links = null,
         protected ?Closure $meta = null
     ) {
-        $this->whenIncluded = Config::$whenIncluded;
+        $this->whenIncluded = Config::$autoWhenIncluded;
     }
 
     /**

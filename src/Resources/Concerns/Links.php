@@ -33,6 +33,9 @@ trait Links
      */
     private function requestedLinks(Request $request): array
     {
-        return $this->prepareData($request, $this->toLinks($request));
+        $links = $this->toLinks($request) ?? [];
+        $links = $this->mergeValues($links);
+
+        return $this->resolveValues($request, $links);
     }
 }

@@ -32,7 +32,7 @@ abstract class Relation extends Describer
         protected string $related,
         protected null|string|Closure $relation
     ) {
-        $this->whenIncluded = Config::$whenIncluded;
+        $this->whenIncluded = Config::$autoWhenIncluded;
     }
 
     /**
