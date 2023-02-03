@@ -64,7 +64,7 @@ abstract class Value extends Describer
     {
         return $this->when(static fn(
             Request $request,
-            Model $model,
+            mixed $model,
             string $attribute
         ): bool => Fields::has($request, $attribute));
     }
