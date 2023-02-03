@@ -36,6 +36,24 @@ abstract class Describer
     }
 
     /**
+     * Display field whether the given condition is true.
+     *
+     * @param bool|Closure(Request, T, string):bool $condition
+     *
+     * @return static
+     */
+    public function unless(bool|Closure $condition): static
+    {
+        $this->rules[] = static fn(
+            Request $request,
+            mixed   $model,
+            string  $attribute
+        ): bool => !value($condition, $request, $model, $attribute);
+
+        return $this;
+    }
+
+    /**
      * Display field whether the accessor field is not null.
      *
      * @return static

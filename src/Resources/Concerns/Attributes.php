@@ -51,8 +51,7 @@ trait Attributes
     private function requestedAttributes(Request $request): array
     {
         return Fields::through($this->toType($request), function () use ($request) {
-            $attributes = $this->toAttributes($request);
-            $attributes = $this->prepareData($request, $attributes);
+            $attributes = $this->resolveAttributes($request);
             $attributes = $this->filter($attributes);
 
             $fields = Fields::get($request);
@@ -63,5 +62,20 @@ trait Attributes
 
             return array_map('\value', $attributes);
         });
+    }
+
+    private function prepareAttributes(Request $request)
+    {
+        $attributes = $this->toAttributes($request);
+        $attributes = $this->mergeValues($attributes);
+
+        return $this->autoWhenHas($attributes);
+    }
+
+    private function resolveAttributes(Request $request)
+    {
+        $attributes = $this->prepareAttributes($request);
+
+        return $this->resolveValues($request, $attributes);
     }
 }

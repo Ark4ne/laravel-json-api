@@ -69,6 +69,25 @@ abstract class Value extends Describer
         ): bool => Fields::has($request, $attribute));
     }
 
+    /**
+     * Display an attribute if it exists on the resource.
+     *
+     * @param string|null $field
+     * @return static
+     */
+    public function whenHas(string $field = null): static
+    {
+        return $this->when(static fn(
+            Request $request,
+            mixed $model,
+            string  $attribute
+        ): bool => match (true) {
+            $model instanceof Model => array_key_exists($field ?? $attribute, $model->getAttributes()),
+            IlluminateArr::accessible($model) => array_key_exists($field ?? $attribute, $model),
+            default => property_exists($model, $field ?? $attribute)
+        });
+    }
+
     public function resolveFor(Request $request, mixed $model, string $field): mixed
     {
         if ($this->attribute instanceof Closure) {
