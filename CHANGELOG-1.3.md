@@ -1,6 +1,10 @@
 Release note
 ============
 
+# v1.3.5
+### Fixes
+- Descriptors\Values accepts mixed resource
+
 # v1.3.4
 ### Fixes
 - Descriptors\Values accepts mixed resource
