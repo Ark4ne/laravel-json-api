@@ -1,6 +1,10 @@
 Release note
 ============
 
+# v1.3.4
+### Fixes
+- Descriptors\Values accepts mixed resource
+
 # v1.3.3
 ### Fixes
 - PhpStan for Descriptors
