@@ -30,7 +30,17 @@ trait Attributes
      */
     protected function toAttributes(Request $request): iterable
     {
-        return $this->resource->toArray();
+        if (is_object($this->resource) && method_exists($this->resource, 'toArray')) {
+            return $this->resource->toArray();
+        }
+        if (is_array($this->resource)) {
+            return $this->resource;
+        }
+        if (is_iterable($this->resource)) {
+            return iterator_to_array($this->resource);
+        }
+
+        return [];
     }
 
     /**

@@ -16,7 +16,7 @@ use Ark4ne\JsonApi\Descriptors\Values\{
 use Closure;
 
 /**
- * @template T as \Illuminate\Database\Eloquent\Model
+ * @template T
  */
 trait Relations
 {

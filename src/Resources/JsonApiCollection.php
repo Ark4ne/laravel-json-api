@@ -45,17 +45,19 @@ class JsonApiCollection extends ResourceCollection implements Resourceable
      */
     public function toArray(mixed $request, bool $included = true): array
     {
-        if (collect($this->collection)->every(fn($value) => $value instanceof JsonApiResource)) {
-            $collection = collect($this->collection);
+        $collection = collect($this->collection);
 
+        if ($collection->every(static fn($value) => $value instanceof JsonApiResource)) {
             // @phpstan-ignore-next-line
             $loads = array_merge(...$collection->map->requestedRelationshipsLoad($request));
 
-            // @phpstan-ignore-next-line
-            $resources = $collection->map->resource;
+            if (!empty($loads)) {
+                // @phpstan-ignore-next-line
+                $resources = $collection->map->resource;
 
-            if (!empty($loads) && $resources->every(fn($resource) => $resource instanceof Model)) {
-                (new Collection($resources))->loadMissing($loads);
+                if ($resources->every(static fn($resource) => $resource instanceof Model)) {
+                    (new Collection($resources))->loadMissing($loads);
+                }
             }
         }
 

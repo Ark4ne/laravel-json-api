@@ -15,56 +15,69 @@ use Test\TestCase;
 
 class RelationTest extends TestCase
 {
-    public function testIncluded()
+    public function resourceProvider(): array
+    {
+        return [
+            [[]],
+            [new class {}],
+            [new class extends Model {}],
+        ];
+    }
+
+    /**
+     * @dataProvider resourceProvider
+     */
+    public function testIncluded($model)
     {
         $stub = new RelationOne(UserResource::class, fn() => null);
 
-        $relation = $stub->resolveFor(new Request, new class extends Model {
-        }, 'null');
+        $relation = $stub->resolveFor(new Request, $model, 'null');
 
         $this->assertInstanceOf(Relationship::class, $relation);
         $this->assertFalse(Reflect::get($relation, 'whenIncluded'));
 
         $stub->whenIncluded();
-        $relation = $stub->resolveFor(new Request, new class extends Model {
-        }, 'null');
+        $relation = $stub->resolveFor(new Request, $model, 'null');
 
         $this->assertInstanceOf(Relationship::class, $relation);
         $this->assertTrue(Reflect::get($relation, 'whenIncluded'));
     }
 
-    public function testMeta()
+
+    /**
+     * @dataProvider resourceProvider
+     */
+    public function testMeta($model)
     {
         $stub = new RelationOne(UserResource::class, fn() => null);
 
-        $relation = $stub->resolveFor(new Request, new class extends Model {
-        }, 'null');
+        $relation = $stub->resolveFor(new Request, $model, 'null');
 
         $this->assertInstanceOf(Relationship::class, $relation);
         $this->assertEmpty(Reflect::get($relation, 'meta'));
 
         $stub->meta(fn() => ['test']);
-        $relation = $stub->resolveFor(new Request, new class extends Model {
-        }, 'null');
+        $relation = $stub->resolveFor(new Request, $model, 'null');
 
         $this->assertInstanceOf(Relationship::class, $relation);
         $this->assertInstanceOf(\Closure::class, Reflect::get($relation, 'meta'));
         $this->assertEquals(['test'], Reflect::get($relation, 'meta')());
     }
 
-    public function testLinks()
+    /**
+     * @dataProvider resourceProvider
+     */
+    public function testLinks($model)
     {
         $stub = new RelationOne(UserResource::class, fn() => null);
 
-        $relation = $stub->resolveFor(new Request, new class extends Model {
-        }, 'null');
+        $relation = $stub->resolveFor(new Request, $model, 'null');
 
         $this->assertInstanceOf(Relationship::class, $relation);
         $this->assertEmpty(Reflect::get($relation, 'links'));
 
         $stub->links(fn() => ['test']);
-        $relation = $stub->resolveFor(new Request, new class extends Model {
-        }, 'null');
+        $relation = $stub->resolveFor(new Request, $model, 'null');
 
         $this->assertInstanceOf(Relationship::class, $relation);
         $this->assertInstanceOf(\Closure::class, Reflect::get($relation, 'links'));
@@ -120,12 +133,13 @@ class RelationTest extends TestCase
         $this->assertTrue($check);
     }
 
-    public function testRelationMissing()
+    /**
+     * @dataProvider resourceProvider
+     */
+    public function testRelationMissing($model)
     {
         $missing = RelationMissing::fromRelationship(new Relationship(UserResource::class, fn() => null));
 
-        $model = new class extends Model {
-        };
         $check = Reflect::invoke($missing, 'check', new Request, $model, 'any');
         $value = Reflect::invoke($missing, 'valueFor', new Request, $model, 'any');
 

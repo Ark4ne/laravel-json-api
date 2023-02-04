@@ -6,7 +6,7 @@ use Ark4ne\JsonApi\Resources\Relationship;
 use Closure;
 
 /**
- * @template T as \Illuminate\Database\Eloquent\Model
+ * @template T
  * @extends Relation<T>
  */
 class RelationOne extends Relation

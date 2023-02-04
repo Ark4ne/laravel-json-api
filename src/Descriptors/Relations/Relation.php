@@ -10,9 +10,10 @@ use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MissingValue;
+use Illuminate\Support\Arr;
 
 /**
- * @template T as \Illuminate\Database\Eloquent\Model
+ * @template T
  * @extends Describer<T>
  */
 abstract class Relation extends Describer
@@ -113,7 +114,11 @@ abstract class Relation extends Describer
         if ($retriever instanceof Closure) {
             $value = static fn() => $retriever($model, $field);
         } else {
-            $value = static fn() => $model->getRelationValue($retriever ?? $field);
+            $value = static fn() => match (true) {
+                $model instanceof Model => $model->getRelationValue($retriever ?? $field),
+                Arr::accessible($model) => $model[$retriever ?? $field],
+                default => $model->{$retriever ?? $field}
+            };
         }
 
         $relation = $this->value(fn() => $this->check($request, $model, $field) ? $value() : new MissingValue());
