@@ -10,6 +10,7 @@ use Ark4ne\JsonApi\Support\Arr;
 use Ark4ne\JsonApi\Support\Includes;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use stdClass;
 use Test\Support\Reflect;
 use Test\Support\Stub;
 use Test\TestCase;
@@ -295,7 +296,7 @@ class RelationshipsTest extends TestCase
 
     private function getStub()
     {
-        $resource = new class {
+        $resource = new class extends stdClass {
             private static int $count;
             public int $id = 1;
 

@@ -16,6 +16,7 @@ use DateTime;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MissingValue;
+use stdClass;
 use Test\Support\Reflect;
 use Test\TestCase;
 
@@ -25,7 +26,7 @@ class ValueTest extends TestCase
     {
         return [
             'arrayable' => [collect()],
-            'stdClass' => [new class {
+            'stdClass' => [new class extends stdClass {
             }],
             'model' => [new class extends Model {
             }],

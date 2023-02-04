@@ -8,6 +8,7 @@ use Ark4ne\JsonApi\Descriptors\Values\ValueBool;
 use Ark4ne\JsonApi\Descriptors\Values\ValueMixed;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use stdClass;
 use Test\Support\Reflect;
 use Test\TestCase;
 
@@ -15,7 +16,7 @@ class ResolverTest extends TestCase
 {
     public function testResolveValue()
     {
-        $stub = new class {
+        $stub = new class extends stdClass {
             use Resolver;
 
             public $resource;

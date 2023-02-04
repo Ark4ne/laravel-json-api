@@ -5,6 +5,7 @@ namespace Test\Unit\Resources\Concerns;
 use Ark4ne\JsonApi\Resources\Concerns\Attributes;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use stdClass;
 use Test\Support\Reflect;
 use Test\TestCase;
 
@@ -21,7 +22,7 @@ class AttributesTest extends TestCase
             }
         };
 
-        $object = new class {
+        $object = new class extends stdClass {
             public $foo = 'bar';
             public $baz = 'tar';
             public function toArray() { return (array)$this; }
@@ -58,7 +59,7 @@ class AttributesTest extends TestCase
 
     public function testRequestedAttributes()
     {
-        $object = new class {
+        $object = new class extends stdClass {
             public $foo = 'bar';
             public $baz = 'tar';
             public function toArray() { return (array)$this; }

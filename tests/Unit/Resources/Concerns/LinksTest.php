@@ -5,6 +5,7 @@ namespace Test\Unit\Resources\Concerns;
 use Ark4ne\JsonApi\Resources\Concerns\Links;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use stdClass;
 use Test\Support\Reflect;
 use Test\TestCase;
 
@@ -14,7 +15,7 @@ class LinksTest extends TestCase
     {
         $id = uniqid('id', true);
 
-        $object = new class($id) {
+        $object = new class($id) extends stdClass {
             public $foo = 'bar';
             public $baz = 'tar';
 

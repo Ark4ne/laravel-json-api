@@ -16,6 +16,7 @@ use Ark4ne\JsonApi\Descriptors\Values\ValueString;
 use Ark4ne\JsonApi\Resources\JsonApiCollection;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Closure;
+use stdClass;
 use Test\Support\Reflect;
 use Test\TestCase;
 
@@ -41,7 +42,7 @@ class DescriptorsTraitTest extends TestCase
      */
     public function testDescriptorTrait($expected, $method, ...$args)
     {
-        $mock = new class {
+        $mock = new class extends stdClass {
             use Values;
             use Relations;
         };
