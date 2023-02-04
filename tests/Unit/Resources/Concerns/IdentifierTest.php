@@ -6,6 +6,7 @@ use Ark4ne\JsonApi\Resources\Concerns\Identifier;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Str;
+use stdClass;
 use Test\Support\Reflect;
 use Test\TestCase;
 
@@ -38,7 +39,7 @@ class IdentifierTest extends TestCase
     {
         $id = uniqid('id', true);
 
-        $object = new class($id) {
+        $object = new class($id) extends stdClass {
             public $foo = 'bar';
             public $baz = 'tar';
 

@@ -19,7 +19,7 @@ class RelationTest extends TestCase
     {
         return [
             [[]],
-            [new class {}],
+            [new class extends stdClass {}],
             [new class extends Model {}],
         ];
     }
