@@ -5,6 +5,7 @@ namespace Ark4ne\JsonApi\Descriptors;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MissingValue;
+use Illuminate\Support\Arr;
 
 /**
  * @template T
@@ -100,12 +101,14 @@ abstract class Describer
 
     private function retrieveValue(mixed $model, string $attribute): mixed
     {
+        $value = static fn($attr) => Arr::accessible($model) ? $model[$attr] : $model->$attr;
+
         $retriever = $this->retriever();
         if ($retriever === null) {
-            return $model->$attribute;
+            return $value($attribute);
         }
         if (is_string($retriever)) {
-            return $model->$retriever;
+            return $value($retriever);
         }
         return $retriever();
     }

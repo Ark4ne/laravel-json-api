@@ -12,13 +12,7 @@ class AttributesTest extends TestCase
 {
     public function testToAttributes()
     {
-        $object = new class {
-            public $foo = 'bar';
-            public $baz = 'tar';
-            public function toArray() { return (array)$this; }
-        };
-
-        $stub = new class($object) extends JsonResource {
+        $stub = fn ($object) => new class($object) extends JsonResource {
             use Attributes;
 
             protected function toType(Request $request)
@@ -27,9 +21,38 @@ class AttributesTest extends TestCase
             }
         };
 
+        $object = new class {
+            public $foo = 'bar';
+            public $baz = 'tar';
+            public function toArray() { return (array)$this; }
+        };
+
         $this->assertEquals(
             $object->toArray(),
-            Reflect::invoke($stub, 'toAttributes', new Request())
+            Reflect::invoke($stub($object), 'toAttributes', new Request())
+        );
+
+        $array = [
+            'test' => 'abc',
+        ];
+
+        $this->assertEquals(
+            $array,
+            Reflect::invoke($stub($array), 'toAttributes', new Request())
+        );
+
+        $iterable = new \ArrayIterator($array);
+
+        $this->assertEquals(
+            $array,
+            Reflect::invoke($stub($iterable), 'toAttributes', new Request())
+        );
+
+        $stdClass = (object)[];
+
+        $this->assertEquals(
+            [],
+            Reflect::invoke($stub($stdClass), 'toAttributes', new Request())
         );
     }
 
