@@ -1,6 +1,10 @@
 Release note
 ============
 
+# v1.3.6
+### Fixes
+- JsonApiResource & Descriptors support any array or object
+
 # v1.3.5
 ### Fixes
 - Descriptors\Values accepts mixed resource
