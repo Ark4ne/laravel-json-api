@@ -22,7 +22,7 @@ use Test\TestCase;
 
 class DescriptorsTraitTest extends TestCase
 {
-    public function methods()
+    public static function methods()
     {
         return [
             'bool' => [ValueBool::class, 'bool'],

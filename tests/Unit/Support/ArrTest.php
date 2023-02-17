@@ -7,7 +7,7 @@ use Test\TestCase;
 
 class ArrTest extends TestCase
 {
-    public function mergeProvider()
+    public static function mergeProvider()
     {
         return [
             // [expected, base, with]
@@ -68,7 +68,7 @@ class ArrTest extends TestCase
         $this->assertEquals($expected, Arr::merge($base, $with));
     }
 
-    public function washProvider()
+    public static function washProvider()
     {
         return [
             // [expected, with]
@@ -96,7 +96,7 @@ class ArrTest extends TestCase
         $this->assertEquals($expected, Arr::wash($base));
     }
 
-    public function toArrayProvider()
+    public static function toArrayProvider()
     {
         return [
             // [expected, with]

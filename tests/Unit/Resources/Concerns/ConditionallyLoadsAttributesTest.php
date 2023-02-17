@@ -17,7 +17,7 @@ use Test\TestCase;
 
 class ConditionallyLoadsAttributesTest extends TestCase
 {
-    public function data()
+    public static function data()
     {
         return [
             [false, 'test', []],

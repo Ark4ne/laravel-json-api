@@ -15,7 +15,7 @@ use Test\TestCase;
 
 class RelationTest extends TestCase
 {
-    public function resourceProvider(): array
+    public static function resourceProvider(): array
     {
         return [
             [[]],
@@ -84,7 +84,7 @@ class RelationTest extends TestCase
         $this->assertEquals(['test'], Reflect::get($relation, 'links')());
     }
 
-    public function dataWhenLoaded()
+    public static function dataWhenLoaded()
     {
         return [
             ['attr', null, 'attr'],
@@ -108,7 +108,7 @@ class RelationTest extends TestCase
         $this->assertFalse($check);
     }
 
-    public function dataWhenPivotLoaded()
+    public static function dataWhenPivotLoaded()
     {
         return [
             ['attr', null, 'attr'],
