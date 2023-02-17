@@ -22,7 +22,7 @@ use Test\TestCase;
 
 class ValueTest extends TestCase
 {
-    public function models(): array
+    public static function models(): array
     {
         return [
             'arrayable' => [collect()],
@@ -33,7 +33,7 @@ class ValueTest extends TestCase
         ];
     }
 
-    public function values()
+    public static function values()
     {
         date_default_timezone_set('Europe/London');
 
@@ -70,12 +70,12 @@ class ValueTest extends TestCase
         ];
     }
 
-    public function modelsValues()
+    public static function modelsValues()
     {
         $set = [];
 
-        foreach ($this->values() as $v => $value) {
-            foreach ($this->models() as $m => $model) {
+        foreach (self::values() as $v => $value) {
+            foreach (self::models() as $m => $model) {
                 $set["$v.$m"] = [...$model, ...$value];
             }
         }

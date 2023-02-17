@@ -7,7 +7,7 @@ use Test\TestCase;
 
 class WithTest extends TestCase
 {
-    public function mergeProvider()
+    public static function mergeProvider()
     {
         return [
             // [expected, base, with]
@@ -68,7 +68,7 @@ class WithTest extends TestCase
         $this->assertEquals($expected, With::merge($base, $with));
     }
 
-    public function washProvider()
+    public static function washProvider()
     {
         return [
             // [expected, with]

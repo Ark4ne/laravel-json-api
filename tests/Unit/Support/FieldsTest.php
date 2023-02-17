@@ -8,7 +8,7 @@ use Test\TestCase;
 
 class FieldsTest extends TestCase
 {
-    public function fieldsGetProvider()
+    public static function fieldsGetProvider()
     {
         return [
             [[], 'foo', null],
