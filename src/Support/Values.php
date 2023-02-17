@@ -2,6 +2,7 @@
 
 namespace Ark4ne\JsonApi\Support;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\MergeValue;
 use Illuminate\Http\Resources\PotentiallyMissing;
@@ -84,5 +85,32 @@ class Values
             || ($resource instanceof JsonResource &&
                 $resource->resource instanceof PotentiallyMissing &&
                 $resource->resource->isMissing());
+    }
+
+    /**
+     * @param array<array-key, mixed>|object $object
+     * @param string $attribute
+     * @return bool
+     */
+    public static function hasAttribute(array|object $object, string $attribute): bool
+    {
+        if ($object instanceof Model) {
+            return array_key_exists($attribute, $object->getAttributes());
+        }
+        if (Arr::accessible($object)) {
+            return Arr::exists($object, $attribute);
+        }
+        return property_exists($object, $attribute);
+    }
+
+    public static function getAttribute(array|object $object, string $attribute): mixed
+    {
+        if ($object instanceof Model) {
+            return $object->getAttribute($attribute);
+        }
+        if (Arr::accessible($object)) {
+            return $object[$attribute] ?? null;
+        }
+        return $object->$attribute ?? null;
     }
 }

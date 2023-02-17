@@ -8,6 +8,7 @@ use Ark4ne\JsonApi\Resources\Relationship;
 use Ark4ne\JsonApi\Support\Fields;
 use Ark4ne\JsonApi\Support\Includes;
 use Ark4ne\JsonApi\Support\Supported;
+use Ark4ne\JsonApi\Support\Values;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MergeValue;
 use Illuminate\Http\Resources\MissingValue;
@@ -72,8 +73,8 @@ trait ConditionallyLoadsAttributes
     }
 
     /**
-     * @polyfill JsonResource::whenHas
-     * @see https://github.com/laravel/framework/pull/45376/files
+     * @override JsonResource::whenHas
+     * Support none Model resource
      *
      * Retrieve an attribute if it exists on the resource.
      *
@@ -84,22 +85,17 @@ trait ConditionallyLoadsAttributes
      */
     public function whenHas($attribute, $value = null, $default = null)
     {
-        if (Supported::$whenHas) {
-            // @phpstan-ignore-next-line
-            return parent::whenHas($attribute, $value, $default);
-        }
-
         if (func_num_args() < 3) {
             $default = new MissingValue;
         }
 
-        if (!array_key_exists($attribute, $this->resource->getAttributes())) {
+        if (!Values::hasAttribute($this->resource, $attribute)) {
             return value($default);
         }
 
         return func_num_args() === 1
-            ? $this->resource->{$attribute}
-            : value($value, $this->resource->{$attribute});
+            ? Values::getAttribute($this->resource, $attribute)
+            : value($value, Values::getAttribute($this->resource, $attribute));
     }
 
     /**
