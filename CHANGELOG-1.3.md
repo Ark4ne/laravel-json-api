@@ -1,6 +1,10 @@
 Release note
 ============
 
+# v1.3.7
+### Added
+- Laravel 10 support
+
 # v1.3.6
 ### Fixes
 - JsonApiResource & Descriptors support any array or object
