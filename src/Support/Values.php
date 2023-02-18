@@ -89,10 +89,10 @@ class Values
 
     /**
      * @param array<array-key, mixed>|object $object
-     * @param string $attribute
+     * @param int|string $attribute
      * @return bool
      */
-    public static function hasAttribute(array|object $object, string $attribute): bool
+    public static function hasAttribute(array|object $object, int|string $attribute): bool
     {
         if ($object instanceof Model) {
             return array_key_exists($attribute, $object->getAttributes());
@@ -103,7 +103,12 @@ class Values
         return property_exists($object, $attribute);
     }
 
-    public static function getAttribute(array|object $object, string $attribute): mixed
+    /**
+     * @param array<array-key, mixed>|object $object
+     * @param int|string $attribute
+     * @return mixed
+     */
+    public static function getAttribute(array|object $object, int|string $attribute): mixed
     {
         if ($object instanceof Model) {
             return $object->getAttribute($attribute);
