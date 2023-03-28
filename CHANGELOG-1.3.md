@@ -1,6 +1,10 @@
 Release note
 ============
 
+# v1.3.8
+### Fixes
+- Handle fields input is not an array
+
 # v1.3.7
 ### Added
 - Laravel 10 support
