@@ -5,7 +5,6 @@ namespace Ark4ne\JsonApi\Descriptors\Relations;
 use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Resources\Relationship;
 use Ark4ne\JsonApi\Traits\HasRelationLoad;
-use Ark4ne\JsonApi\Support\Config;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -22,7 +21,7 @@ abstract class Relation extends Describer
 
     protected ?Closure $links = null;
     protected ?Closure $meta = null;
-    protected bool $whenIncluded;
+    protected ?bool $whenIncluded = null;
 
     /**
      * @param class-string<\Ark4ne\JsonApi\Resources\JsonApiResource|\Ark4ne\JsonApi\Resources\JsonApiCollection> $related
@@ -32,7 +31,6 @@ abstract class Relation extends Describer
         protected string $related,
         protected null|string|Closure $relation
     ) {
-        $this->whenIncluded = Config::$autoWhenIncluded;
     }
 
     /**
@@ -63,9 +61,18 @@ abstract class Relation extends Describer
         return $this;
     }
 
-    public function whenIncluded(): static
+    /**
+     * @param bool|null $whenIncluded
+     * @return $this
+     */
+    public function whenIncluded(bool $whenIncluded = null): static
     {
-        $this->whenIncluded = true;
+        if ($whenIncluded === null) {
+            $this->whenIncluded ??= true;
+        } else {
+            $this->whenIncluded = $whenIncluded;
+        }
+
         return $this;
     }
 
@@ -123,8 +130,8 @@ abstract class Relation extends Describer
 
         $relation = $this->value(fn() => $this->check($request, $model, $field) ? $value() : new MissingValue());
 
-        if ($this->whenIncluded) {
-            $relation->whenIncluded();
+        if ($this->whenIncluded !== null) {
+            $relation->whenIncluded($this->whenIncluded);
         }
 
         return $relation;

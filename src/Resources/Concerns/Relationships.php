@@ -103,7 +103,8 @@ trait Relationships
     {
         $relations = [];
         $relationships = $this->toRelationships($request);
-        $relationships = Values::mergeValues($relationships);
+        $relationships = $this->mergeValues($relationships);
+        $relationships = $this->autoWhenIncluded($relationships);
         $relationships = $this->resolveValues($request, $relationships);
         $relationships = $this->filter($relationships);
 

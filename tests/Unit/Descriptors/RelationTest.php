@@ -32,13 +32,21 @@ class RelationTest extends TestCase
         $stub = new RelationOne(UserResource::class, fn() => null);
 
         $relation = $stub->resolveFor(new Request, $model, 'null');
-
         $this->assertInstanceOf(Relationship::class, $relation);
-        $this->assertFalse(Reflect::get($relation, 'whenIncluded'));
+        $this->assertNull(Reflect::get($relation, 'whenIncluded'));
 
         $stub->whenIncluded();
         $relation = $stub->resolveFor(new Request, $model, 'null');
+        $this->assertInstanceOf(Relationship::class, $relation);
+        $this->assertTrue(Reflect::get($relation, 'whenIncluded'));
 
+        $stub->whenIncluded(false);
+        $relation = $stub->resolveFor(new Request, $model, 'null');
+        $this->assertInstanceOf(Relationship::class, $relation);
+        $this->assertFalse(Reflect::get($relation, 'whenIncluded'));
+
+        $stub->whenIncluded(true);
+        $relation = $stub->resolveFor(new Request, $model, 'null');
         $this->assertInstanceOf(Relationship::class, $relation);
         $this->assertTrue(Reflect::get($relation, 'whenIncluded'));
     }

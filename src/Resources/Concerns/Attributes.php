@@ -73,7 +73,7 @@ trait Attributes
         $attributes = $this->toAttributes($request);
         $attributes = $this->mergeValues($attributes);
 
-        return $this->autoWhenHas($attributes);
+        return $this->autoWhenHas($attributes, 'attributes');
     }
 
     /**
