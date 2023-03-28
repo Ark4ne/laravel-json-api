@@ -49,6 +49,7 @@ trait Meta
     {
         $meta = $this->toResourceMeta($request) ?? [];
         $meta = $this->mergeValues($meta);
+        $meta = $this->autoWhenHas($meta, 'resource-meta');
 
         return $this->resolveValues($request, $meta);
     }
@@ -62,6 +63,7 @@ trait Meta
     {
         $meta = $this->toMeta($request) ?? [];
         $meta = $this->mergeValues($meta);
+        $meta = $this->autoWhenHas($meta, 'meta');
 
         return $this->resolveValues($request, $meta);
     }

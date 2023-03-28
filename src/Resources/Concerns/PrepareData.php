@@ -2,8 +2,10 @@
 
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
+use Ark4ne\JsonApi\Descriptors\Relations\Relation;
 use Ark4ne\JsonApi\Descriptors\Resolver;
 use Ark4ne\JsonApi\Descriptors\Values\Value;
+use Ark4ne\JsonApi\Resources\Relationship;
 use Ark4ne\JsonApi\Support\Config;
 use Ark4ne\JsonApi\Support\Values;
 use Illuminate\Http\Request;
@@ -16,12 +18,12 @@ trait PrepareData
     /**
      * @template TKey as array-key
      * @template TValue
-
      * @param iterable<TKey, TValue> $data
      *
      * @return iterable<TKey, TValue>
      */
-    protected function mergeValues(iterable $data) : iterable {
+    protected function mergeValues(iterable $data): iterable
+    {
 
         return Values::mergeValues($data);
     }
@@ -29,33 +31,48 @@ trait PrepareData
     /**
      * @template TKey as array-key
      * @template TValue
-
      * @param iterable<TKey, TValue> $data
      *
      * @return iterable<TKey, TValue>
      */
-    protected function autoWhenHas(iterable $data): iterable
+    protected function autoWhenHas(iterable $data, string $for): iterable
     {
-        if (!Config::$autoWhenHas) {
-            return $data;
+        $autoWhenHas = $this->autoWhenHas ?? null;
+
+        if ($autoWhenHas || (Config::autoWhenHas($for) && $autoWhenHas !== false)) {
+            (new Collection($data))
+                ->each(fn($value, int|string $key) => $value instanceof Value
+                    ? $value->autoWhenHas()
+                    : $value);
         }
 
-        return (new Collection($data))
-            ->map(fn($value, int|string $key) => $value instanceof Value
-                ? $value->whenHas()
-                : $this->whenHas($key, $value));
+        return $data;
+    }
+
+    protected function autoWhenIncluded(iterable $data): iterable
+    {
+        $autoWhenIncluded = $this->autoWhenIncluded ?? null;
+
+        if ($autoWhenIncluded || (Config::$autoWhenIncluded && $autoWhenIncluded !== false)) {
+            (new Collection($data))
+                ->each(fn($relation, int|string $key) => $relation instanceof Relation || $relation instanceof Relationship
+                    ? $relation->whenIncluded()
+                    : $relation);
+        }
+
+        return $data;
     }
 
     /**
+     * @param \Illuminate\Http\Request $request
+     * @param iterable<TKey, TValue>|null $data
+     *
+     * @return iterable<TKey, TValue>
      * @deprecated
      *
      * @template TKey as array-key
      * @template TValue
      *
-     * @param \Illuminate\Http\Request $request
-     * @param iterable<TKey, TValue>|null $data
-     *
-     * @return iterable<TKey, TValue>
      */
     protected function prepareData(Request $request, ?iterable $data): iterable
     {

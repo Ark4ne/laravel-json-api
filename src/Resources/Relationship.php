@@ -2,7 +2,6 @@
 
 namespace Ark4ne\JsonApi\Resources;
 
-use Ark4ne\JsonApi\Support\Config;
 use Ark4ne\JsonApi\Support\Values;
 use Ark4ne\JsonApi\Traits\HasRelationLoad;
 use Closure;
@@ -24,7 +23,7 @@ class Relationship implements Resourceable
 
     protected bool $asCollection = false;
 
-    protected bool $whenIncluded;
+    protected ?bool $whenIncluded = null;
 
     /**
      * @param class-string<T> $resource
@@ -38,7 +37,6 @@ class Relationship implements Resourceable
         protected ?Closure $links = null,
         protected ?Closure $meta = null
     ) {
-        $this->whenIncluded = Config::$autoWhenIncluded;
     }
 
     /**
@@ -99,11 +97,16 @@ class Relationship implements Resourceable
     /**
      * Only load value if relation is included
      *
+     * @param bool|null $whenIncluded
      * @return $this
      */
-    public function whenIncluded(): self
+    public function whenIncluded(bool $whenIncluded = null): static
     {
-        $this->whenIncluded = true;
+        if ($whenIncluded === null) {
+            $this->whenIncluded ??= true;
+        } else {
+            $this->whenIncluded = $whenIncluded;
+        }
 
         return $this;
     }
