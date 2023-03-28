@@ -45,7 +45,7 @@ class Fields
             throw new \BadMethodCallException(__METHOD__ . ':$type must not be null when not current stack');
         }
 
-        $fields = self::parse($request->input('fields', []));
+        $fields = self::parse((array) $request->input('fields', []));
 
         return $fields[$type] ?? null;
     }
