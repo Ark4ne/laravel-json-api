@@ -137,4 +137,14 @@ class ConditionallyLoadsAttributesTest extends TestCase
         $this->assertEquals(new MissingValue, Reflect::invoke($resource, 'whenHas', 'b', 'abc'));
         $this->assertEquals('missing', Reflect::invoke($resource, 'whenHas', 'b', 'abc', 'missing'));
     }
+
+    public function testUnless()
+    {
+        $resource = new class([]) extends JsonResource {
+            use ConditionallyLoadsAttributes;
+        };
+
+        $this->assertEquals(new MissingValue, Reflect::invoke($resource, 'unless', true, 'a'));
+        $this->assertEquals('a', Reflect::invoke($resource, 'unless', false, 'a'));
+    }
 }

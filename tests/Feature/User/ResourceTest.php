@@ -2,6 +2,7 @@
 
 namespace Test\Feature\User;
 
+use Ark4ne\JsonApi\Support\Config;
 use DateTimeInterface;
 use Illuminate\Http\Request;
 use Test\app\Http\Resources\CommentResource;
@@ -134,12 +135,22 @@ class ResourceTest extends FeatureTestCase
         ]]);
     }
 
+    public function testShowBasicAutoWhenIncluded()
+    {
+        Config::$autoWhenIncluded = true;
+        $user = $this->dataSeed();
+
+        $response = $this->get("user/{$user->id}");
+
+        $response->assertExactJson($this->getJsonResult($user, null, null, false));
+    }
+
     private function dataSeed()
     {
         return User::first();
     }
 
-    private function getJsonResult(User $user, ?array $attributes = null, ?array $relationships = null)
+    private function getJsonResult(User $user, ?array $attributes = null, ?array $relationships = null, bool $withIncluded = true): array
     {
         $request = new Request(array_merge(
             ($attributes !== null ? ['fields' => ['user' => implode(',', $attributes)]] : []),
@@ -156,7 +167,7 @@ class ResourceTest extends FeatureTestCase
                 ], array_fill_keys($attributes ?? ['name', 'email'], true))),
                 'relationships' => [
                     'posts' => array_filter([
-                        'data' => $user->posts->map(fn(Post $post) => ['type' => 'post', 'id' => $post->id])->all(),
+                        'data' => $withIncluded ? $user->posts->map(fn(Post $post) => ['type' => 'post', 'id' => $post->id])->all() : null,
                         'links' => [
                             'self' => "https://api.example.com/user/{$user->id}/relationships/posts",
                             'related' => "https://api.example.com/user/{$user->id}/posts",
@@ -167,7 +178,7 @@ class ResourceTest extends FeatureTestCase
                     ]),
                     'comments' => array_filter([
                         // when loaded only
-                        'data' => in_array('comments', $relationships ?? [])
+                        'data' => $withIncluded && in_array('comments', $relationships ?? [])
                             ? $user->comments->map(fn(Comment $comment) => [
                                 'type' => 'comment',
                                 'id' => $comment->id

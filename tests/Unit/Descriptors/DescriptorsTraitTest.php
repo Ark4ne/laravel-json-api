@@ -9,6 +9,7 @@ use Ark4ne\JsonApi\Descriptors\Values;
 use Ark4ne\JsonApi\Descriptors\Values\ValueArray;
 use Ark4ne\JsonApi\Descriptors\Values\ValueBool;
 use Ark4ne\JsonApi\Descriptors\Values\ValueDate;
+use Ark4ne\JsonApi\Descriptors\Values\ValueEnum;
 use Ark4ne\JsonApi\Descriptors\Values\ValueFloat;
 use Ark4ne\JsonApi\Descriptors\Values\ValueInteger;
 use Ark4ne\JsonApi\Descriptors\Values\ValueMixed;
@@ -31,6 +32,7 @@ class DescriptorsTraitTest extends TestCase
             'string' => [ValueString::class, 'string'],
             'date' => [ValueDate::class, 'date'],
             'array' => [ValueArray::class, 'array'],
+            'enum' => [ValueEnum::class, 'enum'],
             'mixed' => [ValueMixed::class, 'mixed'],
             'one' => [RelationOne::class, 'one', JsonApiResource::class],
             'many' => [RelationMany::class, 'many', JsonApiCollection::class],

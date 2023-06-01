@@ -191,6 +191,24 @@ class ValueTest extends TestCase
     /**
      * @dataProvider models
      */
+    public function testUnless(&$model)
+    {
+        data_set($model, 'attr', 'abc');
+
+        $unless = (object)['value' => true];
+
+        $this->throughRetrieverTest(
+            $model,
+            fn(Value $value) => $value->unless(fn() => $unless->value)->valueFor(new Request, $model, 'attr'),
+            fn() => $unless->value = false,
+            fn(Value $value) => $value->valueFor(new Request, $model, 'attr'),
+            'abc'
+        );
+    }
+
+    /**
+     * @dataProvider models
+     */
     public function testWhenInFields($model)
     {
         Fields::through('test', function () use (&$model) {
@@ -240,10 +258,10 @@ class ValueTest extends TestCase
         $this->assertInstanceOf(MissingValue::class, $missing($valueClosureRetriever));
 
         $update();
-
-        $this->assertEquals($expected, $check($valueWithRetriever));
-        $this->assertEquals($expected, $check($valueNoRetriever));
-        $this->assertEquals($expected, $check($valueClosureRetriever));
+        $actual = $check($valueWithRetriever);
+        $this->assertEquals($expected, $actual);
+        $this->assertEquals($expected, $actual = $check($valueNoRetriever));
+        $this->assertEquals($expected, $actual = $check($valueClosureRetriever));
     }
 }
 
