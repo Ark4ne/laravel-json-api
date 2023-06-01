@@ -106,4 +106,44 @@ class ValuesTest extends TestCase
 
         $this->assertEquals(true, Values::isMissing(new JsonResource(new MissingValue())));
     }
+
+
+    /**
+     * Return a list of data to test hasAttribute method
+     */
+    public function dataAttribute()
+    {
+        return [
+            'array' => [['a' => 1], 'a', true, 1],
+            'array.empty' => [[], 'a', false, null],
+            'array.fail' => [['a' => 1], 'b', false, null],
+            'object' => [(object)['a' => 1], 'a', true, 1],
+            'object.empty' => [(object)[], 'a', false, null],
+            'object.fail' => [(object)['a' => 1], 'b', false, null],
+            'model' => [new class(['a' => 1]) extends \Illuminate\Database\Eloquent\Model {
+                protected $fillable = ['a'];
+            }, 'a', true, 1],
+            'model.empty' => [new class() extends \Illuminate\Database\Eloquent\Model {
+            }, 'a', false, null],
+            'model.fail' => [new class(['a' => 1]) extends \Illuminate\Database\Eloquent\Model {
+                protected $fillable = ['a'];
+            }, 'b', false, null],
+        ];
+    }
+
+    /**
+     * @dataProvider dataAttribute
+     */
+    public function testHasAttribute($data, $attribute, $expected)
+    {
+        $this->assertEquals($expected, Values::hasAttribute($data, $attribute));
+    }
+
+    /**
+     * @dataProvider dataAttribute
+     */
+    public function testGetAttribute($data, $attribute, $has, $expected)
+    {
+        $this->assertEquals($expected, Values::getAttribute($data, $attribute));
+    }
 }
