@@ -49,6 +49,13 @@ trait PrepareData
         return $data;
     }
 
+    /**
+     * @template TKey as array-key
+     * @template TValue
+     * @param iterable<TKey, TValue> $data
+     *
+     * @return iterable<TKey, TValue>
+     */
     protected function autoWhenIncluded(iterable $data): iterable
     {
         $autoWhenIncluded = $this->autoWhenIncluded ?? null;
