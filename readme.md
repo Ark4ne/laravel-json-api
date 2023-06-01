@@ -17,6 +17,7 @@ composer require ark4ne/laravel-json-api
 | `describer.nullable`         | `bool`                   | For describer notation, defined if a value is nullable by default.                      |
 | `describer.date`             | `string` datetime format | For describer notation, defined default date time format.                               |
 | `describer.precision`        | `int` \ `null`           | For describer notation, decimal precision for float value. `null` for disable rounding. |
+| `describer.when-has`         | `bool` \ `string[]`      | For describer notation, Apply automatically whenHas condition on attributes.            |
 | `relationship.when-included` | `bool`                   | Allow to disabled by default the loading of relationship data.                          |
 
 # Usage
@@ -398,9 +399,56 @@ UserResource::collection(User::all()); // => JsonApiCollection
 | `date`    | Cast to date, allow to use custom format |
 | `array`   | Cast to array                            |
 | `mixed`   | Don't cast, return as is                 |
+| `enum`    | Get enum value.                          |
 
 ### Relation methods
 | Method  | Description                                                       |
 |---------|-------------------------------------------------------------------|
 | `one`   | For relationship with a single value: `HasOne`, `BelongsTo`, ...  |
 | `many`  | For relationship with many value: `HasMany`, `BelongsToMany`, ... |
+
+
+### Enum
+Method `enum` allow to get enum value for backed enum or name for unit enum.
+
+According to structure:
+```php
+/// Role.php
+enum Role {
+    case ADMIN;
+    case USER;
+}
+/// State.php
+enum State:int {
+    case ACTIVE = 1;
+    case INACTIVE = 0;
+}
+/// User.php
+class User extends Model
+{
+    $casts = [
+        'role' => Role::class,
+        'state' => State::class,
+    ];
+}
+```
+
+The following attributes resource:
+```php
+// UserResource.php
+protected function toAttributes(Request $request): array
+{
+    return [
+        'status' => $this->enum(),
+        'role' => $this->enum(),
+    ];
+}
+```
+
+Will return:
+```php
+[
+    "status": 1,
+    "role": "ADMIN"
+]
+```
