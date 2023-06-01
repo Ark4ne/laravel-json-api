@@ -14,7 +14,7 @@ class SchemaTest extends FeatureTestCase
     public function testSchema()
     {
         $user = new Skeleton(UserResource::class, 'user', ['name', 'email', 'only-with-fields']);
-        $post = new Skeleton(PostResource::class, 'post', ['title', 'content']);
+        $post = new Skeleton(PostResource::class, 'post', ['state', 'title', 'content']);
         $comment = new Skeleton(CommentResource::class, 'comment', ['content']);
 
         $user->relationships['posts'] = $post;

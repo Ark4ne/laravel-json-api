@@ -6,10 +6,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Test\app\Enums\State;
 use Test\app\Factories\PostFactory;
 
 /**
  * @property int $id
+ * @property State $state
  * @property string $title
  * @property string $content
  * @property \DateTimeInterface $created_at
@@ -21,6 +23,11 @@ use Test\app\Factories\PostFactory;
 class Post extends Model
 {
     use HasFactory;
+
+    /** @var array<string, mixed> */
+    protected $casts = [
+        'state' => State::class,
+    ];
 
     protected static function newFactory(): PostFactory
     {

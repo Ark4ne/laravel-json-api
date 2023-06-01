@@ -4,15 +4,14 @@ namespace Ark4ne\JsonApi\Descriptors;
 
 use Ark4ne\JsonApi\Descriptors\Relations\RelationMany;
 use Ark4ne\JsonApi\Descriptors\Relations\RelationOne;
-use Ark4ne\JsonApi\Descriptors\Values\{
-    ValueArray,
+use Ark4ne\JsonApi\Descriptors\Values\{ValueArray,
     ValueBool,
     ValueDate,
+    ValueEnum,
     ValueFloat,
     ValueInteger,
     ValueMixed,
-    ValueString
-};
+    ValueString};
 use Closure;
 
 /**
@@ -88,5 +87,15 @@ trait Values
     protected function mixed(null|string|Closure $attribute = null): ValueMixed
     {
         return new ValueMixed($attribute);
+    }
+
+    /**
+     * @param null|string|Closure(T):mixed $attribute
+     *
+     * @return \Ark4ne\JsonApi\Descriptors\Values\ValueEnum<T>
+     */
+    protected function enum(null|string|Closure $attribute = null): ValueEnum
+    {
+        return new ValueEnum($attribute);
     }
 }

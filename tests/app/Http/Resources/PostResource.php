@@ -19,6 +19,7 @@ class PostResource extends JsonApiResource
     protected function toAttributes(Request $request): iterable
     {
         return [
+            'state' => $this->enum(),
             'title' => $this->string(),
             'content' => $this->string()->whenInFields(),
         ];

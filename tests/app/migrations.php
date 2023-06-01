@@ -18,6 +18,9 @@ return new class extends Migration {
             },
             'posts' => function (Blueprint $table) {
                 $table->id();
+                $table->boolean('state')
+                    ->default(false)
+                    ->comment('0: draft, 1: published');
                 $table->string('title');
                 $table->string('content');
                 $table->timestamps();
