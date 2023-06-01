@@ -41,7 +41,6 @@ return [
         */
         'precision' => null,
 
-        'when-has' => false,
         /*
         |--------------------------------------------------------------------------
         | When Has
@@ -68,6 +67,7 @@ return [
         |                ->whenHas('last_name')
         |                ->whenHas('first_name'),
         */
+        'when-has' => false,
     ],
 
     'relationship' => [

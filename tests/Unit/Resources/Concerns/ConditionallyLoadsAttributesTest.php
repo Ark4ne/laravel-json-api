@@ -7,6 +7,7 @@ use Ark4ne\JsonApi\Descriptors\Relations\RelationOne;
 use Ark4ne\JsonApi\Descriptors\Values\ValueMixed;
 use Ark4ne\JsonApi\Resources\Concerns\ConditionallyLoadsAttributes;
 use Ark4ne\JsonApi\Resources\Relationship;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\MergeValue;
@@ -113,5 +114,27 @@ class ConditionallyLoadsAttributesTest extends TestCase
             'missing.4' => (new RelationOne('present', fn() => 123))->when(false),
             'missing.5' => RelationMissing::fromRelationship((new Relationship(UserResource::class, fn() => null))),
         ]), $actual);
+    }
+
+    public function testWhenHas()
+    {
+        $resource = new class(['a' => 1]) extends JsonResource {
+            use ConditionallyLoadsAttributes;
+        };
+        $this->assertEquals(1, Reflect::invoke($resource, 'whenHas', 'a'));
+        $this->assertEquals('abc', Reflect::invoke($resource, 'whenHas', 'a', 'abc'));
+        $this->assertEquals(new MissingValue, Reflect::invoke($resource, 'whenHas', 'b'));
+        $this->assertEquals(new MissingValue, Reflect::invoke($resource, 'whenHas', 'b', 'missing'));
+        $this->assertEquals('missing', Reflect::invoke($resource, 'whenHas', 'b', 'abc', 'missing'));
+
+        $resource = new class((object)['a' => 1]) extends JsonResource {
+            use ConditionallyLoadsAttributes;
+        };
+
+        $this->assertEquals(1, Reflect::invoke($resource, 'whenHas', 'a'));
+        $this->assertEquals('abc', Reflect::invoke($resource, 'whenHas', 'a', 'abc'));
+        $this->assertEquals(new MissingValue, Reflect::invoke($resource, 'whenHas', 'b'));
+        $this->assertEquals(new MissingValue, Reflect::invoke($resource, 'whenHas', 'b', 'abc'));
+        $this->assertEquals('missing', Reflect::invoke($resource, 'whenHas', 'b', 'abc', 'missing'));
     }
 }

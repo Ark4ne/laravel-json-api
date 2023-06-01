@@ -13,6 +13,11 @@ abstract class FeatureTestCase extends TestCase
 {
     use RefreshDatabase;
 
+    protected function defineEnvironment($app)
+    {
+        $app['config']['jsonapi'] = include __DIR__ . '/../app/jsonapi.php';
+    }
+
     protected function defineRoutes($router)
     {
         include __DIR__ . '/../app/routes.php';
