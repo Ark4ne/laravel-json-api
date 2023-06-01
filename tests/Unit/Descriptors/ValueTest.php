@@ -6,6 +6,7 @@ use Ark4ne\JsonApi\Descriptors\Values\Value;
 use Ark4ne\JsonApi\Descriptors\Values\ValueArray;
 use Ark4ne\JsonApi\Descriptors\Values\ValueBool;
 use Ark4ne\JsonApi\Descriptors\Values\ValueDate;
+use Ark4ne\JsonApi\Descriptors\Values\ValueEnum;
 use Ark4ne\JsonApi\Descriptors\Values\ValueFloat;
 use Ark4ne\JsonApi\Descriptors\Values\ValueInteger;
 use Ark4ne\JsonApi\Descriptors\Values\ValueMixed;
@@ -67,6 +68,8 @@ class ValueTest extends TestCase
             'date.2' => [ValueDate::class, 1640995200, '2022-01-01T00:00:00+00:00', '1970-01-01T00:00:00+00:00'],
             'date.3' => [ValueDate::class, new DateTime("@1640995200"), '2022-01-01T00:00:00+00:00', '1970-01-01T00:00:00+00:00'],
             'date.4' => [ValueDate::class, new Carbon("@1640995200"), '2022-01-01T00:00:00+00:00', '1970-01-01T00:00:00+00:00'],
+            'enum.0' => [ValueEnum::class, TestUnitEnum::A, 'A', null],
+            'enum.1' => [ValueEnum::class, TestBackendEnum::A, 'aaa', null],
         ];
     }
 
@@ -242,4 +245,16 @@ class ValueTest extends TestCase
         $this->assertEquals($expected, $check($valueNoRetriever));
         $this->assertEquals($expected, $check($valueClosureRetriever));
     }
+}
+
+enum TestBackendEnum: string
+{
+    case A = 'aaa';
+    case B = 'bbb';
+    case C = 'ccc';
+}
+enum TestUnitEnum {
+    case A;
+    case B;
+    case C;
 }
