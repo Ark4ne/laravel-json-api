@@ -15,6 +15,10 @@ trait PrepareData
 {
     use Resolver;
 
+    protected ?bool $autoWhenHas = null;
+
+    protected ?bool $autoWhenIncluded = null;
+
     /**
      * @template TKey as array-key
      * @template TValue
