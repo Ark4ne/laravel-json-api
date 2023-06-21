@@ -1,6 +1,10 @@
 Release note
 ============
 
+# v1.4.1
+### Fixed
+- Fix `autoWhenHas` & `autoWhenIncluded` throw exception.
+
 # v1.4.0
 ### Added
 - Add support for enum in values
