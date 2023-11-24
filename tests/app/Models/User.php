@@ -15,6 +15,7 @@ use Test\app\Factories\UserFactory;
  * @property \DateTimeInterface $created_at
  * @property \DateTimeInterface $updated_at
  *
+ * @property-read Post|null $post
  * @property-read Post[]|\Illuminate\Support\Collection<Post> $posts
  * @property-read Comment[]|\Illuminate\Support\Collection<Comment> $comments
  */
