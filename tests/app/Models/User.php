@@ -4,6 +4,7 @@ namespace Test\app\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Test\app\Factories\UserFactory;
 
@@ -24,6 +25,11 @@ class User extends Model
     protected static function newFactory(): UserFactory
     {
         return new UserFactory();
+    }
+
+    public function post(): BelongsTo
+    {
+        return $this->belongsTo(Post::class);
     }
 
     public function posts(): HasMany

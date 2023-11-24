@@ -144,6 +144,23 @@ class RelationshipTest extends TestCase
         ], $relation->toArray(new Request(), false));
     }
 
+    public function testToArrayNullValue()
+    {
+        $resource = $this->getJsonResourceNullValue();
+        $relation = (new Relationship($resource::class, fn() => $resource->resource))->withLinks(fn() => [
+            'self' => 'link'
+        ])->withMeta(fn() => [
+            'hash' => 'azerty'
+        ]);
+
+        $this->assertEquals([
+            'data' => [
+                'links' => ['self' => 'link'],
+                'meta' => ['hash' => 'azerty'],
+            ],
+        ], $relation->toArray(new Request(), false));
+    }
+
     public function testCustomValue()
     {
         $relation = (new Relationship(Collection::class, fn() => ['foo' => 'bar']))
@@ -204,6 +221,22 @@ class RelationshipTest extends TestCase
     private function getJsonResourceMissingValue()
     {
         return new class(new MissingValue()) extends JsonResource implements Resourceable {
+            public function toArray($request, bool $minimal = false): array
+            {
+                return [
+                    'type' => 'my-model',
+                    'id' => $this->id,
+                    'attributes' => [
+                        'foo' => 'bar'
+                    ]
+                ];
+            }
+        };
+    }
+
+    private function getJsonResourceNullValue()
+    {
+        return new class(null) extends JsonResource implements Resourceable {
             public function toArray($request, bool $minimal = false): array
             {
                 return [

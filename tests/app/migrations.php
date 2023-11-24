@@ -36,10 +36,25 @@ return new class extends Migration {
         ];
     }
 
+    public function changes()
+    {
+        return [
+            'users' => function (Blueprint $table) {
+                $table->foreignId('post_id')
+                    ->nullable()
+                    ->after('password')
+                    ->constrained('posts');
+            },
+        ];
+    }
+
     public function up()
     {
         foreach ($this->tables() as $table => $blueprint) {
             Schema::create($table, $blueprint);
+        }
+        foreach ($this->changes() as $table => $blueprint) {
+            Schema::table($table, $blueprint);
         }
     }
 
