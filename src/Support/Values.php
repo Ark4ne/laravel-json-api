@@ -29,6 +29,7 @@ class Values
             $index++;
 
             if (is_iterable($value)) {
+                // @phpstan-ignore-next-line
                 $data[$key] = self::mergeValues($value);
 
                 continue;
