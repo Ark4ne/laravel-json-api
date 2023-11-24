@@ -17,8 +17,10 @@ class SchemaTest extends FeatureTestCase
         $post = new Skeleton(PostResource::class, 'post', ['state', 'title', 'content']);
         $comment = new Skeleton(CommentResource::class, 'comment', ['content']);
 
+        $user->relationships['main-post'] = $post;
         $user->relationships['posts'] = $post;
         $user->relationships['comments'] = $comment;
+        $user->loads['main-post'] = 'post';
         $user->loads['posts'] = 'posts';
         $user->loads['comments'] = [
             'comments' => fn(Builder $q) => $q->where('content', 'like', '%e%')

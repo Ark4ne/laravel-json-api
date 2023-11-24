@@ -39,6 +39,8 @@ class UserResource extends JsonApiResource
     protected function toRelationships(Request $request): iterable
     {
         return [
+            'main-post' => $this->one(PostResource::class, fn() => $this->resource->post)
+                ->withLoad('post'),
             'posts' => PostResource::relationship(fn() => $this->resource->posts, fn() => [
                 'self' => "https://api.example.com/user/{$this->resource->id}/relationships/posts",
                 'related' => "https://api.example.com/user/{$this->resource->id}/posts",

@@ -4,6 +4,7 @@ namespace Test\app\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Test\app\Factories\UserFactory;
 
@@ -14,6 +15,7 @@ use Test\app\Factories\UserFactory;
  * @property \DateTimeInterface $created_at
  * @property \DateTimeInterface $updated_at
  *
+ * @property-read Post|null $post
  * @property-read Post[]|\Illuminate\Support\Collection<Post> $posts
  * @property-read Comment[]|\Illuminate\Support\Collection<Comment> $comments
  */
@@ -24,6 +26,11 @@ class User extends Model
     protected static function newFactory(): UserFactory
     {
         return new UserFactory();
+    }
+
+    public function post(): BelongsTo
+    {
+        return $this->belongsTo(Post::class);
     }
 
     public function posts(): HasMany

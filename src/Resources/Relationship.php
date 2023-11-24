@@ -145,7 +145,8 @@ class Relationship implements Resourceable
     {
         $value = $this->whenIncluded && !$included
             ? new MissingValue
-            : value($this->value);
+            : value($this->value)
+            ?? new MissingValue;
 
         if ($this->asCollection && !is_subclass_of($this->resource, ResourceCollection::class)) {
             $resource = $this->resource::collection($value);

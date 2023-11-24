@@ -29,6 +29,7 @@ class Values
             $index++;
 
             if (is_iterable($value)) {
+                /** @var array<array-key, mixed> $value */
                 $data[$key] = self::mergeValues($value);
 
                 continue;

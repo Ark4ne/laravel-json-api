@@ -166,6 +166,7 @@ class ResourceTest extends FeatureTestCase
                     'email' => $user->email,
                 ], array_fill_keys($attributes ?? ['name', 'email'], true))),
                 'relationships' => [
+                    'main-post' => [],
                     'posts' => array_filter([
                         'data' => $withIncluded ? $user->posts->map(fn(Post $post) => ['type' => 'post', 'id' => $post->id])->all() : null,
                         'links' => [
