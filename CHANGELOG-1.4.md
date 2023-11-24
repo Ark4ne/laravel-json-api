@@ -1,6 +1,10 @@
 Release note
 ============
 
+# v1.4.2
+### Fixed
+- Fix : exception when include relationship one [#19](https://github.com/Ark4ne/laravel-json-api/issues/19)
+
 # v1.4.1
 ### Fixed
 - Fix `autoWhenHas` & `autoWhenIncluded` throw exception.
