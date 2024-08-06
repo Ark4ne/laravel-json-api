@@ -144,9 +144,9 @@ class Relationship implements Resourceable
     public function toArray(mixed $request, bool $included = true): array
     {
         $value = $this->whenIncluded && !$included
-            ? new MissingValue
-            : value($this->value)
-            ?? new MissingValue;
+            ? null
+            : value($this->value);
+        $value ??= new MissingValue;
 
         if ($this->asCollection && !is_subclass_of($this->resource, ResourceCollection::class)) {
             $resource = $this->resource::collection($value);

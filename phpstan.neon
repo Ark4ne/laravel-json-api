@@ -6,4 +6,7 @@ parameters:
         - tests/app/migrations.php
         - tests/app/routes.php
     level: 6
-    checkGenericClassInNonGenericObjectType: false
+
+    ignoreErrors:
+        -
+            identifier: missingType.generics
