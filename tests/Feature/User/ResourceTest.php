@@ -126,11 +126,11 @@ class ResourceTest extends FeatureTestCase
         $response->assertUnprocessable();
         $response->assertJsonValidationErrors(['include' => [
             'The selected include is invalid.',
-            '"posts" doesn\'t have relationship "one"',
-            '"user" doesn\'t have relationship "two"',
+            '"posts" doesn\'t have relationship "one".',
+            '"user" doesn\'t have relationship "two".',
         ], 'fields' => [
             'The selected fields is invalid.',
-            '"user" doesn\'t have relationship "one_field"',
+            '"user" doesn\'t have relationship "one_field".',
             '"unknown" doesn\'t exists.',
         ]]);
     }

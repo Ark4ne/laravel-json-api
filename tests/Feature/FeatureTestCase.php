@@ -23,10 +23,13 @@ abstract class FeatureTestCase extends TestCase
         include __DIR__ . '/../app/routes.php';
     }
 
-    protected function afterRefreshingDatabase()
+    protected function beforeRefreshingDatabase()
     {
         $this->loadMigrationsFrom(__DIR__ . '/../app/migrations.php');
+    }
 
+    protected function afterRefreshingDatabase()
+    {
         self::loadSeed();
     }
 
