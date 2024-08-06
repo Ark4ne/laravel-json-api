@@ -130,7 +130,7 @@ class ResourceTest extends FeatureTestCase
             '"user" doesn\'t have relationship "two".',
         ], 'fields' => [
             'The selected fields is invalid.',
-            '"user" doesn\'t have relationship "one_field".',
+            '"user" doesn\'t have fields "one_field".',
             '"unknown" doesn\'t exists.',
         ]]);
     }
