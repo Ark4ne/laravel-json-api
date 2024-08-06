@@ -111,7 +111,7 @@ class ValuesTest extends TestCase
     /**
      * Return a list of data to test hasAttribute method
      */
-    public function dataAttribute()
+    public static function dataAttribute()
     {
         return [
             'array' => [['a' => 1], 'a', true, 1],
