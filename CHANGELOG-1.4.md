@@ -1,5 +1,10 @@
 Release note
 ============
+# v1.4.3
+### Added
+- Add support for Laravel 11
+### Breaking changes
+- Drop support for Laravel 8
 
 # v1.4.2
 ### Fixed
