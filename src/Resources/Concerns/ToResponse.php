@@ -14,6 +14,6 @@ trait ToResponse
     {
         return parent
             ::toResponse($request)
-            ->header('Content-type', 'application/vnd.api+json');
+            ->header('Content-Type', 'application/vnd.api+json');
     }
 }
