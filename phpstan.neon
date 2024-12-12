@@ -7,6 +7,8 @@ parameters:
         - tests/app/routes.php
     level: 6
 
+    reportUnmatchedIgnoredErrors: false
+
     ignoreErrors:
         -
             identifier: missingType.generics
