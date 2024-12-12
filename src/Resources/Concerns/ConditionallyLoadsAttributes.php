@@ -2,13 +2,15 @@
 
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
-use Ark4ne\JsonApi\Descriptors\Relations\Relation;
-use Ark4ne\JsonApi\Descriptors\Relations\RelationMissing;
+use Ark4ne\JsonApi\Descriptors\Describer;
+use Ark4ne\JsonApi\Descriptors\Relations\RelationRaw;
+use Ark4ne\JsonApi\Descriptors\Values\ValueRaw;
 use Ark4ne\JsonApi\Resources\Relationship;
 use Ark4ne\JsonApi\Support\Fields;
 use Ark4ne\JsonApi\Support\Includes;
 use Ark4ne\JsonApi\Support\Supported;
 use Ark4ne\JsonApi\Support\Values;
+use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MergeValue;
 use Illuminate\Http\Resources\MissingValue;
@@ -48,27 +50,23 @@ trait ConditionallyLoadsAttributes
     }
 
     /**
-     * @param bool $condition
+     * @param bool|Closure():boolean $condition
      * @param iterable<array-key, mixed> $data
      *
      * @return \Illuminate\Http\Resources\MergeValue
      */
-    protected function applyWhen(bool $condition, iterable $data): MergeValue
+    protected function applyWhen(bool|Closure $condition, iterable $data): MergeValue
     {
-        if ($condition) {
-            return new MergeValue($data);
-        }
-
-        return new MergeValue(collect($data)->map(function ($raw) {
-            if ($raw instanceof Relationship) {
-                return RelationMissing::fromRelationship($raw);
+        return new MergeValue(collect($data)->map(function ($raw, $key) use ($condition) {
+            if ($raw instanceof Describer) {
+                $value = $raw;
+            } elseif ($raw instanceof Relationship) {
+                $value = RelationRaw::fromRelationship($raw);
+            } else {
+                $value = new ValueRaw($key, $raw);
             }
 
-            if ($raw instanceof Relation) {
-                return $raw->when(false);
-            }
-
-            return new MissingValue();
+            return $value->when(fn () => value($condition));
         }));
     }
 
@@ -111,7 +109,7 @@ trait ConditionallyLoadsAttributes
      */
     public function unless($condition, $value, $default = null)
     {
-        if (Supported::$whenHas) {
+        if (Supported::$unless) {
             // @phpstan-ignore-next-line
             return parent::unless($condition, $value, $default);
         }
