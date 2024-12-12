@@ -1,5 +1,10 @@
 Release note
 ============
+# v1.4.4
+### Change
+- `applyWhen` condition can be a closure
+- CI: test all supported laravel version
+
 # v1.4.3
 ### Added
 - Add support for Laravel 11
