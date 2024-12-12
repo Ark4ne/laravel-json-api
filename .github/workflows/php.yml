@@ -38,10 +38,10 @@ jobs:
         path: vendor
         key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
         restore-keys: |
-          ${{ runner.os }}-php-${{ matrix.php_version }}
+          ${{ runner.os }}-php-${{ matrix.php_version }}-laravel-${{ matrix.laravel_version }}
 
     - name: Install dependencies
-      run: composer install --prefer-dist --no-progress
+      run: composer require laravel/framework ${{ matrix.laravel_version }} --prefer-dist --no-progress
 
     - name: PHPStan
       run: vendor/bin/phpstan analyze
