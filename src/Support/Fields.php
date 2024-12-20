@@ -37,7 +37,7 @@ class Fields
      *
      * @return string[]|null
      */
-    public static function get(Request $request, string $type = null): ?array
+    public static function get(Request $request, null|string $type = null): ?array
     {
         $type ??= self::$current;
 
@@ -57,7 +57,7 @@ class Fields
      *
      * @return bool
      */
-    public static function has(Request $request, string $field, string $type =null): bool  {
+    public static function has(Request $request, string $field, null|string $type =null): bool  {
         $type ??= self::$current;
 
         if ($type === null) {

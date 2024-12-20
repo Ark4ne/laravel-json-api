@@ -21,7 +21,7 @@ trait Schema
      */
     private static array $schemas = [];
 
-    public static function schema(Request $request = null): Skeleton
+    public static function schema(null|Request $request = null): Skeleton
     {
         if (isset(self::$schemas[static::class])) {
             return self::$schemas[static::class];

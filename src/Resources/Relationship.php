@@ -100,7 +100,7 @@ class Relationship implements Resourceable
      * @param bool|null $whenIncluded
      * @return $this
      */
-    public function whenIncluded(bool $whenIncluded = null): static
+    public function whenIncluded(null|bool $whenIncluded = null): static
     {
         if ($whenIncluded === null) {
             $this->whenIncluded ??= true;
