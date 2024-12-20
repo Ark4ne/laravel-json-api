@@ -43,11 +43,11 @@ jobs:
     - name: Install dependencies
       run: composer require laravel/framework ${{ matrix.laravel_version }} --prefer-dist --no-progress
 
-    - name: PHPStan
-      run: vendor/bin/phpstan analyze
-
     - name: PHPUnit
       run: vendor/bin/phpunit --coverage-clover coverage.xml --configuration phpunit.php${{ matrix.php_version }}.xml.dist
+
+    - name: PHPStan
+      run: vendor/bin/phpstan analyze
 
     - name: Coverage
       run: bash <(curl -s https://codecov.io/bash)
