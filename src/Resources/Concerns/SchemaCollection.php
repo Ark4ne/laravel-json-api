@@ -8,7 +8,7 @@ use ReflectionClass;
 
 trait SchemaCollection
 {
-    public static function schema(Request $request = null): Skeleton
+    public static function schema(null|Request $request = null): Skeleton
     {
         return self::new()->collects::schema($request);
     }

@@ -60,7 +60,7 @@ trait Relationships
             if ($load && Includes::include($request, $name)) {
                 $include = Includes::through($name, fn() => $this->requestedRelationshipsLoadFromSchema($request, $schema->relationships[$name]));
 
-                $apply = static function ($load, string $pre = null) use (&$loads, &$apply) {
+                $apply = static function ($load, null|string $pre = null) use (&$loads, &$apply) {
                     foreach ((array)$load as $key => $value) {
                         if (is_string($value)) {
                             $loads["$pre.$value"] = [];
