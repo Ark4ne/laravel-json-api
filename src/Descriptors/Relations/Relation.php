@@ -65,7 +65,7 @@ abstract class Relation extends Describer
      * @param bool|null $whenIncluded
      * @return $this
      */
-    public function whenIncluded(bool $whenIncluded = null): static
+    public function whenIncluded(null|bool $whenIncluded = null): static
     {
         if ($whenIncluded === null) {
             $this->whenIncluded ??= true;
@@ -83,7 +83,7 @@ abstract class Relation extends Describer
      *
      * @return static
      */
-    public function whenLoaded(string $relation = null): self
+    public function whenLoaded(null|string $relation = null): self
     {
         return $this->when(fn(
             Request $request,
@@ -100,7 +100,7 @@ abstract class Relation extends Describer
      *
      * @return static
      */
-    public function whenPivotLoaded(string $table, string $accessor = null): self
+    public function whenPivotLoaded(string $table, null|string $accessor = null): self
     {
         return $this->when(fn(
             Request $request,

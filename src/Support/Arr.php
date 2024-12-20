@@ -107,7 +107,7 @@ class Arr
      * @param string|null $saveKey
      * @return array<mixed>
      */
-    public static function undot(array $array, string $saveKey = null): array
+    public static function undot(array $array, null|string $saveKey = null): array
     {
         $results = [];
 
@@ -129,7 +129,7 @@ class Arr
      * @param string|null $saveKey
      * @return mixed
      */
-    public static function apply(array &$array, string $path, mixed $value, string $saveKey = null): mixed
+    public static function apply(array &$array, string $path, mixed $value, null|string $saveKey = null): mixed
     {
         $keys = explode('.', $path);
 
