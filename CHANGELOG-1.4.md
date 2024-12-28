@@ -1,9 +1,19 @@
 Release note
 ============
-# v1.4.4
+# v1.4.6
+### Change
+- Support PHP 8.4
+### Fixed
+- Fix `applyWhen` behavior
+
+# v1.4.5
 ### Change
 - `applyWhen` condition can be a closure
 - CI: test all supported laravel version
+
+# v1.4.4
+### Fixes
+- typo on ToResponse : change Content-type to Content-Type
 
 # v1.4.3
 ### Added
