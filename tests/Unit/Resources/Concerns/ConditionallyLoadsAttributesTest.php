@@ -7,6 +7,7 @@ use Ark4ne\JsonApi\Descriptors\Relations\RelationRaw;
 use Ark4ne\JsonApi\Descriptors\Values\ValueMixed;
 use Ark4ne\JsonApi\Descriptors\Values\ValueRaw;
 use Ark4ne\JsonApi\Resources\Concerns\ConditionallyLoadsAttributes;
+use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Ark4ne\JsonApi\Resources\Relationship;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -75,16 +76,16 @@ class ConditionallyLoadsAttributesTest extends TestCase
             'missing.2' => 123,
         ]);
         $this->assertEquals(new MergeValue([
-            'missing.1' => (new ValueRaw('missing.1', 'abc'))->when(fn () => false),
-            'missing.2' => (new ValueRaw('missing.2', 123))->when(fn () => false),
+            'missing.1' => (new ValueMixed(fn() => 'abc'))->when(fn() => false),
+            'missing.2' => (new ValueMixed(fn() => 123))->when(fn() => false),
         ]), $actual);
         $actual = Reflect::invoke($stub, 'applyWhen', true, [
             'present.1' => 'abc',
             'present.2' => 123,
         ]);
         $this->assertEquals(new MergeValue([
-            'present.1' => (new ValueRaw('present.1', 'abc'))->when(fn () => true),
-            'present.2' => (new ValueRaw('present.2', 123))->when(fn () => true),
+            'present.1' => (new ValueMixed(fn() => 'abc'))->when(fn() => true),
+            'present.2' => (new ValueMixed(fn() => 123))->when(fn() => true),
         ]), $actual);
         $actual = Reflect::invoke($stub, 'applyWhen', true, [
             'present.1' => (new ValueMixed(fn() => 'abc')),
@@ -94,11 +95,11 @@ class ConditionallyLoadsAttributesTest extends TestCase
             'present.5' => (new Relationship(UserResource::class, fn() => null)),
         ]);
         $this->assertEquals(new MergeValue([
-            'present.1' => (new ValueMixed(fn() => 'abc'))->when(fn () => true),
-            'present.2' => (new ValueMixed(fn() => 123))->when(fn () => true),
-            'present.3' => (new RelationOne('present', fn() => 'abc'))->when(fn () => true),
-            'present.4' => (new RelationOne('present', fn() => 123))->when(fn () => true),
-            'present.5' => RelationRaw::fromRelationship(new Relationship(UserResource::class, fn() => null))->when(fn () => true),
+            'present.1' => (new ValueMixed(fn() => 'abc'))->when(fn() => true),
+            'present.2' => (new ValueMixed(fn() => 123))->when(fn() => true),
+            'present.3' => (new RelationOne('present', fn() => 'abc'))->when(fn() => true),
+            'present.4' => (new RelationOne('present', fn() => 123))->when(fn() => true),
+            'present.5' => RelationRaw::fromRelationship(new Relationship(UserResource::class, fn() => null))->when(fn() => true),
         ]), $actual);
         $actual = Reflect::invoke($stub, 'applyWhen', false, [
             'missing.1' => (new ValueMixed(fn() => 'abc')),
@@ -108,11 +109,11 @@ class ConditionallyLoadsAttributesTest extends TestCase
             'missing.5' => (new Relationship(UserResource::class, fn() => null)),
         ]);
         $this->assertEquals(new MergeValue([
-            'missing.1' => (new ValueMixed(fn() => 'abc'))->when(fn () => false),
-            'missing.2' => (new ValueMixed(fn() => 123))->when(fn () => false),
-            'missing.3' => (new RelationOne('present', fn() => 'abc'))->when(fn () => false),
-            'missing.4' => (new RelationOne('present', fn() => 123))->when(fn () => false),
-            'missing.5' => RelationRaw::fromRelationship(new Relationship(UserResource::class, fn() => null))->when(fn () => false),
+            'missing.1' => (new ValueMixed(fn() => 'abc'))->when(fn() => false),
+            'missing.2' => (new ValueMixed(fn() => 123))->when(fn() => false),
+            'missing.3' => (new RelationOne('present', fn() => 'abc'))->when(fn() => false),
+            'missing.4' => (new RelationOne('present', fn() => 123))->when(fn() => false),
+            'missing.5' => RelationRaw::fromRelationship(new Relationship(UserResource::class, fn() => null))->when(fn() => false),
         ]), $actual);
     }
 

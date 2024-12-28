@@ -25,6 +25,11 @@ class UserResource extends JsonApiResource
             'name' => $this->resource->name,
             'email' => $this->resource->email,
             'only-with-fields' => $this->string(fn() => 'huge-data-set')->whenInFields(),
+            $this->applyWhen(fn () => true, [
+                'with-apply-conditional-raw' => 'huge-data-set',
+                'with-apply-conditional-closure' => fn () => 'huge-data-set',
+                'with-apply-conditional-value' => $this->string(fn () => 'huge-data-set'),
+            ]),
         ];
     }
 
