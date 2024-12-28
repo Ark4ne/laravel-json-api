@@ -164,7 +164,16 @@ class ResourceTest extends FeatureTestCase
                 'attributes' => array_filter(array_intersect_key([
                     'name' => $user->name,
                     'email' => $user->email,
-                ], array_fill_keys($attributes ?? ['name', 'email'], true))),
+                    "with-apply-conditional-closure" => "huge-data-set",
+                    "with-apply-conditional-raw" => "huge-data-set",
+                    "with-apply-conditional-value" => "huge-data-set"
+                ], array_fill_keys($attributes ?? [
+                    'name',
+                    'email',
+                    "with-apply-conditional-closure",
+                    "with-apply-conditional-raw",
+                    "with-apply-conditional-value",
+                ], true))),
                 'relationships' => [
                     'main-post' => [],
                     'posts' => array_filter([

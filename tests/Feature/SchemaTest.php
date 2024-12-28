@@ -13,7 +13,14 @@ class SchemaTest extends FeatureTestCase
 {
     public function testSchema()
     {
-        $user = new Skeleton(UserResource::class, 'user', ['name', 'email', 'only-with-fields']);
+        $user = new Skeleton(UserResource::class, 'user', [
+            'name',
+            'email',
+            'only-with-fields',
+            'with-apply-conditional-raw',
+            'with-apply-conditional-closure',
+            'with-apply-conditional-value',
+        ]);
         $post = new Skeleton(PostResource::class, 'post', ['state', 'title', 'content']);
         $comment = new Skeleton(CommentResource::class, 'comment', ['content']);
 

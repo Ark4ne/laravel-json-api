@@ -4,7 +4,7 @@ namespace Ark4ne\JsonApi\Resources\Concerns;
 
 use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Descriptors\Relations\RelationRaw;
-use Ark4ne\JsonApi\Descriptors\Values\ValueRaw;
+use Ark4ne\JsonApi\Descriptors\Values\ValueMixed;
 use Ark4ne\JsonApi\Resources\Relationship;
 use Ark4ne\JsonApi\Support\Fields;
 use Ark4ne\JsonApi\Support\Includes;
@@ -57,13 +57,13 @@ trait ConditionallyLoadsAttributes
      */
     protected function applyWhen(bool|Closure $condition, iterable $data): MergeValue
     {
-        return new MergeValue(collect($data)->map(function ($raw, $key) use ($condition) {
+        return new MergeValue(collect($data)->map(function ($raw) use ($condition) {
             if ($raw instanceof Describer) {
                 $value = $raw;
             } elseif ($raw instanceof Relationship) {
                 $value = RelationRaw::fromRelationship($raw);
             } else {
-                $value = new ValueRaw($key, $raw);
+                $value = new ValueMixed(is_callable($raw) ? $raw : static fn () => $raw);
             }
 
             return $value->when(fn () => value($condition));
