@@ -28,7 +28,6 @@ trait PrepareData
      */
     protected function mergeValues(iterable $data): iterable
     {
-
         return Values::mergeValues($data);
     }
 

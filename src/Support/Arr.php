@@ -167,6 +167,28 @@ class Arr
      * @template TKey as array-key
      * @template TValue
      *
+     * @param array<TKey, TValue> $array
+     * @param array<array-key, mixed> $struct
+     *
+     * @return array<TKey, TValue>
+     */
+    public static function intersectKeyStruct(array $array, array $struct): array
+    {
+        $res = array_intersect_key($array, $struct);
+
+        foreach ($res as $key => $value) {
+            if (is_array($value) && is_array($struct[$key])) {
+                $res[$key] = self::intersectKeyStruct($value, $struct[$key]);
+            }
+        }
+
+        return $res;
+    }
+
+    /**
+     * @template TKey as array-key
+     * @template TValue
+     *
      * @param array<TKey, TValue> $value
      *
      * @return array<TKey, TValue>

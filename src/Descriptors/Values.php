@@ -2,16 +2,17 @@
 
 namespace Ark4ne\JsonApi\Descriptors;
 
-use Ark4ne\JsonApi\Descriptors\Relations\RelationMany;
-use Ark4ne\JsonApi\Descriptors\Relations\RelationOne;
-use Ark4ne\JsonApi\Descriptors\Values\{ValueArray,
+use Ark4ne\JsonApi\Descriptors\Values\{
+    ValueArray,
     ValueBool,
     ValueDate,
     ValueEnum,
     ValueFloat,
     ValueInteger,
     ValueMixed,
-    ValueString};
+    ValueString,
+    ValueStruct
+};
 use Closure;
 
 /**
@@ -97,5 +98,15 @@ trait Values
     protected function enum(null|string|Closure $attribute = null): ValueEnum
     {
         return new ValueEnum($attribute);
+    }
+
+    /**
+     * @param Closure(T):iterable<string, \Closure|mixed>|iterable<array-key, \Ark4ne\JsonApi\Descriptors\Values\Value> $attribute
+     *
+     * @return \Ark4ne\JsonApi\Descriptors\Values\ValueStruct<T>
+     */
+    protected function struct(Closure $attribute = null): ValueStruct
+    {
+        return new ValueStruct($attribute);
     }
 }

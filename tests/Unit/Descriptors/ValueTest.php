@@ -93,7 +93,7 @@ class ValueTest extends TestCase
     {
         /** @var \Ark4ne\JsonApi\Descriptors\Values\Value $v */
         $v = new $class(null);
-        $this->assertEquals($excepted, Reflect::invoke($v, 'value', $value));
+        $this->assertEquals($excepted, Reflect::invoke($v, 'value', $value, new Request));
     }
 
     /**
@@ -228,24 +228,26 @@ class ValueTest extends TestCase
 
     public function testValueFloatPrecision()
     {
+        $request = new Request;
         $v = new ValueFloat(null);
-        $this->assertEquals(123.12, Reflect::invoke($v, 'value', '123.12'));
+        $this->assertEquals(123.12, Reflect::invoke($v, 'value', '123.12', $request));
         $v->precision(2);
-        $this->assertEquals(123.12, Reflect::invoke($v, 'value', '123.12'));
+        $this->assertEquals(123.12, Reflect::invoke($v, 'value', '123.12', $request));
         $v->precision(1);
-        $this->assertEquals(123.1, Reflect::invoke($v, 'value', '123.12'));
+        $this->assertEquals(123.1, Reflect::invoke($v, 'value', '123.12', $request));
         $v->precision(0);
-        $this->assertEquals(123, Reflect::invoke($v, 'value', '123.12'));
+        $this->assertEquals(123, Reflect::invoke($v, 'value', '123.12', $request));
     }
 
     public function testValueDateFormat()
     {
+        $request = new Request;
         $v = new ValueDate(null);
-        $this->assertEquals('2022-01-01T00:00:00+00:00', Reflect::invoke($v, 'value', '2022-01-01 00:00:00'));
+        $this->assertEquals('2022-01-01T00:00:00+00:00', Reflect::invoke($v, 'value', '2022-01-01 00:00:00', $request));
         $v->format('Y-m-d H:i:s');
-        $this->assertEquals('2022-01-01 00:00:00', Reflect::invoke($v, 'value', '2022-01-01 00:00:00'));
+        $this->assertEquals('2022-01-01 00:00:00', Reflect::invoke($v, 'value', '2022-01-01 00:00:00', $request));
         $v->format('U');
-        $this->assertEquals('1640995200', Reflect::invoke($v, 'value', '2022-01-01 00:00:00'));
+        $this->assertEquals('1640995200', Reflect::invoke($v, 'value', '2022-01-01 00:00:00', $request));
     }
 
     private function throughRetrieverTest(&$model, \Closure $missing, \Closure $update, \Closure $check, $expected)

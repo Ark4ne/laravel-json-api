@@ -4,6 +4,7 @@ namespace Ark4ne\JsonApi\Descriptors\Values;
 
 use Ark4ne\JsonApi\Support\Config;
 use Closure;
+use Illuminate\Http\Request;
 
 /**
  * @template T
@@ -26,7 +27,7 @@ class ValueFloat extends Value
         return $this;
     }
 
-    public function value(mixed $of): float
+    public function value(mixed $of, Request $request): float
     {
         if (isset($this->precision)) {
             $precision = 10 ** $this->precision;
