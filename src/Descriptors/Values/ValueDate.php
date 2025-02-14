@@ -6,6 +6,7 @@ use Ark4ne\JsonApi\Support\Config;
 use Closure;
 use DateTime;
 use DateTimeInterface;
+use Illuminate\Http\Request;
 
 /**
  * @template T
@@ -31,7 +32,7 @@ class ValueDate extends Value
     /**
      * @throws \Exception
      */
-    public function value(mixed $of): string
+    public function value(mixed $of, Request $request): string
     {
         if ($of === null) {
             return (new DateTime("@0"))->format($this->format);

@@ -2,6 +2,7 @@
 
 namespace Test\Feature\User;
 
+use Ark4ne\JsonApi\Support\Arr;
 use Ark4ne\JsonApi\Support\Config;
 use DateTimeInterface;
 use Illuminate\Http\Request;
@@ -30,6 +31,22 @@ class ResourceTest extends FeatureTestCase
         $response = $this->get("user/{$user->id}?fields[user]=name");
 
         $response->assertExactJson($this->getJsonResult($user, ['name']));
+    }
+
+
+    public function testShowWithStructAttributes()
+    {
+        $user = $this->dataSeed();
+
+        $attrs = [
+            'name',
+            'struct-set.name',
+            'struct-set.sub-struct.int'
+        ];
+
+        $response = $this->get("user/{$user->id}?fields[user]=" . implode(',', $attrs));
+
+        $response->assertExactJson($this->getJsonResult($user, $attrs));
     }
 
     public function testShowWithRelationshipsPosts()
@@ -161,18 +178,30 @@ class ResourceTest extends FeatureTestCase
             'data' => [
                 'id' => $user->id,
                 'type' => 'user',
-                'attributes' => array_filter(array_intersect_key([
+                'attributes' => Arr::intersectKeyStruct([
                     'name' => $user->name,
                     'email' => $user->email,
                     "with-apply-conditional-closure" => "huge-data-set",
                     "with-apply-conditional-raw" => "huge-data-set",
-                    "with-apply-conditional-value" => "huge-data-set"
-                ], array_fill_keys($attributes ?? [
+                    "with-apply-conditional-value" => "huge-data-set",
+                    "struct-set" => [
+                        "name" => $user->name,
+                        "closure" => "closure",
+                        "email" => $user->email,
+                        "casted" => "string",
+                        "with-apply-conditional-raw" => "huge-data-set",
+                        "sub-struct" => [
+                            "int" => 200,
+                            "float" => 1.1,
+                        ]
+                    ]
+                ], Arr::undot(array_fill_keys($attributes ?? [
                     'name',
                     'email',
                     "with-apply-conditional-closure",
                     "with-apply-conditional-raw",
                     "with-apply-conditional-value",
+                    "struct-set",
                 ], true))),
                 'relationships' => [
                     'main-post' => [],

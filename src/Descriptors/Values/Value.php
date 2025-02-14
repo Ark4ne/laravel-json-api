@@ -108,7 +108,7 @@ abstract class Value extends Describer
 
         return $value === null && $this->nullable
             ? null
-            : $this->value($value);
+            : $this->value($value, $request);
     }
 
     protected function check(Request $request, mixed $model, string $attribute): bool
@@ -120,5 +120,5 @@ abstract class Value extends Describer
         return parent::check($request, $model, $attribute);
     }
 
-    abstract protected function value(mixed $of): mixed;
+    abstract protected function value(mixed $of, Request $request): mixed;
 }

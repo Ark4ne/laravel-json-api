@@ -151,12 +151,12 @@ abstract class Describer
      *
      * @return int|string
      */
-    public static function retrieveName(mixed $value, int|string $key): int|string
+    public static function retrieveName(mixed $value, int|string $key, null|string $prefix = null): int|string
     {
         if (is_int($key) && $value instanceof self && is_string($retriever = $value->retriever())) {
-            return $retriever;
+            return $prefix ? $prefix . '.' . $retriever : $retriever;
         }
 
-        return $key;
+        return $prefix ? $prefix . '.' . $key : $key;
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
+use Ark4ne\JsonApi\Support\Arr;
 use Ark4ne\JsonApi\Support\Fields;
 use Illuminate\Http\Request;
 
@@ -58,7 +59,7 @@ trait Attributes
 
             $attributes = null === $fields
                 ? $attributes
-                : array_intersect_key($attributes, array_fill_keys($fields, true));
+                : Arr::intersectKeyStruct($attributes, Arr::undot(array_fill_keys($fields, true)));
 
             return array_map('\value', $attributes);
         });

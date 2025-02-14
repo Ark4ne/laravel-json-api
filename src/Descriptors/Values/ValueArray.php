@@ -2,6 +2,7 @@
 
 namespace Ark4ne\JsonApi\Descriptors\Values;
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 
 /**
@@ -12,10 +13,10 @@ class ValueArray extends Value
 {
     /**
      * @param mixed $of
-     *
+     * @param Request $request
      * @return array<array-key, mixed>
      */
-    public function value(mixed $of): array
+    public function value(mixed $of, Request $request): array
     {
         return (new Collection($of))->toArray();
     }

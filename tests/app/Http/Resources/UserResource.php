@@ -30,6 +30,24 @@ class UserResource extends JsonApiResource
                 'with-apply-conditional-closure' => fn () => 'huge-data-set',
                 'with-apply-conditional-value' => $this->string(fn () => 'huge-data-set'),
             ]),
+            'struct-set' => $this->struct(fn () => [
+                $this->string('name'),
+                'email' => $this->resource->email,
+                'casted' => $this->string(fn() => 'string'),
+                $this->applyWhen(fn () => true, [
+                    'with-apply-conditional-raw' => 'huge-data-set',
+                ]),
+                'closure' => fn() => 'closure',
+                'missing' => $this->mixed(fn() => 'value')->when(false),
+                'sub-struct' => $this->struct(fn () => [
+                    'int' => $this->float(fn () => 200),
+                    'float' => $this->float(fn () => 1.1),
+                ]),
+                'third-struct' => $this->struct(fn () => [
+                    'int' => $this->float(fn () => 300),
+                    'float' => $this->float(fn () => 3.1),
+                ])->when(false),
+            ]),
         ];
     }
 

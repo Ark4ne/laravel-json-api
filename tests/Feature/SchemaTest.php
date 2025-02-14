@@ -20,6 +20,17 @@ class SchemaTest extends FeatureTestCase
             'with-apply-conditional-raw',
             'with-apply-conditional-closure',
             'with-apply-conditional-value',
+            'struct-set',
+            'struct-set.name',
+            'struct-set.email',
+            'struct-set.casted',
+            'struct-set.with-apply-conditional-raw',
+            'struct-set.closure',
+            'struct-set.missing',
+            'struct-set.sub-struct.int',
+            'struct-set.sub-struct.float',
+            'struct-set.third-struct.int',
+            'struct-set.third-struct.float',
         ]);
         $post = new Skeleton(PostResource::class, 'post', ['state', 'title', 'content']);
         $comment = new Skeleton(CommentResource::class, 'comment', ['content']);

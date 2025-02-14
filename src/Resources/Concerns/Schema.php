@@ -5,6 +5,7 @@ namespace Ark4ne\JsonApi\Resources\Concerns;
 use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Descriptors\Relations\Relation;
 use Ark4ne\JsonApi\Descriptors\Resolver;
+use Ark4ne\JsonApi\Descriptors\Values\ValueStruct;
 use Ark4ne\JsonApi\Resources\Skeleton;
 use Ark4ne\JsonApi\Support\FakeModel;
 use Ark4ne\JsonApi\Support\Values;
@@ -37,9 +38,16 @@ trait Schema
         );
 
         $schema->fields = (new Collection(Values::mergeValues($resource->toAttributes($request))))
-            ->map(fn($value, $key) => Describer::retrieveName($value, $key))
-            ->values()
-            ->all();
+            ->flatMap(function ($value, $key) use ($resource) {
+                $collection = (new Collection([Describer::retrieveName($value, $key) => true]));
+
+                if ($value instanceof ValueStruct) {
+                    return $collection->merge(self::structFields($resource, $key, $value, $key));
+                }
+
+                return $collection;
+            })
+            ->keys()->all();
 
         foreach (Values::mergeValues($resource->toRelationships($request)) as $name => $relation) {
             if ($relation instanceof Relation) {
@@ -82,5 +90,19 @@ trait Schema
         $instance->resource = new FakeModel;
 
         return $instance;
+    }
+
+    private static function structFields(mixed $resource, string $key, ValueStruct $struct, null|string $prefix = null): Collection
+    {
+        return (new Collection(Values::mergeValues(($struct->retriever())($resource, $key))))
+            ->flatMap(function($value, $key) use ($resource, $prefix) {
+                $prefixed = Describer::retrieveName($value, $key, $prefix);
+
+                if ($value instanceof ValueStruct) {
+                    return self::structFields($resource, $key, $value, $prefixed);
+                }
+
+                return [$prefixed => $value];
+            });
     }
 }
