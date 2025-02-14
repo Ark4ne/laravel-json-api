@@ -94,7 +94,10 @@ trait Schema
 
     private static function structFields(mixed $resource, string $key, ValueStruct $struct, null|string $prefix = null): Collection
     {
-        return (new Collection(Values::mergeValues(($struct->retriever())($resource, $key))))
+        /** @var array<array-key, mixed> $attributes */
+        $attributes = ($struct->retriever())($resource, $key);
+
+        return (new Collection(Values::mergeValues($attributes)))
             ->flatMap(function($value, $key) use ($resource, $prefix) {
                 $prefixed = Describer::retrieveName($value, $key, $prefix);
 

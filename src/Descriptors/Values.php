@@ -101,11 +101,11 @@ trait Values
     }
 
     /**
-     * @param Closure(T):iterable<string, \Closure|mixed>|iterable<array-key, \Ark4ne\JsonApi\Descriptors\Values\Value> $attribute
+     * @param Closure(T):iterable<string, mixed|\Closure|\Ark4ne\JsonApi\Descriptors\Values\Value> $attribute
      *
      * @return \Ark4ne\JsonApi\Descriptors\Values\ValueStruct<T>
      */
-    protected function struct(Closure $attribute = null): ValueStruct
+    protected function struct(Closure $attribute): ValueStruct
     {
         return new ValueStruct($attribute);
     }

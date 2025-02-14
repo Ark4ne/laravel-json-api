@@ -31,7 +31,7 @@ class ValueStruct extends Value
     }
 
     /**
-     * @param mixed $of
+     * @param iterable<array-key, mixed> $of
      * @param Request $request
      *
      * @return array<array-key, mixed>

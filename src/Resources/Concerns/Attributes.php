@@ -15,7 +15,7 @@ trait Attributes
      *
      * @param \Illuminate\Http\Request $request
      *
-     * @return iterable<string, \Closure|mixed>|iterable<array-key, \Ark4ne\JsonApi\Descriptors\Values\Value>
+     * @return iterable<array-key, mixed|\Closure|\Ark4ne\JsonApi\Descriptors\Values\Value>
      *
      * ```
      * return [
