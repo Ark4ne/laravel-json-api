@@ -11,7 +11,7 @@ trait Resolver
      * @param \Illuminate\Http\Request $request
      * @param iterable<mixed>|null $values
      *
-     * @return array<mixed>|null
+     * @return array<array-key, mixed>|null
      */
     protected function resolveValues(Request $request, ?iterable $values): ?array
     {
