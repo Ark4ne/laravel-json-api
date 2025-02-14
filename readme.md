@@ -399,7 +399,8 @@ UserResource::collection(User::all()); // => JsonApiCollection
 | `date`    | Cast to date, allow to use custom format |
 | `array`   | Cast to array                            |
 | `mixed`   | Don't cast, return as is                 |
-| `enum`    | Get enum value.                          |
+| `enum`    | Get enum value                           |
+| `struct`  | Custom struct. Accept an array of values |
 
 ### Relation methods
 | Method  | Description                                                       |
