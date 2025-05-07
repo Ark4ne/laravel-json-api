@@ -17,7 +17,7 @@ jobs:
     strategy:
       matrix:
         php_version: ['8.1', '8.2', '8.3', '8.4']
-        laravel_version: ['^9.0', '^10.0', '^11.0']
+        laravel_version: ['^9.0', '^10.0', '^11.0', '^12.0']
         exclude:
           - php_version: '8.1'
             laravel_version: '^11.0'
