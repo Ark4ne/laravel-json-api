@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\MergeValue;
 use Illuminate\Http\Resources\MissingValue;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Test\app\Http\Resources\UserResource;
 use Test\Support\Reflect;
 use Test\TestCase;
@@ -30,6 +31,7 @@ class ConditionallyLoadsAttributesTest extends TestCase
     /**
      * @dataProvider data
      */
+    #[DataProvider('data')]
     public function testWhenInclude($expected, $property, $query)
     {
         $request = new Request(['include' => implode(',', $query)]);
@@ -47,6 +49,7 @@ class ConditionallyLoadsAttributesTest extends TestCase
     /**
      * @dataProvider data
      */
+    #[DataProvider('data')]
     public function testWhenInFields($expected, $property, $query)
     {
         $request = new Request(['fields' => ['type' => implode(',', $query)]]);

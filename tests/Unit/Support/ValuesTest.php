@@ -7,6 +7,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\MergeValue;
 use Illuminate\Http\Resources\MissingValue;
 use Illuminate\Http\Resources\PotentiallyMissing;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Test\TestCase;
 
 class ValuesTest extends TestCase
@@ -134,6 +135,7 @@ class ValuesTest extends TestCase
     /**
      * @dataProvider dataAttribute
      */
+    #[DataProvider('dataAttribute')]
     public function testHasAttribute($data, $attribute, $expected)
     {
         $this->assertEquals($expected, Values::hasAttribute($data, $attribute));
@@ -142,6 +144,7 @@ class ValuesTest extends TestCase
     /**
      * @dataProvider dataAttribute
      */
+    #[DataProvider('dataAttribute')]
     public function testGetAttribute($data, $attribute, $has, $expected)
     {
         $this->assertEquals($expected, Values::getAttribute($data, $attribute));

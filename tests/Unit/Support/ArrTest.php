@@ -3,6 +3,7 @@
 namespace Test\Unit\Support;
 
 use Ark4ne\JsonApi\Support\Arr;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Test\TestCase;
 
 class ArrTest extends TestCase
@@ -63,6 +64,7 @@ class ArrTest extends TestCase
     /**
      * @dataProvider mergeProvider
      */
+    #[DataProvider('mergeProvider')]
     public function testMerge($expected, $base, $with)
     {
         $this->assertEquals($expected, Arr::merge($base, $with));
@@ -91,6 +93,7 @@ class ArrTest extends TestCase
     /**
      * @dataProvider washProvider
      */
+    #[DataProvider('washProvider')]
     public function testWash($expected, $base)
     {
         $this->assertEquals($expected, Arr::wash($base));
@@ -118,6 +121,7 @@ class ArrTest extends TestCase
     /**
      * @dataProvider toArrayProvider
      */
+    #[DataProvider('toArrayProvider')]
     public function testToArray($expected, $base)
     {
         $this->assertEquals($expected, Arr::toArray($base));

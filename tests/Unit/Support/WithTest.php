@@ -3,6 +3,7 @@
 namespace Test\Unit\Support;
 
 use Ark4ne\JsonApi\Support\With;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Test\TestCase;
 
 class WithTest extends TestCase
@@ -63,6 +64,7 @@ class WithTest extends TestCase
     /**
      * @dataProvider mergeProvider
      */
+    #[DataProvider('mergeProvider')]
     public function testMerge($expected, $base, $with)
     {
         $this->assertEquals($expected, With::merge($base, $with));
@@ -91,6 +93,7 @@ class WithTest extends TestCase
     /**
      * @dataProvider washProvider
      */
+    #[DataProvider('washProvider')]
     public function testWash($expected, $base)
     {
         $this->assertEquals($expected, With::wash($base));
