@@ -4,6 +4,7 @@ namespace Test\Unit\Support;
 
 use Ark4ne\JsonApi\Support\Fields;
 use Illuminate\Http\Request;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Test\TestCase;
 
 class FieldsTest extends TestCase
@@ -22,6 +23,7 @@ class FieldsTest extends TestCase
     /**
      * @dataProvider fieldsGetProvider
      */
+    #[DataProvider('fieldsGetProvider')]
     public function testGet(array $query, string $type, ?array $expected)
     {
         $this->assertEquals($expected, Fields::get(new Request(['fields' => $query]), $type));

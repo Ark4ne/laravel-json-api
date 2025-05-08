@@ -8,6 +8,7 @@ use Ark4ne\JsonApi\Resources\Relationship;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MissingValue;
+use PHPUnit\Framework\Attributes\DataProvider;
 use stdClass;
 use Test\app\Http\Resources\UserResource;
 use Test\Support\Reflect;
@@ -27,6 +28,7 @@ class RelationTest extends TestCase
     /**
      * @dataProvider resourceProvider
      */
+    #[DataProvider('resourceProvider')]
     public function testIncluded($model)
     {
         $stub = new RelationOne(UserResource::class, fn() => null);
@@ -55,6 +57,7 @@ class RelationTest extends TestCase
     /**
      * @dataProvider resourceProvider
      */
+    #[DataProvider('resourceProvider')]
     public function testMeta($model)
     {
         $stub = new RelationOne(UserResource::class, fn() => null);
@@ -75,6 +78,7 @@ class RelationTest extends TestCase
     /**
      * @dataProvider resourceProvider
      */
+    #[DataProvider('resourceProvider')]
     public function testLinks($model)
     {
         $stub = new RelationOne(UserResource::class, fn() => null);
@@ -104,9 +108,10 @@ class RelationTest extends TestCase
     /**
      * @dataProvider dataWhenLoaded
      */
+    #[DataProvider('dataWhenLoaded')]
     public function testWhenLoaded($expectedAttr, $relation, $invokedAttr)
     {
-        $mockModel = $this->getMockForAbstractClass(Model::class, mockedMethods: ['relationLoaded']);
+        $mockModel = $this->getMockBuilder(Model::class)->onlyMethods(['relationLoaded'])->getMock();
         $mockModel->expects(self::once())->method('relationLoaded')->with($expectedAttr)->willReturn(false);
 
         $stub = new RelationOne(UserResource::class, $relation);
@@ -128,6 +133,7 @@ class RelationTest extends TestCase
     /**
      * @dataProvider dataWhenPivotLoaded
      */
+    #[DataProvider('dataWhenPivotLoaded')]
     public function testWhenPivotLoaded($expectedAttr, $relation, $invokedAttr)
     {
         $model = new class extends Model {
@@ -144,6 +150,7 @@ class RelationTest extends TestCase
     /**
      * @dataProvider resourceProvider
      */
+    #[DataProvider('resourceProvider')]
     public function testRelationMissing($model)
     {
         $missing = RelationMissing::fromRelationship(new Relationship(UserResource::class, fn() => null));

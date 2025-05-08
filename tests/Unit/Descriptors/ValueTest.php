@@ -17,6 +17,7 @@ use DateTime;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MissingValue;
+use PHPUnit\Framework\Attributes\DataProvider;
 use stdClass;
 use Test\Support\Reflect;
 use Test\TestCase;
@@ -89,6 +90,7 @@ class ValueTest extends TestCase
     /**
      * @dataProvider values
      */
+    #[DataProvider('values')]
     public function testConvertValue($class, $value, $excepted)
     {
         /** @var \Ark4ne\JsonApi\Descriptors\Values\Value $v */
@@ -99,6 +101,7 @@ class ValueTest extends TestCase
     /**
      * @dataProvider modelsValues
      */
+    #[DataProvider('modelsValues')]
     public function testValueFor($model, $class, $value, $excepted)
     {
         data_set($model, 'attr', $value);
@@ -114,6 +117,7 @@ class ValueTest extends TestCase
     /**
      * @dataProvider modelsValues
      */
+    #[DataProvider('modelsValues')]
     public function testValueForWithNull($model, $class, $value, $excepted)
     {
         data_set($model, 'attr', null);
@@ -126,6 +130,7 @@ class ValueTest extends TestCase
     /**
      * @dataProvider modelsValues
      */
+    #[DataProvider('modelsValues')]
     public function testValueForWithNullAndNonNullable($model, $class, $value, $_, $excepted)
     {
         data_set($model, 'attr', null);
@@ -144,6 +149,7 @@ class ValueTest extends TestCase
     /**
      * @dataProvider models
      */
+    #[DataProvider('models')]
     public function testWhenNoNull($model)
     {
         data_set($model, 'attr', null);
@@ -175,6 +181,7 @@ class ValueTest extends TestCase
     /**
      * @dataProvider models
      */
+    #[DataProvider('models')]
     public function testWhenFilled(&$model)
     {
         data_set($model, 'attr', null);
@@ -191,6 +198,7 @@ class ValueTest extends TestCase
     /**
      * @dataProvider models
      */
+    #[DataProvider('models')]
     public function testUnless(&$model)
     {
         data_set($model, 'attr', 'abc');
@@ -209,6 +217,7 @@ class ValueTest extends TestCase
     /**
      * @dataProvider models
      */
+    #[DataProvider('models')]
     public function testWhenInFields($model)
     {
         Fields::through('test', function () use (&$model) {
