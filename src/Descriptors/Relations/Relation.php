@@ -6,6 +6,7 @@ use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Resources\Relationship;
 use Ark4ne\JsonApi\Traits\HasRelationLoad;
 use Closure;
+use Illuminate\Contracts\Auth\Access\Gate;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MissingValue;
@@ -25,12 +26,13 @@ abstract class Relation extends Describer
 
     /**
      * @param class-string<\Ark4ne\JsonApi\Resources\JsonApiResource|\Ark4ne\JsonApi\Resources\JsonApiCollection> $related
-     * @param string|\Closure|null                                                                                $relation
+     * @param string|\Closure|null $relation
      */
     public function __construct(
-        protected string $related,
+        protected string              $related,
         protected null|string|Closure $relation
-    ) {
+    )
+    {
     }
 
     /**
@@ -62,6 +64,24 @@ abstract class Relation extends Describer
     }
 
     /**
+     * @param iterable<mixed>|string $abilities Abilities to check
+     * @param array<mixed> $arguments Arguments to pass to the policy method, the model is always the first argument
+     * @param string $gateClass Gate class to use, defaults to the default Gate implementation
+     * @return static
+     */
+    public function can(iterable|string $abilities, array $arguments = [], string $gateClass = Gate::class): static
+    {
+        return $this->when(fn(
+            Request $request,
+            Model   $model,
+            string  $attribute
+        ) => app($gateClass)
+            ->forUser($request->user())
+            ->allows($abilities, [$model, ...$arguments])
+        );
+    }
+
+    /**
      * @param bool|null $whenIncluded
      * @return $this
      */
@@ -77,35 +97,34 @@ abstract class Relation extends Describer
     }
 
     /**
-     * @see \Illuminate\Http\Resources\ConditionallyLoadsAttributes::whenLoaded
-     *
      * @param string|null $relation
      *
      * @return static
+     * @see \Illuminate\Http\Resources\ConditionallyLoadsAttributes::whenLoaded
      */
-    public function whenLoaded(null|string $relation = null): self
+    public function whenLoaded(null|string $relation = null): static
     {
         return $this->when(fn(
             Request $request,
-            Model $model,
-            string $attribute
+            Model   $model,
+            string  $attribute
         ): bool => $model->relationLoaded($relation ?? (is_string($this->relation) ? $this->relation : $attribute)));
     }
 
     /**
-     * @see \Illuminate\Http\Resources\ConditionallyLoadsAttributes::whenPivotLoadedAs
-     *
-     * @param string      $table
+     * @param string $table
      * @param string|null $accessor
      *
      * @return static
+     * @see \Illuminate\Http\Resources\ConditionallyLoadsAttributes::whenPivotLoadedAs
+     *
      */
-    public function whenPivotLoaded(string $table, null|string $accessor = null): self
+    public function whenPivotLoaded(string $table, null|string $accessor = null): static
     {
         return $this->when(fn(
             Request $request,
-            Model $model,
-            string $attribute
+            Model   $model,
+            string  $attribute
         ): bool => ($pivot = $model->{$accessor ?? (is_string($this->relation) ? $this->relation : $attribute)})
             && (
                 $pivot instanceof $table ||
@@ -139,8 +158,8 @@ abstract class Relation extends Describer
 
     /**
      * @param \Illuminate\Http\Request $request
-     * @param T                        $model
-     * @param string                   $field
+     * @param T $model
+     * @param string $field
      *
      * @return mixed
      */
