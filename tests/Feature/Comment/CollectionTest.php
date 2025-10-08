@@ -3,6 +3,7 @@
 namespace Test\Feature\Comment;
 
 use DateTimeInterface;
+use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Test\app\Http\Resources\PostResource;
@@ -82,6 +83,8 @@ class CollectionTest extends FeatureTestCase
                 ))
             ->reduce(fn(Collection $all, Collection $value) => $all->merge($value), collect());
 
+        $isLaravel12 = ((int)explode('.', Application::VERSION, 2)) >= 12;
+
         return collect(array_filter([
             'data' => $data,
             'included' => $include->uniqueStrict()->values()->all(),
@@ -99,25 +102,26 @@ class CollectionTest extends FeatureTestCase
                     [
                         'active' => false,
                         'label' => "&laquo; Previous",
-                        'page' => null,
+                        ...($isLaravel12 ? ['page' => null] : []),
                         'url' => null,
                     ],
                     [
                         'active' => true,
                         'label' => '1',
-                        'page' => 1,
+                        ...($isLaravel12 ? ['page' => 1] : []),
                         'url' => "http://localhost/comment?page=1",
                     ],
                     ...(array_map(static fn($value) => [
                         'active' => false,
                         'label' => (string)$value,
-                        'page' => $value,
+                        ...($isLaravel12 ? ['page' => $value] : []),
                         'url' => "http://localhost/comment?page=$value",
                         ], range(2, 10))),
                     [
                         'active' => false,
                         'label' => "Next &raquo;",
                         'page' => 2,
+                        ...($isLaravel12 ? ['page' => 2] : []),
                         'url' => "http://localhost/comment?page=2",
                     ],
                 ],
