@@ -78,46 +78,49 @@ class ConditionallyLoadsAttributesTest extends TestCase
             'missing.1' => 'abc',
             'missing.2' => 123,
         ]);
-        $this->assertEquals(new MergeValue([
-            'missing.1' => (new ValueMixed(fn() => 'abc'))->when(fn() => false),
-            'missing.2' => (new ValueMixed(fn() => 123))->when(fn() => false),
-        ]), $actual);
+        $this->assertInstanceOf(MergeValue::class, $actual);
+        $this->assertInstanceOf(ValueMixed::class, $actual->data['missing.1']);
+        $this->assertInstanceOf(ValueMixed::class, $actual->data['missing.2']);
+        $this->assertEquals('abc', $actual->data['missing.1']->retriever()());
+        $this->assertEquals(123, $actual->data['missing.2']->retriever()());
         $actual = Reflect::invoke($stub, 'applyWhen', true, [
             'present.1' => 'abc',
             'present.2' => 123,
         ]);
-        $this->assertEquals(new MergeValue([
-            'present.1' => (new ValueMixed(fn() => 'abc'))->when(fn() => true),
-            'present.2' => (new ValueMixed(fn() => 123))->when(fn() => true),
-        ]), $actual);
+        $this->assertInstanceOf(ValueMixed::class, $actual->data['present.1']);
+        $this->assertInstanceOf(ValueMixed::class, $actual->data['present.2']);
+        $this->assertEquals('abc', $actual->data['present.1']->retriever()());
+        $this->assertEquals(123, $actual->data['present.2']->retriever()());
+
         $actual = Reflect::invoke($stub, 'applyWhen', true, [
-            'present.1' => (new ValueMixed(fn() => 'abc')),
-            'present.2' => (new ValueMixed(fn() => 123)),
-            'present.3' => (new RelationOne('present', fn() => 'abc')),
-            'present.4' => (new RelationOne('present', fn() => 123)),
-            'present.5' => (new Relationship(UserResource::class, fn() => null)),
+            'present.1' => $p1 = (new ValueMixed(fn() => 'abc')),
+            'present.2' => $p2 = (new ValueMixed(fn() => 123)),
+            'present.3' => $p3 = (new RelationOne('present', fn() => 'abc')),
+            'present.4' => $p4 = (new RelationOne('present', fn() => 123)),
+            'present.5' => $p5 = (new Relationship(UserResource::class, fn() => null)),
         ]);
-        $this->assertEquals(new MergeValue([
-            'present.1' => (new ValueMixed(fn() => 'abc'))->when(fn() => true),
-            'present.2' => (new ValueMixed(fn() => 123))->when(fn() => true),
-            'present.3' => (new RelationOne('present', fn() => 'abc'))->when(fn() => true),
-            'present.4' => (new RelationOne('present', fn() => 123))->when(fn() => true),
-            'present.5' => RelationRaw::fromRelationship(new Relationship(UserResource::class, fn() => null))->when(fn() => true),
-        ]), $actual);
+        $this->assertInstanceOf(MergeValue::class, $actual);
+        $this->assertEquals($p1, $actual->data['present.1']);
+        $this->assertEquals($p2, $actual->data['present.2']);
+        $this->assertEquals($p3, $actual->data['present.3']);
+        $this->assertEquals($p4, $actual->data['present.4']);
+        $this->assertInstanceOf(RelationRaw::class, $actual->data['present.5']);
+        $this->assertInstanceOf(Relationship::class, $actual->data['present.5']->retriever()());
+
         $actual = Reflect::invoke($stub, 'applyWhen', false, [
-            'missing.1' => (new ValueMixed(fn() => 'abc')),
-            'missing.2' => (new ValueMixed(fn() => 123)),
-            'missing.3' => (new RelationOne('present', fn() => 'abc')),
-            'missing.4' => (new RelationOne('present', fn() => 123)),
+            'missing.1' => $p1 = (new ValueMixed(fn() => 'abc')),
+            'missing.2' => $p2 = (new ValueMixed(fn() => 123)),
+            'missing.3' => $p3 = (new RelationOne('present', fn() => 'abc')),
+            'missing.4' => $p4 = (new RelationOne('present', fn() => 123)),
             'missing.5' => (new Relationship(UserResource::class, fn() => null)),
         ]);
-        $this->assertEquals(new MergeValue([
-            'missing.1' => (new ValueMixed(fn() => 'abc'))->when(fn() => false),
-            'missing.2' => (new ValueMixed(fn() => 123))->when(fn() => false),
-            'missing.3' => (new RelationOne('present', fn() => 'abc'))->when(fn() => false),
-            'missing.4' => (new RelationOne('present', fn() => 123))->when(fn() => false),
-            'missing.5' => RelationRaw::fromRelationship(new Relationship(UserResource::class, fn() => null))->when(fn() => false),
-        ]), $actual);
+        $this->assertInstanceOf(MergeValue::class, $actual);
+        $this->assertEquals($p1, $actual->data['missing.1']);
+        $this->assertEquals($p2, $actual->data['missing.2']);
+        $this->assertEquals($p3, $actual->data['missing.3']);
+        $this->assertEquals($p4, $actual->data['missing.4']);
+        $this->assertInstanceOf(RelationRaw::class, $actual->data['missing.5']);
+        $this->assertInstanceOf(Relationship::class, $actual->data['missing.5']->retriever()());
     }
 
     public function testWhenHas()

@@ -99,21 +99,25 @@ class CollectionTest extends FeatureTestCase
                     [
                         'active' => false,
                         'label' => "&laquo; Previous",
+                        'page' => null,
                         'url' => null,
                     ],
                     [
                         'active' => true,
                         'label' => '1',
+                        'page' => 1,
                         'url' => "http://localhost/comment?page=1",
                     ],
                     ...(array_map(static fn($value) => [
                         'active' => false,
                         'label' => (string)$value,
+                        'page' => $value,
                         'url' => "http://localhost/comment?page=$value",
                         ], range(2, 10))),
                     [
                         'active' => false,
                         'label' => "Next &raquo;",
+                        'page' => 2,
                         'url' => "http://localhost/comment?page=2",
                     ],
                 ],

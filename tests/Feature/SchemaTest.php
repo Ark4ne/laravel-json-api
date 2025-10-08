@@ -41,7 +41,7 @@ class SchemaTest extends FeatureTestCase
         $user->loads['main-post'] = 'post';
         $user->loads['posts'] = 'posts';
         $user->loads['comments'] = [
-            'comments' => fn(Builder $q) => $q->where('content', 'like', '%e%')
+            'comments' => UserResource::schema()->loads['comments']['comments']
         ];
 
         $post->relationships['user'] = $user;
