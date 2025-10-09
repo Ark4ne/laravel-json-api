@@ -22,6 +22,6 @@ final class RelationRaw extends Relation
 
     public static function fromRelationship(Relationship $relationship): self
     {
-        return new self($relationship->getResource(), fn() => $relationship);
+        return new self($relationship->getResource(), static fn() => $relationship);
     }
 }

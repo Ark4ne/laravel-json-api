@@ -91,7 +91,7 @@ class ValueTest extends TestCase
      * @dataProvider values
      */
     #[DataProvider('values')]
-    public function testConvertValue($class, $value, $excepted)
+    public function testConvertValue($class, $value, $excepted, $_ignored)
     {
         /** @var \Ark4ne\JsonApi\Descriptors\Values\Value $v */
         $v = new $class(null);
@@ -102,7 +102,7 @@ class ValueTest extends TestCase
      * @dataProvider modelsValues
      */
     #[DataProvider('modelsValues')]
-    public function testValueFor($model, $class, $value, $excepted)
+    public function testValueFor($model, $class, $value, $excepted, $_ignored)
     {
         data_set($model, 'attr', $value);
 
@@ -118,7 +118,7 @@ class ValueTest extends TestCase
      * @dataProvider modelsValues
      */
     #[DataProvider('modelsValues')]
-    public function testValueForWithNull($model, $class, $value, $excepted)
+    public function testValueForWithNull($model, $class, $value, $excepted, $_ignored)
     {
         data_set($model, 'attr', null);
 

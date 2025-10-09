@@ -84,17 +84,17 @@ abstract class Describer
     /**
      * @param \Illuminate\Http\Request $request
      * @param T $model
-     * @param string $field
+     * @param string $attribute
      *
      * @return mixed
      */
-    public function valueFor(Request $request, mixed $model, string $field): mixed
+    public function valueFor(Request $request, mixed $model, string $attribute): mixed
     {
-        if (!$this->check($request, $model, $field)) {
+        if (!$this->check($request, $model, $attribute)) {
             return new MissingValue();
         }
 
-        return $this->resolveFor($request, $model, $field);
+        return $this->resolveFor($request, $model, $attribute);
     }
 
     /**
@@ -134,11 +134,11 @@ abstract class Describer
     /**
      * @param \Illuminate\Http\Request $request
      * @param T $model
-     * @param string $field
+     * @param string $attribute
      *
      * @return mixed
      */
-    abstract protected function resolveFor(Request $request, mixed $model, string $field): mixed;
+    abstract protected function resolveFor(Request $request, mixed $model, string $attribute): mixed;
 
     /**
      * @return string|Closure|null

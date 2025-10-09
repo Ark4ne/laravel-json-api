@@ -4,6 +4,7 @@ namespace Ark4ne\JsonApi\Descriptors\Relations;
 
 use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Resources\Relationship;
+use Ark4ne\JsonApi\Support\Includes;
 use Ark4ne\JsonApi\Traits\HasRelationLoad;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
@@ -25,12 +26,13 @@ abstract class Relation extends Describer
 
     /**
      * @param class-string<\Ark4ne\JsonApi\Resources\JsonApiResource|\Ark4ne\JsonApi\Resources\JsonApiCollection> $related
-     * @param string|\Closure|null                                                                                $relation
+     * @param string|\Closure|null $relation
      */
     public function __construct(
-        protected string $related,
+        protected string              $related,
         protected null|string|Closure $relation
-    ) {
+    )
+    {
     }
 
     /**
@@ -63,7 +65,7 @@ abstract class Relation extends Describer
 
     /**
      * @param bool|null $whenIncluded
-     * @return $this
+     * @return static
      */
     public function whenIncluded(null|bool $whenIncluded = null): static
     {
@@ -73,39 +75,42 @@ abstract class Relation extends Describer
             $this->whenIncluded = $whenIncluded;
         }
 
-        return $this;
+        return $this->when(fn(
+            Request $request,
+            Model   $model,
+            string  $attribute
+        ): bool => !$this->whenIncluded || Includes::include($request, $attribute));
     }
 
     /**
-     * @see \Illuminate\Http\Resources\ConditionallyLoadsAttributes::whenLoaded
-     *
      * @param string|null $relation
      *
      * @return static
+     * @see \Illuminate\Http\Resources\ConditionallyLoadsAttributes::whenLoaded
      */
-    public function whenLoaded(null|string $relation = null): self
+    public function whenLoaded(null|string $relation = null): static
     {
         return $this->when(fn(
             Request $request,
-            Model $model,
-            string $attribute
+            Model   $model,
+            string  $attribute
         ): bool => $model->relationLoaded($relation ?? (is_string($this->relation) ? $this->relation : $attribute)));
     }
 
     /**
-     * @see \Illuminate\Http\Resources\ConditionallyLoadsAttributes::whenPivotLoadedAs
-     *
-     * @param string      $table
+     * @param string $table
      * @param string|null $accessor
      *
      * @return static
+     * @see \Illuminate\Http\Resources\ConditionallyLoadsAttributes::whenPivotLoadedAs
+     *
      */
-    public function whenPivotLoaded(string $table, null|string $accessor = null): self
+    public function whenPivotLoaded(string $table, null|string $accessor = null): static
     {
         return $this->when(fn(
             Request $request,
-            Model $model,
-            string $attribute
+            Model   $model,
+            string  $attribute
         ): bool => ($pivot = $model->{$accessor ?? (is_string($this->relation) ? $this->relation : $attribute)})
             && (
                 $pivot instanceof $table ||
@@ -114,21 +119,21 @@ abstract class Relation extends Describer
         );
     }
 
-    public function resolveFor(Request $request, mixed $model, string $field): Relationship
+    public function resolveFor(Request $request, mixed $model, string $attribute): Relationship
     {
         $retriever = $this->retriever();
 
         if ($retriever instanceof Closure) {
-            $value = static fn() => $retriever($model, $field);
+            $value = static fn() => $retriever($model, $attribute);
         } else {
             $value = static fn() => match (true) {
-                $model instanceof Model => $model->getRelationValue($retriever ?? $field),
-                Arr::accessible($model) => $model[$retriever ?? $field],
-                default => $model->{$retriever ?? $field}
+                $model instanceof Model => $model->getRelationValue($retriever ?? $attribute),
+                Arr::accessible($model) => $model[$retriever ?? $attribute],
+                default => $model->{$retriever ?? $attribute}
             };
         }
 
-        $relation = $this->value(fn() => $this->check($request, $model, $field) ? $value() : new MissingValue());
+        $relation = $this->value(fn() => $this->check($request, $model, $attribute) ? $value() : new MissingValue());
 
         if ($this->whenIncluded !== null) {
             $relation->whenIncluded($this->whenIncluded);
@@ -139,14 +144,14 @@ abstract class Relation extends Describer
 
     /**
      * @param \Illuminate\Http\Request $request
-     * @param T                        $model
-     * @param string                   $field
+     * @param T $model
+     * @param string $attribute
      *
      * @return mixed
      */
-    public function valueFor(Request $request, mixed $model, string $field): mixed
+    public function valueFor(Request $request, mixed $model, string $attribute): mixed
     {
-        return $this->resolveFor($request, $model, $field);
+        return $this->resolveFor($request, $model, $attribute);
     }
 
     abstract protected function value(Closure $value): Relationship;

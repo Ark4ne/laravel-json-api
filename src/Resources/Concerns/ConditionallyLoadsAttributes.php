@@ -66,7 +66,7 @@ trait ConditionallyLoadsAttributes
                 $value = new ValueMixed(is_callable($raw) ? $raw : static fn () => $raw);
             }
 
-            return $value->when(fn () => value($condition));
+            return $value->when(static fn () => value($condition));
         }));
     }
 
