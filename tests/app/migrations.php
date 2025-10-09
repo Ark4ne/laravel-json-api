@@ -23,6 +23,7 @@ return new class extends Migration {
                     ->comment('0: draft, 1: published');
                 $table->string('title');
                 $table->string('content');
+                $table->boolean('is_public');
                 $table->timestamps();
                 $table->foreignId('user_id')->constrained('users');
             },

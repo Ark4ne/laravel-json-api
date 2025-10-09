@@ -3,10 +3,12 @@
 namespace Ark4ne\JsonApi\Descriptors\Relations;
 
 use Ark4ne\JsonApi\Descriptors\Describer;
+use Ark4ne\JsonApi\Filters\Filters;
 use Ark4ne\JsonApi\Resources\Relationship;
 use Ark4ne\JsonApi\Support\Includes;
 use Ark4ne\JsonApi\Traits\HasRelationLoad;
 use Closure;
+use Illuminate\Contracts\Auth\Access\Gate;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MissingValue;
@@ -23,6 +25,7 @@ abstract class Relation extends Describer
     protected ?Closure $links = null;
     protected ?Closure $meta = null;
     protected ?bool $whenIncluded = null;
+    protected ?Filters $filters = null;
 
     /**
      * @param class-string<\Ark4ne\JsonApi\Resources\JsonApiResource|\Ark4ne\JsonApi\Resources\JsonApiCollection> $related
@@ -61,6 +64,37 @@ abstract class Relation extends Describer
     {
         $this->meta = $meta;
         return $this;
+    }
+
+    /**
+     * Set filters for the relationship
+     *
+     * @param Closure(Filters): Filters $filters Callback that receives (Filters $filters) and configures the filters
+     * @return static
+     */
+    public function filters(Closure $filters): static
+    {
+        $this->filters = $filters(new Filters);
+        return $this;
+    }
+
+    /**
+     * @param iterable|string $abilities Abilities to check
+     * @param array<mixed> $arguments Arguments to pass to the policy method, the model is always the first argument
+     * @param string $gateClass Gate class to use, defaults to the default Gate implementation
+     * @param string|null $guard Guard to use, defaults to the default guard
+     * @return static
+     */
+    public function can(iterable|string $abilities, array $arguments = [], string $gateClass = Gate::class, ?string $guard = null): static
+    {
+        return $this->when(fn(
+            Request $request,
+            Model   $model,
+            string  $attribute
+        ) => app($gateClass)
+            ->forUser($request->user($guard))
+            ->allows($abilities, [$model, ...$arguments])
+        );
     }
 
     /**
@@ -137,6 +171,10 @@ abstract class Relation extends Describer
 
         if ($this->whenIncluded !== null) {
             $relation->whenIncluded($this->whenIncluded);
+        }
+
+        if ($this->filters !== null) {
+            $relation->withFilters($this->filters);
         }
 
         return $relation;

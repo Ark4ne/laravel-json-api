@@ -2,6 +2,7 @@
 
 namespace Ark4ne\JsonApi\Resources;
 
+use Ark4ne\JsonApi\Filters\Filters;
 use Ark4ne\JsonApi\Support\Values;
 use Ark4ne\JsonApi\Traits\HasRelationLoad;
 use Closure;
@@ -24,6 +25,8 @@ class Relationship implements Resourceable
     protected bool $asCollection = false;
 
     protected ?bool $whenIncluded = null;
+
+    protected ?Filters $filters = null;
 
     /**
      * @param class-string<T> $resource
@@ -112,6 +115,19 @@ class Relationship implements Resourceable
     }
 
     /**
+     * Set filters for the relationship
+     *
+     * @param Filters $filters
+     * @return $this
+     */
+    public function withFilters(Filters $filters): static
+    {
+        $this->filters = $filters;
+
+        return $this;
+    }
+
+    /**
      * Return class-string of resource
      *
      * @return class-string<T>
@@ -147,6 +163,11 @@ class Relationship implements Resourceable
             ? null
             : value($this->value);
         $value ??= new MissingValue;
+
+        // Apply filters if they are defined and we have data
+        if ($this->filters !== null && !Values::isMissing($value)) {
+            $value = $this->filters->apply($request, $value);
+        }
 
         if ($this->asCollection && !is_subclass_of($this->resource, ResourceCollection::class)) {
             $resource = $this->resource::collection($value);
