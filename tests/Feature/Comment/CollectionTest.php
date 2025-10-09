@@ -83,7 +83,7 @@ class CollectionTest extends FeatureTestCase
                 ))
             ->reduce(fn(Collection $all, Collection $value) => $all->merge($value), collect());
 
-        $isLaravel12 = ((int)explode('.', Application::VERSION, 2)) >= 12;
+        $isLaravel12 = ((int)explode('.', Application::VERSION, 2)[0]) >= 12;
 
         return collect(array_filter([
             'data' => $data,

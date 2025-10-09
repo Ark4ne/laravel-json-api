@@ -136,7 +136,7 @@ class ValuesTest extends TestCase
      * @dataProvider dataAttribute
      */
     #[DataProvider('dataAttribute')]
-    public function testHasAttribute($data, $attribute, $expected)
+    public function testHasAttribute($data, $attribute, $expected, $_ignored)
     {
         $this->assertEquals($expected, Values::hasAttribute($data, $attribute));
     }
