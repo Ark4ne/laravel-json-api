@@ -263,7 +263,7 @@ protected function toRelationships(Request $request): array
 
 `toRelationships` must returns an array, keyed by string, of `JsonApiResource` or `JsonApiCollection`.
 
-#### Laravel conditional relationships 
+#### Laravel conditional relationships
 _**@see** [laravel: eloquent-conditional-relationships](https://laravel.com/docs/9.x/eloquent-resources#conditional-relationships)_
 
 Support laravel conditional relationships.
@@ -327,6 +327,21 @@ protected function toRelationships(Request $request): array
             'creator' => $this->name,
         ])
         ->asCollection(),
+    ];
+}
+```
+
+#### Laravel policy on relationships
+_**@see** [laravel: authorizing-actions-via-gates](https://laravel.com/docs/12.x/authorization#authorizing-actions-via-gates)_
+
+Apply laravel policy on relationships.
+
+```php
+protected function toRelationships(Request $request): array
+{
+    return [
+        'posts' => $this->many(PostResource::class)
+            ->can('viewAny.post')
     ];
 }
 ```
