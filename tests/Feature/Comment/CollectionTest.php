@@ -120,7 +120,6 @@ class CollectionTest extends FeatureTestCase
                     [
                         'active' => false,
                         'label' => "Next &raquo;",
-                        'page' => 2,
                         ...($isLaravel12 ? ['page' => 2] : []),
                         'url' => "http://localhost/comment?page=2",
                     ],
