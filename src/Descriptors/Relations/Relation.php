@@ -7,7 +7,6 @@ use Ark4ne\JsonApi\Resources\Relationship;
 use Ark4ne\JsonApi\Support\Includes;
 use Ark4ne\JsonApi\Traits\HasRelationLoad;
 use Closure;
-use Illuminate\Contracts\Auth\Access\Gate;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MissingValue;
@@ -62,24 +61,6 @@ abstract class Relation extends Describer
     {
         $this->meta = $meta;
         return $this;
-    }
-
-    /**
-     * @param iterable<mixed>|string $abilities Abilities to check
-     * @param array<mixed> $arguments Arguments to pass to the policy method, the model is always the first argument
-     * @param string $gateClass Gate class to use, defaults to the default Gate implementation
-     * @return static
-     */
-    public function can(iterable|string $abilities, array $arguments = [], string $gateClass = Gate::class): static
-    {
-        return $this->when(fn(
-            Request $request,
-            Model   $model,
-            string  $attribute
-        ) => app($gateClass)
-            ->forUser($request->user())
-            ->allows($abilities, [$model, ...$arguments])
-        );
     }
 
     /**

@@ -331,20 +331,6 @@ protected function toRelationships(Request $request): array
 }
 ```
 
-#### Laravel policy on relationships
-_**@see** [laravel: authorizing-actions-via-gates](https://laravel.com/docs/12.x/authorization#authorizing-actions-via-gates)_
-
-Apply laravel policy on relationships.
-
-```php
-protected function toRelationships(Request $request): array
-{
-    return [
-        'posts' => $this->many(PostResource::class)
-            ->can('viewAny.post')
-    ];
-}
-```
 
 ### toLinks
 _**@see** [{json:api}: resource-linkage](https://jsonapi.org/format/#document-resource-object-links)_
