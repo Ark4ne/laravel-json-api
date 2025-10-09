@@ -79,7 +79,7 @@ abstract class Relation extends Describer
     }
 
     /**
-     * @param iterable|string $abilities Abilities to check
+     * @param iterable<mixed>|string $abilities Abilities to check
      * @param array<mixed> $arguments Arguments to pass to the policy method, the model is always the first argument
      * @param string $gateClass Gate class to use, defaults to the default Gate implementation
      * @param string|null $guard Guard to use, defaults to the default guard
