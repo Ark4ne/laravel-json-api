@@ -39,8 +39,6 @@ class RelationshipFiltersTest extends FeatureTestCase
                 return [
                     'posts' => $this->many(PostResource::class)
                         ->filters(fn(Filters $filters) => $filters->can('view')),
-                    'comments' => CommentResource::relationship(fn () => $this->resource->comments)
-                        ->withFilters((new Filters)->can('view'))
                 ];
             }
         };
