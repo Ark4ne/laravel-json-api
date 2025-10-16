@@ -13,15 +13,12 @@ trait UseTrans
      * @param string                $default
      * @param array<string, string> $replace
      *
-     * @return array<string>
+     * @return string
      */
-    protected function trans(?string $key, string $default, array $replace = []): array
+    protected function trans(?string $key, string $default, array $replace = []): string
     {
         $message = trans($key);
 
-        return array_map(
-            static fn($msg) => Str::replace(array_keys($replace), array_values($replace), $msg),
-            $message === $key ? [$default] : (array)$message
-        );
+        return Str::replace(array_keys($replace), array_values($replace), $message === $key ? $default : $message);
     }
 }

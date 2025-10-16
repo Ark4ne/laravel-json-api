@@ -6,13 +6,16 @@ use Ark4ne\JsonApi\Requests\Rules\Traits\UseTrans;
 use Ark4ne\JsonApi\Resources\Skeleton;
 use Ark4ne\JsonApi\Support\Includes as SupportIncludes;
 use Illuminate\Contracts\Validation\Rule;
+use Illuminate\Contracts\Validation\ValidationRule;
 
 /**
  * @template T as \Ark4ne\JsonApi\Resources\JsonApiResource
  */
-class Includes implements Rule
+class Includes implements ValidationRule
 {
     use UseTrans;
+
+    private const BASE = 'validation.custom.jsonapi.fields';
 
     /**
      * @var array<int, array{":include": string, ":relation": string}>>
@@ -27,32 +30,39 @@ class Includes implements Rule
     ) {
     }
 
-    public function passes($attribute, $value): bool
+    public function validate(string $attribute, mixed $value, \Closure $fail): void
     {
         if (!is_string($value)) {
-            return false;
+            $fail($this->trans(
+                sprintf('%s.invalid', self::BASE),
+                'The selected :attribute is invalid.'
+            ));
+            return;
         }
 
         $desired = SupportIncludes::parse($value);
         $schema = $this->resource::schema();
 
-        return $this->assert($schema, $desired);
+        if (!$this->assert($schema, $desired)) {
+            foreach ($this->message() as $message) {
+                $fail($message);
+            }
+        }
     }
 
     /**
      * @return array<string>
      */
-    public function message(): array
+    private function message(): array
     {
-        $base = 'validation.custom.jsonapi.includes';
         $message = $this->trans(
-            "$base.invalid",
+            sprintf('%s.invalid', self::BASE),
             'The selected :attribute is invalid.'
         );
 
-        return array_merge($message, ...array_map(
+        return array_merge([$message], array_map(
             fn($failure) => $this->trans(
-                "$base.invalid_includes",
+                sprintf('%s.invalid_includes', self::BASE),
                 '":include" doesn\'t have relationship ":relation".',
                 $failure
             ),

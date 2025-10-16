@@ -3,36 +3,56 @@
 namespace Test\Unit\Requests\Rules;
 
 use Ark4ne\JsonApi\Requests\Rules\Includes;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Test\app\Http\Resources\UserResource;
 use Test\TestCase;
 
 class IncludesTest extends TestCase
 {
-    public function testPasses()
+    /**
+     * @dataProvider validationDataProvider
+     */
+    #[DataProvider('validationDataProvider')]
+    public function testPasses(mixed $values, array $expected)
     {
         $rule = new Includes(UserResource::class);
+        $errors = [];
 
-        $this->assertFalse($rule->passes(null, [
-            'posts',
-            'posts.user',
-            'posts.user.comments',
-            'posts.user.posts'
-        ]));
+        $rule->validate('fields', $values, function($message) use (&$errors) {
+            $errors[] = $message;
+        });
+        $this->assertEquals($expected, $errors);
+    }
 
-        $this->assertTrue($rule->passes(null, implode(',', [
-            'posts',
-            'posts.user',
-            'posts.user.comments',
-            'posts.user.posts'
-        ])));
+    public static function validationDataProvider()
+    {
+        return [
+            // not expected type
+            [123, ['The selected :attribute is invalid.']],
+            [null, ['The selected :attribute is invalid.']],
 
-        $this->assertFalse($rule->passes(null, implode(',', [
-            'posts',
-            'unknown',
-        ])));
+            // valid cases
+            [implode(',', [
+                'posts',
+                'posts.user',
+                'posts.user.comments',
+                'posts.user.posts'
+            ]), []],
 
-        $this->assertFalse($rule->passes(null, implode(',', [
-            'posts.unknown',
-        ])));
+            // invalid cases
+            [implode(',', [
+                'posts',
+                'unknown',
+            ]), [
+                'The selected :attribute is invalid.',
+                '"user" doesn\'t have relationship "unknown".',
+            ]],
+            [implode(',', [
+                'posts.unknown',
+            ]), [
+                'The selected :attribute is invalid.',
+                '"posts" doesn\'t have relationship "unknown".'
+            ]],
+        ];
     }
 }
