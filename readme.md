@@ -209,7 +209,7 @@ protected function toAttributes(Request $request): array
 ```
 
 #### Described attributes
-_**@see** [described notation](##described-notation)_
+_**@see** [described notation](#described-notation)_
 
 ```php
 protected function toAttributes(Request $request): array
@@ -283,7 +283,7 @@ protected function toRelationships(Request $request): array
 ```
 
 #### Described attributes
-_**@see** [described notation](##described-notation)_
+_**@see** [described notation](#described-notation)_
 
 ```php
 protected function toRelationships(Request $request): array
@@ -391,17 +391,18 @@ UserResource::collection(User::all()); // => JsonApiCollection
 ## Described notation
 
 ### Value methods
-| Method    | Description                              |
-|-----------|------------------------------------------|
-| `bool`    | Cast to boolean                          |
-| `integer` | Cast to integer                          |
-| `float`   | Cast to float                            |
-| `string`  | Cast to string                           |
-| `date`    | Cast to date, allow to use custom format |
-| `array`   | Cast to array                            |
-| `mixed`   | Don't cast, return as is                 |
-| `enum`    | Get enum value                           |
-| `struct`  | Custom struct. Accept an array of values |
+| Method    | Description                                                     |
+|-----------|-----------------------------------------------------------------|
+| `bool`    | Cast to boolean                                                 |
+| `integer` | Cast to integer                                                 |
+| `float`   | Cast to float                                                   |
+| `string`  | Cast to string                                                  |
+| `date`    | Cast to date, allow to use custom format                        |
+| `array`   | Cast to array, supports typed arrays with `->of()`              |
+| `arrayOf` | Helper method for typed arrays (alternative to `array()->of()`) |
+| `mixed`   | Don't cast, return as is                                        |
+| `enum`    | Get enum value                                                  |
+| `struct`  | Custom struct. Accept an array of values                        |
 
 ### Relation methods
 | Method  | Description                                                       |
@@ -453,4 +454,163 @@ Will return:
     "status": 1,
     "role": "ADMIN"
 ]
+```
+
+### Typed Arrays
+
+The `array` descriptor supports typed arrays to ensure all elements are cast to a specific type. This is useful when you need to guarantee type consistency across array elements.
+
+#### Basic Usage
+
+```php
+// UserResource.php
+protected function toAttributes(Request $request): array
+{
+    return [
+        // Array of strings - all values will be cast to string
+        'tags' => $this->array('tags')->of($this->string()),
+
+        // Array of integers - all values will be cast to integer
+        'scores' => $this->array('scores')->of($this->integer()),
+
+        // Array of floats
+        'prices' => $this->array('prices')->of($this->float()),
+
+        // Array of booleans
+        'flags' => $this->array('flags')->of($this->bool()),
+    ];
+}
+```
+
+#### Using Class References
+
+You can also use class references instead of descriptor instances:
+
+```php
+use Ark4ne\JsonApi\Descriptors\Values\ValueString;
+use Ark4ne\JsonApi\Descriptors\Values\ValueInteger;
+
+protected function toAttributes(Request $request): array
+{
+    return [
+        'tags' => $this->array('tags')->of(ValueString::class),
+        'scores' => $this->array('scores')->of(ValueInteger::class),
+    ];
+}
+```
+
+#### Alternative Syntax
+
+You can also use the `arrayOf()` helper method:
+
+```php
+protected function toAttributes(Request $request): array
+{
+    return [
+        'tags' => $this->arrayOf($this->string(), 'tags'),
+        'scores' => $this->arrayOf($this->integer(), 'scores'),
+    ];
+}
+```
+
+#### Nested Typed Arrays
+
+For multi-dimensional arrays, you can nest `array()->of()` calls:
+
+```php
+protected function toAttributes(Request $request): array
+{
+    return [
+        // 2D array (matrix) of integers
+        'matrix' => $this->array('matrix')->of(
+            $this->array()->of($this->integer())
+        ),
+    ];
+}
+```
+
+#### With Closures and Transformations
+
+Combine typed arrays with closures for data transformation:
+
+```php
+protected function toAttributes(Request $request): array
+{
+    return [
+        // Transform and type cast
+        'doubled' => $this->array(fn() => array_map(fn($n) => $n * 2, $this->numbers))
+            ->of($this->integer()),
+
+        // Access nested properties
+        'user_ids' => $this->array(fn() => $this->users->pluck('id'))
+            ->of($this->integer()),
+    ];
+}
+```
+
+#### With Conditions
+
+Typed arrays support all conditional methods:
+
+```php
+protected function toAttributes(Request $request): array
+{
+    return [
+        // Only include if not null
+        'tags' => $this->array('tags')->of($this->string())->whenNotNull(),
+
+        // Only include if array is not empty
+        'scores' => $this->array('scores')->of($this->integer())->whenFilled(),
+
+        // Conditional based on closure
+        'admin_notes' => $this->array('notes')->of($this->string())
+            ->when(fn() => $request->user()->isAdmin()),
+    ];
+}
+```
+
+> **⚠️ Important Note:** Conditions applied to the item type (inside `of()`) are **not evaluated per-item**. They apply to the entire array descriptor, not individual elements.
+>
+> ```php
+> // ❌ This will NOT filter individual items
+> 'even-numbers' => $this->array('numbers')->of(
+>     $this->integer()->when(fn($request, $model, $attr) => $attr % 2 === 0)
+> )
+> // All items will be included, the when() doesn't filter per item
+>
+> // ✅ To filter items, do it before passing to the array
+> 'even-numbers' => $this->array(
+>     fn() => array_filter($this->numbers, fn($n) => $n % 2 === 0)
+> )->of($this->integer())
+> ```
+
+#### Example
+
+Given a model with mixed-type arrays:
+
+```php
+$user = new User([
+    'tags' => ['php', 'laravel', 123, true],
+    'scores' => [95.5, '87', 92, '78.9'],
+]);
+```
+
+The resource will ensure type consistency:
+
+```php
+protected function toAttributes(Request $request): array
+{
+    return [
+        'tags' => $this->array('tags')->of($this->string()),
+        'scores' => $this->array('scores')->of($this->integer()),
+    ];
+}
+```
+
+Output:
+```json
+{
+    "tags": ["php", "laravel", "123", "1"],
+    "scores": [95, 87, 92, 78]
+}
 ```
