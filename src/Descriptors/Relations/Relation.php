@@ -109,11 +109,7 @@ abstract class Relation extends Describer
             $this->whenIncluded = $whenIncluded;
         }
 
-        return $this->when(fn(
-            Request $request,
-            Model   $model,
-            string  $attribute
-        ): bool => !$this->whenIncluded || Includes::include($request, $attribute));
+        return $this;
     }
 
     /**
