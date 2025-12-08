@@ -2,7 +2,7 @@
 
 namespace Ark4ne\JsonApi\Descriptors;
 
-use Ark4ne\JsonApi\Descriptors\Values\{
+use Ark4ne\JsonApi\Descriptors\Values\{Value,
     ValueArray,
     ValueBool,
     ValueDate,
@@ -11,8 +11,7 @@ use Ark4ne\JsonApi\Descriptors\Values\{
     ValueInteger,
     ValueMixed,
     ValueString,
-    ValueStruct
-};
+    ValueStruct};
 use Closure;
 
 /**
@@ -23,7 +22,7 @@ trait Values
     /**
      * @param null|string|Closure(T):mixed $attribute
      *
-     * @return \Ark4ne\JsonApi\Descriptors\Values\ValueBool<T>
+     * @return ValueBool<T>
      */
     protected function bool(null|string|Closure $attribute = null): ValueBool
     {
@@ -33,7 +32,7 @@ trait Values
     /**
      * @param null|string|Closure(T):mixed $attribute
      *
-     * @return \Ark4ne\JsonApi\Descriptors\Values\ValueInteger<T>
+     * @return ValueInteger<T>
      */
     protected function integer(null|string|Closure $attribute = null): ValueInteger
     {
@@ -43,7 +42,7 @@ trait Values
     /**
      * @param null|string|Closure(T):mixed $attribute
      *
-     * @return \Ark4ne\JsonApi\Descriptors\Values\ValueFloat<T>
+     * @return ValueFloat<T>
      */
     public function float(null|string|Closure $attribute = null): ValueFloat
     {
@@ -53,7 +52,7 @@ trait Values
     /**
      * @param null|string|Closure(T):mixed $attribute
      *
-     * @return \Ark4ne\JsonApi\Descriptors\Values\ValueString<T>
+     * @return ValueString<T>
      */
     protected function string(null|string|Closure $attribute = null): ValueString
     {
@@ -63,7 +62,7 @@ trait Values
     /**
      * @param null|string|Closure(T):(\DateTimeInterface|string|int|null) $attribute
      *
-     * @return \Ark4ne\JsonApi\Descriptors\Values\ValueDate<T>
+     * @return ValueDate<T>
      */
     protected function date(null|string|Closure $attribute = null): ValueDate
     {
@@ -73,7 +72,7 @@ trait Values
     /**
      * @param null|string|Closure(T):(array<mixed>|null) $attribute
      *
-     * @return \Ark4ne\JsonApi\Descriptors\Values\ValueArray<T>
+     * @return ValueArray<T, mixed>
      */
     protected function array(null|string|Closure $attribute = null): ValueArray
     {
@@ -83,7 +82,7 @@ trait Values
     /**
      * @param null|string|Closure(T):mixed $attribute
      *
-     * @return \Ark4ne\JsonApi\Descriptors\Values\ValueMixed<T>
+     * @return ValueMixed<T>
      */
     protected function mixed(null|string|Closure $attribute = null): ValueMixed
     {
@@ -93,7 +92,7 @@ trait Values
     /**
      * @param null|string|Closure(T):mixed $attribute
      *
-     * @return \Ark4ne\JsonApi\Descriptors\Values\ValueEnum<T>
+     * @return ValueEnum<T>
      */
     protected function enum(null|string|Closure $attribute = null): ValueEnum
     {
@@ -101,12 +100,23 @@ trait Values
     }
 
     /**
-     * @param Closure(T):iterable<string, mixed|\Closure|\Ark4ne\JsonApi\Descriptors\Values\Value> $attribute
+     * @param Closure(T):iterable<string, mixed|Closure|Value> $attribute
      *
-     * @return \Ark4ne\JsonApi\Descriptors\Values\ValueStruct<T>
+     * @return ValueStruct<T>
      */
     protected function struct(Closure $attribute): ValueStruct
     {
         return new ValueStruct($attribute);
+    }
+
+    /**
+     * @template U
+     * @param Value<U> $type
+     * @param null|string|Closure(T):(array<mixed>|null) $attribute
+     * @return ValueArray<T, U>
+     */
+    protected function arrayOf(Value $type, null|string|Closure $attribute = null): ValueArray
+    {
+        return (new ValueArray($attribute))->of($type);
     }
 }
