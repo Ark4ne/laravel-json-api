@@ -70,9 +70,10 @@ trait Values
     }
 
     /**
+     * @template U
      * @param null|string|Closure(T):(array<mixed>|null) $attribute
      *
-     * @return ValueArray<T, mixed>
+     * @return ValueArray<T, U>
      */
     protected function array(null|string|Closure $attribute = null): ValueArray
     {
@@ -90,9 +91,10 @@ trait Values
     }
 
     /**
+     * @template U
      * @param null|string|Closure(T):mixed $attribute
      *
-     * @return ValueEnum<T>
+     * @return ValueEnum<T, U>
      */
     protected function enum(null|string|Closure $attribute = null): ValueEnum
     {
