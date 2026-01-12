@@ -1,7 +1,10 @@
 # Changelog - Version 1.6
 
-## [1.6.0] - 2025-01-28
+## [1.6.3] - 2025-02-15
+### Change
+- Drop support for Laravel > 12.44 due to compatibility issues with `illuminate/http` package.
 
+## [1.6.0] - 2025-01-28
 ### Added
 
 - **Typed Arrays Support**: Added support for typed arrays in resource attributes, allowing type-safe array elements
