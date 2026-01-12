@@ -29,7 +29,7 @@ trait Attributes
      * ];
      * ```
      */
-    protected function toAttributes(Request $request): iterable
+    public function toAttributes(Request $request): iterable
     {
         if (is_object($this->resource) && method_exists($this->resource, 'toArray')) {
             return $this->resource->toArray();
