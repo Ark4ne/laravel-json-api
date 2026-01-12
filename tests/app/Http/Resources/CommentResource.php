@@ -16,7 +16,7 @@ class CommentResource extends JsonApiResource
         return 'comment';
     }
 
-    protected function toAttributes(Request $request): iterable
+    public function toAttributes(Request $request): iterable
     {
         return collect([
             'content' => fn() => $this->resource->content,
