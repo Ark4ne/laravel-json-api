@@ -93,7 +93,7 @@ protected function toType(Request $request): string;
 
 protected function toIdentifier(Request $request): int|string;
 
-protected function toAttributes(Request $request): iterable;
+public function toAttributes(Request $request): iterable;
 
 protected function toRelationships(Request $request): iterable;
 
@@ -110,7 +110,7 @@ use Illuminate\Http\Request;
 
 class UserResource extends JsonApiResource
 {
-    protected function toAttributes(Request $request): iterable
+    public function toAttributes(Request $request): iterable
     {
         return [
             'name' => $this->name,
@@ -173,7 +173,7 @@ _**@see** [{json:api} resource-attributes](https://jsonapi.org/format/#document-
 Returns resource attributes.
 
 ```php
-protected function toAttributes(Request $request): iterable
+public function toAttributes(Request $request): iterable
 {
     return [
         'name' => $this->name,
@@ -188,7 +188,7 @@ _**@see** [laravel: eloquent-conditional-attributes](https://laravel.com/docs/9.
 Support laravel conditional attributes.
 
 ```php
-protected function toAttributes(Request $request): array
+public function toAttributes(Request $request): array
 {
     return [
         'name' => $this->name,
@@ -212,7 +212,7 @@ protected function toAttributes(Request $request): array
 _**@see** [described notation](#described-notation)_
 
 ```php
-protected function toAttributes(Request $request): array
+public function toAttributes(Request $request): array
 {
     return [
         'name' => $this->string(),
@@ -439,7 +439,7 @@ class User extends Model
 The following attributes resource:
 ```php
 // UserResource.php
-protected function toAttributes(Request $request): array
+public function toAttributes(Request $request): array
 {
     return [
         'status' => $this->enum(),
@@ -464,7 +464,7 @@ The `array` descriptor supports typed arrays to ensure all elements are cast to 
 
 ```php
 // UserResource.php
-protected function toAttributes(Request $request): array
+public function toAttributes(Request $request): array
 {
     return [
         // Array of strings - all values will be cast to string
@@ -490,7 +490,7 @@ You can also use class references instead of descriptor instances:
 use Ark4ne\JsonApi\Descriptors\Values\ValueString;
 use Ark4ne\JsonApi\Descriptors\Values\ValueInteger;
 
-protected function toAttributes(Request $request): array
+public function toAttributes(Request $request): array
 {
     return [
         'tags' => $this->array('tags')->of(ValueString::class),
@@ -504,7 +504,7 @@ protected function toAttributes(Request $request): array
 You can also use the `arrayOf()` helper method:
 
 ```php
-protected function toAttributes(Request $request): array
+public function toAttributes(Request $request): array
 {
     return [
         'tags' => $this->arrayOf($this->string(), 'tags'),
@@ -518,7 +518,7 @@ protected function toAttributes(Request $request): array
 For multi-dimensional arrays, you can nest `array()->of()` calls:
 
 ```php
-protected function toAttributes(Request $request): array
+public function toAttributes(Request $request): array
 {
     return [
         // 2D array (matrix) of integers
@@ -534,7 +534,7 @@ protected function toAttributes(Request $request): array
 Combine typed arrays with closures for data transformation:
 
 ```php
-protected function toAttributes(Request $request): array
+public function toAttributes(Request $request): array
 {
     return [
         // Transform and type cast
@@ -553,7 +553,7 @@ protected function toAttributes(Request $request): array
 Typed arrays support all conditional methods:
 
 ```php
-protected function toAttributes(Request $request): array
+public function toAttributes(Request $request): array
 {
     return [
         // Only include if not null
@@ -598,7 +598,7 @@ $user = new User([
 The resource will ensure type consistency:
 
 ```php
-protected function toAttributes(Request $request): array
+public function toAttributes(Request $request): array
 {
     return [
         'tags' => $this->array('tags')->of($this->string()),
