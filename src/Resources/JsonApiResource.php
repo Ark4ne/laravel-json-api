@@ -6,6 +6,7 @@ use Ark4ne\JsonApi\Descriptors;
 use Ark4ne\JsonApi\Resources\Concerns;
 use Ark4ne\JsonApi\Support\Arr;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
@@ -30,7 +31,7 @@ abstract class JsonApiResource extends JsonResource implements Resourceable
     public $resource;
 
     /**
-     * @param \Illuminate\Http\Request $request
+     * @param Request $request
      * @param bool                     $included
      *
      * @return array{id: int|string, type: string, attributes?:array<string, string>, relationships?:array<string, mixed>, links?:mixed, meta?:mixed}
@@ -61,7 +62,7 @@ abstract class JsonApiResource extends JsonResource implements Resourceable
     }
 
     /**
-     * @param \Illuminate\Http\Request|mixed $request
+     * @param Request|mixed $request
      *
      * @return array<mixed>
      */
@@ -94,5 +95,16 @@ abstract class JsonApiResource extends JsonResource implements Resourceable
         }
 
         return $collection;
+    }
+
+    /**
+     * Fix breaking change in JsonResource in Laravel 12.45
+     *
+     * @param Request $request
+     * @return array|\Illuminate\Contracts\Support\Arrayable|\JsonSerializable
+     */
+    public function resolveResourceData(Request $request)
+    {
+        return $this->toArray($request);
     }
 }
