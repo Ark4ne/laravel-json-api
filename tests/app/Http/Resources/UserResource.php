@@ -19,7 +19,7 @@ class UserResource extends JsonApiResource
         return 'user';
     }
 
-    protected function toAttributes(Request $request): iterable
+    public function toAttributes(Request $request): iterable
     {
         return [
             'name' => $this->resource->name,

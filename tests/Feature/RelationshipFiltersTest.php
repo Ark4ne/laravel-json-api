@@ -112,7 +112,7 @@ class RelationshipFiltersTest extends FeatureTestCase
 
 class PostResource extends JsonApiResource
 {
-    protected function toAttributes(Request $request): iterable
+    public function toAttributes(Request $request): iterable
     {
         return [
             'title' => $this->title,

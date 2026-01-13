@@ -16,7 +16,7 @@ class PostResource extends JsonApiResource
         return 'post';
     }
 
-    protected function toAttributes(Request $request): iterable
+    public function toAttributes(Request $request): iterable
     {
         return [
             'state' => $this->enum(),

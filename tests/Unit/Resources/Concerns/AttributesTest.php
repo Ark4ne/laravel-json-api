@@ -73,7 +73,7 @@ class AttributesTest extends TestCase
                 return 'my-type';
             }
 
-            protected function toAttributes(Request $request): iterable
+            public function toAttributes(Request $request): iterable
             {
                 return collect([
                     'foo' => $this->foo,
