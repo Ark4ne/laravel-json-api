@@ -99,7 +99,7 @@ abstract class JsonApiResource extends JsonResource implements Resourceable
 
     /**
      * Fix breaking change in JsonResource in Laravel 12.45
-     *
+     * @phpstan-ignore-next-line
      * @param Request $request
      * @return array|\Illuminate\Contracts\Support\Arrayable|\JsonSerializable
      */
