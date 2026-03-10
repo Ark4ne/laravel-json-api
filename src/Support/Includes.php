@@ -71,6 +71,12 @@ class Includes
         return array_keys(Arr::dot(self::currentStack($request)));
     }
 
+    public static function flush(): void
+    {
+        self::$stack = [];
+        self::$cache[static::class] = [];
+    }
+
     /**
      * @param string $include
      *

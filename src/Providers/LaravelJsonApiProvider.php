@@ -3,6 +3,8 @@
 namespace Ark4ne\JsonApi\Providers;
 
 use Ark4ne\JsonApi\Support\Config;
+use Ark4ne\JsonApi\Support\Fields;
+use Ark4ne\JsonApi\Support\Includes;
 use Illuminate\Support\ServiceProvider;
 
 class LaravelJsonApiProvider extends ServiceProvider
@@ -17,5 +19,15 @@ class LaravelJsonApiProvider extends ServiceProvider
     public function boot(): void
     {
         Config::boot();
+
+        if (class_exists(\Laravel\Octane\Events\RequestReceived::class)) {
+            $this->app['events']->listen(
+                \Laravel\Octane\Events\RequestReceived::class,
+                static function () {
+                    Fields::flush();
+                    Includes::flush();
+                }
+            );
+        }
     }
 }

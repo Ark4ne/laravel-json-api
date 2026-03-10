@@ -10,7 +10,8 @@ class Fields
 {
     use HasLocalCache;
 
-    public static ?string $current = null;
+    /** @var string[] */
+    private static array $stack = [];
 
     /**
      * Defined current resource-type/relation through callback
@@ -22,13 +23,23 @@ class Fields
      */
     public static function through(string $type, callable $callable): mixed
     {
+        self::$stack[] = $type;
         try {
-            self::$current = $type;
-
             return $callable();
         } finally {
-            self::$current = null;
+            array_pop(self::$stack);
         }
+    }
+
+    public static function current(): ?string
+    {
+        return empty(self::$stack) ? null : end(self::$stack);
+    }
+
+    public static function flush(): void
+    {
+        self::$stack = [];
+        self::$cache[static::class] = [];
     }
 
     /**
@@ -39,7 +50,7 @@ class Fields
      */
     public static function get(Request $request, null|string $type = null): ?array
     {
-        $type ??= self::$current;
+        $type ??= self::current();
 
         if ($type === null) {
             throw new \BadMethodCallException(__METHOD__ . ':$type must not be null when not current stack');
@@ -58,7 +69,7 @@ class Fields
      * @return bool
      */
     public static function has(Request $request, string $field, null|string $type =null): bool  {
-        $type ??= self::$current;
+        $type ??= self::current();
 
         if ($type === null) {
             throw new \BadMethodCallException(__METHOD__ . ':$type must not be null when not current stack');
