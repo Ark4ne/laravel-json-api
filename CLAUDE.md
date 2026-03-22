@@ -43,9 +43,10 @@ This is a Laravel package that provides JSON:API compliant resource serializatio
 - **Schema**: Resource schema generation for validation
 - **ToResponse**: Response formatting
 
-#### Request Validation
-- **Rules/Includes**: Validates `include` parameter against resource schema
-- **Rules/Fields**: Validates `fields` parameter for sparse fieldsets
+The `Describer` base class (`src/Descriptors/Describer.php`) resolves attribute names automatically from the `retriever()` when a descriptor is passed as a positional array value (no explicit key needed).
+
+#### `applyWhen` vs Laravel's `mergeWhen`
+Use `$this->applyWhen($condition, [...])` instead of `$this->mergeWhen(...)` when you need the field names to be visible in schema generation (for `Rules\Fields` validation). `mergeWhen` hides field names from the schema.
 
 ### Key Features
 - **Include Support**: Dynamic relationship loading via `?include=` parameter
