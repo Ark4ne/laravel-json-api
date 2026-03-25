@@ -139,10 +139,19 @@ trait Relationships
         $resource = $relationship->toArray($request, $included);
 
         if (isset($resource['included'])) {
-            $this->with['included'] = array_merge(
+            $this->with['included'] = Includes::merge(
                 $this->with['included'] ?? [],
                 $resource['included']
             );
+        }
+
+        if (isset($resource['with']['included'])) {
+            $this->with['included'] = Includes::merge(
+                $this->with['included'] ?? [],
+                $resource['with']['included']
+            );
+
+            unset($resource['with']['included']);
         }
 
         if (isset($resource['with'])) {
