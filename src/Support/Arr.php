@@ -54,6 +54,37 @@ class Arr
 
     /**
      * @template TKey as array-key
+     * @template UKey as array-key
+     * @template TValue
+     * @template UValue
+     *
+     * @param iterable<TKey, TValue> $base
+     * @param iterable<UKey, UValue> $with
+     *
+     * @return array<TKey & UKey, TValue & UValue>
+     */
+    public static function fillRecursive(iterable $base, iterable $with): array
+    {
+        $base = self::toArray($base);
+        $with = self::toArray($with);
+
+        foreach ($with as $key => $value) {
+            if (is_string($key)) {
+                if (is_array($value) && array_key_exists($key, $base) && is_array($base[$key])) {
+                    $base[$key] = self::fillRecursive($base[$key], $value);
+                } elseif(!array_key_exists($key, $base)) {
+                    $base[$key] = $value;
+                }
+            } elseif (!in_array($value, $base, true)) {
+                $base[] = $value;
+            }
+        }
+
+        return $base;
+    }
+
+    /**
+     * @template TKey as array-key
      * @template TValue
      *
      * @param iterable<TKey, TValue> $with

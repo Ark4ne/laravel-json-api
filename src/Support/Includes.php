@@ -90,6 +90,19 @@ class Includes
     }
 
     /**
+     * @param array<array{type: string, id: string|int}> $includes
+     * @param array<array{type: string, id: string|int}> $newIncludes
+     * @return array<array{type: string, id: string|int}>
+     */
+    public static function merge(array $includes, array $newIncludes): array
+    {
+        return array_values(\Ark4ne\JsonApi\Support\Arr::fillRecursive(
+            collect($includes)->keyBy(static fn($v) => $v['type'] . ':' . $v['id'])->all(),
+            collect($newIncludes)->keyBy(static fn($v) => $v['type'] . ':' . $v['id'])->all(),
+        ));
+    }
+
+    /**
      * @param \Illuminate\Http\Request $request
      *
      * @return array<string, mixed>
