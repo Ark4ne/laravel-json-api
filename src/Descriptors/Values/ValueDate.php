@@ -1,11 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Descriptors\Values;
 
 use Ark4ne\JsonApi\Support\Config;
 use Closure;
 use DateTime;
 use DateTimeInterface;
+use Exception;
 use Illuminate\Http\Request;
 
 /**
@@ -30,7 +33,7 @@ class ValueDate extends Value
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function value(mixed $of, Request $request): string
     {

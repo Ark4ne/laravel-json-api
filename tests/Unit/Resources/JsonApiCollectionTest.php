@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\Unit\Resources;
 
 use Ark4ne\JsonApi\Resources\JsonApiCollection;
@@ -10,18 +12,15 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Test\Support\Stub;
 use Test\TestCase;
 
-use function collect;
-
 class JsonApiCollectionTest extends TestCase
 {
-    public function testToArrayBasic()
+    public function testToArrayBasic(): void
     {
         foreach (range(1, 3) as $idx) {
             $models[] = Stub::model(['id' => $idx]);
         }
 
-        $collection = new class(collect($models), null) extends JsonApiCollection {
-        };
+        $collection = new class (\collect($models), null) extends JsonApiCollection {};
 
         $request = new Request();
 
@@ -33,18 +32,17 @@ class JsonApiCollectionTest extends TestCase
         $this->assertEquals($collect, $collection->toArray($request));
         $this->assertEquals([], $collection->with($request));
         $this->assertEquals([
-            'data' => $collect
+            'data' => $collect,
         ], $collection->toResponse($request)->getData(true));
     }
 
-    public function testToArrayResource()
+    public function testToArrayResource(): void
     {
         foreach (range(1, 3) as $idx) {
             $resources[] = $this->getResource(Stub::model(['id' => $idx]));
         }
 
-        $collection = new class(collect($resources), null) extends JsonApiCollection {
-        };
+        $collection = new class (\collect($resources), null) extends JsonApiCollection {};
 
         $request = new Request();
 
@@ -56,24 +54,24 @@ class JsonApiCollectionTest extends TestCase
         $this->assertEquals($collect, $collection->toArray($request));
         $this->assertEquals([
             'meta' => ['foo' => ['bar-1', 'bar-2', 'bar-3']],
-            'included' => $collect
+            'included' => $collect,
         ], $collection->with($request));
 
         $collection->with = [];
         $this->assertEquals([
             'data' => $collect,
             'meta' => ['foo' => ['bar-1', 'bar-2', 'bar-3']],
-            'included' => $collect
+            'included' => $collect,
         ], $collection->toResponse($request)->getData(true));
     }
 
-    public function testToArrayResourceMinimal()
+    public function testToArrayResourceMinimal(): void
     {
         foreach (range(1, 3) as $idx) {
             $resources[] = $this->getResource(Stub::model(['id' => $idx]));
         }
 
-        $collection = new class(collect($resources), null) extends JsonApiCollection {
+        $collection = new class (\collect($resources), null) extends JsonApiCollection {
             public function toArray($request, bool $included = true): array
             {
                 $this->with = ['other' => 'slug'];
@@ -91,29 +89,29 @@ class JsonApiCollectionTest extends TestCase
         $this->assertEquals($collect, $collection->toArray($request, true));
         $this->assertEquals([
             'meta' => [
-                'foo' => ['bar-1', 'bar-2', 'bar-3']
+                'foo' => ['bar-1', 'bar-2', 'bar-3'],
             ],
-            'other' => 'slug'
+            'other' => 'slug',
         ], $collection->with($request));
         $collection->with = [];
         $this->assertEquals([
             'data' => $collect,
             'meta' => ['foo' => ['bar-1', 'bar-2', 'bar-3']],
-            'other' => 'slug'
+            'other' => 'slug',
         ], $collection->toResponse($request)->getData(true));
     }
 
     private function getResource(Model $model)
     {
-        return new class($model) extends JsonResource implements Resourceable {
+        return new class ($model) extends JsonResource implements Resourceable {
             public function toArray($request, bool $minimal = false): array
             {
                 $this->with['bar'] = [];
                 $this->with['meta']['foo'] = "bar-{$this->id}";
                 $this->with['included'][] = [
-                        'type' => 'my-model',
-                        'id' => $this->id,
-                    ] + $this->resource->toArray();
+                    'type' => 'my-model',
+                    'id' => $this->id,
+                ] + $this->resource->toArray();
 
                 return [
                     'type' => 'my-model',

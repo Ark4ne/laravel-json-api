@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Descriptors\Values;
 
 use Illuminate\Http\Request;
@@ -15,7 +17,7 @@ class ValueArray extends Value
     /**
      * @var class-string<Value<U>>|Value<U>|null
      */
-    protected null|string|Value $type = null;
+    protected string|Value|null $type = null;
 
     /**
      * Define the type of elements in the array

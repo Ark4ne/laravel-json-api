@@ -1,9 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
 use Ark4ne\JsonApi\Support\Arr;
 use Ark4ne\JsonApi\Support\Fields;
+use Closure;
 use Illuminate\Http\Request;
 
 trait Attributes
@@ -15,7 +18,7 @@ trait Attributes
      *
      * @param \Illuminate\Http\Request $request
      *
-     * @return iterable<array-key, mixed|\Closure|\Ark4ne\JsonApi\Descriptors\Values\Value>
+     * @return iterable<array-key, mixed|Closure|\Ark4ne\JsonApi\Descriptors\Values\Value>
      *
      * ```
      * return [
@@ -67,7 +70,7 @@ trait Attributes
 
     /**
      * @param Request $request
-     * @return iterable<string, \Closure|mixed>|iterable<array-key, \Ark4ne\JsonApi\Descriptors\Values\Value>
+     * @return iterable<string, Closure|mixed>|iterable<array-key, \Ark4ne\JsonApi\Descriptors\Values\Value>
      */
     private function prepareAttributes(Request $request): iterable
     {
@@ -79,7 +82,7 @@ trait Attributes
 
     /**
      * @param Request $request
-     * @return iterable<string, \Closure|mixed>|iterable<array-key, \Ark4ne\JsonApi\Descriptors\Values\Value>
+     * @return iterable<string, Closure|mixed>|iterable<array-key, \Ark4ne\JsonApi\Descriptors\Values\Value>
      */
     private function resolveAttributes(Request $request): iterable
     {

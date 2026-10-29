@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Descriptors\Values;
 
 use BackedEnum;
@@ -16,7 +18,7 @@ class ValueEnum extends Value
     /**
      * @var class-string<U>|null
      */
-    protected null|string $type = null;
+    protected ?string $type = null;
 
     /**
      * Define the type of elements in the array
@@ -32,8 +34,12 @@ class ValueEnum extends Value
 
     protected function value(mixed $of, Request $request): mixed
     {
-        if ($of instanceof BackedEnum) return $of->value;
-        if ($of instanceof UnitEnum) return $of->name;
+        if ($of instanceof BackedEnum) {
+            return $of->value;
+        }
+        if ($of instanceof UnitEnum) {
+            return $of->name;
+        }
 
         return $of;
     }

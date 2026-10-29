@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Support;
 
 use ArrayAccess;
@@ -15,7 +17,7 @@ class FakeModel implements Arrayable, ArrayAccess, Countable, IteratorAggregate,
 {
     public function __get(string $name): self
     {
-        return new self;
+        return new self();
     }
 
     public function __isset(string $name)
@@ -36,7 +38,7 @@ class FakeModel implements Arrayable, ArrayAccess, Countable, IteratorAggregate,
      */
     public function __call(string $name, array $args): self
     {
-        return new self;
+        return new self();
     }
 
     /**
@@ -47,12 +49,12 @@ class FakeModel implements Arrayable, ArrayAccess, Countable, IteratorAggregate,
      */
     public static function __callStatic(string $name, array $args): self
     {
-        return new self;
+        return new self();
     }
 
     public function __invoke(): self
     {
-        return new self;
+        return new self();
     }
 
     public function __toString()

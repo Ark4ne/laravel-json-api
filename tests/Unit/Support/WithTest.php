@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\Unit\Support;
 
 use Ark4ne\JsonApi\Support\With;
@@ -21,43 +23,43 @@ class WithTest extends TestCase
             [
                 ['foo' => ['bar' => ['baz' => [1, 2]]]],
                 ['foo' => ['bar' => ['baz' => [1]]]],
-                ['foo' => ['bar' => ['baz' => [2]]]]
+                ['foo' => ['bar' => ['baz' => [2]]]],
             ],
             [
                 [
                     'included' => [
                         ['id' => 1, 'attributes' => ['a' => 1]],
-                        ['id' => 2, 'attributes' => ['a' => 2]]
-                    ]
+                        ['id' => 2, 'attributes' => ['a' => 2]],
+                    ],
                 ],
                 [
                     'included' => [
                         ['id' => 1, 'attributes' => ['a' => 1]],
-                    ]
+                    ],
                 ],
                 [
                     'included' => [
-                        ['id' => 2, 'attributes' => ['a' => 2]]
-                    ]
-                ]
+                        ['id' => 2, 'attributes' => ['a' => 2]],
+                    ],
+                ],
             ],
             [
                 [
                     'included' => [
                         ['id' => 1, 'attributes' => ['a' => 1]],
-                    ]
+                    ],
                 ],
                 [
                     'included' => [
                         ['id' => 1, 'attributes' => ['a' => 1]],
-                    ]
+                    ],
                 ],
                 [
                     'included' => [
-                        ['id' => 1, 'attributes' => ['a' => 1]]
-                    ]
-                ]
-            ]
+                        ['id' => 1, 'attributes' => ['a' => 1]],
+                    ],
+                ],
+            ],
         ];
     }
 
@@ -65,7 +67,7 @@ class WithTest extends TestCase
      * @dataProvider mergeProvider
      */
     #[DataProvider('mergeProvider')]
-    public function testMerge($expected, $base, $with)
+    public function testMerge($expected, $base, $with): void
     {
         $this->assertEquals($expected, With::merge($base, $with));
     }
@@ -80,11 +82,11 @@ class WithTest extends TestCase
             [['foo' => ['a' => 1, 'b' => 1]], ['foo' => ['a' => 1, 'b' => 1]]],
             [
                 [
-                    'included' => [['id' => 1, 'attributes' => []]]
+                    'included' => [['id' => 1, 'attributes' => []]],
                 ],
                 [
                     'included' => [['id' => 1, 'attributes' => []]],
-                    'meta' => []
+                    'meta' => [],
                 ],
             ],
         ];
@@ -94,7 +96,7 @@ class WithTest extends TestCase
      * @dataProvider washProvider
      */
     #[DataProvider('washProvider')]
-    public function testWash($expected, $base)
+    public function testWash($expected, $base): void
     {
         $this->assertEquals($expected, With::wash($base));
     }

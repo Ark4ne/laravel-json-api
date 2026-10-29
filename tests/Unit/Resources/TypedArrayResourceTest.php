@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\Unit\Resources;
 
 use Ark4ne\JsonApi\Resources\JsonApiResource;
@@ -9,14 +11,14 @@ use Test\TestCase;
 
 class TypedArrayResourceTest extends TestCase
 {
-    public function testResourceWithArrayOfStrings()
+    public function testResourceWithArrayOfStrings(): void
     {
         $model = Stub::model([
             'id' => 1,
-            'tags' => ['php', 'laravel', 'json-api', true, 1.0]
+            'tags' => ['php', 'laravel', 'json-api', true, 1.0],
         ]);
 
-        $resource = new class($model) extends JsonApiResource {
+        $resource = new class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'article';
@@ -25,7 +27,7 @@ class TypedArrayResourceTest extends TestCase
             public function toAttributes(Request $request): iterable
             {
                 return [
-                    'tags' => $this->arrayOf($this->string(), 'tags')
+                    'tags' => $this->arrayOf($this->string(), 'tags'),
                 ];
             }
         };
@@ -41,14 +43,14 @@ class TypedArrayResourceTest extends TestCase
         $this->assertSame(['php', 'laravel', 'json-api', '1', '1'], $result['attributes']['tags']);
     }
 
-    public function testResourceWithArrayOfIntegers()
+    public function testResourceWithArrayOfIntegers(): void
     {
         $model = Stub::model([
             'id' => 2,
-            'scores' => [1.5, '2', 3, '4.9']
+            'scores' => [1.5, '2', 3, '4.9'],
         ]);
 
-        $resource = new class($model) extends JsonApiResource {
+        $resource = new class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'game';
@@ -57,7 +59,7 @@ class TypedArrayResourceTest extends TestCase
             public function toAttributes(Request $request): iterable
             {
                 return [
-                    'scores' => $this->arrayOf($this->integer(), 'scores')
+                    'scores' => $this->arrayOf($this->integer(), 'scores'),
                 ];
             }
         };
@@ -73,14 +75,14 @@ class TypedArrayResourceTest extends TestCase
         $this->assertSame([1, 2, 3, 4], $result['attributes']['scores']);
     }
 
-    public function testResourceWithArrayOfFloats()
+    public function testResourceWithArrayOfFloats(): void
     {
         $model = Stub::model([
             'id' => 3,
-            'prices' => [10, '20.5', 30.75, '40']
+            'prices' => [10, '20.5', 30.75, '40'],
         ]);
 
-        $resource = new class($model) extends JsonApiResource {
+        $resource = new class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'product';
@@ -89,7 +91,7 @@ class TypedArrayResourceTest extends TestCase
             public function toAttributes(Request $request): iterable
             {
                 return [
-                    'prices' => $this->arrayOf($this->float(), 'prices')
+                    'prices' => $this->arrayOf($this->float(), 'prices'),
                 ];
             }
         };
@@ -105,18 +107,18 @@ class TypedArrayResourceTest extends TestCase
         $this->assertEquals([10.0, 20.5, 30.75, 40.0], $result['attributes']['prices']);
     }
 
-    public function testResourceWithNestedTypedArrays()
+    public function testResourceWithNestedTypedArrays(): void
     {
         $model = Stub::model([
             'id' => 4,
             'matrix' => [
                 ['1', 2, 3],
                 [4, '5', 6],
-                [7, 8, '9']
-            ]
+                [7, 8, '9'],
+            ],
         ]);
 
-        $resource = new class($model) extends JsonApiResource {
+        $resource = new class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'matrix';
@@ -127,8 +129,8 @@ class TypedArrayResourceTest extends TestCase
                 return [
                     'matrix' => $this->arrayOf(
                         $this->arrayOf($this->integer()),
-                        'matrix'
-                    )
+                        'matrix',
+                    ),
                 ];
             }
         };
@@ -144,18 +146,18 @@ class TypedArrayResourceTest extends TestCase
         $this->assertSame([
             [1, 2, 3],
             [4, 5, 6],
-            [7, 8, 9]
+            [7, 8, 9],
         ], $result['attributes']['matrix']);
     }
 
-    public function testResourceWithEmptyArray()
+    public function testResourceWithEmptyArray(): void
     {
         $model = Stub::model([
             'id' => 5,
-            'tags' => []
+            'tags' => [],
         ]);
 
-        $resource = new class($model) extends JsonApiResource {
+        $resource = new class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'article';
@@ -164,7 +166,7 @@ class TypedArrayResourceTest extends TestCase
             public function toAttributes(Request $request): iterable
             {
                 return [
-                    'tags' => $this->arrayOf($this->string(), 'tags')
+                    'tags' => $this->arrayOf($this->string(), 'tags'),
                 ];
             }
         };
@@ -180,14 +182,14 @@ class TypedArrayResourceTest extends TestCase
         $this->assertEmpty($result['attributes']['tags']);
     }
 
-    public function testResourceWithUntypedArray()
+    public function testResourceWithUntypedArray(): void
     {
         $model = Stub::model([
             'id' => 6,
-            'mixed' => [1, 'string', true, 3.14]
+            'mixed' => [1, 'string', true, 3.14],
         ]);
 
-        $resource = new class($model) extends JsonApiResource {
+        $resource = new class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'mixed-data';
@@ -196,7 +198,7 @@ class TypedArrayResourceTest extends TestCase
             public function toAttributes(Request $request): iterable
             {
                 return [
-                    'mixed' => $this->array('mixed')
+                    'mixed' => $this->array('mixed'),
                 ];
             }
         };
@@ -212,16 +214,16 @@ class TypedArrayResourceTest extends TestCase
         $this->assertSame([1, 'string', true, 3.14], $result['attributes']['mixed']);
     }
 
-    public function testResourceWithMultipleTypedArrays()
+    public function testResourceWithMultipleTypedArrays(): void
     {
         $model = Stub::model([
             'id' => 7,
             'tags' => ['php', 'laravel'],
             'scores' => [95, 87, 92],
-            'prices' => [10.5, 20.75]
+            'prices' => [10.5, 20.75],
         ]);
 
-        $resource = new class($model) extends JsonApiResource {
+        $resource = new class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'complex';
@@ -232,7 +234,7 @@ class TypedArrayResourceTest extends TestCase
                 return [
                     'tags' => $this->arrayOf($this->string(), 'tags'),
                     'scores' => $this->arrayOf($this->integer(), 'scores'),
-                    'prices' => $this->arrayOf($this->float(), 'prices')
+                    'prices' => $this->arrayOf($this->float(), 'prices'),
                 ];
             }
         };
@@ -254,14 +256,14 @@ class TypedArrayResourceTest extends TestCase
         $this->assertEquals([10.5, 20.75], $result['attributes']['prices']);
     }
 
-    public function testResourceWithArrayOfBooleans()
+    public function testResourceWithArrayOfBooleans(): void
     {
         $model = Stub::model([
             'id' => 8,
-            'flags' => [true, false, 1, 0, 'true', '']
+            'flags' => [true, false, 1, 0, 'true', ''],
         ]);
 
-        $resource = new class($model) extends JsonApiResource {
+        $resource = new class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'flags';
@@ -270,7 +272,7 @@ class TypedArrayResourceTest extends TestCase
             public function toAttributes(Request $request): iterable
             {
                 return [
-                    'flags' => $this->arrayOf($this->bool(), 'flags')
+                    'flags' => $this->arrayOf($this->bool(), 'flags'),
                 ];
             }
         };
@@ -286,14 +288,14 @@ class TypedArrayResourceTest extends TestCase
         $this->assertSame([true, false, true, false, true, false], $result['attributes']['flags']);
     }
 
-    public function testResourceWithArrayAndClosure()
+    public function testResourceWithArrayAndClosure(): void
     {
         $model = Stub::model([
             'id' => 9,
-            'numbers' => [1, 2, 3, 4, 5]
+            'numbers' => [1, 2, 3, 4, 5],
         ]);
 
-        $resource = new class($model) extends JsonApiResource {
+        $resource = new class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'calculated';
@@ -304,8 +306,8 @@ class TypedArrayResourceTest extends TestCase
                 return [
                     'doubled' => $this->arrayOf(
                         $this->integer(),
-                        fn() => array_map(fn($n) => $n * 2, $this->numbers)
-                    )
+                        fn() => array_map(fn($n) => $n * 2, $this->numbers),
+                    ),
                 ];
             }
         };
@@ -332,10 +334,10 @@ class TypedArrayResourceTest extends TestCase
     {
         $model = Stub::model([
             'id' => 10,
-            'flags' => [true, false, 1, 0]
+            'flags' => [true, false, 1, 0],
         ]);
 
-        $resource = new class($model) extends JsonApiResource {
+        $resource = new class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'conditional-item';
@@ -346,7 +348,7 @@ class TypedArrayResourceTest extends TestCase
                 return [
                     // The when(false) on the item type is not evaluated per-item
                     // It only affects the array descriptor itself
-                    'flags' => $this->arrayOf($this->bool()->when(false), 'flags')
+                    'flags' => $this->arrayOf($this->bool()->when(false), 'flags'),
                 ];
             }
         };
@@ -366,10 +368,10 @@ class TypedArrayResourceTest extends TestCase
     {
         $model = Stub::model([
             'id' => 12,
-            'flags' => [true, false, 1, 0]
+            'flags' => [true, false, 1, 0],
         ]);
 
-        $resource = new class($model) extends JsonApiResource {
+        $resource = new class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'conditional-array';
@@ -378,7 +380,7 @@ class TypedArrayResourceTest extends TestCase
             public function toAttributes(Request $request): iterable
             {
                 return [
-                    'flags' => $this->arrayOf($this->bool(), 'flags')->when(false)
+                    'flags' => $this->arrayOf($this->bool(), 'flags')->when(false),
                 ];
             }
         };
@@ -396,10 +398,10 @@ class TypedArrayResourceTest extends TestCase
     {
         $model = Stub::model([
             'id' => 13,
-            'flags' => [true, false, 1, 0]
+            'flags' => [true, false, 1, 0],
         ]);
 
-        $resource = new class($model) extends JsonApiResource {
+        $resource = new class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'conditional-array-true';
@@ -408,7 +410,7 @@ class TypedArrayResourceTest extends TestCase
             public function toAttributes(Request $request): iterable
             {
                 return [
-                    'flags' => $this->arrayOf($this->bool(), 'flags')->when(true)
+                    'flags' => $this->arrayOf($this->bool(), 'flags')->when(true),
                 ];
             }
         };
@@ -428,10 +430,10 @@ class TypedArrayResourceTest extends TestCase
         $model = Stub::model([
             'id' => 14,
             'present' => [1, 2, 3],
-            'absent' => null
+            'absent' => null,
         ]);
 
-        $resource = new class($model) extends JsonApiResource {
+        $resource = new class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'when-not-null';
@@ -441,7 +443,7 @@ class TypedArrayResourceTest extends TestCase
             {
                 return [
                     'present' => $this->arrayOf($this->integer(), 'present')->whenNotNull(),
-                    'absent' => $this->arrayOf($this->integer(), 'absent')->whenNotNull()
+                    'absent' => $this->arrayOf($this->integer(), 'absent')->whenNotNull(),
                 ];
             }
         };
@@ -462,10 +464,10 @@ class TypedArrayResourceTest extends TestCase
         $model = Stub::model([
             'id' => 15,
             'filled' => [1, 2, 3],
-            'empty' => []
+            'empty' => [],
         ]);
 
-        $resource = new class($model) extends JsonApiResource {
+        $resource = new class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'when-filled';
@@ -475,7 +477,7 @@ class TypedArrayResourceTest extends TestCase
             {
                 return [
                     'filled' => $this->arrayOf($this->integer(), 'filled')->whenFilled(),
-                    'empty' => $this->arrayOf($this->integer(), 'empty')->whenFilled()
+                    'empty' => $this->arrayOf($this->integer(), 'empty')->whenFilled(),
                 ];
             }
         };
@@ -496,10 +498,10 @@ class TypedArrayResourceTest extends TestCase
     {
         $model = Stub::model([
             'id' => 16,
-            'existing' => [1, 2, 3]
+            'existing' => [1, 2, 3],
         ]);
 
-        $resource = new class($model) extends JsonApiResource {
+        $resource = new class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'when-has';
@@ -509,7 +511,7 @@ class TypedArrayResourceTest extends TestCase
             {
                 return [
                     'existing' => $this->arrayOf($this->integer(), 'existing')->whenHas(),
-                    'missing' => $this->arrayOf($this->integer(), 'missing')->whenHas()
+                    'missing' => $this->arrayOf($this->integer(), 'missing')->whenHas(),
                 ];
             }
         };
@@ -529,10 +531,10 @@ class TypedArrayResourceTest extends TestCase
     {
         $model = Stub::model([
             'id' => 17,
-            'tags' => ['php', 'laravel']
+            'tags' => ['php', 'laravel'],
         ]);
 
-        $resource = new class($model) extends JsonApiResource {
+        $resource = new class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'unless';
@@ -542,7 +544,7 @@ class TypedArrayResourceTest extends TestCase
             {
                 return [
                     'visible' => $this->arrayOf($this->string(), 'tags')->unless(false),
-                    'hidden' => $this->arrayOf($this->string(), 'tags')->unless(true)
+                    'hidden' => $this->arrayOf($this->string(), 'tags')->unless(true),
                 ];
             }
         };
@@ -564,10 +566,10 @@ class TypedArrayResourceTest extends TestCase
             'id' => 18,
             'admin_tags' => ['admin', 'super'],
             'user_tags' => ['user', 'basic'],
-            'is_admin' => true
+            'is_admin' => true,
         ]);
 
-        $resource = new class($model) extends JsonApiResource {
+        $resource = new class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'closure-condition';
@@ -578,12 +580,12 @@ class TypedArrayResourceTest extends TestCase
                 return [
                     'admin_tags' => $this->arrayOf(
                         $this->string(),
-                        'admin_tags'
+                        'admin_tags',
                     )->when(fn() => $this->is_admin),
                     'user_tags' => $this->arrayOf(
                         $this->string(),
-                        'user_tags'
-                    )->unless(fn() => $this->is_admin)
+                        'user_tags',
+                    )->unless(fn() => $this->is_admin),
                 ];
             }
         };
@@ -605,10 +607,10 @@ class TypedArrayResourceTest extends TestCase
             'id' => 19,
             'tags' => ['php', 'laravel'],
             'is_visible' => true,
-            'has_permission' => true
+            'has_permission' => true,
         ]);
 
-        $resource = new class($model) extends JsonApiResource {
+        $resource = new class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'multiple-conditions';
@@ -619,7 +621,7 @@ class TypedArrayResourceTest extends TestCase
                 return [
                     'tags' => $this->arrayOf($this->string(), 'tags')
                         ->when(fn() => $this->is_visible)
-                        ->when(fn() => $this->has_permission)
+                        ->when(fn() => $this->has_permission),
                 ];
             }
         };
@@ -640,10 +642,10 @@ class TypedArrayResourceTest extends TestCase
             'id' => 20,
             'tags' => ['php', 'laravel'],
             'is_visible' => true,
-            'has_permission' => false
+            'has_permission' => false,
         ]);
 
-        $resource = new class($model) extends JsonApiResource {
+        $resource = new class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'multiple-conditions-false';
@@ -654,7 +656,7 @@ class TypedArrayResourceTest extends TestCase
                 return [
                     'tags' => $this->arrayOf($this->string(), 'tags')
                         ->when(fn() => $this->is_visible)
-                        ->when(fn() => $this->has_permission)
+                        ->when(fn() => $this->has_permission),
                 ];
             }
         };
@@ -673,10 +675,10 @@ class TypedArrayResourceTest extends TestCase
     {
         $model = Stub::model([
             'id' => 21,
-            'flags' => [true, false, 1, 0]
+            'flags' => [true, false, 1, 0],
         ]);
 
-        $resource = new class($model) extends JsonApiResource {
+        $resource = new class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'of-syntax-no-attr';
@@ -687,7 +689,7 @@ class TypedArrayResourceTest extends TestCase
                 return [
                     // Using array()->of() syntax without specifying attribute
                     // Should use the key 'flags' from the return array
-                    'flags' => $this->array()->of($this->bool())
+                    'flags' => $this->array()->of($this->bool()),
                 ];
             }
         };
@@ -707,10 +709,10 @@ class TypedArrayResourceTest extends TestCase
     {
         $model = Stub::model([
             'id' => 22,
-            'abc' => ['php', 'laravel', 'json-api', 1, true]
+            'abc' => ['php', 'laravel', 'json-api', 1, true],
         ]);
 
-        $resource = new class($model) extends JsonApiResource {
+        $resource = new class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'of-syntax-with-attr';
@@ -719,7 +721,7 @@ class TypedArrayResourceTest extends TestCase
             public function toAttributes(Request $request): iterable
             {
                 return [
-                    'abc' => $this->array('abc')->of($this->string())
+                    'abc' => $this->array('abc')->of($this->string()),
                 ];
             }
         };
@@ -739,10 +741,10 @@ class TypedArrayResourceTest extends TestCase
     {
         $model = Stub::model([
             'id' => 23,
-            'def' => [1, 2, 3, 4, 5]
+            'def' => [1, 2, 3, 4, 5],
         ]);
 
-        $resource = new class($model) extends JsonApiResource {
+        $resource = new class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'of-syntax-with-closure';
@@ -751,7 +753,7 @@ class TypedArrayResourceTest extends TestCase
             public function toAttributes(Request $request): iterable
             {
                 return [
-                    'def' => $this->array(fn() => $this->def)->of($this->integer())
+                    'def' => $this->array(fn() => $this->def)->of($this->integer()),
                 ];
             }
         };
@@ -771,10 +773,10 @@ class TypedArrayResourceTest extends TestCase
     {
         $model = Stub::model([
             'id' => 24,
-            'numbers' => [1, 2, 3]
+            'numbers' => [1, 2, 3],
         ]);
 
-        $resource = new class($model) extends JsonApiResource {
+        $resource = new class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'of-syntax-transformation';
@@ -784,7 +786,7 @@ class TypedArrayResourceTest extends TestCase
             {
                 return [
                     'doubled' => $this->array(fn() => array_map(fn($n) => $n * 2, $this->numbers))
-                        ->of($this->integer())
+                        ->of($this->integer()),
                 ];
             }
         };
@@ -805,10 +807,10 @@ class TypedArrayResourceTest extends TestCase
         $model = Stub::model([
             'id' => 25,
             'scores' => [95.5, '87', 92.3, '78'],
-            'show_scores' => true
+            'show_scores' => true,
         ]);
 
-        $resource = new class($model) extends JsonApiResource {
+        $resource = new class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'of-syntax-conditions';
@@ -819,7 +821,7 @@ class TypedArrayResourceTest extends TestCase
                 return [
                     'scores' => $this->array('scores')
                         ->of($this->integer())
-                        ->when(fn() => $this->show_scores)
+                        ->when(fn() => $this->show_scores),
                 ];
             }
         };
@@ -842,10 +844,10 @@ class TypedArrayResourceTest extends TestCase
             'matrix' => [
                 [1.5, '2', 3],
                 ['4', 5.7, 6],
-            ]
+            ],
         ]);
 
-        $resource = new class($model) extends JsonApiResource {
+        $resource = new class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'of-syntax-nested';
@@ -855,8 +857,8 @@ class TypedArrayResourceTest extends TestCase
             {
                 return [
                     'matrix' => $this->array('matrix')->of(
-                        $this->array()->of($this->integer())
-                    )
+                        $this->array()->of($this->integer()),
+                    ),
                 ];
             }
         };
@@ -880,10 +882,10 @@ class TypedArrayResourceTest extends TestCase
         $model = Stub::model([
             'id' => 27,
             'tags' => ['php', 'laravel'],
-            'scores' => [95, 87, 92]
+            'scores' => [95, 87, 92],
         ]);
 
-        $resource = new class($model) extends JsonApiResource {
+        $resource = new class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'mixed-syntax';
@@ -895,7 +897,7 @@ class TypedArrayResourceTest extends TestCase
                     // Using arrayOf() syntax
                     'tags' => $this->arrayOf($this->string(), 'tags'),
                     // Using array()->of() syntax
-                    'scores' => $this->array('scores')->of($this->integer())
+                    'scores' => $this->array('scores')->of($this->integer()),
                 ];
             }
         };
@@ -923,10 +925,10 @@ class TypedArrayResourceTest extends TestCase
     {
         $model = Stub::model([
             'id' => 28,
-            'numbers' => [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+            'numbers' => [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
         ]);
 
-        $resource = new class($model) extends JsonApiResource {
+        $resource = new class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'conditional-items';
@@ -938,8 +940,8 @@ class TypedArrayResourceTest extends TestCase
                     // Note: when() on the item type doesn't filter individual items
                     // It would apply to the entire descriptor, not per-item
                     'even-numbers' => $this->array('numbers')->of(
-                        $this->integer()->when(fn($request, $model, $attr) => $attr % 2 === 0)
-                    )
+                        $this->integer()->when(fn($request, $model, $attr) => $attr % 2 === 0),
+                    ),
                 ];
             }
         };

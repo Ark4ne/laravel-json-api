@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Descriptors;
 
 use Ark4ne\JsonApi\Descriptors\Values\{Value,
@@ -13,6 +15,7 @@ use Ark4ne\JsonApi\Descriptors\Values\{Value,
     ValueString,
     ValueStruct};
 use Closure;
+use DateTimeInterface;
 
 /**
  * @template T
@@ -24,7 +27,7 @@ trait Values
      *
      * @return ValueBool<T>
      */
-    protected function bool(null|string|Closure $attribute = null): ValueBool
+    protected function bool(string|Closure|null $attribute = null): ValueBool
     {
         return new ValueBool($attribute);
     }
@@ -34,7 +37,7 @@ trait Values
      *
      * @return ValueInteger<T>
      */
-    protected function integer(null|string|Closure $attribute = null): ValueInteger
+    protected function integer(string|Closure|null $attribute = null): ValueInteger
     {
         return new ValueInteger($attribute);
     }
@@ -44,7 +47,7 @@ trait Values
      *
      * @return ValueFloat<T>
      */
-    public function float(null|string|Closure $attribute = null): ValueFloat
+    public function float(string|Closure|null $attribute = null): ValueFloat
     {
         return new ValueFloat($attribute);
     }
@@ -54,17 +57,17 @@ trait Values
      *
      * @return ValueString<T>
      */
-    protected function string(null|string|Closure $attribute = null): ValueString
+    protected function string(string|Closure|null $attribute = null): ValueString
     {
         return new ValueString($attribute);
     }
 
     /**
-     * @param null|string|Closure(T):(\DateTimeInterface|string|int|null) $attribute
+     * @param null|string|Closure(T):(DateTimeInterface|string|int|null) $attribute
      *
      * @return ValueDate<T>
      */
-    protected function date(null|string|Closure $attribute = null): ValueDate
+    protected function date(string|Closure|null $attribute = null): ValueDate
     {
         return new ValueDate($attribute);
     }
@@ -74,7 +77,7 @@ trait Values
      *
      * @return ValueArray<T, mixed>
      */
-    protected function array(null|string|Closure $attribute = null): ValueArray
+    protected function array(string|Closure|null $attribute = null): ValueArray
     {
         return new ValueArray($attribute);
     }
@@ -84,7 +87,7 @@ trait Values
      *
      * @return ValueMixed<T>
      */
-    protected function mixed(null|string|Closure $attribute = null): ValueMixed
+    protected function mixed(string|Closure|null $attribute = null): ValueMixed
     {
         return new ValueMixed($attribute);
     }
@@ -94,7 +97,7 @@ trait Values
      *
      * @return ValueEnum<T, mixed>
      */
-    protected function enum(null|string|Closure $attribute = null): ValueEnum
+    protected function enum(string|Closure|null $attribute = null): ValueEnum
     {
         return new ValueEnum($attribute);
     }
@@ -114,7 +117,7 @@ trait Values
      * @param null|string|Closure(T):(array<mixed>|null) $attribute
      * @return ValueArray<T, mixed>
      */
-    protected function arrayOf(Value $type, null|string|Closure $attribute = null): ValueArray
+    protected function arrayOf(Value $type, string|Closure|null $attribute = null): ValueArray
     {
         return (new ValueArray($attribute))->of($type);
     }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
 use Ark4ne\JsonApi\Resources\Relationship;
@@ -17,7 +19,7 @@ trait Relationize
     public static function relationship(
         Closure $value,
         ?Closure $links = null,
-        ?Closure $meta = null
+        ?Closure $meta = null,
     ): Relationship {
         return new Relationship(static::class, $value, $links, $meta);
     }

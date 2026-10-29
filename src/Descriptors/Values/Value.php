@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Descriptors\Values;
 
 use Ark4ne\JsonApi\Descriptors\Describer;
@@ -21,7 +23,7 @@ abstract class Value extends Describer
     protected bool $nullable;
 
     public function __construct(
-        protected null|string|Closure $attribute
+        protected string|Closure|null $attribute,
     ) {
         $this->nullable = Config::$nullable;
     }
@@ -65,7 +67,7 @@ abstract class Value extends Describer
         return $this->when(static fn(
             Request $request,
             Model $model,
-            string $attribute
+            string $attribute,
         ): bool => $model->hasAppended($attribute));
     }
 
@@ -79,7 +81,7 @@ abstract class Value extends Describer
         return $this->when(static fn(
             Request $request,
             mixed $model,
-            string $attribute
+            string $attribute,
         ): bool => Fields::has($request, $attribute));
     }
 
@@ -94,7 +96,7 @@ abstract class Value extends Describer
         return $this->when(static fn(
             Request $request,
             mixed $model,
-            string $attribute
+            string $attribute,
         ): bool => Values::hasAttribute($model, $field ?? $attribute));
     }
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\app\Http\Resources;
 
 use Ark4ne\JsonApi\Resources\Concerns\ConditionallyLoadsAttributes;
@@ -25,27 +27,27 @@ class UserResource extends JsonApiResource
             'name' => $this->resource->name,
             'email' => $this->resource->email,
             'only-with-fields' => $this->string(fn() => 'huge-data-set')->whenInFields(),
-            $this->applyWhen(fn () => true, [
+            $this->applyWhen(fn() => true, [
                 'with-apply-conditional-raw' => 'huge-data-set',
-                'with-apply-conditional-closure' => fn () => 'huge-data-set',
-                'with-apply-conditional-value' => $this->string(fn () => 'huge-data-set'),
+                'with-apply-conditional-closure' => fn() => 'huge-data-set',
+                'with-apply-conditional-value' => $this->string(fn() => 'huge-data-set'),
             ]),
-            'struct-set' => $this->struct(fn () => [
+            'struct-set' => $this->struct(fn() => [
                 $this->string('name'),
                 'email' => $this->resource->email,
                 'casted' => $this->string(fn() => 'string'),
-                $this->applyWhen(fn () => true, [
+                $this->applyWhen(fn() => true, [
                     'with-apply-conditional-raw' => 'huge-data-set',
                 ]),
                 'closure' => fn() => 'closure',
                 'missing' => $this->mixed(fn() => 'value')->when(false),
-                'sub-struct' => $this->struct(fn () => [
-                    'int' => $this->float(fn () => 200),
-                    'float' => $this->float(fn () => 1.1),
+                'sub-struct' => $this->struct(fn() => [
+                    'int' => $this->float(fn() => 200),
+                    'float' => $this->float(fn() => 1.1),
                 ]),
-                'third-struct' => $this->struct(fn () => [
-                    'int' => $this->float(fn () => 300),
-                    'float' => $this->float(fn () => 3.1),
+                'third-struct' => $this->struct(fn() => [
+                    'int' => $this->float(fn() => 300),
+                    'float' => $this->float(fn() => 3.1),
                 ])->when(false),
             ]),
         ];
@@ -82,7 +84,7 @@ class UserResource extends JsonApiResource
                 ->meta(fn() => [
                     'total' => $this->resource->comments()->getQuery()->count(),
                 ])
-                ->withLoad(['comments' => fn($q) => $q->where('content', 'like', '%e%')])
+                ->withLoad(['comments' => fn($q) => $q->where('content', 'like', '%e%')]),
         ];
     }
 }

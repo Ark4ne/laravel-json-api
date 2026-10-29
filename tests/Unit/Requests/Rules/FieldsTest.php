@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\Unit\Requests\Rules;
 
 use Ark4ne\JsonApi\Requests\Rules\Fields;
@@ -13,12 +15,12 @@ class FieldsTest extends TestCase
      * @dataProvider validationDataProvider
      */
     #[DataProvider('validationDataProvider')]
-    public function testPasses(mixed $values, array $expected)
+    public function testPasses(mixed $values, array $expected): void
     {
         $rule = new Fields(UserResource::class);
         $errors = [];
 
-        $rule->validate('fields', $values, function($message) use (&$errors) {
+        $rule->validate('fields', $values, function ($message) use (&$errors): void {
             $errors[] = $message;
         });
         $this->assertEquals($expected, $errors);
@@ -43,11 +45,11 @@ class FieldsTest extends TestCase
             ]],
             [['user' => 'name,unknown', 'post' => 'content'], [
                 'The selected :attribute is invalid.',
-                '"user" doesn\'t have fields "unknown".'
+                '"user" doesn\'t have fields "unknown".',
             ]],
             [['user' => 'name,email', 'post' => 'unknown'], [
                 'The selected :attribute is invalid.',
-                '"post" doesn\'t have fields "unknown".'
+                '"post" doesn\'t have fields "unknown".',
             ]],
         ];
     }

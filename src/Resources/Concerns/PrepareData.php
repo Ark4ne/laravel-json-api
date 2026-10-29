@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
 use Ark4ne\JsonApi\Descriptors\Relations\Relation;
@@ -82,7 +84,6 @@ trait PrepareData
      *
      * @template TKey as array-key
      * @template TValue
-     *
      */
     protected function prepareData(Request $request, ?iterable $data): iterable
     {

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Descriptors;
 
 use Illuminate\Http\Request;
@@ -26,11 +28,11 @@ trait Resolver
                 $fields[$key] = value(
                     $value instanceof Describer
                         ? $value->valueFor($request, $this->resource, $key)
-                        : $value
+                        : $value,
                 );
 
                 return $fields;
-            }, new Collection)
+            }, new Collection())
             ->all();
     }
 }

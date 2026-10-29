@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Resources;
 
 /**
@@ -20,6 +22,5 @@ class Skeleton
         public array $fields = [],
         public array $relationships = [],
         public array $loads = [],
-    ) {
-    }
+    ) {}
 }

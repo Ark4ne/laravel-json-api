@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\Unit\Descriptors;
 
 use Ark4ne\JsonApi\Descriptors\Values\Value;
@@ -13,6 +15,7 @@ use Ark4ne\JsonApi\Descriptors\Values\ValueMixed;
 use Ark4ne\JsonApi\Descriptors\Values\ValueString;
 use Ark4ne\JsonApi\Support\Fields;
 use Carbon\Carbon;
+use Closure;
 use DateTime;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -28,10 +31,8 @@ class ValueTest extends TestCase
     {
         return [
             'arrayable' => [collect()],
-            'stdClass' => [new class extends stdClass {
-            }],
-            'model' => [new class extends Model {
-            }],
+            'stdClass' => [new class extends stdClass {}],
+            'model' => [new class extends Model {}],
         ];
     }
 
@@ -52,7 +53,7 @@ class ValueTest extends TestCase
             'string.0' => [ValueString::class, 'abc', 'abc', ''],
             'string.1' => [ValueString::class, true, '1', ''],
             'string.2' => [ValueString::class, 123.12, '123.12', ''],
-            'string.3' => [ValueString::class, collect([]), (string)collect([]), ''],
+            'string.3' => [ValueString::class, collect([]), (string) collect([]), ''],
             'array.0' => [ValueArray::class, [], [], []],
             'array.1' => [ValueArray::class, collect([]), [], []],
             'array.2' => [ValueArray::class, [123], [123], []],
@@ -91,18 +92,18 @@ class ValueTest extends TestCase
      * @dataProvider values
      */
     #[DataProvider('values')]
-    public function testConvertValue($class, $value, $excepted, $_ignored)
+    public function testConvertValue($class, $value, $excepted, $_ignored): void
     {
         /** @var \Ark4ne\JsonApi\Descriptors\Values\Value $v */
         $v = new $class(null);
-        $this->assertEquals($excepted, Reflect::invoke($v, 'value', $value, new Request));
+        $this->assertEquals($excepted, Reflect::invoke($v, 'value', $value, new Request()));
     }
 
     /**
      * @dataProvider modelsValues
      */
     #[DataProvider('modelsValues')]
-    public function testValueFor($model, $class, $value, $excepted, $_ignored)
+    public function testValueFor($model, $class, $value, $excepted, $_ignored): void
     {
         data_set($model, 'attr', $value);
 
@@ -110,7 +111,7 @@ class ValueTest extends TestCase
         $v = new $class('attr');
         $this->assertEquals(
             $excepted,
-            $v->valueFor(new Request, $model, 'attr')
+            $v->valueFor(new Request(), $model, 'attr'),
         );
     }
 
@@ -118,63 +119,63 @@ class ValueTest extends TestCase
      * @dataProvider modelsValues
      */
     #[DataProvider('modelsValues')]
-    public function testValueForWithNull($model, $class, $value, $excepted, $_ignored)
+    public function testValueForWithNull($model, $class, $value, $excepted, $_ignored): void
     {
         data_set($model, 'attr', null);
 
         /** @var \Ark4ne\JsonApi\Descriptors\Values\Value $v */
         $v = new $class('attr');
-        $this->assertNull($v->valueFor(new Request, $model, 'attr'));
+        $this->assertNull($v->valueFor(new Request(), $model, 'attr'));
     }
 
     /**
      * @dataProvider modelsValues
      */
     #[DataProvider('modelsValues')]
-    public function testValueForWithNullAndNonNullable($model, $class, $value, $_, $excepted)
+    public function testValueForWithNullAndNonNullable($model, $class, $value, $_, $excepted): void
     {
         data_set($model, 'attr', null);
 
         /** @var \Ark4ne\JsonApi\Descriptors\Values\Value $v */
         $v = new $class('attr');
-        $this->assertNull($v->valueFor(new Request, $model, 'attr'));
+        $this->assertNull($v->valueFor(new Request(), $model, 'attr'));
         /** @var \Ark4ne\JsonApi\Descriptors\Values\Value $v */
         $v = new $class('attr');
         $this->assertTrue($v->isNullable());
         $v->nullable(false);
         $this->assertFalse($v->isNullable());
-        $this->assertEquals($excepted, $v->valueFor(new Request, $model, 'attr'));
+        $this->assertEquals($excepted, $v->valueFor(new Request(), $model, 'attr'));
     }
 
     /**
      * @dataProvider models
      */
     #[DataProvider('models')]
-    public function testWhenNoNull($model)
+    public function testWhenNoNull($model): void
     {
         data_set($model, 'attr', null);
 
         $this->throughRetrieverTest(
             $model,
-            fn(Value $value) => $value->whenNotNull()->valueFor(new Request, $model, 'attr'),
+            fn(Value $value) => $value->whenNotNull()->valueFor(new Request(), $model, 'attr'),
             fn() => data_set($model, 'attr', 'abc'),
-            fn(Value $value) => $value->valueFor(new Request, $model, 'attr'),
-            true
+            fn(Value $value) => $value->valueFor(new Request(), $model, 'attr'),
+            true,
         );
     }
 
-    public function testWhenAppended()
+    public function testWhenAppended(): void
     {
-        $model = new class(['attr' => '']) extends Model {
+        $model = new class (['attr' => '']) extends Model {
             protected $fillable = ['attr'];
         };
 
         $this->throughRetrieverTest(
             $model,
-            fn(Value $value) => $value->whenAppended()->valueFor(new Request, $model, 'attr'),
+            fn(Value $value) => $value->whenAppended()->valueFor(new Request(), $model, 'attr'),
             fn() => $model->append(['attr']),
-            fn(Value $value) => $value->valueFor(new Request, $model, 'attr'),
-            false
+            fn(Value $value) => $value->valueFor(new Request(), $model, 'attr'),
+            false,
         );
     }
 
@@ -182,16 +183,16 @@ class ValueTest extends TestCase
      * @dataProvider models
      */
     #[DataProvider('models')]
-    public function testWhenFilled(&$model)
+    public function testWhenFilled(&$model): void
     {
         data_set($model, 'attr', null);
 
         $this->throughRetrieverTest(
             $model,
-            fn(Value $value) => $value->whenFilled()->valueFor(new Request, $model, 'attr'),
+            fn(Value $value) => $value->whenFilled()->valueFor(new Request(), $model, 'attr'),
             fn() => data_set($model, 'attr', 'abc'),
-            fn(Value $value) => $value->valueFor(new Request, $model, 'attr'),
-            true
+            fn(Value $value) => $value->valueFor(new Request(), $model, 'attr'),
+            true,
         );
     }
 
@@ -199,18 +200,18 @@ class ValueTest extends TestCase
      * @dataProvider models
      */
     #[DataProvider('models')]
-    public function testUnless(&$model)
+    public function testUnless(&$model): void
     {
         data_set($model, 'attr', 'abc');
 
-        $unless = (object)['value' => true];
+        $unless = (object) ['value' => true];
 
         $this->throughRetrieverTest(
             $model,
-            fn(Value $value) => $value->unless(fn() => $unless->value)->valueFor(new Request, $model, 'attr'),
+            fn(Value $value) => $value->unless(fn() => $unless->value)->valueFor(new Request(), $model, 'attr'),
             fn() => $unless->value = false,
-            fn(Value $value) => $value->valueFor(new Request, $model, 'attr'),
-            'abc'
+            fn(Value $value) => $value->valueFor(new Request(), $model, 'attr'),
+            'abc',
         );
     }
 
@@ -218,26 +219,26 @@ class ValueTest extends TestCase
      * @dataProvider models
      */
     #[DataProvider('models')]
-    public function testWhenInFields($model)
+    public function testWhenInFields($model): void
     {
-        Fields::through('test', function () use (&$model) {
+        Fields::through('test', function () use (&$model): void {
             $this->throughRetrieverTest(
                 $model,
-                fn(Value $value) => $value->whenInFields()->valueFor(new Request, $model, 'attr'),
+                fn(Value $value) => $value->whenInFields()->valueFor(new Request(), $model, 'attr'),
                 fn() => data_set($model, 'attr', 'abc'),
                 fn(Value $value) => $value->valueFor(new Request([
                     'fields' => [
-                        'test' => 'attr'
-                    ]
+                        'test' => 'attr',
+                    ],
                 ]), $model, 'attr'),
-                true
+                true,
             );
         });
     }
 
-    public function testValueFloatPrecision()
+    public function testValueFloatPrecision(): void
     {
-        $request = new Request;
+        $request = new Request();
         $v = new ValueFloat(null);
         $this->assertEquals(123.12, Reflect::invoke($v, 'value', '123.12', $request));
         $v->precision(2);
@@ -248,9 +249,9 @@ class ValueTest extends TestCase
         $this->assertEquals(123, Reflect::invoke($v, 'value', '123.12', $request));
     }
 
-    public function testValueDateFormat()
+    public function testValueDateFormat(): void
     {
-        $request = new Request;
+        $request = new Request();
         $v = new ValueDate(null);
         $this->assertEquals('2022-01-01T00:00:00+00:00', Reflect::invoke($v, 'value', '2022-01-01 00:00:00', $request));
         $v->format('Y-m-d H:i:s');
@@ -259,7 +260,7 @@ class ValueTest extends TestCase
         $this->assertEquals('1640995200', Reflect::invoke($v, 'value', '2022-01-01 00:00:00', $request));
     }
 
-    private function throughRetrieverTest(&$model, \Closure $missing, \Closure $update, \Closure $check, $expected)
+    private function throughRetrieverTest(&$model, Closure $missing, Closure $update, Closure $check, $expected): void
     {
         $valueWithRetriever = new ValueBool('attr');
         $this->assertInstanceOf(MissingValue::class, $missing($valueWithRetriever));
@@ -282,7 +283,8 @@ enum TestBackendEnum: string
     case B = 'bbb';
     case C = 'ccc';
 }
-enum TestUnitEnum {
+enum TestUnitEnum
+{
     case A;
     case B;
     case C;

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\Unit\Support;
 
 use Ark4ne\JsonApi\Support\FakeModel;
@@ -7,9 +9,9 @@ use Test\TestCase;
 
 class FakeModelTest extends TestCase
 {
-    public function testFakeModel()
+    public function testFakeModel(): void
     {
-        $model = new FakeModel;
+        $model = new FakeModel();
 
         $this->assertFalse(isset($model->abc));
         $this->assertInstanceOf(FakeModel::class, FakeModel::abc());
@@ -22,7 +24,7 @@ class FakeModelTest extends TestCase
         $this->assertEquals([], $model->jsonSerialize());
         $this->assertEquals('[]', $model->toJson());
         $this->assertEquals('[]', json_encode($model));
-        $this->assertEquals('', (string)($model));
+        $this->assertEquals('', (string) ($model));
 
         $model->abc = 123;
         $this->assertInstanceOf(FakeModel::class, $model->abc);

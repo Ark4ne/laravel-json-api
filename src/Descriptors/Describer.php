@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Descriptors;
 
 use Closure;
@@ -29,7 +31,7 @@ abstract class Describer
         $this->rules[] = static fn(
             Request $request,
             mixed   $model,
-            string  $attribute
+            string  $attribute,
         ): bool => value($condition, $request, $model, $attribute);
 
         return $this;
@@ -47,7 +49,7 @@ abstract class Describer
         $this->rules[] = static fn(
             Request $request,
             mixed   $model,
-            string  $attribute
+            string  $attribute,
         ): bool => !value($condition, $request, $model, $attribute);
 
         return $this;
@@ -63,7 +65,7 @@ abstract class Describer
         return $this->when(fn(
             Request $request,
             mixed   $model,
-            string  $attribute
+            string  $attribute,
         ): bool => null !== $this->retrieveValue($model, $attribute));
     }
 
@@ -77,7 +79,7 @@ abstract class Describer
         return $this->when(fn(
             Request $request,
             mixed   $model,
-            string  $attribute
+            string  $attribute,
         ): bool => filled($this->retrieveValue($model, $attribute)));
     }
 
@@ -143,7 +145,7 @@ abstract class Describer
     /**
      * @return string|Closure|null
      */
-    abstract public function retriever(): null|string|Closure;
+    abstract public function retriever(): string|Closure|null;
 
     /**
      * @param mixed $value
@@ -151,7 +153,7 @@ abstract class Describer
      *
      * @return int|string
      */
-    public static function retrieveName(mixed $value, int|string $key, null|string $prefix = null): int|string
+    public static function retrieveName(mixed $value, int|string $key, ?string $prefix = null): int|string
     {
         if (is_int($key) && $value instanceof self && is_string($retriever = $value->retriever())) {
             return $prefix ? $prefix . '.' . $retriever : $retriever;

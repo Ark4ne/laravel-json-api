@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\app\Http\Resources;
 
 use Ark4ne\JsonApi\Resources\JsonApiResource;

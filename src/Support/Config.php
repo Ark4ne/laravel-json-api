@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Support;
 
 use DateTimeInterface;
@@ -15,7 +17,7 @@ class Config
     /** @var array<string, bool>|bool  */
     public static array|bool $autoWhenHas = false;
 
-    public static int|null $precision = null;
+    public static ?int $precision = null;
 
     public static function boot(): void
     {

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Support;
 
 use Ark4ne\JsonApi\Support\Traits\HasLocalCache;
@@ -84,8 +86,11 @@ class Includes
      */
     public static function parse(string $include): array
     {
-        return self::cache("parse:$include", static fn() => empty($include) ? [] : Arr::undot(
-            array_fill_keys(explode(',', $include), []))
+        return self::cache(
+            "parse:$include",
+            static fn() => empty($include) ? [] : Arr::undot(
+                array_fill_keys(explode(',', $include), []),
+            ),
         );
     }
 
@@ -112,7 +117,7 @@ class Includes
         return Arr::get(
             self::parse($request->input('include') ?? ''),
             implode('.', self::$stack) ?: null,
-            []
+            [],
         );
     }
 }

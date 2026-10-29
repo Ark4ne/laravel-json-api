@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Descriptors\Relations;
 
 use Ark4ne\JsonApi\Resources\Relationship;

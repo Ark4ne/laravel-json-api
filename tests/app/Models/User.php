@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\app\Models;
 
+use DateTimeInterface;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,8 +15,8 @@ use Test\app\Factories\UserFactory;
  * @property int $id
  * @property string $name
  * @property string $email
- * @property \DateTimeInterface $created_at
- * @property \DateTimeInterface $updated_at
+ * @property DateTimeInterface $created_at
+ * @property DateTimeInterface $updated_at
  *
  * @property-read Post|null $post
  * @property-read Post[]|\Illuminate\Support\Collection<Post> $posts

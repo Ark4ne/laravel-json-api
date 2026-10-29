@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
 use Illuminate\Http\JsonResponse;
@@ -12,8 +14,7 @@ trait ToResponse
      */
     public function toResponse($request): JsonResponse
     {
-        return parent
-            ::toResponse($request)
+        return parent::toResponse($request)
             ->header('Content-Type', 'application/vnd.api+json');
     }
 }

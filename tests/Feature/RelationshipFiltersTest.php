@@ -1,14 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\Feature;
 
-use Test\app\Http\Resources\CommentResource;
-use Test\app\Models\Post;
-use Test\app\Models\User;
 use Ark4ne\JsonApi\Filters\Filters;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Contracts\Auth\Access\Gate;
 use Illuminate\Http\Request;
+use Test\app\Models\Post;
+use Test\app\Models\User;
 
 class RelationshipFiltersTest extends FeatureTestCase
 {
@@ -30,10 +31,10 @@ class RelationshipFiltersTest extends FeatureTestCase
         $this->postPrivate = $this->user->posts()->where('is_public', false)->get();
     }
 
-    public function test_can_filter_relationship_with_policy()
+    public function test_can_filter_relationship_with_policy(): void
     {
         // Create a resource with policy filter
-        $resource = new class($this->user) extends JsonApiResource {
+        $resource = new class ($this->user) extends JsonApiResource {
             protected function toRelationships(Request $request): iterable
             {
                 return [
@@ -44,7 +45,7 @@ class RelationshipFiltersTest extends FeatureTestCase
         };
 
         // Mock the gate to only allow public posts
-        $this->mock(Gate::class, function ($mock) {
+        $this->mock(Gate::class, function ($mock): void {
             $mock->shouldReceive('forUser')->andReturnSelf();
             $mock->shouldReceive('allows')
                 ->with('view', [$this->postPublic->first()])
@@ -55,50 +56,51 @@ class RelationshipFiltersTest extends FeatureTestCase
         });
 
         $result = $resource->toArray($this->createRequest());
-        
+
         // Should only contain the public post
         $this->assertCount($this->postPublic->count(), $result['relationships']['posts']['data']);
         $this->assertEquals($this->postPublic->first()->id, $result['relationships']['posts']['data'][0]['id']);
     }
 
-    public function test_can_filter_relationship_with_custom_callback()
+    public function test_can_filter_relationship_with_custom_callback(): void
     {
-        $resource = new class($this->user) extends JsonApiResource {
+        $resource = new class ($this->user) extends JsonApiResource {
             protected function toRelationships(Request $request): iterable
             {
                 return [
                     'posts' => $this->many(PostResource::class)
                         ->filters(fn(Filters $filters) => $filters->when(
-                            fn($request, $post) => $post->is_public
-                        ))
+                            fn($request, $post) => $post->is_public,
+                        )),
                 ];
             }
         };
 
         $result = $resource->toArray($this->createRequest());
-        
+
         // Should only contain the public post
         $this->assertCount($this->postPublic->count(), $result['relationships']['posts']['data']);
         $this->assertEquals($this->postPublic->first()->id, $result['relationships']['posts']['data'][0]['id']);
     }
 
-    public function test_can_combine_multiple_filters()
+    public function test_can_combine_multiple_filters(): void
     {
-        $resource = new class($this->user) extends JsonApiResource {
+        $resource = new class ($this->user) extends JsonApiResource {
             protected function toRelationships(Request $request): iterable
             {
                 return [
                     'posts' => $this->many(PostResource::class)
-                        ->filters(fn(Filters $filters) => $filters
+                        ->filters(
+                            fn(Filters $filters) => $filters
                             ->when(fn($request, $post) => $post->is_public)
-                            ->when(fn($request, $post) => $post->id > 0)
-                        )
+                            ->when(fn($request, $post) => $post->id > 0),
+                        ),
                 ];
             }
         };
 
         $result = $resource->toArray($this->createRequest());
-        
+
         // Should only contain the public post that passes both filters
         $this->assertCount($this->postPublic->count(), $result['relationships']['posts']['data']);
         $this->assertEquals($this->postPublic->first()->id, $result['relationships']['posts']['data'][0]['id']);

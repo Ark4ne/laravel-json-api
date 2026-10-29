@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\Unit\Support;
 
 use Ark4ne\JsonApi\Support\Values;
@@ -12,7 +14,7 @@ use Test\TestCase;
 
 class ValuesTest extends TestCase
 {
-    public function testMergeValues()
+    public function testMergeValues(): void
     {
         $actual = Values::mergeValues([]);
         $this->assertEquals([], $actual);
@@ -25,7 +27,7 @@ class ValuesTest extends TestCase
             'c' => true,
             'd' => false,
             'e' => null,
-            'f' => new MissingValue,
+            'f' => new MissingValue(),
         ];
         $actual = Values::mergeValues($sample);
         $this->assertEquals($expected, $actual);
@@ -38,58 +40,57 @@ class ValuesTest extends TestCase
         $actual = Values::mergeValues($sampleWithMerge);
         $this->assertEquals($expected, $actual);
 
-        $actual = Values::mergeValues($sample + [
+        $actual = Values::mergeValues(
+            $sample + [
                 new MergeValue([
                     'g' => '12345',
                     'h' => [
                         'i' => 'def',
                         new MergeValue([new MergeValue([true])]),
-                        new MergeValue([[new MergeValue([[true]])]])
+                        new MergeValue([[new MergeValue([[true]])]]),
                     ],
                     'k' => [
                         new MergeValue([1, 2, 3]),
-                        new MergeValue([4, 5, 6])
+                        new MergeValue([4, 5, 6]),
                     ],
                     new MergeValue([
-                        'self' => new MissingValue()
+                        'self' => new MissingValue(),
                     ]),
                     new MergeValue([
-                        'self' => new MissingValue()
+                        'self' => new MissingValue(),
                     ]),
                     new MergeValue([
-                        'self' => 'three'
+                        'self' => 'three',
                     ]),
                     new MergeValue([
-                        'self' => new MissingValue()
+                        'self' => new MissingValue(),
                     ]),
                 ]),
-            ]
+            ],
         );
         $this->assertEquals($sample + [
-                'g' => '12345',
-                'h' => [
-                    'i' => 'def',
-                    true,
-                    [[true]],
-                ],
-                'k' => [
-                    1,
-                    2,
-                    3,
-                    4,
-                    5,
-                    6
-                ],
-                'self' => 'three',
-            ], $actual);
+            'g' => '12345',
+            'h' => [
+                'i' => 'def',
+                true,
+                [[true]],
+            ],
+            'k' => [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+            ],
+            'self' => 'three',
+        ], $actual);
     }
 
-    public function testIsMissing()
+    public function testIsMissing(): void
     {
-        $maybeMissing = fn(bool $missing) => new class($missing) implements PotentiallyMissing {
-            public function __construct(protected bool $missing)
-            {
-            }
+        $maybeMissing = fn(bool $missing) => new class ($missing) implements PotentiallyMissing {
+            public function __construct(protected bool $missing) {}
 
             public function isMissing()
             {
@@ -118,15 +119,14 @@ class ValuesTest extends TestCase
             'array' => [['a' => 1], 'a', true, 1],
             'array.empty' => [[], 'a', false, null],
             'array.fail' => [['a' => 1], 'b', false, null],
-            'object' => [(object)['a' => 1], 'a', true, 1],
-            'object.empty' => [(object)[], 'a', false, null],
-            'object.fail' => [(object)['a' => 1], 'b', false, null],
-            'model' => [new class(['a' => 1]) extends \Illuminate\Database\Eloquent\Model {
+            'object' => [(object) ['a' => 1], 'a', true, 1],
+            'object.empty' => [(object) [], 'a', false, null],
+            'object.fail' => [(object) ['a' => 1], 'b', false, null],
+            'model' => [new class (['a' => 1]) extends \Illuminate\Database\Eloquent\Model {
                 protected $fillable = ['a'];
             }, 'a', true, 1],
-            'model.empty' => [new class() extends \Illuminate\Database\Eloquent\Model {
-            }, 'a', false, null],
-            'model.fail' => [new class(['a' => 1]) extends \Illuminate\Database\Eloquent\Model {
+            'model.empty' => [new class extends \Illuminate\Database\Eloquent\Model {}, 'a', false, null],
+            'model.fail' => [new class (['a' => 1]) extends \Illuminate\Database\Eloquent\Model {
                 protected $fillable = ['a'];
             }, 'b', false, null],
         ];
@@ -136,7 +136,7 @@ class ValuesTest extends TestCase
      * @dataProvider dataAttribute
      */
     #[DataProvider('dataAttribute')]
-    public function testHasAttribute($data, $attribute, $expected, $_ignored)
+    public function testHasAttribute($data, $attribute, $expected, $_ignored): void
     {
         $this->assertEquals($expected, Values::hasAttribute($data, $attribute));
     }
@@ -145,7 +145,7 @@ class ValuesTest extends TestCase
      * @dataProvider dataAttribute
      */
     #[DataProvider('dataAttribute')]
-    public function testGetAttribute($data, $attribute, $has, $expected)
+    public function testGetAttribute($data, $attribute, $has, $expected): void
     {
         $this->assertEquals($expected, Values::getAttribute($data, $attribute));
     }

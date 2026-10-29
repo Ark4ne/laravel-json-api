@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\Unit\Descriptors;
 
 use Ark4ne\JsonApi\Descriptors\Values\ValueArray;
-use Ark4ne\JsonApi\Descriptors\Values\ValueString;
-use Ark4ne\JsonApi\Descriptors\Values\ValueInteger;
 use Ark4ne\JsonApi\Descriptors\Values\ValueEnum;
+use Ark4ne\JsonApi\Descriptors\Values\ValueInteger;
+use Ark4ne\JsonApi\Descriptors\Values\ValueString;
 use Illuminate\Http\Request;
 use PHPUnit\Framework\TestCase;
 
@@ -19,7 +21,7 @@ class TypedArrayTest extends TestCase
         $this->request = new Request();
     }
 
-    public function testArrayOfStrings()
+    public function testArrayOfStrings(): void
     {
         $array = new ValueArray('tags');
         $array->of(new ValueString(null));
@@ -32,7 +34,7 @@ class TypedArrayTest extends TestCase
         $this->assertSame(['php', 'laravel', 'json-api', '1', '1'], $result);
     }
 
-    public function testArrayOfIntegers()
+    public function testArrayOfIntegers(): void
     {
         $array = new ValueArray('scores');
         $array->of(new ValueInteger(null));
@@ -45,7 +47,7 @@ class TypedArrayTest extends TestCase
         $this->assertSame([1, 2, 3, 4], $result);
     }
 
-    public function testArrayOfEnums()
+    public function testArrayOfEnums(): void
     {
         $array = new ValueArray('statuses');
         $array->of(new ValueEnum(null));
@@ -53,7 +55,7 @@ class TypedArrayTest extends TestCase
         $input = [
             Status::ACTIVE,
             Status::INACTIVE,
-            Status::PENDING
+            Status::PENDING,
         ];
         $result = $array->value($input, $this->request);
 
@@ -62,7 +64,7 @@ class TypedArrayTest extends TestCase
         $this->assertSame([1, 0, 2], $result); // Assuming backed enum values
     }
 
-    public function testNestedArrays()
+    public function testNestedArrays(): void
     {
         $innerArray = new ValueArray(null);
         $innerArray->of(new ValueInteger(null));
@@ -73,7 +75,7 @@ class TypedArrayTest extends TestCase
         $input = [
             ['1', 2, 3],
             [4, '5', 6],
-            [7, 8, '9']
+            [7, 8, '9'],
         ];
         $result = $outerArray->value($input, $this->request);
 
@@ -82,11 +84,11 @@ class TypedArrayTest extends TestCase
         $this->assertSame([
             [1, 2, 3],
             [4, 5, 6],
-            [7, 8, 9]
+            [7, 8, 9],
         ], $result);
     }
 
-    public function testEmptyArray()
+    public function testEmptyArray(): void
     {
         $array = new ValueArray('tags');
         $array->of(new ValueString(null));
@@ -97,7 +99,7 @@ class TypedArrayTest extends TestCase
         $this->assertCount(0, $result);
     }
 
-    public function testArrayWithoutTypeSpecification()
+    public function testArrayWithoutTypeSpecification(): void
     {
         $array = new ValueArray('mixed');
 

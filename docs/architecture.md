@@ -1,0 +1,358 @@
+# Architecture, concepts and patterns
+
+This document sets the concepts and patterns of `ark4ne/laravel-json-api` 2.x. They are inspired by
+[`ark4ne/openapi-writer`](https://github.com/Ark4ne/openapi-writer) and
+[`ark4ne/laravel-openapi-generator`](https://github.com/Ark4ne/laravel-openapi-generator), adapted to a package whose
+first quality is **how easily resources are written**. Every contribution follows them; a deviation is discussed and
+recorded here before it is coded.
+
+**Guiding idea:** the resource **describes**, the definition is **compiled once**, the renderer **decides**, the
+document is **written**. No layer does the work of another: a descriptor does not know the document, the renderer never
+guesses what a resource declares, the HTTP layer never builds resource objects by hand.
+
+Writing a resource stays as it is in 1.x:
+
+```php
+final class PostResource extends JsonApiResource
+{
+    protected function toAttributes(Request $request): iterable
+    {
+        return [
+            'title' => $this->string(),
+            'state' => $this->enum(),
+            'content' => $this->string()->whenInFields(),
+        ];
+    }
+
+    protected function toRelationships(Request $request): iterable
+    {
+        return [
+            'author' => $this->one(UserResource::class),
+            'comments' => $this->many(CommentResource::class)->links(fn() => [/* … */]),
+        ];
+    }
+}
+```
+
+## 1. Lifecycle
+
+```
+                    ┌──────────── once per class (cached) ────────────┐
+Resource class ───► │ Probe ──► toAttributes / toRelationships / …    │ ──► ResourceDefinition
+                    │        └─► descriptors ──► definitions          │        (public, immutable)
+                    └─────────────────────────────────────────────────┘
+                                                                              │
+Request ──► JsonApiContext (fields, include, configuration) ──────────────────┤
+                                                                              ▼
+Resource / Collection ──► LoadPlanner ──► DocumentBuilder ──► ResourceObjectRenderer (stages) ──► Document ──► JsonResponse
+                          (eager-load)          │                    │
+                                                └── IncludedRegistry ◄┘  (identity map type:id)
+```
+
+1. **Compilation.** The first time a resource class is needed, `Definitions` runs its hooks (`toType`,
+   `toAttributes`, `toRelationships`, `toLinks`, `toResourceMeta`) on a `Probe` instead of a real model. The
+   descriptors it returns produce a `ResourceDefinition`: names, value types, conditions, relationships, cardinalities,
+   load plans. The definition is kept in memory and can be compiled to `bootstrap/cache/jsonapi.php`.
+2. **Context.** One `JsonApiContext` per request holds the parsed `fields` and `include`, the current include path,
+   the `Configuration` and the `Diagnostics`. It is passed explicitly; nothing reads a static stack.
+3. **Loading.** Before rendering, the `LoadPlanner` computes from the definitions and the requested includes which
+   relations must be eager-loaded, and loads them once on the whole root collection, level by level.
+4. **Rendering.** The `DocumentBuilder` asks the `ResourceObjectRenderer` for each primary resource object. The
+   renderer runs its stages (identification, attributes, relationships, links, meta); related resources go to the
+   `IncludedRegistry`. The builder assembles `data`, `included`, `links`, `meta` and `jsonapi`.
+5. **Response.** The document becomes a `JsonResponse` with the `application/vnd.api+json` media type. Rendering is
+   idempotent: rendering twice gives the same document and mutates no resource.
+
+## 2. Layers and dependency rule
+
+```
+Support ← Configuration ← Definition ← Descriptors ← Compilation ← Context ← Loading ← Rendering ← Resources ← Http ← Laravel
+                                    (Exceptions: usable by every layer)
+```
+
+| Layer | Folder | Content |
+| --- | --- | --- |
+| Support | `src/Support/` | Building blocks without internal dependency: `Arr`, `Values`, `Probe`, `Diagnostics` |
+| Configuration | `src/Configuration/` | `Configuration`: typed, validated, readonly view of `config/jsonapi.php` |
+| Definition | `src/Definition/` | Public immutable model: `ResourceDefinition`, `AttributeDefinition`, `RelationshipDefinition`, `ValueType`, `Cardinality`; the `DefinitionSource` contract |
+| Descriptors | `src/Descriptors/` | Fluent immutable builders (`ValueString`, `RelationMany`…), their `Condition`s and the value type registry |
+| Compilation | `src/Compilation/` | `Definitions` (repository and memory cache), `DefinitionCompiler` (probe run), `CompiledDefinitions` (file cache) |
+| Context | `src/Context/` | `JsonApiContext`, `IncludeTree`, `SparseFieldsets` |
+| Loading | `src/Loading/` | `LoadPlanner`, `LoadPlan`, linkage without query (`BelongsTo` foreign keys) |
+| Rendering | `src/Rendering/` | `DocumentBuilder`, `ResourceObjectRenderer`, `Stage`s, `IncludedRegistry`, `Document` |
+| Resources | `src/Resources/` | The user façade: `JsonApiResource`, `JsonApiCollection` and their concerns |
+| Http | `src/Http/` | Validation rules, `JsonApiFormRequest`, content negotiation middleware, `ErrorRenderer`s |
+| Laravel | `src/Laravel/` | Service provider, Artisan commands, container bindings, `JsonApi` facade, configuration loading |
+| Exceptions | `src/Exceptions/` | Single exception hierarchy |
+
+- A layer depends only on the layers to its left. Checked by `phpat` (`tests/Architecture/ArchitectureTest.php`).
+- **Inversion at the Resources boundary.** `Compilation` and `Rendering` never depend on `Resources`: they work on the
+  `Definition\DefinitionSource` contract, which `JsonApiResource` implements through `@internal` bridge methods. The
+  user hooks stay `protected`.
+- **Laravel.** Every layer may depend on `Illuminate\Contracts\*`, on `Illuminate\Http\Request` and on the Laravel
+  classes it documents (`JsonResource`, `Model`, `Relation`…). Only the `Laravel` layer uses facades, global helpers
+  (`config()`, `app()`, `request()`…) and the container. Checked by `phpat` and `spaze/phpstan-disallowed-calls`.
+
+## 3. The definition model
+
+`src/Definition/` holds what a resource **declares**, independently of any request and any model. It is the
+**public contract** of the package for the tools that read resources (validation rules, `jsonapi:check`,
+`laravel-openapi-generator`). Patterns: **Immutable Value Object**, **Named Constructor**.
+
+```php
+final readonly class AttributeDefinition
+{
+    private function __construct(
+        public string $name,
+        public ValueType $type,
+        public bool $nullable,
+        public ?string $format = null,
+        /** @var class-string<UnitEnum>|null */
+        public ?string $enum = null,
+        public ?AttributeDefinition $items = null,
+        /** @var array<string, AttributeDefinition> */
+        public array $children = [],
+        public bool $conditional = false,
+        public bool $sparse = false,
+    ) {}
+
+    public static function of(string $name, ValueType $type): self { /* … */ }
+
+    public function nullable(bool $nullable = true): self { return $this->copy(nullable: $nullable); }
+}
+```
+
+| Object | Content |
+| --- | --- |
+| `ResourceDefinition` | Resource class, `type`, attributes, relationships, declared links and meta, diagnostics of its compilation |
+| `AttributeDefinition` | Name, dotted path inside structs, `ValueType`, nullable, format, enum class, item type, children (structs), conditional, sparse (`whenInFields`: out unless requested) |
+| `RelationshipDefinition` | Name, related resource class, `Cardinality::One` / `Many`, load plan, linkage mode, declared links and meta, conditional |
+| `ValueType` | The type of a value as the tools need it: `string`, `integer`, `number`, `boolean`, `date`, `enum`, `array`, `struct`, `mixed`, or a custom type of the registry |
+
+Rules:
+
+1. **`final readonly` classes**, private constructor, named constructors, `copy()` for every change.
+2. **No closure, no model, no request** inside a definition: it must be serializable with `var_export`. What depends on
+   runtime (a closure retriever, a constrained eager-load) is recorded as a flag (`computed`, `constrained`) and
+   resolved by the renderer from the resource instance.
+3. **Defaults resolved at compilation.** A descriptor without explicit nullability or date format stores "unset"; the
+   compiler resolves it from the `Configuration`, so a definition is always complete.
+4. **Semver.** Every public property and method of `Definition\*` and `Compilation\Definitions::for()` follows semver:
+   a change is a major version.
+
+## 4. Compilation: the probe
+
+The package never parses PHP code. It runs the resource hooks once on a **probe**: an object that answers anything
+(`$probe->name`, `$probe->posts()->count()`, `$probe['key']`) with another probe, and **records** what was read.
+Patterns: **Null Object** (the probe), **Builder** (descriptors build definitions), **Repository** (`Definitions`).
+
+- **Lazy values are required.** A value must be a descriptor (`$this->string()`) or a closure. An eager value
+  (`'name' => $this->resource->name`) is still accepted: the probe records that `name` was read and links the
+  attribute to it, with a diagnostic, but its type is unknown (`mixed`).
+- **No `if` on the request.** The definition is built with a neutral `Request`: every condition goes through
+  `->when()`, `->unless()` or `applyWhen()`. A resource whose attributes differ between two probe runs gets a
+  diagnostic.
+- **`mergeWhen` hides fields** from the definition: `applyWhen` is the documented way to group conditional fields.
+- **Opt-in escape hatch.** A resource may override `public static function definition(): ResourceDefinition` and
+  build its definition by hand; it is then never probed.
+
+### Cache
+
+| Level | Where | Lifetime | Filled by |
+| --- | --- | --- | --- |
+| Memory | `Definitions` (pure cache, the only static state allowed) | Process | First use of a class |
+| Compiled | `bootstrap/cache/jsonapi.php` (`var_export`, served by OPcache) | Until `jsonapi:clear` | `php artisan jsonapi:cache`, called by `php artisan optimize` |
+
+Without the compiled cache, PHP-FPM compiles each used class once per request; with it, a definition costs one
+OPcache read.
+
+## 5. Descriptors
+
+`src/Descriptors/` holds the fluent API returned by `$this->string()`, `$this->one()`… A descriptor has two roles:
+**describe** (`definition(string $name)`) and **resolve** a value for a given resource instance and context.
+
+- **Immutable.** Every fluent method returns a clone: a descriptor can be shared or reused without side effects.
+- **Conditions are objects.** `when()`, `unless()`, `whenHas()`, `whenFilled()`, `whenNotNull()`, `whenInFields()`,
+  `whenLoaded()`, `can()`… each add a `Condition` (**Specification** pattern) evaluated by the renderer. The
+  definition records that the field is conditional, and `whenInFields()` additionally marks it sparse.
+- **Value types are a registry** (**Strategy** + **Registry**): each `Value` subclass declares its `ValueType` and how it
+  casts a raw value. An application registers its own (`JsonApi::valueType('money', MoneyValue::class)`), and the new
+  type is available as `$this->money()` and visible in the definition.
+- **Relations** carry the related resource (explicit class, or resolved through `#[UseResource]` /
+  `Model::toResource()`), the cardinality, links and meta closures, the load plan, filters and the linkage mode.
+
+## 6. Context
+
+`JsonApiContext` is created once per request by the `Laravel` layer (`scoped` binding) and passed **explicitly**.
+
+| Member | Content |
+| --- | --- |
+| `fields` | `SparseFieldsets`: parsed `fields[type]`, `null` when a type is not restricted |
+| `include` | `IncludeTree`: parsed `include`, with the configured maximum depth |
+| `path` | The current include path; `withPath('posts')` returns a new context (no push / pop on a static stack) |
+| `configuration` | The `Configuration` |
+| `diagnostics` | The `Diagnostics` of the request (debug only) |
+
+It accepts a plain `Illuminate\Http\Request` or Laravel's native `JsonApiRequest`.
+
+## 7. Loading
+
+**Default linkage keeps the 1.x behaviour:** a relationship that is not included still renders its resource linkage
+(`data`), as the specification allows. What changes is the cost: no query is ever triggered resource by resource.
+
+| `relationship.linkage` | Not included, not loaded | Not included, loaded | Included |
+| --- | --- | --- | --- |
+| `always` (default) | Linkage, loaded in batch (or from the foreign key) | Linkage | Linkage + `included` |
+| `loaded` | `links` / `meta` only, or omitted | Linkage | Linkage + `included` |
+| `included` | `links` / `meta` only, or omitted | `links` / `meta` only, or omitted | Linkage + `included` |
+
+- The `LoadPlanner` reads the definitions and the `IncludeTree`, and builds a `LoadPlan`: which relation, on which
+  model class, at which depth, with which constraint.
+- The plan is applied **once** on the root collection, then level by level, with `loadMissing()` grouped by model
+  class: one query per relation and per level.
+- A `BelongsTo` relation renders its linkage from the foreign key and the related definition's `type`, without any
+  query.
+- Non-Eloquent resources (arrays, DTOs) are read as they are: loading does not apply.
+
+## 8. Rendering
+
+Patterns: **Builder** (`DocumentBuilder`), **Pipeline** (stages), **Identity Map** (`IncludedRegistry`).
+
+```php
+interface Stage
+{
+    public function render(ResourceObject $object, RenderedResource $resource, JsonApiContext $context): ResourceObject;
+}
+```
+
+- **Stages**, in an explicit and tested order: `IdentificationStage` → `AttributesStage` → `RelationshipsStage` →
+  `LinksStage` → `MetaStage`. An application can insert its own stage.
+- **Attributes are lazy.** Definition → sparse fieldset filter → conditions → value resolution: a closure that is not
+  requested is never called.
+- **`IncludedRegistry`** keys every resource object by `type:id`: O(1) insertion, primary resources excluded, a
+  resource reached through two paths rendered once.
+- **Shape guarantees**, by construction and not by `array_filter`: `id` is always a string; an empty to-one is
+  `{"data": null}`, an empty to-many `{"data": []}`; a relationship object always has `data`, `links` or `meta`, or is
+  omitted; `attributes`, `relationships`, `links` and `meta` are always JSON objects.
+- **Sparse fieldsets** restrict attributes **and** relationships, for primary and included resources alike.
+- **Pagination** keeps Laravel's paginated output (`links.first/last/prev/next`, `meta`): it already complies with the
+  specification.
+
+## 9. Resources (the user façade)
+
+`JsonApiResource` extends Laravel's `JsonResource` and is the only place where **traits are allowed**: they are thin
+façades (`$this->string()`, `$this->one()`, `$this->applyWhen()`) that delegate to the services above.
+
+| Hook | Role |
+| --- | --- |
+| `toType()` or `#[JsonApiType('posts')]` | Resource type; default from the configured naming convention (`kebab-singular`) |
+| `toIdentifier()` (alias `toId()`) | Resource id; default from the model key |
+| `toAttributes()` | Attributes |
+| `toRelationships()` | Relationships |
+| `toLinks()` | Resource links |
+| `toResourceMeta()` | Resource meta |
+| `toDocumentMeta()` | Top-level meta; `toMeta()` throws in 2.x to avoid a silent change of meaning |
+
+Collections are created through `newCollection()`; `$collects` and `$preserveKeys` work on Laravel 12 and 13, the
+`#[Collects]` / `#[PreserveKeys]` attributes are read when they exist.
+
+## 10. HTTP
+
+Everything in `src/Http/` is **opt-in** and stays in Laravel's idioms. `sort`, `filter` and `page` are out of scope:
+the application handles them as it would in any Laravel API.
+
+- **Validation rules** `Includes` and `Fields` read the definitions; `JsonApiFormRequest` preconfigures them from a
+  resource class.
+- **Errors** (**Chain of Responsibility**): one `ErrorRenderer` per exception family (`ValidationException`,
+  `AuthorizationException`, `ModelNotFoundException`, `HttpException`, `Throwable`), ordered by a public `PRIORITY`
+  constant, wired in one line in `bootstrap/app.php`.
+- **Content negotiation** middleware: `415` / `406` as the specification requires, `ext` and `profile` parameters.
+
+## 11. Extension points
+
+| Extension point | Interface | Registered by | Example |
+| --- | --- | --- | --- |
+| Value type | `Descriptors\Values\Value` (abstract base) | `JsonApi::valueType()` | `MoneyValue` |
+| Condition | `Descriptors\Condition` | Descriptor method or `->when(new MyCondition)` | `WhenFeatureCondition` |
+| Rendering stage | `Rendering\Stage` | Configuration | `TimestampsMetaStage` |
+| Error renderer | `Http\Errors\ErrorRenderer` | Configuration or service provider | `DomainErrorRenderer` |
+| Type naming | `Configuration\TypeNaming` | Configuration | `KebabPluralTypeNaming` |
+
+Registries order their entries by priority, never by the order of a configuration array.
+
+## 12. Diagnostics and errors
+
+- **Notification pattern:** `Diagnostics` collects warnings (eager attribute, request-dependent attributes,
+  `mergeWhen`, filter on an unloaded relation…) instead of stopping. `jsonapi:check` prints them; `--strict` fails on
+  the first warning.
+- **Exceptions** only for programming and configuration errors. Every exception implements
+  `Exceptions\JsonApiException`, extends the matching SPL exception and is built through named constructors
+  (`InvalidConfigurationException::forKey('relationship.linkage', …)`).
+
+## 13. Supported versions
+
+- PHP `^8.3`, Laravel `^12.46|^13.0`, then `^14.0` as soon as it is released.
+- Only APIs present in **every** supported Laravel version are used. A Laravel 13 addition is read only when it
+  exists. A feature that can only be built on the latest version reopens the support decision instead of adding
+  version branches.
+- Laravel 12 is dropped in a minor version after the end of its security fixes (February 2027).
+
+## 14. Code conventions
+
+| Topic | Rule |
+| --- | --- |
+| Classes | `final` by default. Extensible base classes, listed in the architecture test: `JsonApiResource`, `JsonApiCollection`, `Descriptors\Values\Value` |
+| Traits | Only in `src/Resources/` |
+| Global state | No singleton, no mutable static property; the only static cache is `Compilation\Definitions` (pure) |
+| Facades and helpers | Only in `src/Laravel/` |
+| Types | `declare(strict_types=1)`, every signature typed, PHPStan max; `mixed` only for free values, documented |
+| PHPDoc | Generics on the public API (`JsonApiResource<User>`, `Value<User>`, `Closure(User): mixed`); no redundant PHPDoc |
+| Naming | Interfaces without suffix (`Stage`, `Condition`, `ErrorRenderer`); implementations named after what they handle (`AttributesStage`, `ValidationErrorRenderer`, `WhenHasCondition`) |
+| Public API | Everything not documented as public is `@internal` and may change in a minor version |
+| Language | Everything is in English, `docs/` included |
+
+## 15. Tests
+
+- **Suites:** `tests/Unit` (one test class per class), `tests/Feature` (Orchestra Testbench scenarios on the
+  application of `tests/app`), `tests/Architecture` (phpat), `tests/Benchmark`.
+- **Every rendered document is validated** against the official JSON:API 1.1 JSON Schema before any comparison.
+- **Expected documents** are JSON files (`tests/Feature/<Scenario>/expected/*.json`), rewritten by
+  `composer fixtures:update` and reviewed in the diff.
+- **Query counting:** include and linkage scenarios assert the number of SQL queries (no N+1).
+- **Object Mother** for models and resources; shared assertions live in a base `TestCase`, not in traits.
+- Arrange / Act / Assert; test names are sentences (`test_null_to_one_relationship_renders_data_null`).
+- **Workflow:** contract (signatures and PHPDoc, neutral bodies) → red tests → implementation. Never implement
+  behaviour that has no test yet.
+
+## 16. Recipes
+
+### Add a value type
+
+1. Create `src/Descriptors/Values/<Type>Value.php` extending `Value`, declare its `ValueType` and its cast.
+2. Register it in the default value type registry and add the helper to the `Values` concern.
+3. Unit test the cast (nullable, conditions) and the definition it produces.
+
+### Add a condition
+
+1. Create `src/Descriptors/Conditions/<Name>Condition.php` implementing `Condition`.
+2. Add the fluent method on the descriptor (returning a clone).
+3. Unit test the condition alone and its effect on the definition (`conditional`, `sparse`).
+
+### Add an error renderer
+
+1. Create `src/Http/Errors/<Exception>ErrorRenderer.php` with its `PRIORITY` constant.
+2. Register it in the default chain.
+3. Feature test the response, validated against the JSON:API schema.
+
+## 17. Automatic safeguards
+
+| Safeguard | What it checks |
+| --- | --- |
+| PHPStan max level + Larastan + strict rules + phpstan-phpunit | Types, dead code, comparisons, Laravel API |
+| `phpat` | Dependency rule, `final` classes, traits only in `Resources/`, naming |
+| `spaze/phpstan-disallowed-calls` | Facades and global helpers outside `Laravel/`, debug output |
+| PHP-CS-Fixer (PER-CS) | Style, `declare(strict_types=1)` |
+| JSON Schema validation of the rendered documents | Every Feature output complies with JSON:API 1.1 |
+| Coverage ≥ 90 % (`bin/coverage-check.php`) | Tested lines |
+| Infection (MSI ≥ 80 %) | Test quality |
+| CI matrix | PHP 8.3 / 8.4 / 8.5 × Laravel 12 / 13, lowest and stable dependencies |

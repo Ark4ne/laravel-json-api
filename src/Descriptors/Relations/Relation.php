@@ -1,11 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Descriptors\Relations;
 
 use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Filters\Filters;
 use Ark4ne\JsonApi\Resources\Relationship;
-use Ark4ne\JsonApi\Support\Includes;
 use Ark4ne\JsonApi\Traits\HasRelationLoad;
 use Closure;
 use Illuminate\Contracts\Auth\Access\Gate;
@@ -29,14 +30,12 @@ abstract class Relation extends Describer
 
     /**
      * @param class-string<\Ark4ne\JsonApi\Resources\JsonApiResource|\Ark4ne\JsonApi\Resources\JsonApiCollection> $related
-     * @param string|\Closure|null $relation
+     * @param string|Closure|null $relation
      */
     public function __construct(
         protected string              $related,
-        protected null|string|Closure $relation
-    )
-    {
-    }
+        protected string|Closure|null $relation,
+    ) {}
 
     /**
      * @return class-string<\Ark4ne\JsonApi\Resources\JsonApiResource|\Ark4ne\JsonApi\Resources\JsonApiCollection>
@@ -49,7 +48,7 @@ abstract class Relation extends Describer
     /**
      * @return null|string|Closure
      */
-    public function retriever(): null|string|Closure
+    public function retriever(): string|Closure|null
     {
         return $this->relation;
     }
@@ -74,7 +73,7 @@ abstract class Relation extends Describer
      */
     public function filters(Closure $filters): static
     {
-        $this->filters = $filters(new Filters);
+        $this->filters = $filters(new Filters());
         return $this;
     }
 
@@ -87,13 +86,14 @@ abstract class Relation extends Describer
      */
     public function can(iterable|string $abilities, array $arguments = [], string $gateClass = Gate::class, ?string $guard = null): static
     {
-        return $this->when(fn(
-            Request $request,
-            Model   $model,
-            string  $attribute
-        ) => app($gateClass)
+        return $this->when(
+            fn(
+                Request $request,
+                Model   $model,
+                string  $attribute,
+            ) => app($gateClass)
             ->forUser($request->user($guard))
-            ->allows($abilities, [$model, ...$arguments])
+            ->allows($abilities, [$model, ...$arguments]),
         );
     }
 
@@ -101,7 +101,7 @@ abstract class Relation extends Describer
      * @param bool|null $whenIncluded
      * @return static
      */
-    public function whenIncluded(null|bool $whenIncluded = null): static
+    public function whenIncluded(?bool $whenIncluded = null): static
     {
         if ($whenIncluded === null) {
             $this->whenIncluded ??= true;
@@ -118,12 +118,12 @@ abstract class Relation extends Describer
      * @return static
      * @see \Illuminate\Http\Resources\ConditionallyLoadsAttributes::whenLoaded
      */
-    public function whenLoaded(null|string $relation = null): static
+    public function whenLoaded(?string $relation = null): static
     {
         return $this->when(fn(
             Request $request,
             Model   $model,
-            string  $attribute
+            string  $attribute,
         ): bool => $model->relationLoaded($relation ?? (is_string($this->relation) ? $this->relation : $attribute)));
     }
 
@@ -133,19 +133,19 @@ abstract class Relation extends Describer
      *
      * @return static
      * @see \Illuminate\Http\Resources\ConditionallyLoadsAttributes::whenPivotLoadedAs
-     *
      */
-    public function whenPivotLoaded(string $table, null|string $accessor = null): static
+    public function whenPivotLoaded(string $table, ?string $accessor = null): static
     {
-        return $this->when(fn(
-            Request $request,
-            Model   $model,
-            string  $attribute
-        ): bool => ($pivot = $model->{$accessor ?? (is_string($this->relation) ? $this->relation : $attribute)})
+        return $this->when(
+            fn(
+                Request $request,
+                Model   $model,
+                string  $attribute,
+            ): bool => ($pivot = $model->{$accessor ?? (is_string($this->relation) ? $this->relation : $attribute)})
             && (
-                $pivot instanceof $table ||
-                $pivot->getTable() === $table
-            )
+                $pivot instanceof $table
+                || $pivot->getTable() === $table
+            ),
         );
     }
 
@@ -159,7 +159,7 @@ abstract class Relation extends Describer
             $value = static fn() => match (true) {
                 $model instanceof Model => $model->getRelationValue($retriever ?? $attribute),
                 Arr::accessible($model) => $model[$retriever ?? $attribute],
-                default => $model->{$retriever ?? $attribute}
+                default => $model->{$retriever ?? $attribute},
             };
         }
 

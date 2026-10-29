@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\Unit\Descriptors;
 
 use Ark4ne\JsonApi\Descriptors\Relations;
@@ -44,7 +46,7 @@ class DescriptorsTraitTest extends TestCase
      * @dataProvider methods
      */
     #[DataProvider('methods')]
-    public function testDescriptorTrait($expected, $method, ...$args)
+    public function testDescriptorTrait($expected, $method, ...$args): void
     {
         $mock = new class extends stdClass {
             use Values;

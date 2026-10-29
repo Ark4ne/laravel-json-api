@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\Unit\Descriptors;
 
 use Ark4ne\JsonApi\Descriptors\Relations\RelationMissing;
 use Ark4ne\JsonApi\Descriptors\Relations\RelationOne;
 use Ark4ne\JsonApi\Resources\Relationship;
+use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MissingValue;
@@ -29,26 +32,26 @@ class RelationTest extends TestCase
      * @dataProvider resourceProvider
      */
     #[DataProvider('resourceProvider')]
-    public function testIncluded($model)
+    public function testIncluded($model): void
     {
         $stub = new RelationOne(UserResource::class, fn() => null);
 
-        $relation = $stub->resolveFor(new Request, $model, 'null');
+        $relation = $stub->resolveFor(new Request(), $model, 'null');
         $this->assertInstanceOf(Relationship::class, $relation);
         $this->assertNull(Reflect::get($relation, 'whenIncluded'));
 
         $stub->whenIncluded();
-        $relation = $stub->resolveFor(new Request, $model, 'null');
+        $relation = $stub->resolveFor(new Request(), $model, 'null');
         $this->assertInstanceOf(Relationship::class, $relation);
         $this->assertTrue(Reflect::get($relation, 'whenIncluded'));
 
         $stub->whenIncluded(false);
-        $relation = $stub->resolveFor(new Request, $model, 'null');
+        $relation = $stub->resolveFor(new Request(), $model, 'null');
         $this->assertInstanceOf(Relationship::class, $relation);
         $this->assertFalse(Reflect::get($relation, 'whenIncluded'));
 
         $stub->whenIncluded(true);
-        $relation = $stub->resolveFor(new Request, $model, 'null');
+        $relation = $stub->resolveFor(new Request(), $model, 'null');
         $this->assertInstanceOf(Relationship::class, $relation);
         $this->assertTrue(Reflect::get($relation, 'whenIncluded'));
     }
@@ -58,20 +61,20 @@ class RelationTest extends TestCase
      * @dataProvider resourceProvider
      */
     #[DataProvider('resourceProvider')]
-    public function testMeta($model)
+    public function testMeta($model): void
     {
         $stub = new RelationOne(UserResource::class, fn() => null);
 
-        $relation = $stub->resolveFor(new Request, $model, 'null');
+        $relation = $stub->resolveFor(new Request(), $model, 'null');
 
         $this->assertInstanceOf(Relationship::class, $relation);
         $this->assertEmpty(Reflect::get($relation, 'meta'));
 
         $stub->meta(fn() => ['test']);
-        $relation = $stub->resolveFor(new Request, $model, 'null');
+        $relation = $stub->resolveFor(new Request(), $model, 'null');
 
         $this->assertInstanceOf(Relationship::class, $relation);
-        $this->assertInstanceOf(\Closure::class, Reflect::get($relation, 'meta'));
+        $this->assertInstanceOf(Closure::class, Reflect::get($relation, 'meta'));
         $this->assertEquals(['test'], Reflect::get($relation, 'meta')());
     }
 
@@ -79,20 +82,20 @@ class RelationTest extends TestCase
      * @dataProvider resourceProvider
      */
     #[DataProvider('resourceProvider')]
-    public function testLinks($model)
+    public function testLinks($model): void
     {
         $stub = new RelationOne(UserResource::class, fn() => null);
 
-        $relation = $stub->resolveFor(new Request, $model, 'null');
+        $relation = $stub->resolveFor(new Request(), $model, 'null');
 
         $this->assertInstanceOf(Relationship::class, $relation);
         $this->assertEmpty(Reflect::get($relation, 'links'));
 
         $stub->links(fn() => ['test']);
-        $relation = $stub->resolveFor(new Request, $model, 'null');
+        $relation = $stub->resolveFor(new Request(), $model, 'null');
 
         $this->assertInstanceOf(Relationship::class, $relation);
-        $this->assertInstanceOf(\Closure::class, Reflect::get($relation, 'links'));
+        $this->assertInstanceOf(Closure::class, Reflect::get($relation, 'links'));
         $this->assertEquals(['test'], Reflect::get($relation, 'links')());
     }
 
@@ -109,7 +112,7 @@ class RelationTest extends TestCase
      * @dataProvider dataWhenLoaded
      */
     #[DataProvider('dataWhenLoaded')]
-    public function testWhenLoaded($expectedAttr, $relation, $invokedAttr)
+    public function testWhenLoaded($expectedAttr, $relation, $invokedAttr): void
     {
         $mockModel = $this->getMockBuilder(Model::class)->onlyMethods(['relationLoaded'])->getMock();
         $mockModel->expects(self::once())->method('relationLoaded')->with($expectedAttr)->willReturn(false);
@@ -117,7 +120,7 @@ class RelationTest extends TestCase
         $stub = new RelationOne(UserResource::class, $relation);
         $stub->whenLoaded();
 
-        $check = Reflect::invoke($stub, 'check', new Request, $mockModel, $invokedAttr);
+        $check = Reflect::invoke($stub, 'check', new Request(), $mockModel, $invokedAttr);
         $this->assertFalse($check);
     }
 
@@ -134,16 +137,15 @@ class RelationTest extends TestCase
      * @dataProvider dataWhenPivotLoaded
      */
     #[DataProvider('dataWhenPivotLoaded')]
-    public function testWhenPivotLoaded($expectedAttr, $relation, $invokedAttr)
+    public function testWhenPivotLoaded($expectedAttr, $relation, $invokedAttr): void
     {
-        $model = new class extends Model {
-        };
+        $model = new class extends Model {};
 
-        $model->$expectedAttr = new stdClass;
+        $model->$expectedAttr = new stdClass();
         $stub = new RelationOne(UserResource::class, $relation);
         $stub->whenPivotLoaded(stdClass::class);
 
-        $check = Reflect::invoke($stub, 'check', new Request, $model, $invokedAttr);
+        $check = Reflect::invoke($stub, 'check', new Request(), $model, $invokedAttr);
         $this->assertTrue($check);
     }
 
@@ -151,12 +153,12 @@ class RelationTest extends TestCase
      * @dataProvider resourceProvider
      */
     #[DataProvider('resourceProvider')]
-    public function testRelationMissing($model)
+    public function testRelationMissing($model): void
     {
         $missing = RelationMissing::fromRelationship(new Relationship(UserResource::class, fn() => null));
 
-        $check = Reflect::invoke($missing, 'check', new Request, $model, 'any');
-        $value = Reflect::invoke($missing, 'valueFor', new Request, $model, 'any');
+        $check = Reflect::invoke($missing, 'check', new Request(), $model, 'any');
+        $value = Reflect::invoke($missing, 'valueFor', new Request(), $model, 'any');
 
         $this->assertFalse($check);
         $this->assertInstanceOf(Relationship::class, $value);

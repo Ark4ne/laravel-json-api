@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 $config = include __DIR__ . '/../../config/jsonapi.php';
 
 $config['describer']['when-has'] = true;

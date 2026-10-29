@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Support;
 
 use Illuminate\Support\Arr;
@@ -29,7 +31,7 @@ class With
         foreach ((new Collection($with))->toArray() as $key => $value) {
             $base[$key] = array_merge_recursive(
                 $base[$key] ?? [],
-                $value
+                $value,
             );
         }
 
@@ -85,7 +87,7 @@ class With
             $entries = array_values(array_unique($entries, SORT_REGULAR));
             return array_combine(
                 array_column($entries, 0),
-                array_column($entries, 1)
+                array_column($entries, 1),
             );
         }
 

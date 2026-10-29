@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\Unit\Resources;
 
 use Ark4ne\JsonApi\Resources\JsonApiCollection;
@@ -8,14 +10,12 @@ use Illuminate\Http\Request;
 use Test\Support\Stub;
 use Test\TestCase;
 
-use function collect;
-
 class JsonApiResourceTest extends TestCase
 {
-    public function testBasic()
+    public function testBasic(): void
     {
         $model = Stub::model(['id' => 1]);
-        $resource = new class($model) extends JsonApiResource {
+        $resource = new class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'my-model';
@@ -29,20 +29,20 @@ class JsonApiResourceTest extends TestCase
             'id' => '1',
             'attributes' => [
                 'id' => '1',
-            ]
+            ],
         ];
         $this->assertEquals($data, $resource->toArray($request));
         $this->assertEquals([], $resource->with($request));
         $this->assertEquals(
             ['data' => $data],
-            $resource->toResponse($request)->getData(true)
+            $resource->toResponse($request)->getData(true),
         );
     }
 
-    public function testBasicMinimal()
+    public function testBasicMinimal(): void
     {
         $model = Stub::model(['id' => 1]);
-        $resource = new class($model) extends JsonApiResource {
+        $resource = new class ($model) extends JsonApiResource {
             public function toArray($request, bool $included = true): array
             {
                 return parent::toArray($request, false);
@@ -64,14 +64,14 @@ class JsonApiResourceTest extends TestCase
         $this->assertEquals([], $resource->with($request));
         $this->assertEquals(
             ['data' => $data],
-            $resource->toResponse($request)->getData(true)
+            $resource->toResponse($request)->getData(true),
         );
     }
 
-    public function testWithMeta()
+    public function testWithMeta(): void
     {
         $model = Stub::model(['id' => 1]);
-        $resource = new class($model) extends JsonApiResource {
+        $resource = new class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'my-model';
@@ -97,24 +97,26 @@ class JsonApiResourceTest extends TestCase
                 'id' => '1',
             ],
             'meta' => [
-                'self' => '1'
-            ]
+                'self' => '1',
+            ],
         ];
         $this->assertEquals($data, $resource->toArray($request));
         $this->assertEquals([
-            'meta' => ['hash' => 'azerty']
+            'meta' => ['hash' => 'azerty'],
         ], $resource->with($request));
-        $this->assertEquals([
-            'data' => $data,
-            'meta' => ['hash' => 'azerty']
-        ], $resource->toResponse($request)->getData(true)
+        $this->assertEquals(
+            [
+                'data' => $data,
+                'meta' => ['hash' => 'azerty'],
+            ],
+            $resource->toResponse($request)->getData(true),
         );
     }
 
-    public function testWithMetaMinimal()
+    public function testWithMetaMinimal(): void
     {
         $model = Stub::model(['id' => 1]);
-        $resource = new class($model) extends JsonApiResource {
+        $resource = new class ($model) extends JsonApiResource {
             public function toArray($request, bool $included = true): array
             {
                 return parent::toArray($request, false);
@@ -144,34 +146,36 @@ class JsonApiResourceTest extends TestCase
         ];
         $this->assertEquals($data, $resource->toArray($request));
         $this->assertEquals([
-            'meta' => ['hash' => 'azerty']
+            'meta' => ['hash' => 'azerty'],
         ], $resource->with($request));
-        $this->assertEquals([
-            'data' => $data,
-            'meta' => ['hash' => 'azerty']
-        ], $resource->toResponse($request)->getData(true)
+        $this->assertEquals(
+            [
+                'data' => $data,
+                'meta' => ['hash' => 'azerty'],
+            ],
+            $resource->toResponse($request)->getData(true),
         );
     }
 
-    public function testToCollection()
+    public function testToCollection(): void
     {
-        $resource = new class(null) extends JsonApiResource {
+        $resource = new class (null) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'my-model';
             }
         };
 
-        $collection = $resource::collection(collect(Stub::model(['id' => 1])));
+        $collection = $resource::collection(\collect(Stub::model(['id' => 1])));
 
         $this->assertInstanceOf(JsonApiCollection::class, $collection);
         $this->assertEquals($resource::class, $collection->collects);
         $this->assertNull($collection->preserveKeys);
     }
 
-    public function testToCollectionPreserveKeys()
+    public function testToCollectionPreserveKeys(): void
     {
-        $resource = new class(null) extends JsonApiResource {
+        $resource = new class (null) extends JsonApiResource {
             public $preserveKeys = true;
 
             public function toType(Request $request): string
@@ -180,19 +184,19 @@ class JsonApiResourceTest extends TestCase
             }
         };
 
-        $collection = $resource::collection(collect(Stub::model(['id' => 1])));
+        $collection = $resource::collection(\collect(Stub::model(['id' => 1])));
 
         $this->assertInstanceOf(JsonApiCollection::class, $collection);
         $this->assertEquals($resource::class, $collection->collects);
         $this->assertTrue(property_exists($collection, 'preserveKeys'));
     }
 
-    public function testReturnArray()
+    public function testReturnArray(): void
     {
-        $resource = new class(null) extends JsonApiResource {
+        $resource = new class (null) extends JsonApiResource {
             public function toIdentifier(Request $request): string
             {
-                return 1;
+                return '1';
             }
 
             public function toType(Request $request): string
@@ -207,10 +211,10 @@ class JsonApiResourceTest extends TestCase
                     'str' => 'abc',
                 ];
 
-                return collect($data)->merge([
-                    'data' => collect($data)->merge([
-                        'data' => collect($data)
-                    ])->all()
+                return \collect($data)->merge([
+                    'data' => \collect($data)->merge([
+                        'data' => \collect($data),
+                    ])->all(),
                 ]);
             }
 
@@ -221,10 +225,10 @@ class JsonApiResourceTest extends TestCase
                     'str' => 'abc',
                 ];
 
-                return collect($data)->merge([
-                    'data' => collect($data)->merge([
-                        'data' => collect($data)
-                    ])->all()
+                return \collect($data)->merge([
+                    'data' => \collect($data)->merge([
+                        'data' => \collect($data),
+                    ])->all(),
                 ]);
             }
 
@@ -235,15 +239,15 @@ class JsonApiResourceTest extends TestCase
                     'str' => 'abc',
                 ];
 
-                return collect($data)->merge([
-                    'data' => collect($data)->merge([
-                        'data' => collect($data)
-                    ])->all()
+                return \collect($data)->merge([
+                    'data' => \collect($data)->merge([
+                        'data' => \collect($data),
+                    ])->all(),
                 ]);
             }
         };
 
-        $actual = $resource->toArray(new Request);
+        $actual = $resource->toArray(new Request());
 
         $expected = [
             'id' => 1,
@@ -257,8 +261,8 @@ class JsonApiResourceTest extends TestCase
                     'data' => [
                         'int' => 123,
                         'str' => 'abc',
-                    ]
-                ]
+                    ],
+                ],
             ],
             'links' => [
                 'int' => 123,
@@ -269,8 +273,8 @@ class JsonApiResourceTest extends TestCase
                     'data' => [
                         'int' => 123,
                         'str' => 'abc',
-                    ]
-                ]
+                    ],
+                ],
             ],
             'meta' => [
                 'int' => 123,
@@ -281,9 +285,9 @@ class JsonApiResourceTest extends TestCase
                     'data' => [
                         'int' => 123,
                         'str' => 'abc',
-                    ]
-                ]
-            ]
+                    ],
+                ],
+            ],
         ];
 
         $this->assertEquals($expected, $actual);

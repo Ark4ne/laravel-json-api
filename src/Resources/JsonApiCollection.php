@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Resources;
 
 use Ark4ne\JsonApi\Support\Arr;
@@ -13,9 +15,9 @@ use Illuminate\Http\Resources\Json\ResourceCollection;
  */
 class JsonApiCollection extends ResourceCollection implements Resourceable
 {
-    use Concerns\Relationize,
-        Concerns\SchemaCollection,
-        Concerns\ToResponse;
+    use Concerns\Relationize;
+    use Concerns\SchemaCollection;
+    use Concerns\ToResponse;
 
     /**
      * @var class-string<T>
@@ -52,7 +54,6 @@ class JsonApiCollection extends ResourceCollection implements Resourceable
             $loads = array_merge(...$collection->map->requestedRelationshipsLoad($request));
 
             if (!empty($loads)) {
-                // @phpstan-ignore-next-line
                 $resources = $collection->map->resource;
 
                 if ($resources->every(static fn($resource) => $resource instanceof Model)) {

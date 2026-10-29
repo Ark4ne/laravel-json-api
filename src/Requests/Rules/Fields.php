@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Requests\Rules;
 
 use Ark4ne\JsonApi\Requests\Rules\Traits\UseTrans;
 use Ark4ne\JsonApi\Resources\Skeleton;
 use Ark4ne\JsonApi\Support\Fields as SupportFields;
+use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 
 /**
@@ -25,16 +28,15 @@ class Fields implements ValidationRule
      * @param class-string<T> $resource
      */
     public function __construct(
-        protected string $resource
-    ) {
-    }
+        protected string $resource,
+    ) {}
 
-    public function validate(string $attribute, mixed $value, \Closure $fail): void
+    public function validate(string $attribute, mixed $value, Closure $fail): void
     {
         if (!is_array($value)) {
             $fail($this->trans(
                 sprintf('%s.invalid', self::BASE),
-                'The selected :attribute is invalid.'
+                'The selected :attribute is invalid.',
             ));
             return;
         }
@@ -57,7 +59,7 @@ class Fields implements ValidationRule
     {
         $message = $this->trans(
             sprintf('%s.invalid', self::BASE),
-            'The selected :attribute is invalid.'
+            'The selected :attribute is invalid.',
         );
 
         return array_merge([$message], array_map(
@@ -65,14 +67,14 @@ class Fields implements ValidationRule
                 ? $this->trans(
                     sprintf('%s.invalid_fields', self::BASE),
                     '":resource" doesn\'t have fields ":fields".',
-                    $failure
+                    $failure,
                 )
                 : $this->trans(
                     sprintf('%s.invalid_resource', self::BASE),
                     '":resource" doesn\'t exists.',
-                    $failure
+                    $failure,
                 ),
-            $this->failures
+            $this->failures,
         ));
     }
 
@@ -89,12 +91,12 @@ class Fields implements ValidationRule
         foreach ($desired as $resource => $fields) {
             if (!isset($resources[$resource])) {
                 $this->failures[] = [
-                    ':resource' => $resource
+                    ':resource' => $resource,
                 ];
             } elseif (!empty($diff = array_diff($fields, $resources[$resource]))) {
                 $this->failures[] = [
                     ':resource' => $resource,
-                    ':fields' => implode(',', $diff)
+                    ':fields' => implode(',', $diff),
                 ];
             }
         }

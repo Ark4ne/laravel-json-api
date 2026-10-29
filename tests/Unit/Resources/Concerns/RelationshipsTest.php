@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\Unit\Resources\Concerns;
 
 use Ark4ne\JsonApi\Resources\Concerns\Relationships;
@@ -17,9 +19,9 @@ use Test\TestCase;
 
 class RelationshipsTest extends TestCase
 {
-    public function testMapRelationshipMinimal()
+    public function testMapRelationshipMinimal(): void
     {
-        $stub = new class(null) extends JsonResource {
+        $stub = new class (null) extends JsonResource {
             use Relationships;
         };
 
@@ -49,9 +51,9 @@ class RelationshipsTest extends TestCase
         $this->assertEquals([], $stub->with($request));
     }
 
-    public function testMapRelationshipFull()
+    public function testMapRelationshipFull(): void
     {
-        $stub = new class(null) extends JsonResource {
+        $stub = new class (null) extends JsonResource {
             use Relationships;
         };
 
@@ -69,14 +71,14 @@ class RelationshipsTest extends TestCase
                     'meta' => ['total' => 1],
                 ],
                 'with' => [
-                    'with-some' => 'some-value'
+                    'with-some' => 'some-value',
                 ],
                 'included' => [
                     [
                         'id' => 'abc-123',
                         'type' => 'child',
-                        'foo' => 'bar'
-                    ]
+                        'foo' => 'bar',
+                    ],
                 ],
             ]);
 
@@ -93,16 +95,16 @@ class RelationshipsTest extends TestCase
                 [
                     'id' => 'abc-123',
                     'type' => 'child',
-                    'foo' => 'bar'
-                ]
-            ]
+                    'foo' => 'bar',
+                ],
+            ],
         ], $stub->with($request));
     }
 
-    public function testRequestedRelationshipsNoRelations()
+    public function testRequestedRelationshipsNoRelations(): void
     {
         Includes::flush();
-        $resource = new class(collect()) extends JsonResource {
+        $resource = new class (collect()) extends JsonResource {
             use Relationships;
         };
 
@@ -112,7 +114,7 @@ class RelationshipsTest extends TestCase
         $this->assertEquals([], $resource->with);
     }
 
-    public function testRequestedRelationshipsNoInclude()
+    public function testRequestedRelationshipsNoInclude(): void
     {
         Includes::flush();
         $stub = $this->getStub();
@@ -121,7 +123,7 @@ class RelationshipsTest extends TestCase
 
         $this->assertEquals([
             'clone' => [
-                'data' => ['id' => 2, 'type' => 'my-type']
+                'data' => ['id' => 2, 'type' => 'my-type'],
             ],
             'clone-links' => [
                 'data' => ['id' => 3, 'type' => 'my-type'],
@@ -131,18 +133,18 @@ class RelationshipsTest extends TestCase
         $this->assertEquals([], $stub->with);
     }
 
-    public function testRequestedRelationshipsOneDepthInclude()
+    public function testRequestedRelationshipsOneDepthInclude(): void
     {
         Includes::flush();
         $stub = $this->getStub();
 
         $actual = Reflect::invoke($stub, 'requestedRelationships', new Request([
-            'include' => 'clone'
+            'include' => 'clone',
         ]));
 
         $this->assertEquals([
             'clone' => [
-                'data' => ['id' => 2, 'type' => 'my-type']
+                'data' => ['id' => 2, 'type' => 'my-type'],
             ],
             'clone-links' => [
                 'data' => ['id' => 5, 'type' => 'my-type'],
@@ -157,30 +159,30 @@ class RelationshipsTest extends TestCase
                     'attributes' => ['foo' => 'bar'],
                     'relationships' => [
                         'clone' => [
-                            'data' => ['id' => 3, 'type' => 'my-type']
+                            'data' => ['id' => 3, 'type' => 'my-type'],
                         ],
                         'clone-links' => [
                             'data' => ['id' => 4, 'type' => 'my-type'],
                             'links' => ['self' => "://api.com/my-type/4"],
                         ],
-                    ]
-                ]
-            ]
+                    ],
+                ],
+            ],
         ], $stub->with);
     }
 
-    public function testRequestedRelationshipsTwoDepthInclude()
+    public function testRequestedRelationshipsTwoDepthInclude(): void
     {
         Includes::flush();
         $stub = $this->getStub();
 
         $actual = Reflect::invoke($stub, 'requestedRelationships', new Request([
-            'include' => 'clone.clone-links'
+            'include' => 'clone.clone-links',
         ]));
 
         $this->assertEquals([
             'clone' => [
-                'data' => ['id' => 2, 'type' => 'my-type']
+                'data' => ['id' => 2, 'type' => 'my-type'],
             ],
             'clone-links' => [
                 'data' => ['id' => 7, 'type' => 'my-type'],
@@ -195,13 +197,13 @@ class RelationshipsTest extends TestCase
                     'attributes' => ['foo' => 'bar'],
                     'relationships' => [
                         'clone' => [
-                            'data' => ['id' => 3, 'type' => 'my-type']
+                            'data' => ['id' => 3, 'type' => 'my-type'],
                         ],
                         'clone-links' => [
                             'data' => ['id' => 4, 'type' => 'my-type'],
                             'links' => ['self' => "://api.com/my-type/4"],
                         ],
-                    ]
+                    ],
                 ],
                 [
                     'id' => 4,
@@ -209,25 +211,25 @@ class RelationshipsTest extends TestCase
                     'attributes' => ['foo' => 'bar'],
                     'relationships' => [
                         'clone' => [
-                            'data' => ['id' => 5, 'type' => 'my-type']
+                            'data' => ['id' => 5, 'type' => 'my-type'],
                         ],
                         'clone-links' => [
                             'data' => ['id' => 6, 'type' => 'my-type'],
                             'links' => ['self' => "://api.com/my-type/6"],
                         ],
-                    ]
-                ]
-            ]
+                    ],
+                ],
+            ],
         ], $stub->with);
     }
 
-    public function testRequestedRelationshipsWithMissingValue()
+    public function testRequestedRelationshipsWithMissingValue(): void
     {
         $model = Stub::model(['id' => 1]);
 
         Reflect::set($model, 'relations', ['loadedRelation' => collect(['type' => 'tar', 'id' => 3])]);
 
-        $resource = new class($model) extends JsonResource {
+        $resource = new class ($model) extends JsonResource {
             use Relationships;
 
             public function toRelationships(Request $request): iterable
@@ -248,26 +250,26 @@ class RelationshipsTest extends TestCase
             'foo' => [
                 'data' => [
                     'id' => 2,
-                    'type' => 'foo'
-                ]
+                    'type' => 'foo',
+                ],
             ],
             'bar' => [],
             'tar' => [
                 'data' => [
                     'id' => 3,
-                    'type' => 'tar'
-                ]
+                    'type' => 'tar',
+                ],
             ],
             'baz' => [],
         ], $actual);
     }
 
-    public function testRequestedRelationshipsLoadFromSchema()
+    public function testRequestedRelationshipsLoadFromSchema(): void
     {
         $r1 = new Skeleton('r1', 'r1');
         $r1->loads = [
             '_2' => 'r2',
-            '_3' => 'r3'
+            '_3' => 'r3',
         ];
 
         $r2 = new Skeleton('r2', 'r2');
@@ -281,12 +283,12 @@ class RelationshipsTest extends TestCase
         $r3->relationships['_1'] = $r1;
 
         $model = Stub::model(['id' => 1]);
-        $resource = new class($model) extends JsonResource {
+        $resource = new class ($model) extends JsonResource {
             use Relationships;
         };
 
         $request = new Request([
-            'include' => '_2._3'
+            'include' => '_2._3',
         ]);
 
         $actual = Reflect::invoke($resource, 'requestedRelationshipsLoadFromSchema', $request, $r1);
@@ -311,7 +313,7 @@ class RelationshipsTest extends TestCase
             }
         };
 
-        return new class($resource) extends JsonResource implements Resourceable {
+        return new class ($resource) extends JsonResource implements Resourceable {
             use Relationships;
 
             public function toArray($request, bool $included = true): array
@@ -320,8 +322,8 @@ class RelationshipsTest extends TestCase
                     'id' => $this->id,
                     'type' => 'my-type',
                     'attributes' => [
-                        'foo' => 'bar'
-                    ]
+                        'foo' => 'bar',
+                    ],
                 ];
 
                 if ($included) {
@@ -336,14 +338,15 @@ class RelationshipsTest extends TestCase
                 return [
                     'clone' => new Relationship(
                         $this::class,
-                        fn() => clone $this->resource
+                        fn() => clone $this->resource,
                     ),
                     'clone-links' => new Relationship(
                         $this::class,
                         fn() => clone $this->resource,
                         fn(self $resource) => [
-                            'self' => "://api.com/my-type/{$resource->id}"
-                        ]),
+                            'self' => "://api.com/my-type/{$resource->id}",
+                        ],
+                    ),
                 ];
             }
         };

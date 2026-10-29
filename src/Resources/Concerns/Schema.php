@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
 use Ark4ne\JsonApi\Descriptors\Describer;
@@ -12,6 +14,7 @@ use Ark4ne\JsonApi\Support\Values;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use ReflectionClass;
+use ReflectionException;
 
 trait Schema
 {
@@ -22,7 +25,7 @@ trait Schema
      */
     private static array $schemas = [];
 
-    public static function schema(null|Request $request = null): Skeleton
+    public static function schema(?Request $request = null): Skeleton
     {
         if (isset(self::$schemas[static::class])) {
             return self::$schemas[static::class];
@@ -30,11 +33,11 @@ trait Schema
 
         $resource = self::new();
 
-        $request ??= new Request;
+        $request ??= new Request();
 
         self::$schemas[static::class] = $schema = new Skeleton(
             static::class,
-            $resource->toType($request)
+            $resource->toType($request),
         );
 
         $schema->fields = (new Collection(Values::mergeValues($resource->toAttributes($request))))
@@ -62,15 +65,12 @@ trait Schema
 
             if ($load === false) {
                 $schema->loads[$name] = false;
-            }
-            elseif ($load === true) {
+            } elseif ($load === true) {
                 $schema->loads[$name] = $name;
-            }
-            elseif (is_string($load)) {
+            } elseif (is_string($load)) {
                 $schema->loads[$name] = $load;
-            }
-            else {
-                foreach ((array)$load as $key => $value) {
+            } else {
+                foreach ((array) $load as $key => $value) {
                     $schema->loads[$name][$key] = $value;
                 }
             }
@@ -80,25 +80,25 @@ trait Schema
     }
 
     /**
-     * @throws \ReflectionException
+     * @throws ReflectionException
      * @return static
      */
     private static function new(): static
     {
         /** @var static $instance */
         $instance = (new ReflectionClass(static::class))->newInstanceWithoutConstructor();
-        $instance->resource = new FakeModel;
+        $instance->resource = new FakeModel();
 
         return $instance;
     }
 
-    private static function structFields(mixed $resource, string $key, ValueStruct $struct, null|string $prefix = null): Collection
+    private static function structFields(mixed $resource, string $key, ValueStruct $struct, ?string $prefix = null): Collection
     {
         /** @var array<array-key, mixed> $attributes */
         $attributes = ($struct->retriever())($resource, $key);
 
         return (new Collection(Values::mergeValues($attributes)))
-            ->flatMap(function($value, $key) use ($resource, $prefix) {
+            ->flatMap(function ($value, $key) use ($resource, $prefix) {
                 $prefixed = Describer::retrieveName($value, $key, $prefix);
 
                 if ($value instanceof ValueStruct) {

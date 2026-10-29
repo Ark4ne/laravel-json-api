@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Filters;
 
 use Ark4ne\JsonApi\Support\Values;
@@ -70,7 +72,7 @@ class Filters
             if ($data instanceof Collection) {
                 return $filtered;
             }
-            
+
             return $filtered->all();
         }
 

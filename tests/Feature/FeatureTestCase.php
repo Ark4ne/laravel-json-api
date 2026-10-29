@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -13,22 +15,22 @@ abstract class FeatureTestCase extends TestCase
 {
     use RefreshDatabase;
 
-    protected function defineEnvironment($app)
+    protected function defineEnvironment($app): void
     {
         $app['config']['jsonapi'] = include __DIR__ . '/../app/jsonapi.php';
     }
 
-    protected function defineRoutes($router)
+    protected function defineRoutes($router): void
     {
         include __DIR__ . '/../app/routes.php';
     }
 
-    protected function beforeRefreshingDatabase()
+    protected function beforeRefreshingDatabase(): void
     {
         $this->loadMigrationsFrom(__DIR__ . '/../app/migrations.php');
     }
 
-    protected function afterRefreshingDatabase()
+    protected function afterRefreshingDatabase(): void
     {
         self::loadSeed();
     }

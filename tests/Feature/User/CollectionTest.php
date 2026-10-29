@@ -1,12 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\Feature\User;
 
 use DateTimeInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use Test\app\Http\Resources\CommentResource;
 use Test\app\Http\Resources\PostResource;
 use Test\app\Models\Comment;
@@ -16,7 +16,7 @@ use Test\Feature\FeatureTestCase;
 
 class CollectionTest extends FeatureTestCase
 {
-    public function testGetIndex()
+    public function testGetIndex(): void
     {
         $users = User::all();
 
@@ -46,20 +46,20 @@ class CollectionTest extends FeatureTestCase
                     'links' => [
                         'self' => "https://api.example.com/user/{$user->id}/relationships/posts",
                         'related' => "https://api.example.com/user/{$user->id}/posts",
-                    ]
+                    ],
                 ]),
                 'comments' => array_filter([
                     // when loaded only
-                    'data' => in_array('comments', $relationships ?? [])
+                    'data' => in_array('comments', $relationships ?? [], true)
                         ? $user->comments->map(fn(Comment $comment) => [
                             'type' => 'comment',
-                            'id' => $comment->id
+                            'id' => $comment->id,
                         ])->all()
                         : null,
                     'links' => [
                         'self' => "https://api.example.com/user/{$user->id}/relationships/comments",
                         'related' => "https://api.example.com/user/{$user->id}/comments",
-                    ]
+                    ],
                 ]),
             ],
             'meta' => [
@@ -71,14 +71,14 @@ class CollectionTest extends FeatureTestCase
         $include = $users
             ->map(fn(User $user) => collect()
                 ->merge(
-                    in_array('posts', $relationships ?? [])
+                    in_array('posts', $relationships ?? [], true)
                         ? $user->posts->mapInto(PostResource::class)->map->toArray($request)
-                        : []
+                        : [],
                 )
                 ->merge(
-                    in_array('comments', $relationships ?? [])
+                    in_array('comments', $relationships ?? [], true)
                         ? $user->comments->mapInto(CommentResource::class)->map->toArray($request)
-                        : []
+                        : [],
                 ))
             ->reduce(fn(Collection $all, Collection $value) => $all->merge($value), collect());
 

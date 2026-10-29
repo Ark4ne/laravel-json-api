@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\Unit\Support;
 
 use Ark4ne\JsonApi\Support\Arr;
@@ -21,43 +23,43 @@ class ArrTest extends TestCase
             [
                 ['foo' => ['bar' => ['baz' => [1, 2]]]],
                 ['foo' => ['bar' => ['baz' => [1]]]],
-                ['foo' => ['bar' => ['baz' => [2]]]]
+                ['foo' => ['bar' => ['baz' => [2]]]],
             ],
             [
                 [
                     'included' => [
                         ['id' => 1, 'attributes' => ['a' => 1]],
-                        ['id' => 2, 'attributes' => ['a' => 2]]
-                    ]
+                        ['id' => 2, 'attributes' => ['a' => 2]],
+                    ],
                 ],
                 [
                     'included' => [
                         ['id' => 1, 'attributes' => ['a' => 1]],
-                    ]
+                    ],
                 ],
                 [
                     'included' => [
-                        ['id' => 2, 'attributes' => ['a' => 2]]
-                    ]
-                ]
+                        ['id' => 2, 'attributes' => ['a' => 2]],
+                    ],
+                ],
             ],
             [
                 [
                     'included' => [
                         ['id' => 1, 'attributes' => ['a' => 1]],
-                    ]
+                    ],
                 ],
                 [
                     'included' => [
                         ['id' => 1, 'attributes' => ['a' => 1]],
-                    ]
+                    ],
                 ],
                 [
                     'included' => [
-                        ['id' => 1, 'attributes' => ['a' => 1]]
-                    ]
-                ]
-            ]
+                        ['id' => 1, 'attributes' => ['a' => 1]],
+                    ],
+                ],
+            ],
         ];
     }
 
@@ -65,7 +67,7 @@ class ArrTest extends TestCase
      * @dataProvider mergeProvider
      */
     #[DataProvider('mergeProvider')]
-    public function testMerge($expected, $base, $with)
+    public function testMerge($expected, $base, $with): void
     {
         $this->assertEquals($expected, Arr::merge($base, $with));
     }
@@ -80,11 +82,11 @@ class ArrTest extends TestCase
             [['foo' => ['a' => 1, 'b' => 1]], ['foo' => ['a' => 1, 'b' => 1]]],
             [
                 [
-                    'included' => [['id' => 1, 'attributes' => []]]
+                    'included' => [['id' => 1, 'attributes' => []]],
                 ],
                 [
                     'included' => [['id' => 1, 'attributes' => []]],
-                    'meta' => []
+                    'meta' => [],
                 ],
             ],
         ];
@@ -94,7 +96,7 @@ class ArrTest extends TestCase
      * @dataProvider washProvider
      */
     #[DataProvider('washProvider')]
-    public function testWash($expected, $base)
+    public function testWash($expected, $base): void
     {
         $this->assertEquals($expected, Arr::wash($base));
     }
@@ -109,11 +111,11 @@ class ArrTest extends TestCase
             [['foo' => ['foo' => 'bar']], collect(['foo' => collect(['foo' => 'bar'])])],
             [
                 ['foo' => ['foo' => ['foo' => ['foo' => 'bar']]]],
-                collect(['foo' => ['foo' => collect(['foo' => ['foo' => 'bar']])]])
+                collect(['foo' => ['foo' => collect(['foo' => ['foo' => 'bar']])]]),
             ],
             [
                 ['foo' => ['foo' => ['foo' => ['foo' => 'bar']]]],
-                ['foo' => ['foo' => collect(['foo' => ['foo' => 'bar']])]]
+                ['foo' => ['foo' => collect(['foo' => ['foo' => 'bar']])]],
             ],
         ];
     }
@@ -122,23 +124,23 @@ class ArrTest extends TestCase
      * @dataProvider toArrayProvider
      */
     #[DataProvider('toArrayProvider')]
-    public function testToArray($expected, $base)
+    public function testToArray($expected, $base): void
     {
         $this->assertEquals($expected, Arr::toArray($base));
     }
 
-    public function testUndot()
+    public function testUndot(): void
     {
         $stub = [
             'test.a' => [
                 '1' => 'test.a.1',
                 '2' => [
-                    '1' => 'test.a.2.1'
+                    '1' => 'test.a.2.1',
                 ],
                 '2.2' => 'test.a.2.2',
                 '3' => 'test.a.3',
                 '3.1' => [
-                    '1' => 'test.a.3.1.1'
+                    '1' => 'test.a.3.1.1',
                 ],
                 '3.2' => 'test.a.3.2',
             ],
@@ -157,29 +159,30 @@ class ArrTest extends TestCase
                     '3' => [
                         '--saved--' => 'test.a.3',
                         '1' => [
-                            '1' => 'test.a.3.1.1'
+                            '1' => 'test.a.3.1.1',
                         ],
                         '2' => 'test.a.3.2',
                     ],
-                ]
-            ]
+                ],
+            ],
         ];
 
         $this->assertEquals($expected, Arr::undot($stub, '--saved--'));
     }
 
-    public function testFlatDot() {
+    public function testFlatDot(): void
+    {
 
         $stub = [
             'test.a' => [
                 '1' => 'test.a.1',
                 '2' => [
-                    '1' => 'test.a.2.1'
+                    '1' => 'test.a.2.1',
                 ],
                 '2.2' => 'test.a.2.2',
                 '3' => 'test.a.3',
                 '3.1' => [
-                    '1' => 'test.a.3.1.1'
+                    '1' => 'test.a.3.1.1',
                 ],
                 '3.2' => 'test.a.3.2',
             ],

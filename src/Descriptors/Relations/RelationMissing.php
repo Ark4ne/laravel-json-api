@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Descriptors\Relations;
 
 use Ark4ne\JsonApi\Resources\Relationship;
@@ -22,7 +24,7 @@ final class RelationMissing extends Relation
     {
         /** @var Relationship $relation */
         $relation = ($this->relation)();
-        $relation->withValue(fn() => new MissingValue);
+        $relation->withValue(fn() => new MissingValue());
         return $relation;
     }
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\app\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -16,7 +18,7 @@ class CommentFactory extends Factory
         return [
             'user_id' => User::factory(),
             'post_id' => Post::factory(),
-            'content' => $this->faker->text()
+            'content' => $this->faker->text(),
         ];
     }
 }

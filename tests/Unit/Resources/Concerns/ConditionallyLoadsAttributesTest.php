@@ -1,13 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\Unit\Resources\Concerns;
 
 use Ark4ne\JsonApi\Descriptors\Relations\RelationOne;
 use Ark4ne\JsonApi\Descriptors\Relations\RelationRaw;
 use Ark4ne\JsonApi\Descriptors\Values\ValueMixed;
-use Ark4ne\JsonApi\Descriptors\Values\ValueRaw;
 use Ark4ne\JsonApi\Resources\Concerns\ConditionallyLoadsAttributes;
-use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Ark4ne\JsonApi\Resources\Relationship;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -24,7 +24,7 @@ class ConditionallyLoadsAttributesTest extends TestCase
     {
         return [
             [false, 'test', []],
-            [true, 'test', ['test']]
+            [true, 'test', ['test']],
         ];
     }
 
@@ -32,17 +32,17 @@ class ConditionallyLoadsAttributesTest extends TestCase
      * @dataProvider data
      */
     #[DataProvider('data')]
-    public function testWhenInclude($expected, $property, $query)
+    public function testWhenInclude($expected, $property, $query): void
     {
         $request = new Request(['include' => implode(',', $query)]);
 
-        $stub = new class(null) extends JsonResource {
+        $stub = new class (null) extends JsonResource {
             use ConditionallyLoadsAttributes;
         };
 
         $this->assertEquals(
-            $expected ?: new MissingValue,
-            Reflect::invoke($stub, 'whenIncluded', $request, $property, true)
+            $expected ?: new MissingValue(),
+            Reflect::invoke($stub, 'whenIncluded', $request, $property, true),
         );
     }
 
@@ -50,11 +50,11 @@ class ConditionallyLoadsAttributesTest extends TestCase
      * @dataProvider data
      */
     #[DataProvider('data')]
-    public function testWhenInFields($expected, $property, $query)
+    public function testWhenInFields($expected, $property, $query): void
     {
         $request = new Request(['fields' => ['type' => implode(',', $query)]]);
 
-        $stub = new class(null) extends JsonResource {
+        $stub = new class (null) extends JsonResource {
             use ConditionallyLoadsAttributes;
 
             protected function toType()
@@ -64,14 +64,14 @@ class ConditionallyLoadsAttributesTest extends TestCase
         };
 
         $this->assertEquals(
-            $expected ?: new MissingValue,
-            Reflect::invoke($stub, 'whenInFields', $request, $property, true)
+            $expected ?: new MissingValue(),
+            Reflect::invoke($stub, 'whenInFields', $request, $property, true),
         );
     }
 
-    public function testApplyWhen()
+    public function testApplyWhen(): void
     {
-        $stub = new class(null) extends JsonResource {
+        $stub = new class (null) extends JsonResource {
             use ConditionallyLoadsAttributes;
         };
         $actual = Reflect::invoke($stub, 'applyWhen', false, [
@@ -123,35 +123,35 @@ class ConditionallyLoadsAttributesTest extends TestCase
         $this->assertInstanceOf(Relationship::class, $actual->data['missing.5']->retriever()());
     }
 
-    public function testWhenHas()
+    public function testWhenHas(): void
     {
-        $resource = new class(['a' => 1]) extends JsonResource {
+        $resource = new class (['a' => 1]) extends JsonResource {
             use ConditionallyLoadsAttributes;
         };
         $this->assertEquals(1, Reflect::invoke($resource, 'whenHas', 'a'));
         $this->assertEquals('abc', Reflect::invoke($resource, 'whenHas', 'a', 'abc'));
-        $this->assertEquals(new MissingValue, Reflect::invoke($resource, 'whenHas', 'b'));
-        $this->assertEquals(new MissingValue, Reflect::invoke($resource, 'whenHas', 'b', 'missing'));
+        $this->assertEquals(new MissingValue(), Reflect::invoke($resource, 'whenHas', 'b'));
+        $this->assertEquals(new MissingValue(), Reflect::invoke($resource, 'whenHas', 'b', 'missing'));
         $this->assertEquals('missing', Reflect::invoke($resource, 'whenHas', 'b', 'abc', 'missing'));
 
-        $resource = new class((object)['a' => 1]) extends JsonResource {
+        $resource = new class ((object) ['a' => 1]) extends JsonResource {
             use ConditionallyLoadsAttributes;
         };
 
         $this->assertEquals(1, Reflect::invoke($resource, 'whenHas', 'a'));
         $this->assertEquals('abc', Reflect::invoke($resource, 'whenHas', 'a', 'abc'));
-        $this->assertEquals(new MissingValue, Reflect::invoke($resource, 'whenHas', 'b'));
-        $this->assertEquals(new MissingValue, Reflect::invoke($resource, 'whenHas', 'b', 'abc'));
+        $this->assertEquals(new MissingValue(), Reflect::invoke($resource, 'whenHas', 'b'));
+        $this->assertEquals(new MissingValue(), Reflect::invoke($resource, 'whenHas', 'b', 'abc'));
         $this->assertEquals('missing', Reflect::invoke($resource, 'whenHas', 'b', 'abc', 'missing'));
     }
 
-    public function testUnless()
+    public function testUnless(): void
     {
-        $resource = new class([]) extends JsonResource {
+        $resource = new class ([]) extends JsonResource {
             use ConditionallyLoadsAttributes;
         };
 
-        $this->assertEquals(new MissingValue, Reflect::invoke($resource, 'unless', true, 'a'));
+        $this->assertEquals(new MissingValue(), Reflect::invoke($resource, 'unless', true, 'a'));
         $this->assertEquals('a', Reflect::invoke($resource, 'unless', false, 'a'));
     }
 }

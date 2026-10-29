@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\Support;
 
 use ReflectionClass;
@@ -15,7 +17,7 @@ class Reflect
         return $reflectMethod->invoke($object, ...$args);
     }
 
-    public static function set($object, string $property, $value)
+    public static function set($object, string $property, $value): void
     {
         $reflect = new ReflectionClass($object);
         $reflectProperty = $reflect->getProperty($property);

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Providers;
 
 use Ark4ne\JsonApi\Support\Config;
@@ -12,7 +14,7 @@ class LaravelJsonApiProvider extends ServiceProvider
     public function register(): void
     {
         $this->publishes([
-            __DIR__ . '/../../config/jsonapi.php' => config_path('jsonapi.php')
+            __DIR__ . '/../../config/jsonapi.php' => config_path('jsonapi.php'),
         ], 'config');
     }
 
@@ -23,10 +25,10 @@ class LaravelJsonApiProvider extends ServiceProvider
         if (class_exists(\Laravel\Octane\Events\RequestReceived::class)) {
             $this->app['events']->listen(
                 \Laravel\Octane\Events\RequestReceived::class,
-                static function () {
+                static function (): void {
                     Fields::flush();
                     Includes::flush();
-                }
+                },
             );
         }
     }

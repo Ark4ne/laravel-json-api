@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\Unit\Support;
 
 use Ark4ne\JsonApi\Support\Includes;
@@ -10,7 +12,7 @@ class IncludesTest extends TestCase
 {
     public $count = 0;
 
-    public function testCyclelife()
+    public function testCyclelife(): void
     {
         $request = new Request([
             'include' => implode(',', [
@@ -20,8 +22,8 @@ class IncludesTest extends TestCase
                 'foo.foo.foo',
                 'foo.foo-bar',
                 'foo.bar.baz',
-                'bar.tar'
-            ])
+                'bar.tar',
+            ]),
         ]);
 
         $expected = [
@@ -34,32 +36,32 @@ class IncludesTest extends TestCase
             [], // foo.tar
             ['tar'], // bar
             ['foo', 'bar'], // root
-            'final'
+            'final',
         ];
 
         $this->assert(array_shift($expected), Includes::get($request), 'root');
 
-        Includes::through('foo', function () use (&$expected, $request) {
+        Includes::through('foo', function () use (&$expected, $request): void {
             $this->assert(array_shift($expected), Includes::get($request), 'root.foo');
 
-            Includes::through('bar', function () use (&$expected, $request) {
+            Includes::through('bar', function () use (&$expected, $request): void {
                 $this->assert(array_shift($expected), Includes::get($request), 'root.foo.bar');
             });
 
-            Includes::through('foo', function () use (&$expected, $request) {
+            Includes::through('foo', function () use (&$expected, $request): void {
                 $this->assert(array_shift($expected), Includes::get($request), 'root.foo.foo');
 
-                Includes::through('foo', function () use (&$expected, $request) {
+                Includes::through('foo', function () use (&$expected, $request): void {
                     $this->assert(array_shift($expected), Includes::get($request), 'root.foo.foo.foo');
                 });
             });
 
-            Includes::through('tar', function () use (&$expected, $request) {
+            Includes::through('tar', function () use (&$expected, $request): void {
                 $this->assert(array_shift($expected), Includes::get($request), 'root.foo.tar');
             });
         });
 
-        Includes::through('bar', function () use (&$expected, $request) {
+        Includes::through('bar', function () use (&$expected, $request): void {
             $this->assert(array_shift($expected), Includes::get($request), 'root.foo.bar');
         });
 
@@ -67,13 +69,13 @@ class IncludesTest extends TestCase
         $this->assertEquals('final', array_shift($expected));
     }
 
-    public function assert($expected, $actual, $message = '')
+    public function assert($expected, $actual, $message = ''): void
     {
         $this->assertEquals($expected, $actual, $message);
         $this->count++;
     }
 
-    public function testParse()
+    public function testParse(): void
     {
         $this->assertEquals([], Includes::parse(''));
 
@@ -95,12 +97,12 @@ class IncludesTest extends TestCase
                     'comment' => [],
                     'posts' => [],
                 ],
-                'test' => []
+                'test' => [],
             ],
         ], $parsed);
     }
 
-    public function testGet()
+    public function testGet(): void
     {
         $request = new Request();
 
@@ -119,7 +121,7 @@ class IncludesTest extends TestCase
         $this->assertEquals(['foo', 'baz'], Includes::get($request));
     }
 
-    public function testIncludes()
+    public function testIncludes(): void
     {
         $request = new Request([
             'include' => implode(',', [
@@ -131,7 +133,7 @@ class IncludesTest extends TestCase
                 'posts.user',
                 'posts.user.posts',
                 'posts.test',
-            ])
+            ]),
         ]);
 
         $this->assertEquals([
@@ -141,7 +143,7 @@ class IncludesTest extends TestCase
             'posts.test',
         ], Includes::includes($request));
 
-        Includes::through('posts', function () use ($request) {
+        Includes::through('posts', function () use ($request): void {
             $this->assertEquals([
                 'user.comment',
                 'user.posts',

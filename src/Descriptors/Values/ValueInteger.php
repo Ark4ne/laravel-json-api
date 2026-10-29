@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Descriptors\Values;
 
 use Illuminate\Http\Request;
@@ -12,6 +14,6 @@ class ValueInteger extends Value
 {
     public function value(mixed $of, Request $request): int
     {
-        return (int)$of;
+        return (int) $of;
     }
 }

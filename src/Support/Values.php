@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Support;
 
 use Illuminate\Database\Eloquent\Model;
@@ -10,7 +12,6 @@ use Illuminate\Support\Arr;
 
 class Values
 {
-
     /**
      * @template TKey as array-key
      * @template TValue
@@ -83,9 +84,9 @@ class Values
     public static function isMissing(mixed $resource): bool
     {
         return ($resource instanceof PotentiallyMissing && $resource->isMissing())
-            || ($resource instanceof JsonResource &&
-                $resource->resource instanceof PotentiallyMissing &&
-                $resource->resource->isMissing());
+            || ($resource instanceof JsonResource
+                && $resource->resource instanceof PotentiallyMissing
+                && $resource->resource->isMissing());
     }
 
     /**

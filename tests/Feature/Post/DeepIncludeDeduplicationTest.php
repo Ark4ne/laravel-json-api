@@ -1,9 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\Feature\Post;
 
-use Ark4ne\JsonApi\Support\Arr;
-use DateTimeInterface;
 use Test\app\Models\Comment;
 use Test\app\Models\Post;
 use Test\app\Models\User;
@@ -76,7 +76,7 @@ class DeepIncludeDeduplicationTest extends FeatureTestCase
         $included = $response->json('included');
 
         $postAuthorInIncluded = collect($included)
-            ->filter(fn($item) => $item['type'] === 'user' && $item['id'] == $postAuthor->id)
+            ->filter(fn($item) => $item['type'] === 'user' && $item['id'] === $postAuthor->id)
             ->count();
         $this->assertSame(1, $postAuthorInIncluded, 'Post author must appear exactly once (deduplication)');
 

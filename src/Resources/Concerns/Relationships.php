@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
 use Ark4ne\JsonApi\Descriptors\Resolver;
@@ -7,13 +9,13 @@ use Ark4ne\JsonApi\Resources\Relationship;
 use Ark4ne\JsonApi\Resources\Skeleton;
 use Ark4ne\JsonApi\Support\Arr;
 use Ark4ne\JsonApi\Support\Includes;
-use Ark4ne\JsonApi\Support\Values;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 
 trait Relationships
 {
-    use PrepareData, Resolver;
+    use PrepareData;
+    use Resolver;
 
     /**
      * @see https://jsonapi.org/format/#document-resource-object-relationships
@@ -60,8 +62,8 @@ trait Relationships
             if ($load && Includes::include($request, $name)) {
                 $include = Includes::through($name, fn() => $this->requestedRelationshipsLoadFromSchema($request, $schema->relationships[$name]));
 
-                $apply = static function ($load, null|string $pre = null) use (&$loads, &$apply) {
-                    foreach ((array)$load as $key => $value) {
+                $apply = static function ($load, ?string $pre = null) use (&$loads, &$apply): void {
+                    foreach ((array) $load as $key => $value) {
                         if (is_string($value)) {
                             $loads["$pre.$value"] = [];
                         } elseif (is_string($key)) {
@@ -74,7 +76,7 @@ trait Relationships
                     }
                 };
 
-                foreach ((array)$load as $key => $value) {
+                foreach ((array) $load as $key => $value) {
                     if (is_string($value)) {
                         $loads[$value] = $include;
                     } elseif (is_string($key)) {
@@ -116,7 +118,7 @@ trait Relationships
             $relations[$name] = Includes::through($name, fn() => $this->mapRelationship(
                 $included,
                 $request,
-                $relationship
+                $relationship,
             ));
         }
 
@@ -133,22 +135,21 @@ trait Relationships
     private function mapRelationship(
         bool         $included,
         Request      $request,
-        Relationship $relationship
-    ): array
-    {
+        Relationship $relationship,
+    ): array {
         $resource = $relationship->toArray($request, $included);
 
         if (isset($resource['included'])) {
             $this->with['included'] = Includes::merge(
                 $this->with['included'] ?? [],
-                $resource['included']
+                $resource['included'],
             );
         }
 
         if (isset($resource['with']['included'])) {
             $this->with['included'] = Includes::merge(
                 $this->with['included'] ?? [],
-                $resource['with']['included']
+                $resource['with']['included'],
             );
 
             unset($resource['with']['included']);
@@ -158,7 +159,7 @@ trait Relationships
             foreach ($resource['with'] as $key => $value) {
                 $this->with[$key] = array_merge(
                     $this->with[$key] ?? [],
-                    (new Collection($value))->all()
+                    (new Collection($value))->all(),
                 );
             }
         }

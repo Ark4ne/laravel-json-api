@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\app\Http\Requests;
 
 use Ark4ne\JsonApi\Requests\Rules\Fields;
@@ -21,7 +23,7 @@ class PostRequest extends FormRequest
     {
         return [
             'fields' => [new Fields(PostResource::class)],
-            'include' => [new Includes(PostResource::class)]
+            'include' => [new Includes(PostResource::class)],
         ];
     }
 }

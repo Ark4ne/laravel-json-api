@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\Unit\Resources\Concerns;
 
 use Ark4ne\JsonApi\Resources\Concerns\Links;
@@ -11,38 +13,41 @@ use Test\TestCase;
 
 class LinksTest extends TestCase
 {
-    public function testToLinks()
+    public function testToLinks(): void
     {
         $id = uniqid('id', true);
 
-        $object = new class($id) extends stdClass {
+        $object = new class ($id) extends stdClass {
             public $foo = 'bar';
             public $baz = 'tar';
 
-            public function __construct(public $id) { }
+            public function __construct(public $id) {}
 
-            public function toArray() { return (array)$this; }
+            public function toArray()
+            {
+                return (array) $this;
+            }
         };
 
-        $stub = new class($object) extends JsonResource {
+        $stub = new class ($object) extends JsonResource {
             use Links;
         };
 
         $this->assertEquals(null, Reflect::invoke($stub, 'toLinks', new Request()));
 
-        $stub = new class($object) extends JsonResource {
+        $stub = new class ($object) extends JsonResource {
             use Links;
 
             protected function toLinks(Request $request): ?iterable
             {
                 return [
-                    'self' => "://api.com/my-type/{$this->id}"
+                    'self' => "://api.com/my-type/{$this->id}",
                 ];
             }
         };
 
         $links = [
-            'self' => "://api.com/my-type/{$id}"
+            'self' => "://api.com/my-type/{$id}",
         ];
 
         $this->assertEquals($links, Reflect::invoke($stub, 'toLinks', new Request()));

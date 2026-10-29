@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\Feature\User;
 
 use Ark4ne\JsonApi\Support\Arr;
@@ -15,7 +17,7 @@ use Test\Feature\FeatureTestCase;
 
 class ResourceTest extends FeatureTestCase
 {
-    public function testShowBasic()
+    public function testShowBasic(): void
     {
         $user = $this->dataSeed();
 
@@ -24,7 +26,7 @@ class ResourceTest extends FeatureTestCase
         $response->assertExactJson($this->getJsonResult($user));
     }
 
-    public function testShowWithAttributes()
+    public function testShowWithAttributes(): void
     {
         $user = $this->dataSeed();
 
@@ -34,14 +36,14 @@ class ResourceTest extends FeatureTestCase
     }
 
 
-    public function testShowWithStructAttributes()
+    public function testShowWithStructAttributes(): void
     {
         $user = $this->dataSeed();
 
         $attrs = [
             'name',
             'struct-set.name',
-            'struct-set.sub-struct.int'
+            'struct-set.sub-struct.int',
         ];
 
         $response = $this->get("user/{$user->id}?fields[user]=" . implode(',', $attrs));
@@ -49,7 +51,7 @@ class ResourceTest extends FeatureTestCase
         $response->assertExactJson($this->getJsonResult($user, $attrs));
     }
 
-    public function testShowWithRelationshipsPosts()
+    public function testShowWithRelationshipsPosts(): void
     {
         $user = $this->dataSeed();
 
@@ -58,7 +60,7 @@ class ResourceTest extends FeatureTestCase
         $response->assertExactJson($this->getJsonResult($user, null, ['posts']));
     }
 
-    public function testShowWithRelationshipsComments()
+    public function testShowWithRelationshipsComments(): void
     {
         $user = $this->dataSeed();
 
@@ -67,7 +69,7 @@ class ResourceTest extends FeatureTestCase
         $response->assertExactJson($this->getJsonResult($user, null, ['comments']));
     }
 
-    public function testShowWithRelationshipsPostsComments()
+    public function testShowWithRelationshipsPostsComments(): void
     {
         $user = $this->dataSeed();
 
@@ -76,7 +78,7 @@ class ResourceTest extends FeatureTestCase
         $response->assertExactJson($this->getJsonResult($user, null, ['posts', 'comments']));
     }
 
-    public function testShowWithRelationshipsDeepInclude()
+    public function testShowWithRelationshipsDeepInclude(): void
     {
         $user = $this->dataSeed();
 
@@ -92,7 +94,7 @@ class ResourceTest extends FeatureTestCase
         $response->assertExactJson($expected);
     }
 
-    public function testShowFailWithAttributes()
+    public function testShowFailWithAttributes(): void
     {
         $user = $this->dataSeed();
 
@@ -103,12 +105,12 @@ class ResourceTest extends FeatureTestCase
             'fields' => [
                 'The selected fields is invalid.',
                 '"user" doesn\'t have fields "unknown".',
-                '"foo" doesn\'t exists.'
-            ]
+                '"foo" doesn\'t exists.',
+            ],
         ]);
     }
 
-    public function testShowFailWithIncludes()
+    public function testShowFailWithIncludes(): void
     {
         $user = $this->dataSeed();
 
@@ -117,11 +119,11 @@ class ResourceTest extends FeatureTestCase
         $response->assertUnprocessable();
         $response->assertJsonValidationErrors(['include' => [
             'The selected include is invalid.',
-            '"user" doesn\'t have relationship "unknown".'
+            '"user" doesn\'t have relationship "unknown".',
         ]]);
     }
 
-    public function testShowFailWithIncludesSub()
+    public function testShowFailWithIncludesSub(): void
     {
         $user = $this->dataSeed();
 
@@ -130,11 +132,11 @@ class ResourceTest extends FeatureTestCase
         $response->assertUnprocessable();
         $response->assertJsonValidationErrors(['include' => [
             'The selected include is invalid.',
-            '"posts" doesn\'t have relationship "unknown"'
+            '"posts" doesn\'t have relationship "unknown"',
         ]]);
     }
 
-    public function testShowMultipleFailures()
+    public function testShowMultipleFailures(): void
     {
         $user = $this->dataSeed();
 
@@ -152,7 +154,7 @@ class ResourceTest extends FeatureTestCase
         ]]);
     }
 
-    public function testShowBasicAutoWhenIncluded()
+    public function testShowBasicAutoWhenIncluded(): void
     {
         Config::$autoWhenIncluded = true;
         $user = $this->dataSeed();
@@ -193,8 +195,8 @@ class ResourceTest extends FeatureTestCase
                         "sub-struct" => [
                             "int" => 200,
                             "float" => 1.1,
-                        ]
-                    ]
+                        ],
+                    ],
                 ], Arr::undot(array_fill_keys($attributes ?? [
                     'name',
                     'email',
@@ -212,15 +214,15 @@ class ResourceTest extends FeatureTestCase
                             'related' => "https://api.example.com/user/{$user->id}/posts",
                         ],
                         'meta' => [
-                            'total' => $user->posts->count()
-                        ]
+                            'total' => $user->posts->count(),
+                        ],
                     ]),
                     'comments' => array_filter([
                         // when loaded only
-                        'data' => $withIncluded && in_array('comments', $relationships ?? [])
+                        'data' => $withIncluded && in_array('comments', $relationships ?? [], true)
                             ? $user->comments->map(fn(Comment $comment) => [
                                 'type' => 'comment',
-                                'id' => $comment->id
+                                'id' => $comment->id,
                             ])->all()
                             : null,
                         'links' => [
@@ -228,8 +230,8 @@ class ResourceTest extends FeatureTestCase
                             'related' => "https://api.example.com/user/{$user->id}/comments",
                         ],
                         'meta' => [
-                            'total' => $user->comments->count()
-                        ]
+                            'total' => $user->comments->count(),
+                        ],
                     ]),
                 ],
                 'meta' => [
@@ -239,16 +241,16 @@ class ResourceTest extends FeatureTestCase
             ],
             'included' => collect()
                 ->merge(
-                    in_array('posts', $relationships ?? [])
+                    in_array('posts', $relationships ?? [], true)
                         ? $user->posts->mapInto(PostResource::class)->map->toArray($request)
-                        : []
+                        : [],
                 )
                 ->merge(
-                    in_array('comments', $relationships ?? [])
+                    in_array('comments', $relationships ?? [], true)
                         ? $user->comments->mapInto(CommentResource::class)->map->toArray($request)
-                        : []
+                        : [],
                 )
-                ->toArray()
+                ->toArray(),
         ]);
     }
 }

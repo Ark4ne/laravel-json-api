@@ -1,13 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Resources;
 
 use Ark4ne\JsonApi\Descriptors;
-use Ark4ne\JsonApi\Resources\Concerns;
 use Ark4ne\JsonApi\Support\Arr;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use JsonSerializable;
 
 /**
  * @template T
@@ -15,17 +17,17 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 abstract class JsonApiResource extends JsonResource implements Resourceable
 {
-    use Descriptors\Relations,
-        Descriptors\Values,
-        Concerns\Relationize,
-        Concerns\Identifier,
-        Concerns\Attributes,
-        Concerns\ConditionallyLoadsAttributes,
-        Concerns\Relationships,
-        Concerns\Links,
-        Concerns\Meta,
-        Concerns\Schema,
-        Concerns\ToResponse;
+    use Descriptors\Relations;
+    use Descriptors\Values;
+    use Concerns\Relationize;
+    use Concerns\Identifier;
+    use Concerns\Attributes;
+    use Concerns\ConditionallyLoadsAttributes;
+    use Concerns\Relationships;
+    use Concerns\Links;
+    use Concerns\Meta;
+    use Concerns\Schema;
+    use Concerns\ToResponse;
 
     /** @var T */
     public $resource;
@@ -54,7 +56,7 @@ abstract class JsonApiResource extends JsonResource implements Resourceable
                 'attributes' => $this->requestedAttributes($request),
                 'relationships' => $this->requestedRelationships($request),
                 'links' => $this->requestedLinks($request),
-                'meta' => $this->requestedResourceMeta($request)
+                'meta' => $this->requestedResourceMeta($request),
             ]));
         }
 
@@ -85,7 +87,7 @@ abstract class JsonApiResource extends JsonResource implements Resourceable
     public static function collection($resource): JsonApiCollection
     {
         /** @var \Ark4ne\JsonApi\Resources\JsonApiCollection<static> $collection */
-        $collection = new class($resource, static::class) extends JsonApiCollection {
+        $collection = new class ($resource, static::class) extends JsonApiCollection {
             public ?bool $preserveKeys = null;
         };
 
@@ -99,9 +101,8 @@ abstract class JsonApiResource extends JsonResource implements Resourceable
 
     /**
      * Fix breaking change in JsonResource in Laravel 12.45
-     * @phpstan-ignore-next-line
      * @param Request $request
-     * @return array|\Illuminate\Contracts\Support\Arrayable|\JsonSerializable
+     * @return array|\Illuminate\Contracts\Support\Arrayable|JsonSerializable
      */
     public function resolveResourceData(Request $request)
     {

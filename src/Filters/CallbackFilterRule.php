@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Filters;
 
 use Closure;
@@ -16,9 +18,8 @@ class CallbackFilterRule implements FilterRule
      * @param Closure(Request, Resource): bool $callback
      */
     public function __construct(
-        protected Closure $callback
-    ) {
-    }
+        protected Closure $callback,
+    ) {}
 
     /**
      * @param Request $request

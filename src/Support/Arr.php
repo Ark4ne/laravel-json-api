@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Support;
 
 use Illuminate\Contracts\Support\Arrayable;
@@ -45,7 +47,7 @@ class Arr
         foreach (self::toArray($with) as $key => $value) {
             $base[$key] = array_merge_recursive(
                 $base[$key] ?? [],
-                $value
+                $value,
             );
         }
 
@@ -72,7 +74,7 @@ class Arr
             if (is_string($key)) {
                 if (is_array($value) && array_key_exists($key, $base) && is_array($base[$key])) {
                     $base[$key] = self::fillRecursive($base[$key], $value);
-                } elseif(!array_key_exists($key, $base)) {
+                } elseif (!array_key_exists($key, $base)) {
                     $base[$key] = $value;
                 }
             } elseif (!in_array($value, $base, true)) {
@@ -138,7 +140,7 @@ class Arr
      * @param string|null $saveKey
      * @return array<mixed>
      */
-    public static function undot(array $array, null|string $saveKey = null): array
+    public static function undot(array $array, ?string $saveKey = null): array
     {
         $results = [];
 
@@ -155,14 +157,14 @@ class Arr
 
     /**
      * @param array<mixed> $array
-     * @param string $path
+     * @param int|string $path
      * @param mixed $value
      * @param string|null $saveKey
      * @return mixed
      */
-    public static function apply(array &$array, string $path, mixed $value, null|string $saveKey = null): mixed
+    public static function apply(array &$array, int|string $path, mixed $value, ?string $saveKey = null): mixed
     {
-        $keys = explode('.', $path);
+        $keys = explode('.', (string) $path);
 
         $keysCount = count($keys);
 
@@ -230,7 +232,7 @@ class Arr
             static fn($value) => is_array($value)
                 ? self::uniqueRecursive(self::uniqueKeyPreserved($value))
                 : $value,
-            $value
+            $value,
         );
     }
 
@@ -249,7 +251,7 @@ class Arr
             $entries = array_values(array_unique($entries, SORT_REGULAR));
             return array_combine(
                 array_column($entries, 0),
-                array_column($entries, 1)
+                array_column($entries, 1),
             );
         }
 

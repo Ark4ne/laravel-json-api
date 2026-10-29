@@ -1,10 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Requests\Rules\Traits;
 
 use Illuminate\Support\Str;
-
-use function trans;
 
 trait UseTrans
 {
@@ -17,7 +17,7 @@ trait UseTrans
      */
     protected function trans(?string $key, string $default, array $replace = []): string
     {
-        $message = trans($key);
+        $message = \trans($key);
 
         return Str::replace(array_keys($replace), array_values($replace), $message === $key ? $default : $message);
     }

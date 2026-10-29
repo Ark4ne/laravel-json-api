@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
 use Ark4ne\JsonApi\Descriptors\Describer;
@@ -63,10 +65,10 @@ trait ConditionallyLoadsAttributes
             } elseif ($raw instanceof Relationship) {
                 $value = RelationRaw::fromRelationship($raw);
             } else {
-                $value = new ValueMixed(is_callable($raw) ? $raw : static fn () => $raw);
+                $value = new ValueMixed(is_callable($raw) ? $raw : static fn() => $raw);
             }
 
-            return $value->when(static fn () => value($condition));
+            return $value->when(static fn() => value($condition));
         }));
     }
 
@@ -84,7 +86,7 @@ trait ConditionallyLoadsAttributes
     public function whenHas($attribute, $value = null, $default = null)
     {
         if (func_num_args() < 3) {
-            $default = new MissingValue;
+            $default = new MissingValue();
         }
 
         if (!Values::hasAttribute($this->resource, $attribute)) {

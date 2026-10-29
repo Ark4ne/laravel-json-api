@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Requests\Rules;
 
 use Ark4ne\JsonApi\Requests\Rules\Traits\UseTrans;
 use Ark4ne\JsonApi\Resources\Skeleton;
 use Ark4ne\JsonApi\Support\Includes as SupportIncludes;
-use Illuminate\Contracts\Validation\Rule;
+use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 
 /**
@@ -26,16 +28,15 @@ class Includes implements ValidationRule
      * @param class-string<T> $resource
      */
     public function __construct(
-        protected string $resource
-    ) {
-    }
+        protected string $resource,
+    ) {}
 
-    public function validate(string $attribute, mixed $value, \Closure $fail): void
+    public function validate(string $attribute, mixed $value, Closure $fail): void
     {
         if (!is_string($value)) {
             $fail($this->trans(
                 sprintf('%s.invalid', self::BASE),
-                'The selected :attribute is invalid.'
+                'The selected :attribute is invalid.',
             ));
             return;
         }
@@ -57,16 +58,16 @@ class Includes implements ValidationRule
     {
         $message = $this->trans(
             sprintf('%s.invalid', self::BASE),
-            'The selected :attribute is invalid.'
+            'The selected :attribute is invalid.',
         );
 
         return array_merge([$message], array_map(
             fn($failure) => $this->trans(
                 sprintf('%s.invalid_includes', self::BASE),
                 '":include" doesn\'t have relationship ":relation".',
-                $failure
+                $failure,
             ),
-            $this->failures
+            $this->failures,
         ));
     }
 
@@ -83,13 +84,13 @@ class Includes implements ValidationRule
             if (!isset($schema->relationships[$relation])) {
                 $this->failures[] = [
                     ':include' => $pretend ?: $schema->type,
-                    ':relation' => $relation
+                    ':relation' => $relation,
                 ];
             } else {
                 $this->assert(
                     $schema->relationships[$relation],
                     $sub,
-                    $pretend ? "$pretend.$relation" : $relation
+                    $pretend ? "$pretend.$relation" : $relation,
                 );
             }
         }

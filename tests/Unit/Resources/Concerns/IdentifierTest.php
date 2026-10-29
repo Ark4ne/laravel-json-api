@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\Unit\Resources\Concerns;
 
 use Ark4ne\JsonApi\Resources\Concerns\Identifier;
@@ -12,15 +14,15 @@ use Test\TestCase;
 
 class IdentifierTest extends TestCase
 {
-    public function testToType()
+    public function testToType(): void
     {
-        $stub = new class(collect()) extends JsonResource {
+        $stub = new class (collect()) extends JsonResource {
             use Identifier;
         };
 
         $this->assertEquals('anonymous', Reflect::invoke($stub, 'toType', new Request()));
 
-        $stub = new class(new JsonResource(null)) extends JsonResource {
+        $stub = new class (new JsonResource(null)) extends JsonResource {
             use Identifier;
 
             protected function toType(Request $request): string
@@ -31,30 +33,33 @@ class IdentifierTest extends TestCase
 
         $this->assertEquals(
             "my-type",
-            Reflect::invoke($stub, 'toType', new Request())
+            Reflect::invoke($stub, 'toType', new Request()),
         );
     }
 
-    public function testToIdentifier()
+    public function testToIdentifier(): void
     {
         $id = uniqid('id', true);
 
-        $object = new class($id) extends stdClass {
+        $object = new class ($id) extends stdClass {
             public $foo = 'bar';
             public $baz = 'tar';
 
-            public function __construct(public $id) { }
+            public function __construct(public $id) {}
 
-            public function toArray() { return (array)$this; }
+            public function toArray()
+            {
+                return (array) $this;
+            }
         };
 
-        $stub = new class($object) extends JsonResource {
+        $stub = new class ($object) extends JsonResource {
             use Identifier;
         };
 
         $this->assertEquals($id, Reflect::invoke($stub, 'toIdentifier', new Request()));
 
-        $stub = new class($object) extends JsonResource {
+        $stub = new class ($object) extends JsonResource {
             use Identifier;
 
             protected function toIdentifier(Request $request): int|string
@@ -65,7 +70,7 @@ class IdentifierTest extends TestCase
 
         $this->assertEquals(
             Str::afterLast($id, '-'),
-            Reflect::invoke($stub, 'toIdentifier', new Request())
+            Reflect::invoke($stub, 'toIdentifier', new Request()),
         );
     }
 }

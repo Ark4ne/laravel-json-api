@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\Unit\Requests\Rules;
 
 use Ark4ne\JsonApi\Requests\Rules\Includes;
@@ -13,12 +15,12 @@ class IncludesTest extends TestCase
      * @dataProvider validationDataProvider
      */
     #[DataProvider('validationDataProvider')]
-    public function testPasses(mixed $values, array $expected)
+    public function testPasses(mixed $values, array $expected): void
     {
         $rule = new Includes(UserResource::class);
         $errors = [];
 
-        $rule->validate('fields', $values, function($message) use (&$errors) {
+        $rule->validate('fields', $values, function ($message) use (&$errors): void {
             $errors[] = $message;
         });
         $this->assertEquals($expected, $errors);
@@ -36,7 +38,7 @@ class IncludesTest extends TestCase
                 'posts',
                 'posts.user',
                 'posts.user.comments',
-                'posts.user.posts'
+                'posts.user.posts',
             ]), []],
 
             // invalid cases
@@ -51,7 +53,7 @@ class IncludesTest extends TestCase
                 'posts.unknown',
             ]), [
                 'The selected :attribute is invalid.',
-                '"posts" doesn\'t have relationship "unknown".'
+                '"posts" doesn\'t have relationship "unknown".',
             ]],
         ];
     }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Traits;
 
 use Illuminate\Database\Eloquent\Builder;

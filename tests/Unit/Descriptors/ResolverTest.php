@@ -1,10 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\Unit\Descriptors;
 
 use Ark4ne\JsonApi\Descriptors\Resolver;
-use Ark4ne\JsonApi\Descriptors\Values\ValueArray;
-use Ark4ne\JsonApi\Descriptors\Values\ValueBool;
 use Ark4ne\JsonApi\Descriptors\Values\ValueMixed;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -14,7 +14,7 @@ use Test\TestCase;
 
 class ResolverTest extends TestCase
 {
-    public function testResolveValue()
+    public function testResolveValue(): void
     {
         $stub = new class extends stdClass {
             use Resolver;
@@ -22,14 +22,14 @@ class ResolverTest extends TestCase
             public $resource;
         };
 
-        $stub->resource = new class([
+        $stub->resource = new class ([
             'b' => 1,
-            'f' => 123
+            'f' => 123,
         ]) extends Model {
             protected $fillable = ['b', 'f'];
         };
 
-        $request = new Request;
+        $request = new Request();
 
         $actual = Reflect::invoke($stub, 'resolveValues', $request, null);
         $this->assertNull($actual);

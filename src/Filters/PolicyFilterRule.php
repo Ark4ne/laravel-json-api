@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Filters;
 
 use Illuminate\Contracts\Auth\Access\Gate;
@@ -20,9 +22,8 @@ class PolicyFilterRule implements FilterRule
         protected iterable|string $abilities,
         protected array $arguments = [],
         protected string $gateClass = Gate::class,
-        protected ?string $guard = null
-    ) {
-    }
+        protected ?string $guard = null,
+    ) {}
 
     /**
      * @param Request $request

@@ -1,22 +1,23 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
-
     public function tables()
     {
         return [
-            'users' => function (Blueprint $table) {
+            'users' => function (Blueprint $table): void {
                 $table->id();
                 $table->string('name');
                 $table->string('email');
                 $table->string('password');
                 $table->timestamps();
             },
-            'posts' => function (Blueprint $table) {
+            'posts' => function (Blueprint $table): void {
                 $table->id();
                 $table->boolean('state')
                     ->default(false)
@@ -27,7 +28,7 @@ return new class extends Migration {
                 $table->timestamps();
                 $table->foreignId('user_id')->constrained('users');
             },
-            'comments' => function (Blueprint $table) {
+            'comments' => function (Blueprint $table): void {
                 $table->id();
                 $table->string('content');
                 $table->foreignId('post_id')->constrained('posts');
@@ -40,7 +41,7 @@ return new class extends Migration {
     public function changes()
     {
         return [
-            'users' => function (Blueprint $table) {
+            'users' => function (Blueprint $table): void {
                 $table->foreignId('post_id')
                     ->nullable()
                     ->after('password')
@@ -49,7 +50,7 @@ return new class extends Migration {
         ];
     }
 
-    public function up()
+    public function up(): void
     {
         foreach ($this->tables() as $table => $blueprint) {
             Schema::create($table, $blueprint);
@@ -59,7 +60,7 @@ return new class extends Migration {
         }
     }
 
-    public function down()
+    public function down(): void
     {
         foreach (array_reverse(array_keys($this->tables())) as $table) {
             Schema::drop($table);

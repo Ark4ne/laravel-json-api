@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Descriptors\Values;
 
 use Illuminate\Http\Request;
@@ -12,6 +14,6 @@ class ValueString extends Value
 {
     public function value(mixed $of, Request $request): string
     {
-        return (string)$of;
+        return (string) $of;
     }
 }

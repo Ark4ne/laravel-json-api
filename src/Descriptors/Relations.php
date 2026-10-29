@@ -1,18 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Descriptors;
 
 use Ark4ne\JsonApi\Descriptors\Relations\RelationMany;
 use Ark4ne\JsonApi\Descriptors\Relations\RelationOne;
-use Ark4ne\JsonApi\Descriptors\Values\{
-    ValueArray,
-    ValueBool,
-    ValueDate,
-    ValueFloat,
-    ValueInteger,
-    ValueMixed,
-    ValueString
-};
 use Closure;
 
 /**
@@ -26,7 +19,7 @@ trait Relations
      *
      * @return \Ark4ne\JsonApi\Descriptors\Relations\RelationOne<T>
      */
-    protected function one(string $for, null|string|Closure $relation = null): RelationOne
+    protected function one(string $for, string|Closure|null $relation = null): RelationOne
     {
         return new RelationOne($for, $relation);
     }
@@ -37,7 +30,7 @@ trait Relations
      *
      * @return \Ark4ne\JsonApi\Descriptors\Relations\RelationMany<T>
      */
-    protected function many(string $for, null|string|Closure $relation = null): RelationMany
+    protected function many(string $for, string|Closure|null $relation = null): RelationMany
     {
         return new RelationMany($for, $relation);
     }

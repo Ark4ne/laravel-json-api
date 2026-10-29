@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Support;
 
 use Ark4ne\JsonApi\Support\Traits\HasLocalCache;
+use BadMethodCallException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 
@@ -48,12 +51,12 @@ class Fields
      *
      * @return string[]|null
      */
-    public static function get(Request $request, null|string $type = null): ?array
+    public static function get(Request $request, ?string $type = null): ?array
     {
         $type ??= self::current();
 
         if ($type === null) {
-            throw new \BadMethodCallException(__METHOD__ . ':$type must not be null when not current stack');
+            throw new BadMethodCallException(__METHOD__ . ':$type must not be null when not current stack');
         }
 
         $fields = self::parse((array) $request->input('fields', []));
@@ -68,11 +71,12 @@ class Fields
      *
      * @return bool
      */
-    public static function has(Request $request, string $field, null|string $type =null): bool  {
+    public static function has(Request $request, string $field, ?string $type = null): bool
+    {
         $type ??= self::current();
 
         if ($type === null) {
-            throw new \BadMethodCallException(__METHOD__ . ':$type must not be null when not current stack');
+            throw new BadMethodCallException(__METHOD__ . ':$type must not be null when not current stack');
         }
 
         $fields = self::get($request, $type);
@@ -91,8 +95,8 @@ class Fields
             (new Collection($fields))->toJson(),
             static fn() => array_map(
                 static fn($value) => array_filter(explode(',', $value)),
-                $fields
-            )
+                $fields,
+            ),
         );
     }
 }

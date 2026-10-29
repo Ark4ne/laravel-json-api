@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\app\Http\Requests;
 
 use Ark4ne\JsonApi\Requests\Rules\Fields;

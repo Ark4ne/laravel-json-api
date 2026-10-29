@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Descriptors\Values;
 
 use Ark4ne\JsonApi\Support\Config;
@@ -12,7 +14,7 @@ use Illuminate\Http\Request;
  */
 class ValueFloat extends Value
 {
-    protected int|null $precision;
+    protected ?int $precision;
 
     public function __construct(string|Closure|null $attribute)
     {
@@ -32,9 +34,9 @@ class ValueFloat extends Value
         if (isset($this->precision)) {
             $precision = 10 ** $this->precision;
 
-            return floor((float)$of * $precision) / $precision;
+            return floor((float) $of * $precision) / $precision;
         }
 
-        return (float)$of;
+        return (float) $of;
     }
 }

@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\Unit\Resources\Concerns;
 
 use Ark4ne\JsonApi\Resources\Concerns\Attributes;
+use ArrayIterator;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use stdClass;
@@ -11,9 +14,9 @@ use Test\TestCase;
 
 class AttributesTest extends TestCase
 {
-    public function testToAttributes()
+    public function testToAttributes(): void
     {
-        $stub = fn ($object) => new class($object) extends JsonResource {
+        $stub = fn($object) => new class ($object) extends JsonResource {
             use Attributes;
 
             protected function toType(Request $request)
@@ -25,12 +28,15 @@ class AttributesTest extends TestCase
         $object = new class extends stdClass {
             public $foo = 'bar';
             public $baz = 'tar';
-            public function toArray() { return (array)$this; }
+            public function toArray()
+            {
+                return (array) $this;
+            }
         };
 
         $this->assertEquals(
             $object->toArray(),
-            Reflect::invoke($stub($object), 'toAttributes', new Request())
+            Reflect::invoke($stub($object), 'toAttributes', new Request()),
         );
 
         $array = [
@@ -39,33 +45,36 @@ class AttributesTest extends TestCase
 
         $this->assertEquals(
             $array,
-            Reflect::invoke($stub($array), 'toAttributes', new Request())
+            Reflect::invoke($stub($array), 'toAttributes', new Request()),
         );
 
-        $iterable = new \ArrayIterator($array);
+        $iterable = new ArrayIterator($array);
 
         $this->assertEquals(
             $array,
-            Reflect::invoke($stub($iterable), 'toAttributes', new Request())
+            Reflect::invoke($stub($iterable), 'toAttributes', new Request()),
         );
 
-        $stdClass = (object)[];
+        $stdClass = (object) [];
 
         $this->assertEquals(
             [],
-            Reflect::invoke($stub($stdClass), 'toAttributes', new Request())
+            Reflect::invoke($stub($stdClass), 'toAttributes', new Request()),
         );
     }
 
-    public function testRequestedAttributes()
+    public function testRequestedAttributes(): void
     {
         $object = new class extends stdClass {
             public $foo = 'bar';
             public $baz = 'tar';
-            public function toArray() { return (array)$this; }
+            public function toArray()
+            {
+                return (array) $this;
+            }
         };
 
-        $stub = new class($object) extends JsonResource {
+        $stub = new class ($object) extends JsonResource {
             use Attributes;
 
             protected function toType(Request $request)
@@ -78,15 +87,19 @@ class AttributesTest extends TestCase
                 return collect([
                     'foo' => $this->foo,
                     'baz' => fn() => $this->baz,
-                    'when_false' => $this->when(false,
-                        fn() => "when_false-{$this->foo}-{$this->baz}"),
-                    'when_true' => $this->when(true,
-                        fn() => "when_true-{$this->foo}-{$this->baz}"),
+                    'when_false' => $this->when(
+                        false,
+                        fn() => "when_false-{$this->foo}-{$this->baz}",
+                    ),
+                    'when_true' => $this->when(
+                        true,
+                        fn() => "when_true-{$this->foo}-{$this->baz}",
+                    ),
                     $this->mergeWhen(false, fn() => [
-                        'merged-false' => 'merged-false'
+                        'merged-false' => 'merged-false',
                     ]),
                     $this->mergeWhen(true, fn() => [
-                        'merged-true' => 'merged-true'
+                        'merged-true' => 'merged-true',
                     ]),
                 ]);
             }
@@ -96,28 +109,31 @@ class AttributesTest extends TestCase
             'foo' => 'bar',
             'baz' => 'tar',
             'when_true' => "when_true-bar-tar",
-            'merged-true' => 'merged-true'
+            'merged-true' => 'merged-true',
         ];
 
         $this->assertEquals(
             $allAttributes,
-            Reflect::invoke($stub, 'requestedAttributes', new Request())
+            Reflect::invoke($stub, 'requestedAttributes', new Request()),
         );
 
         $this->assertEquals(
             array_intersect_key($allAttributes, array_fill_keys(['foo', 'baz'], true)),
-            Reflect::invoke($stub, 'requestedAttributes', new Request(['fields' => ['my-type' => 'foo,baz']]))
+            Reflect::invoke($stub, 'requestedAttributes', new Request(['fields' => ['my-type' => 'foo,baz']])),
         );
 
         $this->assertEquals(
             array_intersect_key($allAttributes, array_fill_keys(['foo', 'merged-true'], true)),
-            Reflect::invoke($stub, 'requestedAttributes',
-                new Request(['fields' => ['my-type' => 'foo,when_false,merged-true']]))
+            Reflect::invoke(
+                $stub,
+                'requestedAttributes',
+                new Request(['fields' => ['my-type' => 'foo,when_false,merged-true']]),
+            ),
         );
 
         $this->assertEquals(
             [],
-            Reflect::invoke($stub, 'requestedAttributes', new Request(['fields' => ['my-type' => '']]))
+            Reflect::invoke($stub, 'requestedAttributes', new Request(['fields' => ['my-type' => '']])),
         );
     }
 }

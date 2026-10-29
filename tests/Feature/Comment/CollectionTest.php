@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\Feature\Comment;
 
 use DateTimeInterface;
@@ -9,20 +11,18 @@ use Illuminate\Support\Collection;
 use Test\app\Http\Resources\PostResource;
 use Test\app\Http\Resources\UserResource;
 use Test\app\Models\Comment;
-use Test\app\Models\Post;
-use Test\app\Models\User;
 use Test\Feature\FeatureTestCase;
 
 class CollectionTest extends FeatureTestCase
 {
-    public function testIndexBasic()
+    public function testIndexBasic(): void
     {
         $response = $this->get("comment");
 
         $response->assertExactJson($this->getJsonResult(Comment::query()->limit(15)->get()));
     }
 
-    public function testIndexWithInclude()
+    public function testIndexWithInclude(): void
     {
         $response = $this->get("comment?include=post");
 
@@ -44,22 +44,22 @@ class CollectionTest extends FeatureTestCase
             ], array_fill_keys($attributes ?? ['content'], true))),
             'relationships' => [
                 'user' => array_filter([
-                    'data' => in_array('user', $relationships ?? [])
+                    'data' => in_array('user', $relationships ?? [], true)
                         ? ['type' => 'user', 'id' => $comment->user->id]
                         : null,
                     'links' => [
                         'self' => "https://api.example.com/comment/{$comment->id}/relationships/user",
                         'related' => "https://api.example.com/comment/{$comment->id}/user",
-                    ]
+                    ],
                 ]),
                 'post' => array_filter([
-                    'data' => in_array('post', $relationships ?? [])
+                    'data' => in_array('post', $relationships ?? [], true)
                         ? ['type' => 'post', 'id' => $comment->post->id]
                         : null,
                     'links' => [
                         'self' => "https://api.example.com/comment/{$comment->id}/relationships/post",
                         'related' => "https://api.example.com/comment/{$comment->id}/post",
-                    ]
+                    ],
                 ]),
             ],
             'meta' => [
@@ -72,18 +72,18 @@ class CollectionTest extends FeatureTestCase
         $include = $comments
             ->map(fn(Comment $comment) => collect()
                 ->merge(
-                    in_array('user', $relationships ?? [])
+                    in_array('user', $relationships ?? [], true)
                         ? [UserResource::make($comment->user)->toArray($request)]
-                        : []
+                        : [],
                 )
                 ->merge(
-                    in_array('post', $relationships ?? [])
+                    in_array('post', $relationships ?? [], true)
                         ? [PostResource::make($comment->post)->toArray($request)]
-                        : []
+                        : [],
                 ))
             ->reduce(fn(Collection $all, Collection $value) => $all->merge($value), collect());
 
-        $isLaravel12 = ((int)explode('.', Application::VERSION, 2)[0]) >= 12;
+        $isLaravel12 = ((int) explode('.', Application::VERSION, 2)[0]) >= 12;
 
         return collect(array_filter([
             'data' => $data,
@@ -92,7 +92,7 @@ class CollectionTest extends FeatureTestCase
                 "first" => "http://localhost/comment?page=1",
                 "last" => "http://localhost/comment?page=10",
                 "next" => "http://localhost/comment?page=2",
-                "prev" => null
+                "prev" => null,
             ],
             "meta" => [
                 'current_page' => 1,
@@ -113,10 +113,10 @@ class CollectionTest extends FeatureTestCase
                     ],
                     ...(array_map(static fn($value) => [
                         'active' => false,
-                        'label' => (string)$value,
+                        'label' => (string) $value,
                         ...($isLaravel12 ? ['page' => $value] : []),
                         'url' => "http://localhost/comment?page=$value",
-                        ], range(2, 10))),
+                    ], range(2, 10))),
                     [
                         'active' => false,
                         'label' => "Next &raquo;",

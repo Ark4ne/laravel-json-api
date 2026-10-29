@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Resources;
 
 use Ark4ne\JsonApi\Filters\Filters;
@@ -38,9 +40,8 @@ class Relationship implements Resourceable
         protected string   $resource,
         protected Closure  $value,
         protected ?Closure $links = null,
-        protected ?Closure $meta = null
-    ) {
-    }
+        protected ?Closure $meta = null,
+    ) {}
 
     /**
      * Re-set value for relation
@@ -103,7 +104,7 @@ class Relationship implements Resourceable
      * @param bool|null $whenIncluded
      * @return $this
      */
-    public function whenIncluded(null|bool $whenIncluded = null): static
+    public function whenIncluded(?bool $whenIncluded = null): static
     {
         if ($whenIncluded === null) {
             $this->whenIncluded ??= true;
@@ -161,8 +162,8 @@ class Relationship implements Resourceable
     {
         $value = $this->whenIncluded && !$included
             ? null
-            : value($this->value);
-        $value ??= new MissingValue;
+            : \value($this->value);
+        $value ??= new MissingValue();
 
         // Apply filters if they are defined and we have data
         if ($this->filters !== null && !Values::isMissing($value)) {
@@ -177,13 +178,13 @@ class Relationship implements Resourceable
 
         $data = [
             'data' => [],
-            'links' => value($this->links, $resource),
-            'meta' => value($this->meta, $resource),
+            'links' => \value($this->links, $resource),
+            'meta' => \value($this->meta, $resource),
         ];
 
         if (Values::isMissing($resource)) {
             return [
-                'data' => array_filter($data)
+                'data' => array_filter($data),
             ];
         }
 
@@ -199,7 +200,7 @@ class Relationship implements Resourceable
             foreach ($datum as $value) {
                 $data['data'][] = [
                     'type' => $value['type'],
-                    'id' => $value['id']
+                    'id' => $value['id'],
                 ];
                 if ($included) {
                     $includes[] = $value;
@@ -208,12 +209,12 @@ class Relationship implements Resourceable
         } elseif ($resource instanceof JsonResource) {
             $data['data'] = [
                 'type' => $datum['type'],
-                'id' => $datum['id']
+                'id' => $datum['id'],
             ];
             if ($included) {
                 $includes[] = $datum;
             }
-        } else { // @phpstan-ignore-line
+        } else {
             $data['data'] = $datum;
         }
 
@@ -222,7 +223,7 @@ class Relationship implements Resourceable
             'included' => $includes,
             'with' => is_object($resource) && method_exists($resource, 'with')
                 ? $resource->with($request)
-                : null
+                : null,
         ]);
     }
 }
