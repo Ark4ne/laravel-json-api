@@ -100,8 +100,8 @@ jobs:
   mutation:
     name: Mutation testing (minimum 80% MSI)
     runs-on: ubuntu-latest
-    # Informative until the 1.x code reaches the threshold (roadmap-v2/E00-socle.md, E0.6), then blocking on master.
-    continue-on-error: true
+    # Blocking on master, informative on other branches.
+    continue-on-error: ${{ github.ref != 'refs/heads/master' }}
     steps:
       - uses: actions/checkout@v4
 

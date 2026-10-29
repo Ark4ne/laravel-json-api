@@ -8,6 +8,10 @@
         "summary": "build/infection/summary.log"
     },
     "tmpDir": "build/infection",
+    // Infection is installed globally: it does not find the project's PHPUnit by itself.
+    "phpUnit": {
+        "customPath": "vendor/bin/phpunit"
+    },
     "minMsi": 80,
     "minCoveredMsi": 80,
     "mutators": {

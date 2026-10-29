@@ -14,11 +14,11 @@ dépendance vers eux.
 ## Progression
 
 <!-- progress:start -->
-**Avancement global : `█░░░░░░░░░` 10 % (16 / 159 livrables)**
+**Avancement global : `█░░░░░░░░░` 11 % (18 / 159 livrables)**
 
 | EPIC | Jalon | Statut | Avancement | Livrables |
 | --- | --- | --- | --- | --- |
-| [E0 — Socle, outillage et conventions](E00-socle.md) | M0 | En cours | `███████░░░` 73 % | 14 / 19 |
+| [E0 — Socle, outillage et conventions](E00-socle.md) | M0 | En cours | `████████░░` 84 % | 16 / 19 |
 | [E1 — Conformité à la spec JSON:API 1.1](E01-conformite-spec.md) | M2 | À faire | `░░░░░░░░░░` 0 % | 0 / 16 |
 | [E2 — Corrections de bugs et nettoyage de la dette](E02-bugs-dette.md) | M2 | À faire | `░░░░░░░░░░` 0 % | 0 / 18 |
 | [E3 — Modèle de définition et évolution du FakeModel](E03-definition.md) | M1 | À faire | `░░░░░░░░░░` 0 % | 0 / 19 |
@@ -96,4 +96,5 @@ La release 1.10 de dépréciation (E11.1) se prépare dès que les ruptures sont
 | 2026-10-30 | Les libs `openapi-writer` et `laravel-openapi-generator` sont des modèles, sans dépendance ; le générateur nous consomme indirectement (E9) |
 | 2026-10-30 | Traits autorisés uniquement dans `Resources/` (façade utilisateur), interdits ailleurs (E0) |
 | 2026-10-30 | Dette 1.x gelée dans `phpstan-baseline.neon` (PHPStan max, phpat, disallowed calls) : la baseline ne peut que diminuer et doit être vide avant 2.0.0 (E0.2b) |
-| 2026-10-30 | Infection non bloquant en CI tant que le MSI de départ n'est pas mesuré et atteint (E0.6b) |
+| 2026-10-30 | Infection installé globalement (comme le générateur), `phpUnit.customPath` explicite ; MSI de départ 83,33 % : job bloquant sur `master`, informatif ailleurs (E0.6b) |
+| 2026-10-30 | `docs/architecture.md` validé : il sert de contrat pour la suite (M1 et au-delà) |

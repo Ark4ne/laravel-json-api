@@ -62,8 +62,8 @@ des services composés, et interdits partout ailleurs (vérifié par phpat).
 - [x] **E0.5** `spaze/phpstan-disallowed-calls` : facades, `config()`, `app()` et `request()` autorisés uniquement dans
       `src/Laravel/`
 - [x] **E0.6** Couverture ≥ 90 % des lignes, avec `bin/coverage-check.php` bloquant en CI (92,65 % au départ)
-- [ ] **E0.6b** Infection MSI ≥ 80 % : `infection.json5` et job CI en place (non bloquant), MSI de départ non encore
-      mesuré
+- [x] **E0.6b** Infection MSI ≥ 80 % : `infection.json5` et job CI, bloquant sur `master`. MSI de départ : 83,33 %
+      (703 mutants : 492 tués, 99 échappés, 109 ignorés, 2 timeouts, 1 erreur)
 
 ### Documentation de conception
 
@@ -82,4 +82,4 @@ des services composés, et interdits partout ailleurs (vérifié par phpat).
 ## Critères de sortie
 
 - [ ] `composer ci` passe en local ✅ ; la CI GitHub passe sur toute la matrice (à confirmer au premier push)
-- [ ] `docs/architecture.md` relu et validé avant le début d'E3
+- [x] `docs/architecture.md` relu et validé avant le début d'E3
