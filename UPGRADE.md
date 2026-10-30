@@ -42,6 +42,12 @@ returns the `ResourceDefinition` (type, attributes, relationships with their rel
 A condition written with an `if` on the request inside a hook is not seen by the definition, which is built with an
 empty request: write it with `->when()`, `->unless()` or `applyWhen()` (README, section "Definition").
 
+### `include` and `fields` come from the query string
+
+1.x read `include` and `fields` from all the input, body included. 2.0 reads them from the query string only, where
+the specification defines them. A middleware adding a default include on a `GET` request
+(`$request->merge(['include' => …])`) keeps working: Laravel merges into the query of a `GET`.
+
 ### Deployment
 
 Add nothing if you already run `php artisan optimize`: it now compiles the resource definitions too

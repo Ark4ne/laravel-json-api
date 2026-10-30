@@ -26,6 +26,7 @@
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.75",
         "larastan/larastan": "^3.4",
+        "opis/json-schema": "^2.6",
         "orchestra/testbench": "^10.0 || ^11.0",
         "phpat/phpat": "^0.12.5",
         "phpstan/phpstan": "^2.1",

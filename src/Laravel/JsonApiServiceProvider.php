@@ -7,6 +7,7 @@ namespace Ark4ne\JsonApi\Laravel;
 use Ark4ne\JsonApi\Compilation\CompiledDefinitions;
 use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Configuration\Configuration;
+use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Laravel\Commands\CacheDefinitionsCommand;
 use Ark4ne\JsonApi\Laravel\Commands\CheckDefinitionsCommand;
 use Ark4ne\JsonApi\Laravel\Commands\ClearDefinitionsCommand;
@@ -14,7 +15,9 @@ use Ark4ne\JsonApi\Support\Config;
 use Ark4ne\JsonApi\Support\Fields;
 use Ark4ne\JsonApi\Support\Includes;
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Http\Request;
 use Illuminate\Support\ServiceProvider;
+use WeakMap;
 
 /**
  * Wires the package into a Laravel application; replaces `Providers\LaravelJsonApiProvider`.
@@ -22,6 +25,7 @@ use Illuminate\Support\ServiceProvider;
  * - Publishes and merges `config/jsonapi.php`, builds the `Configuration` and gives it to `Definitions`.
  * - Gives `bootstrap/cache/jsonapi.php` to `Definitions`, which reads it on first use: nothing is compiled nor read at
  *   boot.
+ * - Binds one `JsonApiContext` per request object, built from it on first use.
  * - Registers `jsonapi:cache`, `jsonapi:clear` and `jsonapi:check`; `php artisan optimize` caches the definitions.
  */
 final class JsonApiServiceProvider extends ServiceProvider
@@ -46,6 +50,19 @@ final class JsonApiServiceProvider extends ServiceProvider
             $configuration = $app->make(Configuration::class);
 
             return new ResourceFinder($configuration->resourcePaths !== [] ? $configuration->resourcePaths : [app_path()]);
+        });
+
+        // One context per request object, built on first use: a new request (HTTP, Octane, test) gets its own, and the
+        // weak map lets the old ones go with their request.
+        /** @var WeakMap<Request, JsonApiContext> $contexts */
+        $contexts = new WeakMap();
+        $this->app->bind(JsonApiContext::class, static function (Application $app) use ($contexts): JsonApiContext {
+            /** @var Request $request */
+            $request = $app->make('request');
+            /** @var Configuration $configuration */
+            $configuration = $app->make(Configuration::class);
+
+            return $contexts[$request] ??= JsonApiContext::fromRequest($request, $configuration);
         });
     }
 

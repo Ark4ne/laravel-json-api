@@ -191,7 +191,8 @@ OPcache read.
 
 ## 6. Context
 
-`JsonApiContext` is created once per request by the `Laravel` layer (`scoped` binding) and passed **explicitly**.
+`JsonApiContext` is created once per request object by the `Laravel` layer and passed **explicitly**. `include` and
+`fields` are read from the query string only.
 
 | Member | Content |
 | --- | --- |
@@ -326,7 +327,8 @@ Registries order their entries by priority, never by the order of a configuratio
 
 - **Suites:** `tests/Unit` (one test class per class), `tests/Feature` (Orchestra Testbench scenarios on the
   application of `tests/app`), `tests/Architecture` (phpat), `tests/Benchmark`.
-- **Every rendered document is validated** against the official JSON:API 1.1 JSON Schema before any comparison.
+- **Every rendered document is validated** against the JSON:API 1.1 JSON Schema before any comparison: jsonapi.org only
+  publishes a 1.0 schema, so `tests/Support/jsonapi-1.1.schema.json` copies it and adds the 1.1 members.
 - **Expected documents** are JSON files (`tests/Feature/<Scenario>/expected/*.json`), rewritten by
   `composer fixtures:update` and reviewed in the diff.
 - **Query counting:** include and linkage scenarios assert the number of SQL queries (no N+1).

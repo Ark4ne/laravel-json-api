@@ -23,6 +23,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **`php artisan jsonapi:check [resources…] [--strict]`** prints the diagnostics of the resources and fails on an error
   (on a warning too with `--strict`).
 - **`Testing\ResourceAssertions::assertValid(PostResource::class, strict: false)`** for the test suites of applications.
+- **`Context\JsonApiContext`**, bound once per request: the parsed `include` (`IncludeTree`) and `fields`
+  (`SparseFieldsets`), the configuration and the diagnostics of the request. `include` and `fields` are read from the
+  query string only, as the specification defines them.
 
 ### Changed
 

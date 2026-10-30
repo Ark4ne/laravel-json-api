@@ -18,10 +18,11 @@ nouveau moteur corrige structurellement la plupart des écarts d'E1 et plusieurs
 
 ### Contexte
 
-- [ ] **E4.1** `JsonApiContext` (readonly, un par requête) : `fields` et `include` parsés une seule fois, chemin
+- [x] **E4.1** `JsonApiContext` (readonly, un par requête) : `fields` et `include` parsés une seule fois, chemin
       courant, `Configuration`, `Diagnostics` 🔴
-- [ ] **E4.1b** Binding `scoped` dans le container (couche `Laravel`) ; le contexte est passé **explicitement** au
-      moteur
+- [x] **E4.1b** Binding d'un contexte par objet `Request` (cache `WeakMap`, couche `Laravel`) : une nouvelle requête
+      (HTTP, Octane, test) a le sien, sans `rebinding` ni résolution au boot ; le contexte est passé **explicitement**
+      au moteur
 
 ### Document
 

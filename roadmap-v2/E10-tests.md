@@ -11,8 +11,11 @@ patterns des libs modèles.
 
 ### Conformité
 
-- [ ] **E10.1** Chaque document produit en test est validé contre le JSON Schema officiel JSON:API 1.1
-      (`opis/json-schema` en dépendance de dev), comme le writer valide contre le schéma OpenAPI
+- [x] **E10.1** Chaque document produit en test est validé contre le JSON Schema JSON:API 1.1
+      (`opis/json-schema` en dépendance de dev), comme le writer valide contre le schéma OpenAPI. jsonapi.org ne
+      publie qu'un schéma 1.0 : il est copié dans `tests/Support/jsonapi-1.1.schema.json` et complété des membres 1.1
+      (`jsonapi.ext` / `profile`, membres des link objects). Toute réponse `application/vnd.api+json` d'un test Feature
+      passe par `FeatureTestCase::createTestResponse()`
 - [ ] **E10.2** Documents attendus en fichiers `tests/Feature/<Scenario>/expected/*.json`, régénérés par
       `composer fixtures:update` et relus dans le diff
 
