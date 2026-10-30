@@ -72,6 +72,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `RenderingException`. The definition exposes the map (`morphs`, `isPolymorphic()`), the validation rules accept an
   include or a fieldset one of the related resources has (path by path), and the related models are loaded resource
   by resource.
+- **Value types of the application**: a `Value` subclass registered under a name (`describer.types`, or
+  `JsonApi::valueType('money', MoneyValue::class)`) is written `$this->money()` in a resource and named as the items
+  of an array (`->of('money')`, as the types of the package: `->of('integer')`). `Descriptors\ValueTypes` is the
+  registry; a name taken by a resource method or a class that is not a `Value` throws an
+  `InvalidConfigurationException` at boot.
 - **Declarative type**: `#[JsonApiType('posts')]` on a resource gives its type without overriding `toType()`, whose
   default implementation returns it (an override can call `parent::toType()`).
 - **Type naming convention** `type.naming`: the type of a resource that declares none, from its class name without the
@@ -79,6 +84,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   (`blog_posts`), or a class implementing `Configuration\TypeNaming`.
 
 ### Changed
+
+- `array()->of(ValueStruct::class)` throws a `DefinitionException` asking for an instance, when declared, instead of
+  failing on rendering (a struct needs its closure).
 
 - **Breaking:** requires PHP `^8.3` and Laravel `^12.46` or `^13.0`. PHP 8.1 and 8.2, Laravel 10 and 11 are no longer
   supported.

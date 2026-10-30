@@ -9,8 +9,11 @@ use Ark4ne\JsonApi\Descriptors\Values\ValueArray;
 use Ark4ne\JsonApi\Descriptors\Values\ValueEnum;
 use Ark4ne\JsonApi\Descriptors\Values\ValueInteger;
 use Ark4ne\JsonApi\Descriptors\Values\ValueString;
+use Ark4ne\JsonApi\Descriptors\Values\ValueStruct;
+use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Illuminate\Http\Request;
 use PHPUnit\Framework\TestCase;
+use Test\app\Values\MoneyValue;
 
 class TypedArrayTest extends TestCase
 {
@@ -111,6 +114,23 @@ class TypedArrayTest extends TestCase
         self::assertCount(4, $result);
         self::assertSame([1, 'string', true, 3.14], $result);
     }
+
+    public function test_the_item_type_is_named_by_its_type(): void
+    {
+        $configuration = Configuration::fromArray(['describer' => ['types' => ['money' => MoneyValue::class]]]);
+        $prices = (new ValueArray(null))->of('money');
+
+        self::assertSame(['1.50', '0.99'], $prices->value([150, 99], new Request(), $configuration));
+        self::assertSame('money', $prices->definition('prices', null, $configuration)->items?->format);
+        self::assertSame([1, 2], (new ValueArray(null))->of('integer')->value(['1', '2'], new Request(), $configuration));
+    }
+
+    public function test_a_struct_given_by_its_class_throws_when_declared(): void
+    {
+        $this->expectException(DefinitionException::class);
+
+        (new ValueArray(null))->of(ValueStruct::class);
+    }
 }
 
 // Example enum for testing
@@ -119,4 +139,5 @@ enum Status: int
     case INACTIVE = 0;
     case ACTIVE = 1;
     case PENDING = 2;
+
 }

@@ -28,6 +28,22 @@ final class DefinitionException extends LogicException implements JsonApiExcepti
     }
 
     /**
+     * A value type was named that is neither registered nor a `Value` class.
+     */
+    public static function unknownValueType(string $type): self
+    {
+        return new self("[{$type}] is not a value type: register it (JsonApi::valueType()) or give a Value class.");
+    }
+
+    /**
+     * A value type was given by its class where an instance is needed: its descriptor needs more than an attribute.
+     */
+    public static function valueTypeNeedsInstance(string $class): self
+    {
+        return new self("[{$class}] cannot be built from its class alone: give an instance (->of(\$this->struct(fn() => [...]))).");
+    }
+
+    /**
      * The resource declares a hook of 1.x that was renamed: kept, it would be ignored silently.
      */
     public static function renamedHook(string $class, string $hook, string $replacement): self

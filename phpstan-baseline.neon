@@ -289,18 +289,6 @@ parameters:
 			path: src/Descriptors/Values/ValueArray.php
 
 		-
-			message: '#^Only booleans are allowed in a negated boolean, Ark4ne\\JsonApi\\Descriptors\\Values\\Value\<U\>\|class\-string\<Ark4ne\\JsonApi\\Descriptors\\Values\\Value\<U\>\>\|null given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: src/Descriptors/Values/ValueArray.php
-
-		-
-			message: '#^PHPDoc tag @return has invalid value \(\$this\<T, U\>\)\: Unexpected token "\<", expected TOKEN_HORIZONTAL_WS at offset 131 on line 5$#'
-			identifier: phpDoc.parseError
-			count: 1
-			path: src/Descriptors/Values/ValueArray.php
-
-		-
 			message: '#^Parameter \#1 \$items of class Illuminate\\Support\\Collection constructor expects Illuminate\\Contracts\\Support\\Arrayable\<TKey of \(int\|string\), TValue\>\|iterable\<TKey of \(int\|string\), TValue\>\|null, mixed given\.$#'
 			identifier: argument.type
 			count: 2

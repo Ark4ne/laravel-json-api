@@ -184,8 +184,10 @@ OPcache read.
   `whenLoaded()`, `can()`… each add a `Condition` (**Specification** pattern) evaluated by the renderer. The
   definition records that the field is conditional, and `whenInFields()` additionally marks it sparse.
 - **Value types are a registry** (**Strategy** + **Registry**): each `Value` subclass declares its `ValueType` and how it
-  casts a raw value. An application registers its own (`JsonApi::valueType('money', MoneyValue::class)`), and the new
-  type is available as `$this->money()` and visible in the definition.
+  casts a raw value. An application registers its own (`JsonApi::valueType('money', MoneyValue::class)`, or
+  `describer.types`: the registry `Descriptors\ValueTypes` reads the `Configuration`, no static state), and the new
+  type is available as `$this->money()`, as `->of('money')` for the items of an array, and visible in the
+  definition.
 - **Relations** carry the related resource (explicit class, or resolved through `#[UseResource]` /
   `Model::toResource()`), the cardinality, links and meta closures, the load plan, filters and the linkage mode.
 
@@ -375,7 +377,9 @@ Registries order their entries by priority, never by the order of a configuratio
 ### Add a value type
 
 1. Create `src/Descriptors/Values/<Type>Value.php` extending `Value`, declare its `ValueType` and its cast.
-2. Register it in the default value type registry and add the helper to the `Values` concern.
+2. Add it to `Descriptors\ValueTypes::BUILT_IN` (unless it needs more than an attribute, as a struct) and add the
+   helper to the `Values` concern. An application does the same with `describer.types` / `JsonApi::valueType()`, its
+   helper being `JsonApiResource::__call()`.
 3. Unit test the cast (nullable, conditions) and the definition it produces.
 
 ### Add a condition

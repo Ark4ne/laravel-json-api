@@ -7,6 +7,8 @@ namespace Ark4ne\JsonApi\Descriptors\Values;
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Definition\AttributeDefinition;
 use Ark4ne\JsonApi\Definition\ValueType;
+use Ark4ne\JsonApi\Descriptors\ValueTypes;
+use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 
@@ -18,18 +20,26 @@ use Illuminate\Support\Collection;
 class ValueArray extends Value
 {
     /**
-     * @var class-string<Value<U>>|Value<U>|null
+     * @var string|Value<U>|null
      */
     protected string|Value|null $type = null;
 
     /**
-     * Define the type of elements in the array
+     * Define the type of elements in the array: a descriptor, or a value type by its name (`'integer'`, a registered
+     * `'money'`) or its class, resolved against the configuration
      *
-     * @param class-string<Value<U>>|Value<U> $type
-     * @return $this<T, U>
+     * @param string|class-string<Value<U>>|Value<U> $type
+     * @return static
+     *
+     * @throws DefinitionException when a class is given that needs more than an attribute (a struct)
      */
     public function of(string|Value $type): static
     {
+        if (is_string($type) && class_exists($type)) {
+            // Fails now rather than on rendering: a struct needs its closure.
+            ValueTypes::make(Configuration::defaults(), $type);
+        }
+
         return $this->with('type', $type);
     }
 
@@ -38,10 +48,10 @@ class ValueArray extends Value
         mixed $subject = null,
         ?Configuration $configuration = null,
     ): AttributeDefinition {
-        $type = is_string($this->type) ? new ($this->type)(null) : $this->type;
+        $configuration ??= Configuration::defaults();
 
         return parent::definition($name, $subject, $configuration)
-            ->items($type?->definition($name, $subject, $configuration));
+            ->items($this->itemType($configuration)?->definition($name, $subject, $configuration));
     }
 
     /**
@@ -51,13 +61,11 @@ class ValueArray extends Value
      */
     public function value(mixed $of, Request $request, Configuration $configuration): array
     {
-        if (!$this->type) {
+        $type = $this->itemType($configuration);
+
+        if ($type === null) {
             return (new Collection($of))->toArray();
         }
-
-        $type = is_string($this->type)
-            ? new ($this->type)(null)
-            : $this->type;
 
         return (new Collection($of))
             ->map(fn($item) => $type->value($item, $request, $configuration))
@@ -67,5 +75,13 @@ class ValueArray extends Value
     protected function valueType(): ValueType
     {
         return ValueType::Array;
+    }
+
+    /**
+     * @return Value<mixed>|null
+     */
+    private function itemType(Configuration $configuration): ?Value
+    {
+        return is_string($this->type) ? ValueTypes::make($configuration, $this->type) : $this->type;
     }
 }

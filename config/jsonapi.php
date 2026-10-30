@@ -83,6 +83,19 @@ return [
         |                ->whenHas('first_name'),
         */
         'when-has' => false,
+
+        /*
+        |--------------------------------------------------------------------------
+        | Types
+        |--------------------------------------------------------------------------
+        |
+        | The value types of the application, by name: classes extending
+        | `Ark4ne\JsonApi\Descriptors\Values\Value`, written `$this->money()`
+        | in a resource, or `->of('money')` as the items of an array. Also
+        | registered with `JsonApi::valueType('money', MoneyValue::class)`.
+        |
+        */
+        'types' => [],
     ],
 
     'type' => [

@@ -13,6 +13,7 @@ use Ark4ne\JsonApi\Exceptions\InvalidConfigurationException;
 use DateTimeInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Test\app\Values\MoneyValue;
 use Test\Unit\Compilation\Fixtures\PrefixedTypeNaming;
 
 final class ConfigurationTest extends TestCase
@@ -41,6 +42,7 @@ final class ConfigurationTest extends TestCase
         self::assertEquals(new JsonApiObject('1.1'), $configuration->jsonapi);
         self::assertNull($configuration->maxIncludeDepth);
         self::assertSame(TypeConvention::KebabSingular, $configuration->typeNaming);
+        self::assertSame([], $configuration->valueTypes);
     }
 
     public function test_an_empty_array_gives_the_defaults(): void
@@ -57,6 +59,7 @@ final class ConfigurationTest extends TestCase
                 'precision' => 2,
                 'strict' => true,
                 'when-has' => ['attributes'],
+                'types' => ['money' => MoneyValue::class],
             ],
             'relationship' => ['linkage' => 'loaded'],
             'fields' => ['relationships' => 'keep'],
@@ -83,6 +86,7 @@ final class ConfigurationTest extends TestCase
         self::assertSame([self::class], $configuration->renderingStages);
         self::assertSame(3, $configuration->maxIncludeDepth);
         self::assertSame(TypeConvention::SnakePlural, $configuration->typeNaming);
+        self::assertSame(['money' => MoneyValue::class], $configuration->valueTypes);
         self::assertEquals(
             new JsonApiObject('1.0', ['https://jsonapi.org/ext/atomic'], ['https://example.com/profile'], ['copyright' => 'ACME']),
             $configuration->jsonapi,
@@ -94,6 +98,17 @@ final class ConfigurationTest extends TestCase
         $configuration = Configuration::fromArray(['type' => ['naming' => PrefixedTypeNaming::class]]);
 
         self::assertInstanceOf(PrefixedTypeNaming::class, $configuration->typeNaming);
+    }
+
+    public function test_a_value_type_is_added_to_a_copy(): void
+    {
+        $configuration = Configuration::defaults();
+
+        $with = $configuration->withValueType('money', MoneyValue::class);
+
+        self::assertSame([], $configuration->valueTypes);
+        self::assertSame(['money' => MoneyValue::class], $with->valueTypes);
+        self::assertSame($configuration->typeNaming, $with->typeNaming);
     }
 
     public function test_the_jsonapi_member_is_disabled_by_false(): void
@@ -151,6 +166,9 @@ final class ConfigurationTest extends TestCase
         yield 'document.jsonapi.ext' => [['document' => ['jsonapi' => ['ext' => 'atomic']]], 'document.jsonapi.ext'];
         yield 'document.jsonapi.profile' => [['document' => ['jsonapi' => ['profile' => [1]]]], 'document.jsonapi.profile'];
         yield 'document.jsonapi.meta' => [['document' => ['jsonapi' => ['meta' => ['a']]]], 'document.jsonapi.meta'];
+        yield 'describer.types not an array' => [['describer' => ['types' => 'money']], 'describer.types'];
+        yield 'describer.types name' => [['describer' => ['types' => ['Money' => MoneyValue::class]]], 'describer.types'];
+        yield 'describer.types unknown class' => [['describer' => ['types' => ['money' => 'App\\Money']]], 'describer.types.money'];
         yield 'type.naming unknown convention' => [['type' => ['naming' => 'camel']], 'type.naming'];
         yield 'type.naming not a type naming' => [['type' => ['naming' => self::class]], 'type.naming'];
         yield 'rendering.stages unknown class' => [['rendering' => ['stages' => ['App\\Unknown']]], 'rendering.stages'];

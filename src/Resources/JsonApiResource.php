@@ -4,15 +4,18 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Resources;
 
+use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Definition\DefinitionSource;
 use Ark4ne\JsonApi\Descriptors;
+use Ark4ne\JsonApi\Descriptors\ValueTypes;
 use Ark4ne\JsonApi\Loading\LoadPlanner;
 use Ark4ne\JsonApi\Rendering\Document;
 use Ark4ne\JsonApi\Rendering\DocumentBuilder;
 use Ark4ne\JsonApi\Rendering\IncludedRegistry;
 use Ark4ne\JsonApi\Rendering\RenderableResource;
 use Ark4ne\JsonApi\Rendering\ResourceObjectRenderer;
+use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -37,6 +40,30 @@ abstract class JsonApiResource extends JsonResource implements DefinitionSource,
 
     /** @var T */
     public $resource;
+
+    /**
+     * A value type the application registers (`JsonApi::valueType('money', MoneyValue::class)`) is written
+     * `$this->money($attribute)`; any other call goes to the model, as in Laravel.
+     *
+     * @param string $method
+     * @param array<array-key, mixed> $parameters
+     */
+    public function __call($method, $parameters): mixed
+    {
+        $configuration = Definitions::configuration();
+
+        if (isset($configuration->valueTypes[$method])) {
+            $attribute = $parameters[0] ?? null;
+
+            return ValueTypes::make(
+                $configuration,
+                $method,
+                is_string($attribute) || $attribute instanceof Closure ? $attribute : null,
+            );
+        }
+
+        return parent::__call($method, $parameters);
+    }
 
     /**
      * The resource object of this resource (https://jsonapi.org/format/#document-resource-objects); the whole document

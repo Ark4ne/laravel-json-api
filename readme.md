@@ -504,6 +504,38 @@ UserResource::collection(User::all()); // => JsonApiCollection
 | `enum`    | Get enum value                                                  |
 | `struct`  | Custom struct. Accept an array of values                        |
 
+#### Value types of the application
+
+A value type of your own extends `Ark4ne\JsonApi\Descriptors\Values\Value`: it casts the raw value and declares its
+`ValueType` (and a format, if any) for the definition.
+
+```php
+final class MoneyValue extends Value
+{
+    public function value(mixed $of, Request $request, Configuration $configuration): string
+    {
+        return number_format($of / 100, 2, '.', '');
+    }
+
+    protected function valueType(): ValueType
+    {
+        return ValueType::String;
+    }
+}
+```
+
+Register it under a name, in `config/jsonapi.php` (`describer.types`) or in a service provider:
+
+```php
+use Ark4ne\JsonApi\Laravel\JsonApi;
+
+JsonApi::valueType('money', MoneyValue::class);
+```
+
+It is then written `$this->money('price')` in a resource (declare `@method MoneyValue<mixed> money(...)` for your IDE
+and PHPStan), and named as the items of an array: `$this->array('prices')->of('money')`. A name taken by a method of
+the resources (`string`, `toArray`…) is refused.
+
 ### Relation methods
 | Method  | Description                                                       |
 |---------|-------------------------------------------------------------------|
@@ -661,7 +693,8 @@ public function toAttributes(Request $request): array
 
 #### Using Class References
 
-You can also use class references instead of descriptor instances:
+You can also use class references, or the name of a value type (`->of('integer')`, `->of('money')`), instead of
+descriptor instances. A struct needs its closure: give it as an instance (`->of($this->struct(fn() => [...]))`).
 
 ```php
 use Ark4ne\JsonApi\Descriptors\Values\ValueString;

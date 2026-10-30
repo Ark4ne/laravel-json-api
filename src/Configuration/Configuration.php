@@ -34,6 +34,8 @@ final readonly class Configuration
      * @param JsonApiObject|null $jsonapi The `jsonapi` member of the documents, `null` for none (`document.jsonapi`)
      * @param positive-int|null $maxIncludeDepth Deepest include path accepted, `null` for no limit (`include.max-depth`)
      * @param TypeNaming $typeNaming The type of a resource that declares none (`type.naming`)
+     * @param array<string, class-string> $valueTypes The value types of the application, by name (`describer.types`);
+     *                                                `Descriptors\ValueTypes` checks they are values
      */
     private function __construct(
         public bool $nullable,
@@ -48,6 +50,7 @@ final readonly class Configuration
         public ?JsonApiObject $jsonapi,
         public ?int $maxIncludeDepth,
         public TypeNaming $typeNaming,
+        public array $valueTypes,
     ) {}
 
     /**
@@ -68,6 +71,7 @@ final readonly class Configuration
             jsonapi: new JsonApiObject(),
             maxIncludeDepth: null,
             typeNaming: TypeConvention::KebabSingular,
+            valueTypes: [],
         );
     }
 
@@ -95,6 +99,31 @@ final readonly class Configuration
             jsonapi: self::jsonapi($config),
             maxIncludeDepth: self::maxIncludeDepth($config),
             typeNaming: self::typeNaming($config, $defaults->typeNaming),
+            valueTypes: self::valueTypes($config),
+        );
+    }
+
+    /**
+     * This configuration with one more value type (`JsonApi::valueType()`).
+     *
+     * @throws InvalidConfigurationException when the name or the class is not valid
+     */
+    public function withValueType(string $name, string $class): self
+    {
+        return new self(
+            nullable: $this->nullable,
+            dateFormat: $this->dateFormat,
+            precision: $this->precision,
+            strict: $this->strict,
+            whenHas: $this->whenHas,
+            linkage: $this->linkage,
+            sparseRelationships: $this->sparseRelationships,
+            resourcePaths: $this->resourcePaths,
+            renderingStages: $this->renderingStages,
+            jsonapi: $this->jsonapi,
+            maxIncludeDepth: $this->maxIncludeDepth,
+            typeNaming: $this->typeNaming,
+            valueTypes: self::valueTypes(['describer' => ['types' => [...$this->valueTypes, $name => $class]]]),
         );
     }
 
@@ -299,6 +328,36 @@ final readonly class Configuration
 
         /** @var list<string> $value */
         return $value;
+    }
+
+    /**
+     * Only the names and the existence of the classes are checked here: `Descriptors\ValueTypes` checks they are
+     * values.
+     *
+     * @param array<array-key, mixed> $config
+     *
+     * @return array<string, class-string>
+     */
+    private static function valueTypes(array $config): array
+    {
+        $value = self::read($config, 'describer.types') ?? [];
+
+        if (!is_array($value)) {
+            throw InvalidConfigurationException::forKey('describer.types', 'an array of value classes by name');
+        }
+
+        $types = [];
+        foreach ($value as $name => $class) {
+            if (!is_string($name) || preg_match('/^[a-z][A-Za-z0-9]*$/', $name) !== 1) {
+                throw InvalidConfigurationException::forKey('describer.types', 'an array keyed by camelCase method names');
+            }
+
+            $types[$name] = is_string($class) && class_exists($class)
+                ? $class
+                : throw InvalidConfigurationException::forKey("describer.types.{$name}", 'an existing class');
+        }
+
+        return $types;
     }
 
     /**

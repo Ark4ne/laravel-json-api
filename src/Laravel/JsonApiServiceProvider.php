@@ -8,6 +8,7 @@ use Ark4ne\JsonApi\Compilation\CompiledDefinitions;
 use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Context\JsonApiContext;
+use Ark4ne\JsonApi\Descriptors\ValueTypes;
 use Ark4ne\JsonApi\Laravel\Commands\CacheDefinitionsCommand;
 use Ark4ne\JsonApi\Laravel\Commands\CheckDefinitionsCommand;
 use Ark4ne\JsonApi\Laravel\Commands\ClearDefinitionsCommand;
@@ -74,6 +75,7 @@ final class JsonApiServiceProvider extends ServiceProvider
         /** @var CompiledDefinitions $compiled */
         $compiled = $this->app->make(CompiledDefinitions::class);
 
+        ValueTypes::validate($configuration, JsonApi::reservedValueTypeNames());
         Definitions::configure($configuration, $compiled);
 
         $this->publishes([self::CONFIG => $this->app->configPath('jsonapi.php')], 'config');
