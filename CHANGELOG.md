@@ -40,6 +40,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **`describer.strict`** (`APP_DEBUG` by default): a value declared `nullable(false)` with no value to stand for
   `null` (a date) throws a `RenderingException` naming the attribute, instead of rendering `null`.
 - `->truncate()` on a float value truncates to its precision, towards zero, instead of rounding.
+- The resource a collection collects is found as Laravel finds it, for its definition and for the validation rules:
+  `#[Collects]` (Laravel 13), `$collects`, then the name of the collection (`UserCollection` collects `User` or
+  `UserResource`).
+- `can()` given a class that does not implement Laravel's `Gate` contract throws a `DefinitionException` instead of
+  failing on a method call.
 - **Meta of resource identifiers**: `->identifierMeta(fn($related) => [...])` on a relationship (`withIdentifierMeta()`
   on `Relationship`) renders a `meta` in each identifier of its linkage (`data.meta`, `data[].meta`), for data of the
   link itself such as a pivot. The `meta()` of the relationship object is unchanged. `RelationshipDefinition` exposes
@@ -53,6 +58,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Every source file declares `strict_types=1`.
 - **Breaking:** a float with a precision is rounded (`1.239` gives `1.24`, `-1.111` gives `-1.11`) instead of floored
   (`1.15` gave `1.14`). `->truncate()` truncates towards zero.
+- **Breaking:** `enum()->of(State::class)` casts a raw value through the enum (`tryFrom()` for a backed enum, the
+  case name for a pure one) and throws a `RenderingException` for what is not one of its cases.
+- `can()`, `whenLoaded()`, `whenPivotLoaded()` and `whenAppended()` work on a resource that is not an Eloquent model
+  (array, object) instead of throwing a `TypeError`: `whenLoaded()` and `whenPivotLoaded()` read its attribute,
+  `whenAppended()` leaves the value out.
 - **Breaking:** a date declared `nullable(false)` renders `null` for `null` instead of `1970-01-01T00:00:00+00:00`, or
   throws with `describer.strict`.
 - A published `config/jsonapi.php` missing a nested key (`describer.strict`) takes the default of the package for
@@ -107,3 +117,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `Rendering\RenderableResource` and `Rendering\RelationshipSource`.
 - The `resolveResourceData()` override (Laravel 12.45 fix), useless now that the rendering does not go through
   Laravel's resource response.
+- **Breaking:** the static helpers `Support\Includes`, `Support\Fields` (and their Octane `RequestReceived` listener),
+  `Support\With`, `Support\Supported`, `Support\Traits\HasLocalCache` and the deprecated
+  `PrepareData::prepareData()`: the include and the sparse fieldsets of the request are in the `JsonApiContext`. The
+  polyfill of `JsonResource::unless()` is removed, Laravel's is used.
+- **Breaking:** `$preserveKeys` on a resource: `data` is always a JSON list. `collection()` returns a
+  `JsonApiCollection` instead of an anonymous subclass.
+- **Breaking:** `float()` is `protected`, like the other value helpers.
+- The `Includes` and `Fields` rules parse the request as the rendering does: spaces and empty segments are ignored,
+  a fieldset that is not a string fails.

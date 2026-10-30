@@ -7,6 +7,7 @@ namespace Test\Unit\Resources;
 use Ark4ne\JsonApi\Resources\JsonApiCollection;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Attributes\Collects;
 use Test\TestCase;
 
 class JsonApiCollectionTest extends TestCase
@@ -63,6 +64,31 @@ class JsonApiCollectionTest extends TestCase
         self::assertCount(3, $document['data']);
     }
 
+    public function test_a_resource_creates_a_collection_without_an_anonymous_class(): void
+    {
+        $collection = CollectedResource::collection([]);
+
+        self::assertSame(JsonApiCollection::class, $collection::class);
+        self::assertSame(CollectedResource::class, $collection->collects);
+    }
+
+    public function test_the_data_of_a_collection_is_a_list_whatever_its_keys(): void
+    {
+        $models = $this->models();
+        $keyed = CollectedResource::collection([5 => $models[0], 'b' => $models[1]]);
+
+        self::assertSame(['1', '2'], array_column($keyed->toArray(new Request()), 'id'));
+    }
+
+    public function test_the_definition_of_a_collection_reads_its_collects_attribute(): void
+    {
+        if (!class_exists(Collects::class)) {
+            self::markTestSkipped('#[Collects] exists from Laravel 13.');
+        }
+
+        self::assertSame('my-model', AttributeCollection::definition()->type);
+    }
+
     /**
      * @return list<Ranked>
      */
@@ -113,3 +139,9 @@ final class MetaCollection extends JsonApiCollection
         return ['meta-1' => 'collection', 'total' => static fn() => 3];
     }
 }
+
+/**
+ * @extends JsonApiCollection<CollectedResource>
+ */
+#[Collects(CollectedResource::class)]
+final class AttributeCollection extends JsonApiCollection {}

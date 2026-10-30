@@ -20,6 +20,14 @@ final class DefinitionException extends LogicException implements JsonApiExcepti
     }
 
     /**
+     * `can()` was given a gate class that does not implement Laravel's `Gate` contract.
+     */
+    public static function notAGate(string $class): self
+    {
+        return new self("[{$class}] is not a gate: it does not implement Illuminate\\Contracts\\Auth\\Access\\Gate.");
+    }
+
+    /**
      * Running the hooks of the resource on a probe threw.
      */
     public static function cannotCompile(string $class, Throwable $previous): self

@@ -59,6 +59,16 @@ final readonly class SparseFieldsets
     }
 
     /**
+     * The requested fields of every restricted type.
+     *
+     * @return array<string, list<string>>
+     */
+    public function all(): array
+    {
+        return $this->fields;
+    }
+
+    /**
      * The requested fields of the type, `null` when it is not restricted.
      *
      * @return list<string>|null

@@ -14,6 +14,7 @@ use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MissingValue;
+use Illuminate\Support\Facades\Gate;
 use PHPUnit\Framework\Attributes\DataProvider;
 use stdClass;
 use Test\app\Http\Resources\CommentResource;
@@ -152,6 +153,52 @@ class RelationTest extends TestCase
 
         $check = Reflect::invoke($stub, 'check', new Request(), $model, $invokedAttr);
         self::assertTrue($check);
+    }
+
+    public function test_when_loaded_reads_the_attribute_of_a_resource_that_is_not_eloquent(): void
+    {
+        $relation = (new RelationOne(UserResource::class, null))->whenLoaded();
+
+        self::assertTrue($relation->passes(new Request(), ['author' => ['id' => 1]], 'author'));
+        self::assertTrue($relation->passes(new Request(), (object) ['author' => (object) ['id' => 1]], 'author'));
+        self::assertFalse($relation->passes(new Request(), ['title' => 'Hello'], 'author'));
+    }
+
+    public function test_when_pivot_loaded_reads_the_attribute_of_a_resource_that_is_not_eloquent(): void
+    {
+        $relation = (new RelationOne(UserResource::class, null))->whenPivotLoaded(stdClass::class, 'pivot');
+
+        self::assertTrue($relation->passes(new Request(), ['pivot' => new stdClass()], 'tags'));
+        self::assertFalse($relation->passes(new Request(), ['pivot' => 'raw'], 'tags'));
+        self::assertFalse($relation->passes(new Request(), [], 'tags'));
+    }
+
+    public function test_when_pivot_loaded_reads_the_pivot_relation_of_an_eloquent_model(): void
+    {
+        $model = new class extends Model {};
+        $model->setRelation('pivot', new stdClass());
+        $relation = (new RelationOne(UserResource::class, null))->whenPivotLoaded(stdClass::class, 'pivot');
+
+        self::assertTrue($relation->passes(new Request(), $model, 'tags'));
+        self::assertFalse($relation->passes(new Request(), new class extends Model {}, 'tags'));
+    }
+
+    public function test_can_with_a_class_that_is_not_a_gate_throws(): void
+    {
+        $this->expectException(DefinitionException::class);
+        $this->expectExceptionMessage('is not a gate');
+
+        (new RelationOne(UserResource::class, null))->can('read', gateClass: stdClass::class)
+            ->passes(new Request(), [], 'author');
+    }
+
+    public function test_can_checks_the_abilities_of_a_resource_that_is_not_eloquent(): void
+    {
+        Gate::define('read', static fn(?object $user, mixed $post) => is_array($post) && ($post['public'] ?? false) === true);
+        $relation = (new RelationOne(UserResource::class, null))->can('read');
+
+        self::assertTrue($relation->passes(new Request(), ['public' => true], 'author'));
+        self::assertFalse($relation->passes(new Request(), ['public' => false], 'author'));
     }
 
     /**

@@ -6,9 +6,8 @@ namespace Ark4ne\JsonApi\Resources;
 
 use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Context\JsonApiContext;
-use Ark4ne\JsonApi\Definition\DefinitionSource;
+use Ark4ne\JsonApi\Definition\RelatedResource;
 use Ark4ne\JsonApi\Definition\ResourceDefinition;
-use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Rendering\Document;
 use Ark4ne\JsonApi\Rendering\DocumentBuilder;
 use Ark4ne\JsonApi\Rendering\IncludedRegistry;
@@ -18,10 +17,10 @@ use Ark4ne\JsonApi\Rendering\ValueResolver;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Attributes\Collects;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Pagination\AbstractCursorPaginator;
 use Illuminate\Pagination\AbstractPaginator;
-use ReflectionClass;
 
 /**
  * @template T as JsonApiResource
@@ -41,13 +40,7 @@ class JsonApiCollection extends ResourceCollection
      */
     public static function definition(): ResourceDefinition
     {
-        $collects = (new ReflectionClass(static::class))->getDefaultProperties()['collects'] ?? null;
-
-        if (!is_string($collects) || !is_subclass_of($collects, DefinitionSource::class)) {
-            throw DefinitionException::notADefinitionSource(static::class);
-        }
-
-        return Definitions::for($collects);
+        return Definitions::for(RelatedResource::resolve(static::class));
     }
 
     /**

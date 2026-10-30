@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Ark4ne\JsonApi\Exceptions;
 
 use LogicException;
+use UnitEnum;
 
 final class RenderingException extends LogicException implements JsonApiException
 {
@@ -17,6 +18,22 @@ final class RenderingException extends LogicException implements JsonApiExceptio
         return new self(
             "[{$attribute}] is not nullable but null was given: make it nullable, or give it a value.",
         );
+    }
+
+    /**
+     * A value declared as a case of an enum (`enum()->of(State::class)`) is not one of its cases.
+     *
+     * @param class-string<UnitEnum> $enum
+     */
+    public static function notAnEnumCase(mixed $value, string $enum): self
+    {
+        $given = match (true) {
+            $value instanceof UnitEnum => $value::class . '::' . $value->name,
+            is_scalar($value) => var_export($value, true),
+            default => get_debug_type($value),
+        };
+
+        return new self("[{$given}] is not a case of [{$enum}].");
     }
 
     /**

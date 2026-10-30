@@ -58,23 +58,16 @@ abstract class JsonApiResource extends JsonResource implements DefinitionSource,
     }
 
     /**
+     * The collection of the resources. Override it to return a collection class of your own (`UserCollection`). `data`
+     * is always a JSON list: `$preserveKeys` does not apply.
+     *
      * @param mixed $resource
      *
      * @return JsonApiCollection<static>
      */
     public static function collection($resource): JsonApiCollection
     {
-        /** @var \Ark4ne\JsonApi\Resources\JsonApiCollection<static> $collection */
-        $collection = new class ($resource, static::class) extends JsonApiCollection {
-            public ?bool $preserveKeys = null;
-        };
-
-        if (property_exists(static::class, 'preserveKeys')) {
-            // @phpstan-ignore-next-line
-            $collection->preserveKeys = (new static([]))->preserveKeys;
-        }
-
-        return $collection;
+        return new JsonApiCollection($resource, static::class);
     }
 
     protected function toDocument(JsonApiContext $context): Document

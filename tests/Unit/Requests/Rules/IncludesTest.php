@@ -107,6 +107,11 @@ class IncludesTest extends TestCase
         ], self::errors(new Includes(UserResource::class, maxDepth: 2), 'posts.user.posts'));
     }
 
+    public function test_the_include_is_parsed_as_the_rendering_parses_it(): void
+    {
+        self::assertSame([], self::errors(new Includes(UserResource::class), 'posts , comments,,posts.user'));
+    }
+
     public function test_the_maximum_depth_defaults_to_the_configuration(): void
     {
         Definitions::configure(Configuration::fromArray(['include' => ['max-depth' => 1]]));

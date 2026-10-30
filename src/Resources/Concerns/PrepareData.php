@@ -5,17 +5,13 @@ declare(strict_types=1);
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
 use Ark4ne\JsonApi\Descriptors\Relations\Relation;
-use Ark4ne\JsonApi\Descriptors\Resolver;
 use Ark4ne\JsonApi\Descriptors\Values\Value;
 use Ark4ne\JsonApi\Resources\Relationship;
 use Ark4ne\JsonApi\Support\Values;
-use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 
 trait PrepareData
 {
-    use Resolver;
-
     protected ?bool $autoWhenHas = null;
 
     protected ?bool $autoWhenIncluded = null;
@@ -79,22 +75,4 @@ trait PrepareData
             ->all();
     }
 
-    /**
-     * @param \Illuminate\Http\Request $request
-     * @param iterable<TKey, TValue>|null $data
-     *
-     * @return iterable<TKey, TValue>
-     * @deprecated
-     *
-     * @template TKey as array-key
-     * @template TValue
-     */
-    protected function prepareData(Request $request, ?iterable $data): iterable
-    {
-        if ($data === null) {
-            return [];
-        }
-
-        return $data ? $this->resolveValues($request, Values::mergeValues($data)) : [];
-    }
 }

@@ -11,8 +11,6 @@ use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Laravel\Commands\CacheDefinitionsCommand;
 use Ark4ne\JsonApi\Laravel\Commands\CheckDefinitionsCommand;
 use Ark4ne\JsonApi\Laravel\Commands\ClearDefinitionsCommand;
-use Ark4ne\JsonApi\Support\Fields;
-use Ark4ne\JsonApi\Support\Includes;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Request;
 use Illuminate\Support\ServiceProvider;
@@ -87,16 +85,6 @@ final class JsonApiServiceProvider extends ServiceProvider
                 CheckDefinitionsCommand::class,
             ]);
             $this->optimizes(optimize: 'jsonapi:cache', clear: 'jsonapi:clear', key: 'jsonapi');
-        }
-
-        if (class_exists(\Laravel\Octane\Events\RequestReceived::class)) {
-            $this->app->make('events')->listen(
-                \Laravel\Octane\Events\RequestReceived::class,
-                static function (): void {
-                    Fields::flush();
-                    Includes::flush();
-                },
-            );
         }
     }
 

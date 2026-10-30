@@ -38,6 +38,9 @@ names the key. Compare your published file with the package one for the new keys
 - A date declared `nullable(false)` renders `null` for `null` (1.x: `1970-01-01T00:00:00+00:00`). With
   `describer.strict`, true by default when `APP_DEBUG` is, it throws a `RenderingException` instead: make the value
   nullable, or give it a value.
+- `enum()->of(State::class)` validates the value: a raw value is cast through the enum, and a value that is not one
+  of its cases throws a `RenderingException`. Remove `of()`, or fix the data, where a value outside the enum is
+  expected.
 - A custom value extending `Descriptors\Values\Value` receives the configuration:
 
   ```php
@@ -45,6 +48,26 @@ names the key. Compare your published file with the package one for the new keys
   ```
 
   `Support\Config` is removed: read the defaults (`$configuration->nullable`, `dateFormat`, `precision`) from it.
+
+### Collections
+
+`collection()` returns a `JsonApiCollection`, no longer an anonymous subclass. `$preserveKeys` is ignored: `data` is a
+JSON list whatever the keys of the collection. To return a collection class of your own, override `collection()`:
+
+```php
+public static function collection($resource): UserCollection
+{
+    return new UserCollection($resource);
+}
+```
+
+`float()` is `protected`, like the other value helpers: call it from the resource only.
+
+### Static helpers
+
+`Support\Includes`, `Support\Fields`, `Support\With` and `Support\Supported` are removed, with
+`PrepareData::prepareData()`. Read the requested include and fields from the context of the request:
+`app(JsonApiContext::class)->include` (`IncludeTree`) and `->fields` (`SparseFieldsets`).
 
 ### Schema and assertions
 

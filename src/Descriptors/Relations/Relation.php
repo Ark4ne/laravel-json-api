@@ -11,8 +11,10 @@ use Ark4ne\JsonApi\Definition\LoadDefinition;
 use Ark4ne\JsonApi\Definition\RelatedResource;
 use Ark4ne\JsonApi\Definition\RelationshipDefinition;
 use Ark4ne\JsonApi\Descriptors\Describer;
+use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Filters\Filters;
 use Ark4ne\JsonApi\Resources\Relationship;
+use Ark4ne\JsonApi\Support\Values;
 use Ark4ne\JsonApi\Traits\HasRelationLoad;
 use Closure;
 use Illuminate\Contracts\Auth\Access\Gate;
@@ -112,15 +114,18 @@ abstract class Relation extends Describer implements DescribesRelationship
      */
     public function can(iterable|string $abilities, array $arguments = [], string $gateClass = Gate::class, ?string $guard = null): static
     {
-        return $this->when(
-            fn(
-                Request $request,
-                Model   $model,
-                string  $attribute,
-            ) => app($gateClass)
-            ->forUser($request->user($guard))
-            ->allows($abilities, [$model, ...$arguments]),
-        );
+        return $this->when(static function (Request $request, mixed $model, string $attribute) use (
+            $abilities,
+            $arguments,
+            $gateClass,
+            $guard,
+        ): bool {
+            $gate = app($gateClass);
+
+            return $gate instanceof Gate
+                ? $gate->forUser($request->user($guard))->allows($abilities, [$model, ...$arguments])
+                : throw DefinitionException::notAGate($gateClass);
+        });
     }
 
     /**
@@ -133,6 +138,9 @@ abstract class Relation extends Describer implements DescribesRelationship
     }
 
     /**
+     * Renders the relationship only when the relation is loaded: on a resource that is not an Eloquent model, when it
+     * has the attribute.
+     *
      * @param string|null $relation
      *
      * @return static
@@ -140,11 +148,13 @@ abstract class Relation extends Describer implements DescribesRelationship
      */
     public function whenLoaded(?string $relation = null): static
     {
-        return $this->when(fn(
-            Request $request,
-            Model   $model,
-            string  $attribute,
-        ): bool => $model->relationLoaded($relation ?? (is_string($this->relation) ? $this->relation : $attribute)));
+        return $this->when(function (Request $request, mixed $model, string $attribute) use ($relation): bool {
+            $relation ??= is_string($this->relation) ? $this->relation : $attribute;
+
+            return $model instanceof Model
+                ? $model->relationLoaded($relation)
+                : (is_array($model) || is_object($model)) && Values::hasAttribute($model, $relation);
+        });
     }
 
     /**
@@ -156,17 +166,18 @@ abstract class Relation extends Describer implements DescribesRelationship
      */
     public function whenPivotLoaded(string $table, ?string $accessor = null): static
     {
-        return $this->when(
-            fn(
-                Request $request,
-                Model   $model,
-                string  $attribute,
-            ): bool => ($pivot = $model->{$accessor ?? (is_string($this->relation) ? $this->relation : $attribute)})
-            && (
-                $pivot instanceof $table
-                || $pivot->getTable() === $table
-            ),
-        );
+        return $this->when(function (Request $request, mixed $model, string $attribute) use ($table, $accessor): bool {
+            $accessor ??= is_string($this->relation) ? $this->relation : $attribute;
+            // A pivot is a relation of an Eloquent model, which hasAttribute() does not see.
+            $pivot = match (true) {
+                $model instanceof Model => $model->getAttribute($accessor),
+                (is_array($model) || is_object($model)) && Values::hasAttribute($model, $accessor)
+                    => Values::getAttribute($model, $accessor),
+                default => null,
+            };
+
+            return $pivot instanceof $table || ($pivot instanceof Model && $pivot->getTable() === $table);
+        });
     }
 
     public function resolveFor(

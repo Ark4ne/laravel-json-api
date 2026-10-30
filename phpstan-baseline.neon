@@ -85,24 +85,6 @@ parameters:
 			path: src/Descriptors/Relations/Relation.php
 
 		-
-			message: '#^Cannot call method allows\(\) on mixed\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: src/Descriptors/Relations/Relation.php
-
-		-
-			message: '#^Cannot call method forUser\(\) on mixed\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: src/Descriptors/Relations/Relation.php
-
-		-
-			message: '#^Cannot call method getTable\(\) on mixed\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: src/Descriptors/Relations/Relation.php
-
-		-
 			message: '#^Method Ark4ne\\JsonApi\\Descriptors\\Relations\\Relation\:\:__construct\(\) has parameter \$related with generic class Ark4ne\\JsonApi\\Resources\\JsonApiCollection but does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
@@ -145,26 +127,8 @@ parameters:
 			path: src/Descriptors/Relations/Relation.php
 
 		-
-			message: '#^Parameter \#1 \$condition of method Ark4ne\\JsonApi\\Descriptors\\Describer\<T\>\:\:when\(\) expects bool\|\(Closure\(Illuminate\\Http\\Request, T, string\)\: bool\), Closure\(Illuminate\\Http\\Request, Illuminate\\Database\\Eloquent\\Model, string\)\: bool given\.$#'
-			identifier: argument.type
-			count: 2
-			path: src/Descriptors/Relations/Relation.php
-
-		-
-			message: '#^Parameter \#1 \$condition of method Ark4ne\\JsonApi\\Descriptors\\Describer\<T\>\:\:when\(\) expects bool\|\(Closure\(Illuminate\\Http\\Request, T, string\)\: bool\), Closure\(Illuminate\\Http\\Request, Illuminate\\Database\\Eloquent\\Model, string\)\: mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Descriptors/Relations/Relation.php
-
-		-
 			message: '#^Property Ark4ne\\JsonApi\\Descriptors\\Relations\\Relation\:\:\$filters with generic class Ark4ne\\JsonApi\\Filters\\Filters does not specify its types\: Resource$#'
 			identifier: missingType.generics
-			count: 1
-			path: src/Descriptors/Relations/Relation.php
-
-		-
-			message: '#^Variable property access on Illuminate\\Database\\Eloquent\\Model&T\.$#'
-			identifier: property.dynamicName
 			count: 1
 			path: src/Descriptors/Relations/Relation.php
 
@@ -307,12 +271,6 @@ parameters:
 			path: src/Descriptors/Relations/RelationRaw.php
 
 		-
-			message: '#^Parameter \#1 \$condition of method Ark4ne\\JsonApi\\Descriptors\\Describer\<T\>\:\:when\(\) expects bool\|\(Closure\(Illuminate\\Http\\Request, T, string\)\: bool\), Closure\(Illuminate\\Http\\Request, Illuminate\\Database\\Eloquent\\Model, string\)\: bool given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Descriptors/Values/Value.php
-
-		-
 			message: '#^Parameter \#1 \$object of static method Ark4ne\\JsonApi\\Support\\Values\:\:getAttribute\(\) expects array\<mixed\>\|object, T given\.$#'
 			identifier: argument.type
 			count: 1
@@ -369,12 +327,6 @@ parameters:
 		-
 			message: '#^Ark4ne\\JsonApi\\Descriptors\\Values\\ValueEnum should be final$#'
 			identifier: phpat.testClassesAreFinal
-			count: 1
-			path: src/Descriptors/Values/ValueEnum.php
-
-		-
-			message: '#^PHPDoc tag @return has invalid value \(\$this\<T, U\>\)\: Unexpected token "\<", expected TOKEN_HORIZONTAL_WS at offset 115 on line 5$#'
-			identifier: phpDoc.parseError
 			count: 1
 			path: src/Descriptors/Values/ValueEnum.php
 
@@ -553,12 +505,6 @@ parameters:
 			path: src/Requests/Rules/Fields.php
 
 		-
-			message: '#^Parameter \#1 \$fields of static method Ark4ne\\JsonApi\\Support\\Fields\:\:parse\(\) expects array\<string, string\>, array\<mixed, mixed\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Requests/Rules/Fields.php
-
-		-
 			message: '#^Ark4ne\\JsonApi\\Requests\\Rules\\Includes should be final$#'
 			identifier: phpat.testClassesAreFinal
 			count: 1
@@ -573,18 +519,6 @@ parameters:
 		-
 			message: '#^Calling trans\(\) is forbidden, global helpers are reserved to src/Laravel/\: inject a dependency instead\.$#'
 			identifier: disallowed.function
-			count: 1
-			path: src/Requests/Rules/Includes.php
-
-		-
-			message: '#^Only booleans are allowed in a ternary operator condition, string given\.$#'
-			identifier: ternary.condNotBoolean
-			count: 1
-			path: src/Requests/Rules/Includes.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
 			count: 1
 			path: src/Requests/Rules/Includes.php
 
@@ -610,12 +544,6 @@ parameters:
 			message: '#^Cannot access property \$id on T of mixed\.$#'
 			identifier: property.nonObject
 			count: 1
-			path: src/Resources/JsonApiResource.php
-
-		-
-			message: '#^Cannot assign offset int\|string to \(Illuminate\\Support\\Collection&TReduceInitial of mixed\)\|\(Illuminate\\Support\\Collection&TReduceReturnType of mixed\)\|Illuminate\\Support\\Collection\<\*NEVER\*, \*NEVER\*\>\.$#'
-			identifier: offsetAssign.dimType
-			count: 4
 			path: src/Resources/JsonApiResource.php
 
 		-
@@ -655,12 +583,6 @@ parameters:
 			path: src/Resources/JsonApiResource.php
 
 		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource\:\:prepareData\(\) should return iterable\<TKey of \(int\|string\), TValue\> but returns array\<mixed\>\|null\.$#'
-			identifier: return.type
-			count: 4
-			path: src/Resources/JsonApiResource.php
-
-		-
 			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource\:\:toAttributes\(\) should return iterable\<\(int\|string\), mixed\> but returns mixed\.$#'
 			identifier: return.type
 			count: 1
@@ -691,12 +613,6 @@ parameters:
 			path: src/Resources/JsonApiResource.php
 
 		-
-			message: '#^Only booleans are allowed in a ternary operator condition, iterable\<TKey of \(int\|string\), TValue\> given\.$#'
-			identifier: ternary.condNotBoolean
-			count: 4
-			path: src/Resources/JsonApiResource.php
-
-		-
 			message: '#^PHPDoc type T of property Ark4ne\\JsonApi\\Resources\\JsonApiResource\:\:\$resource is not the same as PHPDoc type mixed of overridden property Illuminate\\Http\\Resources\\Json\\JsonResource\:\:\$resource\.$#'
 			identifier: property.phpDocType
 			count: 1
@@ -709,12 +625,6 @@ parameters:
 			path: src/Resources/JsonApiResource.php
 
 		-
-			message: '#^Parameter \#1 \$items of class Illuminate\\Support\\Collection constructor expects Illuminate\\Contracts\\Support\\Arrayable\<\(int\|string\), mixed\>\|iterable\<\(int\|string\), mixed\>\|null, iterable given\.$#'
-			identifier: argument.type
-			count: 4
-			path: src/Resources/JsonApiResource.php
-
-		-
 			message: '#^Parameter \#1 \$object of static method Ark4ne\\JsonApi\\Support\\Values\:\:getAttribute\(\) expects array\<mixed\>\|object, T given\.$#'
 			identifier: argument.type
 			count: 2
@@ -724,12 +634,6 @@ parameters:
 			message: '#^Parameter \#1 \$object of static method Ark4ne\\JsonApi\\Support\\Values\:\:hasAttribute\(\) expects array\<mixed\>\|object, T given\.$#'
 			identifier: argument.type
 			count: 1
-			path: src/Resources/JsonApiResource.php
-
-		-
-			message: '#^Parameter \#3 \$attribute of method Ark4ne\\JsonApi\\Descriptors\\Describer\<mixed\>\:\:valueFor\(\) expects string, int\|string given\.$#'
-			identifier: argument.type
-			count: 4
 			path: src/Resources/JsonApiResource.php
 
 		-
@@ -853,96 +757,6 @@ parameters:
 			path: src/Support/Arr.php
 
 		-
-			message: '#^Ark4ne\\JsonApi\\Support\\Fields should be final$#'
-			identifier: phpat.testClassesAreFinal
-			count: 1
-			path: src/Support/Fields.php
-
-		-
-			message: '#^Ark4ne\\JsonApi\\Support\\Fields should not include Ark4ne\\JsonApi\\Support\\Traits\\HasLocalCache$#'
-			identifier: phpat.testOnlyResourcesUseTraits
-			count: 1
-			path: src/Support/Fields.php
-
-		-
-			message: '#^Call to function array_filter\(\) requires parameter \#2 to be passed to avoid loose comparison semantics\.$#'
-			identifier: arrayFilter.strict
-			count: 1
-			path: src/Support/Fields.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 1
-			path: src/Support/Fields.php
-
-		-
-			message: '#^Parameter \#1 \$fields of static method Ark4ne\\JsonApi\\Support\\Fields\:\:parse\(\) expects array\<string, string\>, array\<mixed, mixed\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Support/Fields.php
-
-		-
-			message: '#^Ark4ne\\JsonApi\\Support\\Includes should be final$#'
-			identifier: phpat.testClassesAreFinal
-			count: 1
-			path: src/Support/Includes.php
-
-		-
-			message: '#^Ark4ne\\JsonApi\\Support\\Includes should not include Ark4ne\\JsonApi\\Support\\Traits\\HasLocalCache$#'
-			identifier: phpat.testOnlyResourcesUseTraits
-			count: 1
-			path: src/Support/Includes.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 1
-			path: src/Support/Includes.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Support\\Includes\:\:currentStack\(\) should return array\<string, mixed\> but returns mixed\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Support/Includes.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Support\\Includes\:\:parse\(\) should return array\<string, mixed\> but returns array\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Support/Includes.php
-
-		-
-			message: '#^Parameter \#1 \$include of static method Ark4ne\\JsonApi\\Support\\Includes\:\:parse\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Support/Includes.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 1
-			path: src/Support/Includes.php
-
-		-
-			message: '#^Ark4ne\\JsonApi\\Support\\Supported should be final$#'
-			identifier: phpat.testClassesAreFinal
-			count: 1
-			path: src/Support/Supported.php
-
-		-
-			message: '#^Call to function method_exists\(\) with ''Illuminate\\\\Http\\\\Resources\\\\Json\\\\JsonResource'' and ''unless'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: src/Support/Supported.php
-
-		-
-			message: '#^Call to function method_exists\(\) with ''Illuminate\\\\Http\\\\Resources\\\\Json\\\\JsonResource'' and ''whenHas'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: src/Support/Supported.php
-
-		-
 			message: '#^Ark4ne\\JsonApi\\Support\\Values should be final$#'
 			identifier: phpat.testClassesAreFinal
 			count: 1
@@ -1007,48 +821,6 @@ parameters:
 			identifier: property.dynamicName
 			count: 1
 			path: src/Support/Values.php
-
-		-
-			message: '#^Ark4ne\\JsonApi\\Support\\With should be final$#'
-			identifier: phpat.testClassesAreFinal
-			count: 1
-			path: src/Support/With.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Support\\With\:\:merge\(\) should return array\<TKey of \(\(UKey of int\)\|UKey of string\), TValue&UValue\> but returns array\<mixed\>\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Support/With.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Support\\With\:\:uniqueRecursive\(\) should return array\<TKey of \(int\|string\), TValue\> but returns array\<TKey of \(int\|string\), array\|TValue of mixed\>\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Support/With.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Support\\With\:\:wash\(\) should return array\<TKey of \(int\|string\), TValue\> but returns array\<mixed\>\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Support/With.php
-
-		-
-			message: '#^Parameter \#1 \$items of class Illuminate\\Support\\Collection constructor expects Illuminate\\Contracts\\Support\\Arrayable\<TKey of \(int\|string\), mixed\>\|iterable\<TKey of \(int\|string\), mixed\>\|null, iterable&TValue given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Support/With.php
-
-		-
-			message: '#^Parameter \#1 \.\.\.\$arrays of function array_merge_recursive expects array, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Support/With.php
-
-		-
-			message: '#^Parameter \#2 \.\.\.\$arrays of function array_merge_recursive expects array, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Support/With.php
 
 		-
 			message: '#^Call to function array_filter\(\) requires parameter \#2 to be passed to avoid loose comparison semantics\.$#'
@@ -1585,13 +1357,13 @@ parameters:
 			path: tests/Unit/Descriptors/DescriptorsTraitTest.php
 
 		-
-			message: '#^Class AnonymousClass648c2c8ab9ebfc938fe850f73b544283 uses generic trait Ark4ne\\JsonApi\\Descriptors\\Relations but does not specify its types\: T$#'
+			message: '#^Class AnonymousClass851b8559e292424950e4653170da7104 uses generic trait Ark4ne\\JsonApi\\Descriptors\\Relations but does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
 			path: tests/Unit/Descriptors/DescriptorsTraitTest.php
 
 		-
-			message: '#^Class AnonymousClass648c2c8ab9ebfc938fe850f73b544283 uses generic trait Ark4ne\\JsonApi\\Descriptors\\Values but does not specify its types\: T$#'
+			message: '#^Class AnonymousClass851b8559e292424950e4653170da7104 uses generic trait Ark4ne\\JsonApi\\Descriptors\\Values but does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
 			path: tests/Unit/Descriptors/DescriptorsTraitTest.php
@@ -1621,25 +1393,25 @@ parameters:
 			path: tests/Unit/Descriptors/DescriptorsTraitTest.php
 
 		-
-			message: '#^Method stdClass@anonymous/tests/Unit/Descriptors/DescriptorsTraitTest\.php\:51\:\:many\(\) has parameter \$for with generic class Ark4ne\\JsonApi\\Resources\\JsonApiCollection but does not specify its types\: T$#'
+			message: '#^Method stdClass@anonymous/tests/Unit/Descriptors/DescriptorsTraitTest\.php\:52\:\:many\(\) has parameter \$for with generic class Ark4ne\\JsonApi\\Resources\\JsonApiCollection but does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
 			path: tests/Unit/Descriptors/DescriptorsTraitTest.php
 
 		-
-			message: '#^Method stdClass@anonymous/tests/Unit/Descriptors/DescriptorsTraitTest\.php\:51\:\:many\(\) has parameter \$for with generic class Ark4ne\\JsonApi\\Resources\\JsonApiResource but does not specify its types\: T$#'
+			message: '#^Method stdClass@anonymous/tests/Unit/Descriptors/DescriptorsTraitTest\.php\:52\:\:many\(\) has parameter \$for with generic class Ark4ne\\JsonApi\\Resources\\JsonApiResource but does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
 			path: tests/Unit/Descriptors/DescriptorsTraitTest.php
 
 		-
-			message: '#^Method stdClass@anonymous/tests/Unit/Descriptors/DescriptorsTraitTest\.php\:51\:\:one\(\) has parameter \$for with generic class Ark4ne\\JsonApi\\Resources\\JsonApiCollection but does not specify its types\: T$#'
+			message: '#^Method stdClass@anonymous/tests/Unit/Descriptors/DescriptorsTraitTest\.php\:52\:\:one\(\) has parameter \$for with generic class Ark4ne\\JsonApi\\Resources\\JsonApiCollection but does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
 			path: tests/Unit/Descriptors/DescriptorsTraitTest.php
 
 		-
-			message: '#^Method stdClass@anonymous/tests/Unit/Descriptors/DescriptorsTraitTest\.php\:51\:\:one\(\) has parameter \$for with generic class Ark4ne\\JsonApi\\Resources\\JsonApiResource but does not specify its types\: T$#'
+			message: '#^Method stdClass@anonymous/tests/Unit/Descriptors/DescriptorsTraitTest\.php\:52\:\:one\(\) has parameter \$for with generic class Ark4ne\\JsonApi\\Resources\\JsonApiResource but does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
 			path: tests/Unit/Descriptors/DescriptorsTraitTest.php
@@ -1753,7 +1525,7 @@ parameters:
 			path: tests/Unit/Descriptors/RelationTest.php
 
 		-
-			message: '#^Variable property access on Illuminate\\Database\\Eloquent\\Model@anonymous/tests/Unit/Descriptors/RelationTest\.php\:147\.$#'
+			message: '#^Variable property access on Illuminate\\Database\\Eloquent\\Model@anonymous/tests/Unit/Descriptors/RelationTest\.php\:148\.$#'
 			identifier: property.dynamicName
 			count: 1
 			path: tests/Unit/Descriptors/RelationTest.php
@@ -2221,26 +1993,8 @@ parameters:
 			path: tests/Unit/Resources/Concerns/LinksTest.php
 
 		-
-			message: '#^Cannot assign offset int\|string to \(Illuminate\\Support\\Collection&TReduceInitial of mixed\)\|\(Illuminate\\Support\\Collection&TReduceReturnType of mixed\)\|Illuminate\\Support\\Collection\<\*NEVER\*, \*NEVER\*\>\.$#'
-			identifier: offsetAssign.dimType
-			count: 2
-			path: tests/Unit/Resources/Concerns/LinksTest.php
-
-		-
-			message: '#^Method Illuminate\\Http\\Resources\\Json\\JsonResource@anonymous/tests/Unit/Resources/Concerns/LinksTest\.php\:32\:\:prepareData\(\) should return iterable\<TKey of \(int\|string\), TValue\> but returns array\<mixed\>\|null\.$#'
-			identifier: return.type
-			count: 1
-			path: tests/Unit/Resources/Concerns/LinksTest.php
-
-		-
 			message: '#^Method Illuminate\\Http\\Resources\\Json\\JsonResource@anonymous/tests/Unit/Resources/Concerns/LinksTest\.php\:32\:\:toLinks\(\) return type with generic class Ark4ne\\JsonApi\\Descriptors\\Values\\Value does not specify its types\: T$#'
 			identifier: missingType.generics
-			count: 1
-			path: tests/Unit/Resources/Concerns/LinksTest.php
-
-		-
-			message: '#^Method Illuminate\\Http\\Resources\\Json\\JsonResource@anonymous/tests/Unit/Resources/Concerns/LinksTest\.php\:38\:\:prepareData\(\) should return iterable\<TKey of \(int\|string\), TValue\> but returns array\<mixed\>\|null\.$#'
-			identifier: return.type
 			count: 1
 			path: tests/Unit/Resources/Concerns/LinksTest.php
 
@@ -2269,24 +2023,6 @@ parameters:
 			path: tests/Unit/Resources/Concerns/LinksTest.php
 
 		-
-			message: '#^Only booleans are allowed in a ternary operator condition, iterable\<TKey of \(int\|string\), TValue\> given\.$#'
-			identifier: ternary.condNotBoolean
-			count: 2
-			path: tests/Unit/Resources/Concerns/LinksTest.php
-
-		-
-			message: '#^Parameter \#1 \$items of class Illuminate\\Support\\Collection constructor expects Illuminate\\Contracts\\Support\\Arrayable\<\(int\|string\), mixed\>\|iterable\<\(int\|string\), mixed\>\|null, iterable given\.$#'
-			identifier: argument.type
-			count: 2
-			path: tests/Unit/Resources/Concerns/LinksTest.php
-
-		-
-			message: '#^Parameter \#3 \$attribute of method Ark4ne\\JsonApi\\Descriptors\\Describer\<mixed\>\:\:valueFor\(\) expects string, int\|string given\.$#'
-			identifier: argument.type
-			count: 2
-			path: tests/Unit/Resources/Concerns/LinksTest.php
-
-		-
 			message: '#^Part \$this\-\>id \(mixed\) of encapsed string cannot be cast to string\.$#'
 			identifier: encapsedStringPart.nonString
 			count: 1
@@ -2311,24 +2047,6 @@ parameters:
 			path: tests/Unit/Resources/Concerns/MetaTest.php
 
 		-
-			message: '#^Cannot assign offset int\|string to \(Illuminate\\Support\\Collection&TReduceInitial of mixed\)\|\(Illuminate\\Support\\Collection&TReduceReturnType of mixed\)\|Illuminate\\Support\\Collection\<\*NEVER\*, \*NEVER\*\>\.$#'
-			identifier: offsetAssign.dimType
-			count: 4
-			path: tests/Unit/Resources/Concerns/MetaTest.php
-
-		-
-			message: '#^Method Illuminate\\Http\\Resources\\Json\\JsonResource@anonymous/tests/Unit/Resources/Concerns/MetaTest\.php\:32\:\:prepareData\(\) should return iterable\<TKey of \(int\|string\), TValue\> but returns array\<mixed\>\|null\.$#'
-			identifier: return.type
-			count: 1
-			path: tests/Unit/Resources/Concerns/MetaTest.php
-
-		-
-			message: '#^Method Illuminate\\Http\\Resources\\Json\\JsonResource@anonymous/tests/Unit/Resources/Concerns/MetaTest\.php\:39\:\:prepareData\(\) should return iterable\<TKey of \(int\|string\), TValue\> but returns array\<mixed\>\|null\.$#'
-			identifier: return.type
-			count: 1
-			path: tests/Unit/Resources/Concerns/MetaTest.php
-
-		-
 			message: '#^Method Illuminate\\Http\\Resources\\Json\\JsonResource@anonymous/tests/Unit/Resources/Concerns/MetaTest\.php\:39\:\:toMeta\(\) never returns null so it can be removed from the return type\.$#'
 			identifier: return.unusedType
 			count: 1
@@ -2337,18 +2055,6 @@ parameters:
 		-
 			message: '#^Method Illuminate\\Http\\Resources\\Json\\JsonResource@anonymous/tests/Unit/Resources/Concerns/MetaTest\.php\:39\:\:toMeta\(\) return type has no value type specified in iterable type iterable\.$#'
 			identifier: missingType.iterableValue
-			count: 1
-			path: tests/Unit/Resources/Concerns/MetaTest.php
-
-		-
-			message: '#^Method Illuminate\\Http\\Resources\\Json\\JsonResource@anonymous/tests/Unit/Resources/Concerns/MetaTest\.php\:73\:\:prepareData\(\) should return iterable\<TKey of \(int\|string\), TValue\> but returns array\<mixed\>\|null\.$#'
-			identifier: return.type
-			count: 1
-			path: tests/Unit/Resources/Concerns/MetaTest.php
-
-		-
-			message: '#^Method Illuminate\\Http\\Resources\\Json\\JsonResource@anonymous/tests/Unit/Resources/Concerns/MetaTest\.php\:79\:\:prepareData\(\) should return iterable\<TKey of \(int\|string\), TValue\> but returns array\<mixed\>\|null\.$#'
-			identifier: return.type
 			count: 1
 			path: tests/Unit/Resources/Concerns/MetaTest.php
 
@@ -2389,27 +2095,9 @@ parameters:
 			path: tests/Unit/Resources/Concerns/MetaTest.php
 
 		-
-			message: '#^Only booleans are allowed in a ternary operator condition, iterable\<TKey of \(int\|string\), TValue\> given\.$#'
-			identifier: ternary.condNotBoolean
-			count: 4
-			path: tests/Unit/Resources/Concerns/MetaTest.php
-
-		-
-			message: '#^Parameter \#1 \$items of class Illuminate\\Support\\Collection constructor expects Illuminate\\Contracts\\Support\\Arrayable\<\(int\|string\), mixed\>\|iterable\<\(int\|string\), mixed\>\|null, iterable given\.$#'
-			identifier: argument.type
-			count: 4
-			path: tests/Unit/Resources/Concerns/MetaTest.php
-
-		-
 			message: '#^Parameter \#1 \$string of function sha1 expects string, mixed given\.$#'
 			identifier: argument.type
 			count: 1
-			path: tests/Unit/Resources/Concerns/MetaTest.php
-
-		-
-			message: '#^Parameter \#3 \$attribute of method Ark4ne\\JsonApi\\Descriptors\\Describer\<mixed\>\:\:valueFor\(\) expects string, int\|string given\.$#'
-			identifier: argument.type
-			count: 4
 			path: tests/Unit/Resources/Concerns/MetaTest.php
 
 		-
@@ -2437,38 +2125,14 @@ parameters:
 			path: tests/Unit/Resources/Concerns/MetaTest.php
 
 		-
-			message: '#^Access to an undefined property Ark4ne\\JsonApi\\Resources\\JsonApiCollection\<Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:84\>\:\:\$preserveKeys\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Resources/JsonApiResourceTest.php
-
-		-
 			message: '#^Access to an undefined property Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:43\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 1
 			path: tests/Unit/Resources/JsonApiResourceTest.php
 
 		-
-			message: '#^Call to static method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\) with ''Ark4ne\\\\JsonApi\\\\Resources\\\\JsonApiCollection'' and Ark4ne\\JsonApi\\Resources\\JsonApiCollection\<Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:100\> will always evaluate to true\.$#'
-			identifier: staticMethod.alreadyNarrowedType
-			count: 1
-			path: tests/Unit/Resources/JsonApiResourceTest.php
-
-		-
 			message: '#^Call to static method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\) with ''Ark4ne\\\\JsonApi\\\\Resources\\\\JsonApiCollection'' and Ark4ne\\JsonApi\\Resources\\JsonApiCollection\<Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:84\> will always evaluate to true\.$#'
 			identifier: staticMethod.alreadyNarrowedType
-			count: 1
-			path: tests/Unit/Resources/JsonApiResourceTest.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:118\:\:toLinks\(\) return type with generic class Ark4ne\\JsonApi\\Descriptors\\Values\\Value does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Unit/Resources/JsonApiResourceTest.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:118\:\:toLinks\(\) should return iterable\<\(int\|string\), Ark4ne\\JsonApi\\Descriptors\\Values\\Value\|string\> but returns Illuminate\\Support\\Collection\<string, array\<string, Illuminate\\Support\\Collection\<string, int\|string\>\|int\|string\>\|int\|string\>\.$#'
-			identifier: return.type
 			count: 1
 			path: tests/Unit/Resources/JsonApiResourceTest.php
 
@@ -2485,8 +2149,14 @@ parameters:
 			path: tests/Unit/Resources/JsonApiResourceTest.php
 
 		-
-			message: '#^Property Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:100\:\:\$preserveKeys has no type specified\.$#'
-			identifier: missingType.property
+			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:99\:\:toLinks\(\) return type with generic class Ark4ne\\JsonApi\\Descriptors\\Values\\Value does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: tests/Unit/Resources/JsonApiResourceTest.php
+
+		-
+			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:99\:\:toLinks\(\) should return iterable\<\(int\|string\), Ark4ne\\JsonApi\\Descriptors\\Values\\Value\|string\> but returns Illuminate\\Support\\Collection\<string, array\<string, Illuminate\\Support\\Collection\<string, int\|string\>\|int\|string\>\|int\|string\>\.$#'
+			identifier: return.type
 			count: 1
 			path: tests/Unit/Resources/JsonApiResourceTest.php
 
@@ -2713,60 +2383,6 @@ parameters:
 			path: tests/Unit/Support/ArrTest.php
 
 		-
-			message: '#^Method Test\\Unit\\Support\\FieldsTest\:\:fieldsGetProvider\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: tests/Unit/Support/FieldsTest.php
-
-		-
-			message: '#^Method Test\\Unit\\Support\\FieldsTest\:\:testGet\(\) has parameter \$expected with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: tests/Unit/Support/FieldsTest.php
-
-		-
-			message: '#^Method Test\\Unit\\Support\\FieldsTest\:\:testGet\(\) has parameter \$query with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: tests/Unit/Support/FieldsTest.php
-
-		-
-			message: '#^Cannot use \+\+ on mixed\.$#'
-			identifier: postInc.type
-			count: 1
-			path: tests/Unit/Support/IncludesTest.php
-
-		-
-			message: '#^Method Test\\Unit\\Support\\IncludesTest\:\:assert\(\) has parameter \$actual with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: tests/Unit/Support/IncludesTest.php
-
-		-
-			message: '#^Method Test\\Unit\\Support\\IncludesTest\:\:assert\(\) has parameter \$expected with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: tests/Unit/Support/IncludesTest.php
-
-		-
-			message: '#^Method Test\\Unit\\Support\\IncludesTest\:\:assert\(\) has parameter \$message with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: tests/Unit/Support/IncludesTest.php
-
-		-
-			message: '#^Parameter \#3 \$message of static method PHPUnit\\Framework\\Assert\:\:assertEquals\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/Unit/Support/IncludesTest.php
-
-		-
-			message: '#^Property Test\\Unit\\Support\\IncludesTest\:\:\$count has no type specified\.$#'
-			identifier: missingType.property
-			count: 1
-			path: tests/Unit/Support/IncludesTest.php
-
-		-
 			message: '#^Method Test\\Unit\\Support\\ValuesTest\:\:dataAttribute\(\) has no return type specified\.$#'
 			identifier: missingType.return
 			count: 1
@@ -2843,96 +2459,6 @@ parameters:
 			identifier: argument.type
 			count: 1
 			path: tests/Unit/Support/ValuesTest.php
-
-		-
-			message: '#^Method Test\\Unit\\Support\\WithTest\:\:mergeProvider\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: tests/Unit/Support/WithTest.php
-
-		-
-			message: '#^Method Test\\Unit\\Support\\WithTest\:\:testMerge\(\) has parameter \$base with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: tests/Unit/Support/WithTest.php
-
-		-
-			message: '#^Method Test\\Unit\\Support\\WithTest\:\:testMerge\(\) has parameter \$expected with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: tests/Unit/Support/WithTest.php
-
-		-
-			message: '#^Method Test\\Unit\\Support\\WithTest\:\:testMerge\(\) has parameter \$with with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: tests/Unit/Support/WithTest.php
-
-		-
-			message: '#^Method Test\\Unit\\Support\\WithTest\:\:testWash\(\) has parameter \$base with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: tests/Unit/Support/WithTest.php
-
-		-
-			message: '#^Method Test\\Unit\\Support\\WithTest\:\:testWash\(\) has parameter \$expected with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: tests/Unit/Support/WithTest.php
-
-		-
-			message: '#^Method Test\\Unit\\Support\\WithTest\:\:washProvider\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: tests/Unit/Support/WithTest.php
-
-		-
-			message: '#^Parameter \#1 \$base of static method Ark4ne\\JsonApi\\Support\\With\:\:merge\(\) expects iterable\<\(int\|string\), mixed\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/Unit/Support/WithTest.php
-
-		-
-			message: '#^Parameter \#1 \$with of static method Ark4ne\\JsonApi\\Support\\With\:\:wash\(\) expects iterable\<\(int\|string\), mixed\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/Unit/Support/WithTest.php
-
-		-
-			message: '#^Parameter \#2 \$with of static method Ark4ne\\JsonApi\\Support\\With\:\:merge\(\) expects iterable\<\(int\|string\), mixed\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/Unit/Support/WithTest.php
-
-		-
-			message: '#^Unable to resolve the template type TKey in call to static method Ark4ne\\JsonApi\\Support\\With\:\:merge\(\)$#'
-			identifier: argument.templateType
-			count: 1
-			path: tests/Unit/Support/WithTest.php
-
-		-
-			message: '#^Unable to resolve the template type TKey in call to static method Ark4ne\\JsonApi\\Support\\With\:\:wash\(\)$#'
-			identifier: argument.templateType
-			count: 1
-			path: tests/Unit/Support/WithTest.php
-
-		-
-			message: '#^Unable to resolve the template type TValue in call to static method Ark4ne\\JsonApi\\Support\\With\:\:merge\(\)$#'
-			identifier: argument.templateType
-			count: 1
-			path: tests/Unit/Support/WithTest.php
-
-		-
-			message: '#^Unable to resolve the template type TValue in call to static method Ark4ne\\JsonApi\\Support\\With\:\:wash\(\)$#'
-			identifier: argument.templateType
-			count: 1
-			path: tests/Unit/Support/WithTest.php
-
-		-
-			message: '#^Unable to resolve the template type UValue in call to static method Ark4ne\\JsonApi\\Support\\With\:\:merge\(\)$#'
-			identifier: argument.templateType
-			count: 1
-			path: tests/Unit/Support/WithTest.php
 
 		-
 			message: '#^Class Test\\app\\Factories\\CommentFactory extends generic class Illuminate\\Database\\Eloquent\\Factories\\Factory but does not specify its types\: TModel$#'

@@ -69,7 +69,8 @@ abstract class Value extends Describer
     }
 
     /**
-     * Display attribute whether the accessor attribute has been appended.
+     * Display attribute whether the accessor attribute has been appended; never on a resource that is not an Eloquent
+     * model.
      *
      * @return static
      */
@@ -77,9 +78,9 @@ abstract class Value extends Describer
     {
         return $this->when(static fn(
             Request $request,
-            Model $model,
+            mixed $model,
             string $attribute,
-        ): bool => $model->hasAppended($attribute));
+        ): bool => $model instanceof Model && $model->hasAppended($attribute));
     }
 
     /**

@@ -48,7 +48,7 @@ trait Values
      *
      * @return ValueFloat<T>
      */
-    public function float(string|Closure|null $attribute = null): ValueFloat
+    protected function float(string|Closure|null $attribute = null): ValueFloat
     {
         return new ValueFloat($attribute);
     }

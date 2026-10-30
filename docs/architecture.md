@@ -288,8 +288,10 @@ façades (`$this->string()`, `$this->one()`, `$this->applyWhen()`) that delegate
 | `toResourceMeta()` | Resource meta |
 | `toDocumentMeta()` | Top-level meta; `toMeta()` throws in 2.x to avoid a silent change of meaning |
 
-Collections are created through `newCollection()`; `$collects` and `$preserveKeys` work on Laravel 12 and 13, the
-`#[Collects]` / `#[PreserveKeys]` attributes are read when they exist.
+`collection()` returns a `JsonApiCollection` (no anonymous class); a resource overrides it to return a collection class
+of its own. A collection reads `$collects`, and `#[Collects]` when it exists (Laravel 13). `$preserveKeys` and
+`#[PreserveKeys]` do not apply: `data` is always a JSON list. Laravel's `newCollection()` is not used, its return type
+is `AnonymousResourceCollection`.
 
 ## 10. HTTP
 

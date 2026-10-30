@@ -8,7 +8,6 @@ use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Descriptors\Relations\RelationRaw;
 use Ark4ne\JsonApi\Descriptors\Values\ValueMixed;
 use Ark4ne\JsonApi\Resources\Relationship;
-use Ark4ne\JsonApi\Support\Supported;
 use Ark4ne\JsonApi\Support\Values;
 use Closure;
 use Illuminate\Http\Request;
@@ -99,28 +98,5 @@ trait ConditionallyLoadsAttributes
         return func_num_args() === 1
             ? Values::getAttribute($this->resource, $attribute)
             : value($value, Values::getAttribute($this->resource, $attribute));
-    }
-
-    /**
-     * @polyfill JsonResource::unless
-     * @see https://github.com/laravel/framework/pull/45419/files
-     *
-     * Retrieve a value if the given "condition" is falsy.
-     *
-     * @param  bool  $condition
-     * @param  mixed  $value
-     * @param  mixed  $default
-     * @return \Illuminate\Http\Resources\MissingValue|mixed
-     */
-    public function unless($condition, $value, $default = null)
-    {
-        if (Supported::$unless) {
-            // @phpstan-ignore-next-line
-            return parent::unless($condition, $value, $default);
-        }
-
-        $arguments = func_num_args() === 2 ? [$value] : [$value, $default];
-
-        return $this->when(! $condition, ...$arguments);
     }
 }

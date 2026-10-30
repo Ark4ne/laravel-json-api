@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Ark4ne\JsonApi\Requests\Rules;
 
 use Ark4ne\JsonApi\Compilation\Definitions;
+use Ark4ne\JsonApi\Context\IncludeTree;
 use Ark4ne\JsonApi\Definition\RelatedResource;
 use Ark4ne\JsonApi\Requests\Rules\Traits\UseTrans;
-use Ark4ne\JsonApi\Support\Includes as SupportIncludes;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 
@@ -52,9 +52,8 @@ class Includes implements ValidationRule
             return;
         }
 
-        $desired = SupportIncludes::parse($value);
-
-        if (!$this->assert($this->resource, $desired)) {
+        // Parsed as the rendering parses it, every segment kept: the depth is checked here.
+        if (!$this->assert($this->resource, IncludeTree::parse($value))) {
             foreach ($this->message() as $message) {
                 $fail($message);
             }
@@ -91,31 +90,27 @@ class Includes implements ValidationRule
     }
 
     /**
-     * @param array<string, mixed> $desired
-     * @param string               $pretend
-     *
-     * @return bool
+     * Checks the relationships included under `$path` against the definition of `$class`, then their own includes.
      */
-    private function assert(string $class, array $desired, string $pretend = ''): bool
+    private function assert(string $class, IncludeTree $include, string $path = ''): bool
     {
         $definition = Definitions::for(RelatedResource::resolve($class));
 
         $maxDepth = $this->maxDepth ?? Definitions::configuration()->maxIncludeDepth;
 
-        /** @var array<string, mixed> $sub every level of a parsed include is an array */
-        foreach ($desired as $relation => $sub) {
+        foreach ($include->children($path) as $relation) {
             $relationship = $definition->relationship($relation);
-            $path = $pretend ? "$pretend.$relation" : $relation;
+            $child = $path === '' ? $relation : "{$path}.{$relation}";
 
-            if ($maxDepth !== null && substr_count($path, '.') >= $maxDepth) {
-                $this->tooDeep[] = $path;
+            if ($maxDepth !== null && substr_count($child, '.') >= $maxDepth) {
+                $this->tooDeep[] = $child;
             } elseif ($relationship === null) {
                 $this->failures[] = [
-                    ':include' => $pretend ?: $definition->type,
+                    ':include' => $path === '' ? $definition->type : $path,
                     ':relation' => $relation,
                 ];
             } else {
-                $this->assert($relationship->related, $sub, $path);
+                $this->assert($relationship->related, $include, $child);
             }
         }
 

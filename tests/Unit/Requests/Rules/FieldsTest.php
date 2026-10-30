@@ -63,6 +63,15 @@ class FieldsTest extends TestCase
         self::assertSame([], self::errors(new Fields(UserResource::class), ['user' => 'name,posts', 'post' => 'title,user']));
     }
 
+    public function test_the_fields_are_parsed_as_the_rendering_parses_them(): void
+    {
+        self::assertSame([], self::errors(new Fields(UserResource::class), ['user' => ' name , posts,', 'post' => null]));
+        self::assertSame(
+            ['The selected :attribute is invalid.'],
+            self::errors(new Fields(UserResource::class), ['user' => ['name']]),
+        );
+    }
+
     public function test_the_fields_are_read_from_the_definitions(): void
     {
         self::assertSame([], self::errors(new Fields(AlphaResource::class), [

@@ -113,4 +113,12 @@ final class SparseFieldsetsTest extends TestCase
 
         self::assertSame([], $fields->of('user'));
     }
+
+    public function test_every_restricted_type_is_listed_with_its_fields(): void
+    {
+        self::assertSame(
+            ['user' => ['name', 'email'], 'post' => []],
+            SparseFieldsets::parse(['user' => ' name,,email ', 'post' => null])->all(),
+        );
+    }
 }

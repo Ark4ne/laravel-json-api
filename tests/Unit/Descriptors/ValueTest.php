@@ -29,6 +29,7 @@ use stdClass;
 use Test\app\Enums\State;
 use Test\Support\Reflect;
 use Test\TestCase;
+use UnitEnum;
 
 class ValueTest extends TestCase
 {
@@ -478,6 +479,68 @@ class ValueTest extends TestCase
 
         $array = new ValueArray(null);
         self::assertNotSame($array, $array->of(new ValueString(null)));
+    }
+
+    public function test_when_appended_leaves_out_the_value_of_a_resource_that_is_not_eloquent(): void
+    {
+        self::assertInstanceOf(
+            MissingValue::class,
+            (new ValueString('title'))->whenAppended()->valueFor(new Request(), ['title' => 'Hello'], 'title'),
+        );
+    }
+
+    public function test_an_enum_of_a_declared_type_casts_the_raw_values_through_it(): void
+    {
+        $backed = (new ValueEnum('state'))->of(TestBackendEnum::class);
+        $unit = (new ValueEnum('state'))->of(TestUnitEnum::class);
+
+        self::assertSame('aaa', $backed->valueFor(new Request(), ['state' => TestBackendEnum::A], 'state'));
+        self::assertSame('bbb', $backed->valueFor(new Request(), ['state' => 'bbb'], 'state'));
+        self::assertSame('C', $unit->valueFor(new Request(), ['state' => 'C'], 'state'));
+        self::assertSame('B', $unit->valueFor(new Request(), ['state' => TestUnitEnum::B], 'state'));
+        self::assertSame('raw', (new ValueEnum('state'))->valueFor(new Request(), ['state' => 'raw'], 'state'));
+    }
+
+    public function test_an_enum_of_a_declared_type_casts_a_numeric_string_to_an_integer_backing(): void
+    {
+        self::assertSame(1, (new ValueEnum('state'))->of(State::class)->valueFor(new Request(), ['state' => '1'], 'state'));
+        self::assertSame('bbb', (new ValueEnum('state'))->of(TestBackendEnum::class)->valueFor(new Request(), ['state' => 'bbb'], 'state'));
+    }
+
+    public function test_a_null_enum_of_a_declared_type_follows_the_null_rules(): void
+    {
+        $enum = (new ValueEnum('state'))->of(State::class)->nullable(false);
+
+        self::assertNull($enum->valueFor(new Request(), ['state' => null], 'state'));
+
+        $this->expectException(RenderingException::class);
+        $this->expectExceptionMessage('[state] is not nullable');
+
+        $enum->valueFor(new Request(), ['state' => null], 'state', Configuration::fromArray(['describer' => ['strict' => true]]));
+    }
+
+    /**
+     * @return iterable<string, array{class-string<UnitEnum>, mixed}>
+     */
+    public static function notCases(): iterable
+    {
+        yield 'unknown backed value' => [TestBackendEnum::class, 'zzz'];
+        yield 'unknown case name' => [TestUnitEnum::class, 'Z'];
+        yield 'case of another enum' => [TestBackendEnum::class, TestUnitEnum::A];
+        yield 'not a scalar' => [TestUnitEnum::class, ['A']];
+        yield 'not a numeric string for an integer backing' => [State::class, 'one'];
+    }
+
+    /**
+     * @param class-string<UnitEnum> $type
+     */
+    #[DataProvider('notCases')]
+    public function test_an_enum_of_a_declared_type_refuses_what_is_not_one_of_its_cases(string $type, mixed $value): void
+    {
+        $this->expectException(RenderingException::class);
+        $this->expectExceptionMessage("is not a case of [{$type}]");
+
+        (new ValueEnum('state'))->of($type)->valueFor(new Request(), ['state' => $value], 'state');
     }
 
     public function test_auto_when_has_does_not_stack_conditions_on_each_rendering(): void

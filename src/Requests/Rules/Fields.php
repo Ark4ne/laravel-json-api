@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Ark4ne\JsonApi\Requests\Rules;
 
 use Ark4ne\JsonApi\Compilation\Definitions;
+use Ark4ne\JsonApi\Context\SparseFieldsets;
 use Ark4ne\JsonApi\Definition\RelatedResource;
 use Ark4ne\JsonApi\Requests\Rules\Traits\UseTrans;
-use Ark4ne\JsonApi\Support\Fields as SupportFields;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 
@@ -45,7 +45,16 @@ class Fields implements ValidationRule
             return;
         }
 
-        $desired = SupportFields::parse($value);
+        foreach ($value as $fields) {
+            if ($fields !== null && !is_string($fields)) {
+                $fail($this->trans(sprintf('%s.invalid', self::BASE), 'The selected :attribute is invalid.'));
+
+                return;
+            }
+        }
+
+        // Parsed as the rendering parses it.
+        $desired = SparseFieldsets::parse($value)->all();
 
         if (!$this->assert($this->fieldsByType($this->resource), $desired)) {
 

@@ -92,25 +92,6 @@ class JsonApiResourceTest extends TestCase
 
         self::assertInstanceOf(JsonApiCollection::class, $collection);
         self::assertEquals($resource::class, $collection->collects);
-        self::assertNull($collection->preserveKeys);
-    }
-
-    public function testToCollectionPreserveKeys(): void
-    {
-        $resource = new class (null) extends JsonApiResource {
-            public $preserveKeys = true;
-
-            public function toType(Request $request): string
-            {
-                return 'my-model';
-            }
-        };
-
-        $collection = $resource::collection(\collect(Stub::model(['id' => 1])));
-
-        self::assertInstanceOf(JsonApiCollection::class, $collection);
-        self::assertEquals($resource::class, $collection->collects);
-        self::assertTrue(property_exists($collection, 'preserveKeys'));
     }
 
     public function testReturnArray(): void

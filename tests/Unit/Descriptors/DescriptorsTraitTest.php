@@ -20,6 +20,7 @@ use Ark4ne\JsonApi\Resources\JsonApiCollection;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Closure;
 use PHPUnit\Framework\Attributes\DataProvider;
+use ReflectionMethod;
 use stdClass;
 use Test\Support\Reflect;
 use Test\TestCase;
@@ -62,5 +63,13 @@ class DescriptorsTraitTest extends TestCase
         $descriptor = Reflect::invoke($mock, $method, ...[...$args, fn() => 'closure']);
         self::assertInstanceOf($expected, $descriptor);
         self::assertInstanceOf(Closure::class, $descriptor->retriever());
+    }
+
+    #[DataProvider('methods')]
+    public function test_every_descriptor_helper_is_protected(string $expected, string $method, string ...$arguments): void
+    {
+        $trait = in_array($method, ['one', 'many'], true) ? Relations::class : Values::class;
+
+        self::assertTrue((new ReflectionMethod($trait, $method))->isProtected());
     }
 }
