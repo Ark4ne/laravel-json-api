@@ -35,6 +35,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `JsonApiCollection::toMeta()`: document meta of a collection, winning over those of its resources.
 - **`jsonapi` member** in every document, configured in `document.jsonapi` (`version`, `ext`, `profile`, `meta`):
   `{"version": "1.1"}` by default, `false` to leave it out.
+- **Maximum include depth**, `include.max-depth` (no limit by default): the `Includes` rule rejects a deeper path
+  (`invalid_depth`), and nothing deeper is loaded nor rendered, even without validation.
 - `Exceptions\RenderingException`, thrown when a member that must be a JSON object would be rendered as a list.
 
 ### Changed
@@ -67,6 +69,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **Breaking:** only the primary resources add document meta (`toMeta()`), the included ones no longer do. In a
   collection they are merged key by key, the first resource setting a key keeping it (1.x gathered the values of a
   shared key into a list).
+- **Breaking:** without `toAttributes()`, the attributes of a model are read with `attributesToArray()` (loaded
+  relations are no longer rendered as attributes) and leave out its key, `id`, `type` and the foreign keys of the
+  `BelongsTo` / `MorphTo` relationships declared in `toRelationships()`; `id` and `type` are left out of an array too.
 - `whenInFields()` only marks a value: the renderer decides from the sparse fieldset. `Value::valueFor()` returns the
   value whatever the request.
 - Collections and other arrayables returned by a hook are rendered as plain arrays.

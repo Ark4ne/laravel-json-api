@@ -28,9 +28,6 @@ class JsonApiResourceTest extends TestCase
         $data = [
             'type' => 'my-model',
             'id' => '1',
-            'attributes' => [
-                'id' => '1',
-            ],
         ];
         self::assertEquals($data, $resource->toArray($request));
         self::assertEquals([], $resource->with($request));
@@ -65,9 +62,6 @@ class JsonApiResourceTest extends TestCase
         $data = [
             'type' => 'my-model',
             'id' => '1',
-            'attributes' => [
-                'id' => '1',
-            ],
             'meta' => [
                 'self' => '1',
             ],

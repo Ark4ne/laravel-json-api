@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Test\Unit\Resources\Concerns;
 
-use Ark4ne\JsonApi\Resources\Concerns\Attributes;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use ArrayIterator;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
 use stdClass;
+use Test\app\Http\Resources\CommentResource;
+use Test\app\Http\Resources\UserResource;
+use Test\app\Models\Post;
+use Test\app\Models\User;
 use Test\Support\Reflect;
 use Test\TestCase;
 
@@ -17,10 +20,8 @@ class AttributesTest extends TestCase
 {
     public function testToAttributes(): void
     {
-        $stub = fn($object) => new class ($object) extends JsonResource {
-            use Attributes;
-
-            protected function toType(Request $request)
+        $stub = fn($object) => new class ($object) extends JsonApiResource {
+            protected function toType(Request $request): string
             {
                 return 'my-type';
             }
@@ -135,5 +136,58 @@ class AttributesTest extends TestCase
             'attributes',
             $stub->toArray(new Request(['fields' => ['my-type' => '']])),
         );
+    }
+
+    public function test_the_default_attributes_of_a_model_leave_out_its_key_and_the_foreign_keys_of_its_relationships(): void
+    {
+        $user = (new User())->forceFill(['id' => 3, 'name' => 'Ada']);
+        $post = (new Post())->forceFill(['id' => 7, 'title' => 'Hello', 'type' => 'news', 'user_id' => 3]);
+        $post->setRelation('user', $user);
+        $post->setRelation('comments', new Collection());
+
+        $resource = new DefaultAttributesPostResource($post);
+
+        self::assertSame(['title' => 'Hello'], $resource->toArray(new Request())['attributes'] ?? null);
+    }
+
+    public function test_the_default_attributes_of_an_array_leave_out_id_and_type(): void
+    {
+        $resource = new class (['id' => 1, 'type' => 'thing', 'name' => 'Ada']) extends JsonApiResource {
+            protected function toType(Request $request): string
+            {
+                return 'thing';
+            }
+
+            protected function toIdentifier(Request $request): int
+            {
+                return 1;
+            }
+        };
+
+        self::assertSame(['name' => 'Ada'], $resource->toArray(new Request())['attributes'] ?? null);
+    }
+}
+
+/**
+ * Default `toAttributes()`, relationships declared.
+ *
+ * @extends JsonApiResource<Post>
+ */
+final class DefaultAttributesPostResource extends JsonApiResource
+{
+    protected function toType(Request $request): string
+    {
+        return 'post';
+    }
+
+    /**
+     * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Relations\Relation<mixed>>
+     */
+    protected function toRelationships(Request $request): iterable
+    {
+        return [
+            'user' => $this->one(UserResource::class),
+            'comments' => $this->many(CommentResource::class),
+        ];
     }
 }

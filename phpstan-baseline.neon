@@ -577,12 +577,6 @@ parameters:
 			path: src/Requests/Rules/Includes.php
 
 		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 1
-			path: src/Requests/Rules/Includes.php
-
-		-
 			message: '#^Only booleans are allowed in a ternary operator condition, string given\.$#'
 			identifier: ternary.condNotBoolean
 			count: 1
@@ -2071,410 +2065,26 @@ parameters:
 			path: tests/Unit/Requests/Rules/IncludesTest.php
 
 		-
-			message: '#^Access to an undefined property Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:113\:\:\$comments\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Access to an undefined property Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:113\:\:\$posts\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Access to an undefined property Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:152\:\:\$comments\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Access to an undefined property Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:166\:\:\$posts\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Access to an undefined property Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:203\:\:\$comments\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Access to an undefined property Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:203\:\:\$likes\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Access to an undefined property Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:203\:\:\$posts\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Access to an undefined property Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:238\:\:\$posts\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Access to an undefined property Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:271\:\:\$comments\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Access to an undefined property Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:271\:\:\$posts\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Access to an undefined property Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:303\:\:\$posts\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Access to an undefined property Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:32\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Access to an undefined property Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:32\:\:\$posts\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Access to an undefined property Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:334\:\:\$posts\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Access to an undefined property Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:364\:\:\$posts\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Access to an undefined property Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:81\:\:\$comments\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Access to an undefined property Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:81\:\:\$posts\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Call to an undefined method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:113\:\:withInclude\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Call to an undefined method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:166\:\:withInclude\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Call to an undefined method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:203\:\:withInclude\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Call to an undefined method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:238\:\:withInclude\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Call to an undefined method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:271\:\:withInclude\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Call to an undefined method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:303\:\:withInclude\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Call to an undefined method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:32\:\:withInclude\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Call to an undefined method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:334\:\:withInclude\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Call to an undefined method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:364\:\:withInclude\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Call to an undefined method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:81\:\:withInclude\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Cannot call method asCollection\(\) on mixed\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Cannot call method withInclude\(\) on mixed\.$#'
-			identifier: method.nonObject
-			count: 2
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertArrayHasKey\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 26
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertArrayNotHasKey\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 3
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertCount\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertIsArray\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 4
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:markTestSkipped\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:113\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Descriptors\\Relations\\Relation does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:113\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Resources\\Relationship does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:152\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Descriptors\\Relations\\Relation does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:152\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Resources\\Relationship does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:166\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Descriptors\\Relations\\Relation does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:166\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Resources\\Relationship does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:166\:\:toRelationships\(\) should return iterable\<\(int\|string\), Ark4ne\\JsonApi\\Descriptors\\Relations\\Relation\|Ark4ne\\JsonApi\\Resources\\Relationship\|Illuminate\\Http\\Resources\\MergeValue\|Illuminate\\Http\\Resources\\PotentiallyMissing\> but returns array\<string, mixed\>\.$#'
-			identifier: return.type
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:203\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Descriptors\\Relations\\Relation does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:203\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Resources\\Relationship does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:238\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Descriptors\\Relations\\Relation does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:238\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Resources\\Relationship does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:271\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Descriptors\\Relations\\Relation does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:271\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Resources\\Relationship does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:303\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Descriptors\\Relations\\Relation does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:303\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Resources\\Relationship does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:32\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Descriptors\\Relations\\Relation does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:32\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Resources\\Relationship does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:334\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Descriptors\\Relations\\Relation does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:334\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Resources\\Relationship does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:364\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Descriptors\\Relations\\Relation does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:364\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Resources\\Relationship does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:81\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Descriptors\\Relations\\Relation does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/AutoIncludeTest\.php\:81\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Resources\\Relationship does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Unit/Resources/AutoIncludeTest.php
-
-		-
-			message: '#^Access to an undefined property Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/Concerns/AttributesTest\.php\:78\:\:\$baz\.$#'
+			message: '#^Access to an undefined property Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/Concerns/AttributesTest\.php\:79\:\:\$baz\.$#'
 			identifier: property.notFound
 			count: 3
 			path: tests/Unit/Resources/Concerns/AttributesTest.php
 
 		-
-			message: '#^Access to an undefined property Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/Concerns/AttributesTest\.php\:78\:\:\$foo\.$#'
+			message: '#^Access to an undefined property Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/Concerns/AttributesTest\.php\:79\:\:\$foo\.$#'
 			identifier: property.notFound
 			count: 3
 			path: tests/Unit/Resources/Concerns/AttributesTest.php
 
 		-
-			message: '#^Cannot assign offset int\|string to \(Illuminate\\Support\\Collection&TReduceInitial of mixed\)\|\(Illuminate\\Support\\Collection&TReduceReturnType of mixed\)\|Illuminate\\Support\\Collection\<\*NEVER\*, \*NEVER\*\>\.$#'
-			identifier: offsetAssign.dimType
-			count: 1
-			path: tests/Unit/Resources/Concerns/AttributesTest.php
-
-		-
-			message: '#^Method Illuminate\\Http\\Resources\\Json\\JsonResource@anonymous/tests/Unit/Resources/Concerns/AttributesTest\.php\:20\:\:prepareData\(\) should return iterable\<TKey of \(int\|string\), TValue\> but returns array\<mixed\>\|null\.$#'
-			identifier: return.type
-			count: 1
-			path: tests/Unit/Resources/Concerns/AttributesTest.php
-
-		-
-			message: '#^Method Illuminate\\Http\\Resources\\Json\\JsonResource@anonymous/tests/Unit/Resources/Concerns/AttributesTest\.php\:20\:\:toAttributes\(\) should return iterable\<\(int\|string\), mixed\> but returns mixed\.$#'
-			identifier: return.type
-			count: 1
-			path: tests/Unit/Resources/Concerns/AttributesTest.php
-
-		-
-			message: '#^Method Illuminate\\Http\\Resources\\Json\\JsonResource@anonymous/tests/Unit/Resources/Concerns/AttributesTest\.php\:20\:\:toType\(\) has no return type specified\.$#'
+			message: '#^Method stdClass@anonymous/tests/Unit/Resources/Concerns/AttributesTest\.php\:30\:\:toArray\(\) has no return type specified\.$#'
 			identifier: missingType.return
 			count: 1
 			path: tests/Unit/Resources/Concerns/AttributesTest.php
 
 		-
-			message: '#^Method stdClass@anonymous/tests/Unit/Resources/Concerns/AttributesTest\.php\:29\:\:toArray\(\) has no return type specified\.$#'
+			message: '#^Method stdClass@anonymous/tests/Unit/Resources/Concerns/AttributesTest\.php\:70\:\:toArray\(\) has no return type specified\.$#'
 			identifier: missingType.return
-			count: 1
-			path: tests/Unit/Resources/Concerns/AttributesTest.php
-
-		-
-			message: '#^Method stdClass@anonymous/tests/Unit/Resources/Concerns/AttributesTest\.php\:69\:\:toArray\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: tests/Unit/Resources/Concerns/AttributesTest.php
-
-		-
-			message: '#^Only booleans are allowed in a ternary operator condition, iterable\<TKey of \(int\|string\), TValue\> given\.$#'
-			identifier: ternary.condNotBoolean
-			count: 1
-			path: tests/Unit/Resources/Concerns/AttributesTest.php
-
-		-
-			message: '#^Parameter \#1 \$items of class Illuminate\\Support\\Collection constructor expects Illuminate\\Contracts\\Support\\Arrayable\<\(int\|string\), mixed\>\|iterable\<\(int\|string\), mixed\>\|null, iterable given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/Unit/Resources/Concerns/AttributesTest.php
-
-		-
-			message: '#^Parameter \#3 \$attribute of method Ark4ne\\JsonApi\\Descriptors\\Describer\<mixed\>\:\:valueFor\(\) expects string, int\|string given\.$#'
-			identifier: argument.type
 			count: 1
 			path: tests/Unit/Resources/Concerns/AttributesTest.php
 
@@ -2491,32 +2101,26 @@ parameters:
 			path: tests/Unit/Resources/Concerns/AttributesTest.php
 
 		-
-			message: '#^Property stdClass@anonymous/tests/Unit/Resources/Concerns/AttributesTest\.php\:29\:\:\$baz has no type specified\.$#'
+			message: '#^Property stdClass@anonymous/tests/Unit/Resources/Concerns/AttributesTest\.php\:30\:\:\$baz has no type specified\.$#'
 			identifier: missingType.property
 			count: 1
 			path: tests/Unit/Resources/Concerns/AttributesTest.php
 
 		-
-			message: '#^Property stdClass@anonymous/tests/Unit/Resources/Concerns/AttributesTest\.php\:29\:\:\$foo has no type specified\.$#'
+			message: '#^Property stdClass@anonymous/tests/Unit/Resources/Concerns/AttributesTest\.php\:30\:\:\$foo has no type specified\.$#'
 			identifier: missingType.property
 			count: 1
 			path: tests/Unit/Resources/Concerns/AttributesTest.php
 
 		-
-			message: '#^Property stdClass@anonymous/tests/Unit/Resources/Concerns/AttributesTest\.php\:69\:\:\$baz has no type specified\.$#'
+			message: '#^Property stdClass@anonymous/tests/Unit/Resources/Concerns/AttributesTest\.php\:70\:\:\$baz has no type specified\.$#'
 			identifier: missingType.property
 			count: 1
 			path: tests/Unit/Resources/Concerns/AttributesTest.php
 
 		-
-			message: '#^Property stdClass@anonymous/tests/Unit/Resources/Concerns/AttributesTest\.php\:69\:\:\$foo has no type specified\.$#'
+			message: '#^Property stdClass@anonymous/tests/Unit/Resources/Concerns/AttributesTest\.php\:70\:\:\$foo has no type specified\.$#'
 			identifier: missingType.property
-			count: 1
-			path: tests/Unit/Resources/Concerns/AttributesTest.php
-
-		-
-			message: '#^Return type \(iterable\<\(int\|string\), mixed\>\) of method Illuminate\\Http\\Resources\\Json\\JsonResource@anonymous/tests/Unit/Resources/Concerns/AttributesTest\.php\:20\:\:toAttributes\(\) should be covariant with return type \(array\|Illuminate\\Contracts\\Support\\Arrayable\|JsonSerializable\) of method Illuminate\\Http\\Resources\\Json\\JsonResource\:\:toAttributes\(\)$#'
-			identifier: method.childReturnType
 			count: 1
 			path: tests/Unit/Resources/Concerns/AttributesTest.php
 
@@ -2887,55 +2491,55 @@ parameters:
 			path: tests/Unit/Resources/Concerns/MetaTest.php
 
 		-
-			message: '#^Access to an undefined property Ark4ne\\JsonApi\\Resources\\JsonApiCollection\<Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:90\>\:\:\$preserveKeys\.$#'
+			message: '#^Access to an undefined property Ark4ne\\JsonApi\\Resources\\JsonApiCollection\<Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:84\>\:\:\$preserveKeys\.$#'
 			identifier: property.notFound
 			count: 1
 			path: tests/Unit/Resources/JsonApiResourceTest.php
 
 		-
-			message: '#^Access to an undefined property Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:46\:\:\$id\.$#'
+			message: '#^Access to an undefined property Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:43\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 1
 			path: tests/Unit/Resources/JsonApiResourceTest.php
 
 		-
-			message: '#^Call to static method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\) with ''Ark4ne\\\\JsonApi\\\\Resources\\\\JsonApiCollection'' and Ark4ne\\JsonApi\\Resources\\JsonApiCollection\<Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:106\> will always evaluate to true\.$#'
+			message: '#^Call to static method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\) with ''Ark4ne\\\\JsonApi\\\\Resources\\\\JsonApiCollection'' and Ark4ne\\JsonApi\\Resources\\JsonApiCollection\<Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:100\> will always evaluate to true\.$#'
 			identifier: staticMethod.alreadyNarrowedType
 			count: 1
 			path: tests/Unit/Resources/JsonApiResourceTest.php
 
 		-
-			message: '#^Call to static method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\) with ''Ark4ne\\\\JsonApi\\\\Resources\\\\JsonApiCollection'' and Ark4ne\\JsonApi\\Resources\\JsonApiCollection\<Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:90\> will always evaluate to true\.$#'
+			message: '#^Call to static method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\) with ''Ark4ne\\\\JsonApi\\\\Resources\\\\JsonApiCollection'' and Ark4ne\\JsonApi\\Resources\\JsonApiCollection\<Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:84\> will always evaluate to true\.$#'
 			identifier: staticMethod.alreadyNarrowedType
 			count: 1
 			path: tests/Unit/Resources/JsonApiResourceTest.php
 
 		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:124\:\:toLinks\(\) return type with generic class Ark4ne\\JsonApi\\Descriptors\\Values\\Value does not specify its types\: T$#'
+			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:118\:\:toLinks\(\) return type with generic class Ark4ne\\JsonApi\\Descriptors\\Values\\Value does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
 			path: tests/Unit/Resources/JsonApiResourceTest.php
 
 		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:124\:\:toLinks\(\) should return iterable\<\(int\|string\), Ark4ne\\JsonApi\\Descriptors\\Values\\Value\|string\> but returns Illuminate\\Support\\Collection\<string, array\<string, Illuminate\\Support\\Collection\<string, int\|string\>\|int\|string\>\|int\|string\>\.$#'
+			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:118\:\:toLinks\(\) should return iterable\<\(int\|string\), Ark4ne\\JsonApi\\Descriptors\\Values\\Value\|string\> but returns Illuminate\\Support\\Collection\<string, array\<string, Illuminate\\Support\\Collection\<string, int\|string\>\|int\|string\>\|int\|string\>\.$#'
 			identifier: return.type
 			count: 1
 			path: tests/Unit/Resources/JsonApiResourceTest.php
 
 		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:46\:\:toMeta\(\) never returns null so it can be removed from the return type\.$#'
+			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:43\:\:toMeta\(\) never returns null so it can be removed from the return type\.$#'
 			identifier: return.unusedType
 			count: 1
 			path: tests/Unit/Resources/JsonApiResourceTest.php
 
 		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:46\:\:toResourceMeta\(\) never returns null so it can be removed from the return type\.$#'
+			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:43\:\:toResourceMeta\(\) never returns null so it can be removed from the return type\.$#'
 			identifier: return.unusedType
 			count: 1
 			path: tests/Unit/Resources/JsonApiResourceTest.php
 
 		-
-			message: '#^Property Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:106\:\:\$preserveKeys has no type specified\.$#'
+			message: '#^Property Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:100\:\:\$preserveKeys has no type specified\.$#'
 			identifier: missingType.property
 			count: 1
 			path: tests/Unit/Resources/JsonApiResourceTest.php

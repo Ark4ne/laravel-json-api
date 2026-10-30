@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Test\Unit\Requests\Rules;
 
+use Ark4ne\JsonApi\Compilation\Definitions;
+use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Requests\Rules\Includes;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Translation\PotentiallyTranslatedString;
@@ -94,5 +96,28 @@ class IncludesTest extends TestCase
         );
 
         return $errors;
+    }
+
+    public function test_an_include_deeper_than_the_maximum_depth_fails(): void
+    {
+        self::assertSame([], self::errors(new Includes(UserResource::class, maxDepth: 2), 'posts.user,comments'));
+        self::assertSame([
+            'The selected :attribute is invalid.',
+            '"posts.user.posts" is deeper than the maximum include depth of 2.',
+        ], self::errors(new Includes(UserResource::class, maxDepth: 2), 'posts.user.posts'));
+    }
+
+    public function test_the_maximum_depth_defaults_to_the_configuration(): void
+    {
+        Definitions::configure(Configuration::fromArray(['include' => ['max-depth' => 1]]));
+
+        try {
+            self::assertSame([
+                'The selected :attribute is invalid.',
+                '"posts.user" is deeper than the maximum include depth of 1.',
+            ], self::errors(new Includes(UserResource::class), 'posts.user'));
+        } finally {
+            Definitions::configure(Configuration::defaults());
+        }
     }
 }

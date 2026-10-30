@@ -63,4 +63,14 @@ final class JsonApiContextTest extends TestCase
         self::assertSame(['author'], $context->include->paths());
         self::assertFalse($context->fields->restricts('post'));
     }
+
+    public function test_the_include_is_cut_at_the_configured_maximum_depth(): void
+    {
+        $context = JsonApiContext::fromRequest(
+            new Request(['include' => 'posts.comments.user']),
+            Configuration::fromArray(['include' => ['max-depth' => 1]]),
+        );
+
+        self::assertSame(['posts'], $context->include->paths());
+    }
 }

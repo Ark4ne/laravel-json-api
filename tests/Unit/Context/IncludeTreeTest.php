@@ -88,4 +88,12 @@ final class IncludeTreeTest extends TestCase
         self::assertSame(['posts', 'posts.comments', 'friends'], $tree->paths());
         self::assertSame(['comments'], $tree->children('posts'));
     }
+
+    public function test_the_segments_beyond_the_maximum_depth_are_ignored(): void
+    {
+        $tree = IncludeTree::parse('posts.comments.user,user', maxDepth: 2);
+
+        self::assertSame(['posts', 'posts.comments', 'user'], $tree->paths());
+        self::assertSame([], $tree->children('posts.comments'));
+    }
 }

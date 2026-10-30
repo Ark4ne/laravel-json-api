@@ -24,8 +24,11 @@ final readonly class IncludeTree
     /**
      * Parses `include` (`posts,posts.comments`): spaces and empty segments are ignored, and a value that is not a string
      * includes nothing (its validation is the job of `Rules\Includes`).
+     *
+     * @param positive-int|null $maxDepth Segments deeper are ignored (`include.max-depth`): nothing is loaded nor
+     *                                    rendered beyond, even when the request is not validated
      */
-    public static function parse(mixed $include): self
+    public static function parse(mixed $include, ?int $maxDepth = null): self
     {
         if (!is_string($include)) {
             return self::none();
@@ -35,11 +38,16 @@ final readonly class IncludeTree
         $children = [];
         foreach (explode(',', $include) as $path) {
             $parent = '';
+            $depth = 0;
             foreach (explode('.', $path) as $segment) {
                 $segment = trim($segment);
 
                 if ($segment === '') {
                     continue;
+                }
+
+                if ($maxDepth !== null && ++$depth > $maxDepth) {
+                    break;
                 }
 
                 $current = $parent === '' ? $segment : "{$parent}.{$segment}";

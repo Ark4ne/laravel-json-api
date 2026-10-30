@@ -68,6 +68,8 @@ Clients reading the documents must expect:
 - `id` always a string, in resource objects and in relationship linkage;
 - `{"data": null}` for an empty to-one relationship, `{"data": []}` for an empty to-many; a relationship that has
   neither data, links nor meta is left out;
+- without `toAttributes()`, no `id`, `type`, model key, foreign keys of the declared relationships (`user_id`…) nor
+  loaded relations in `attributes`. Write `toAttributes()` if a client reads them there;
 - empty `attributes`, `relationships`, `links` or `meta` left out instead of `[]`. A hook returning members without
   names (`toAttributes()` returning `['a', 'b']`, `toMeta()` returning `['x']`) now throws a `RenderingException`:
   give each member a name;

@@ -103,6 +103,21 @@ return [
         'relationships' => 'filter',
     ],
 
+    'include' => [
+        /*
+        |--------------------------------------------------------------------------
+        | Maximum depth
+        |--------------------------------------------------------------------------
+        |
+        | Deepest include path accepted (`posts.comments.user` is 3 deep), as a
+        | protection against abusive includes: the `Includes` rule rejects a
+        | deeper path, and nothing deeper is ever loaded nor rendered.
+        | `null` for no limit.
+        |
+        */
+        'max-depth' => null,
+    ],
+
     'definitions' => [
         /*
         |--------------------------------------------------------------------------

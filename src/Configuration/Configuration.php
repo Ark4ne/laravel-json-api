@@ -30,6 +30,7 @@ final readonly class Configuration
      *                                    (`definitions.paths`); empty for the application's default
      * @param list<class-string> $renderingStages Stages run after those of the package (`rendering.stages`)
      * @param JsonApiObject|null $jsonapi The `jsonapi` member of the documents, `null` for none (`document.jsonapi`)
+     * @param positive-int|null $maxIncludeDepth Deepest include path accepted, `null` for no limit (`include.max-depth`)
      */
     private function __construct(
         public bool $nullable,
@@ -41,6 +42,7 @@ final readonly class Configuration
         public array $resourcePaths,
         public array $renderingStages,
         public ?JsonApiObject $jsonapi,
+        public ?int $maxIncludeDepth,
     ) {}
 
     /**
@@ -58,6 +60,7 @@ final readonly class Configuration
             resourcePaths: [],
             renderingStages: [],
             jsonapi: new JsonApiObject(),
+            maxIncludeDepth: null,
         );
     }
 
@@ -82,6 +85,7 @@ final readonly class Configuration
             resourcePaths: self::paths($config, $defaults->resourcePaths),
             renderingStages: self::stages($config, $defaults->renderingStages),
             jsonapi: self::jsonapi($config),
+            maxIncludeDepth: self::maxIncludeDepth($config),
         );
     }
 
@@ -266,5 +270,19 @@ final readonly class Configuration
 
         /** @var list<string> $value */
         return $value;
+    }
+
+    /**
+     * @param array<array-key, mixed> $config
+     *
+     * @return positive-int|null
+     */
+    private static function maxIncludeDepth(array $config): ?int
+    {
+        $value = self::read($config, 'include.max-depth');
+
+        return $value === null || (is_int($value) && $value > 0)
+            ? $value
+            : throw InvalidConfigurationException::forKey('include.max-depth', 'a positive integer or null');
     }
 }

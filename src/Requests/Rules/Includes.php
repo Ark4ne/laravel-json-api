@@ -28,10 +28,18 @@ class Includes implements ValidationRule
     protected array $failures = [];
 
     /**
+     * @var list<string> The include paths deeper than the maximum depth
+     */
+    protected array $tooDeep = [];
+
+    /**
      * @param class-string<T> $resource
+     * @param positive-int|null $maxDepth Deepest include path accepted; the configured one (`include.max-depth`) when
+     *                                    `null`
      */
     public function __construct(
         protected string $resource,
+        protected ?int $maxDepth = null,
     ) {}
 
     public function validate(string $attribute, mixed $value, Closure $fail): void
@@ -63,6 +71,8 @@ class Includes implements ValidationRule
             'The selected :attribute is invalid.',
         );
 
+        $depth = (string) ($this->maxDepth ?? Definitions::configuration()->maxIncludeDepth);
+
         return array_merge([$message], array_map(
             fn($failure) => $this->trans(
                 sprintf('%s.invalid_includes', self::BASE),
@@ -70,6 +80,13 @@ class Includes implements ValidationRule
                 $failure,
             ),
             $this->failures,
+        ), array_map(
+            fn(string $path) => $this->trans(
+                sprintf('%s.invalid_depth', self::BASE),
+                '":include" is deeper than the maximum include depth of :depth.',
+                [':include' => $path, ':depth' => $depth],
+            ),
+            $this->tooDeep,
         ));
     }
 
@@ -83,24 +100,25 @@ class Includes implements ValidationRule
     {
         $definition = Definitions::for(RelatedResource::resolve($class));
 
+        $maxDepth = $this->maxDepth ?? Definitions::configuration()->maxIncludeDepth;
+
         /** @var array<string, mixed> $sub every level of a parsed include is an array */
         foreach ($desired as $relation => $sub) {
             $relationship = $definition->relationship($relation);
+            $path = $pretend ? "$pretend.$relation" : $relation;
 
-            if ($relationship === null) {
+            if ($maxDepth !== null && substr_count($path, '.') >= $maxDepth) {
+                $this->tooDeep[] = $path;
+            } elseif ($relationship === null) {
                 $this->failures[] = [
                     ':include' => $pretend ?: $definition->type,
                     ':relation' => $relation,
                 ];
             } else {
-                $this->assert(
-                    $relationship->related,
-                    $sub,
-                    $pretend ? "$pretend.$relation" : $relation,
-                );
+                $this->assert($relationship->related, $sub, $path);
             }
         }
 
-        return empty($this->failures);
+        return $this->failures === [] && $this->tooDeep === [];
     }
 }

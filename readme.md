@@ -19,6 +19,10 @@ composer require ark4ne/laravel-json-api
 | `describer.precision`        | `int` \ `null`           | For describer notation, decimal precision for float value. `null` for disable rounding. |
 | `describer.when-has`         | `bool` \ `string[]`      | For describer notation, Apply automatically whenHas condition on attributes.            |
 | `relationship.when-included` | `bool`                   | Allow to disabled by default the loading of relationship data.                          |
+| `fields.relationships`       | `'filter'` \ `'keep'`    | `fields[type]` restricts the relationships too (`filter`, JSON:API) or not (`keep`, 1.x). |
+| `include.max-depth`          | `int` \ `null`           | Deepest include path accepted; nothing deeper is loaded nor rendered. `null`: no limit.  |
+| `document.jsonapi`           | `array` \ `false`        | Top-level `jsonapi` member (`version`, `ext`, `profile`, `meta`); `false` to omit it.   |
+| `rendering.stages`           | `class-string[]`         | Rendering stages (`Ark4ne\JsonApi\Rendering\Stage`) run after those of the package.    |
 
 # Usage
 This package is a specialisation of Laravel's `JsonResource` class.
@@ -82,6 +86,7 @@ class UserFetchRequest extends FormRequest
 | `validation.custom.jsonapi.fields.invalid_resource`   | ":resource" doesn \' t exists.                       |
 | `validation.custom.jsonapi.includes.invalid`          | The selected :attribute is invalid.                  |
 | `validation.custom.jsonapi.includes.invalid_includes` | ":include" doesn \' t have relationship ":relation". |
+| `validation.custom.jsonapi.includes.invalid_depth`    | ":include" is deeper than the maximum include depth of :depth. |
 
 ## Resource
 **@see** _[{json:api} resource-type](https://jsonapi.org/format/#document-resource-objects)_
@@ -199,6 +204,10 @@ public function toAttributes(Request $request): iterable
     ];
 }
 ```
+
+Without `toAttributes()`, the attributes of the model are rendered (`attributesToArray()`: casts, `$hidden` and
+`$appends` applied), without its key, `id`, `type` and the foreign keys of the relationships declared in
+`toRelationships()`: JSON:API represents them as relationships.
 
 #### Laravel conditional attributes 
 _**@see** [laravel: eloquent-conditional-attributes](https://laravel.com/docs/9.x/eloquent-resources#conditional-attributes)_

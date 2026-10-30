@@ -20,7 +20,7 @@ envoyé, ce que l'application applique si elle le souhaite.
 - [ ] **E7.1** `JsonApiFormRequest` : règles `include` et `fields` préconfigurées depuis la `ResourceDefinition`
       (`protected string $resource = PostResource::class;`)
 - [ ] **E7.3** Corriger `Rules\Includes::BASE` (pointe sur `jsonapi.fields`) ; messages en traductions publiables
-      (`lang/`)
+      (`lang/`), y compris `invalid_depth` ajouté par E1.11
 - [ ] **E7.7** Lecture du corps d'écriture (`data.attributes`, `data.relationships`) :
       `$request->jsonApi()->attributes()`, erreurs de validation pointant vers `/data/attributes/x`
 

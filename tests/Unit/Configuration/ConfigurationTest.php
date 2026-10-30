@@ -35,6 +35,7 @@ final class ConfigurationTest extends TestCase
         self::assertSame([], $configuration->resourcePaths);
         self::assertSame([], $configuration->renderingStages);
         self::assertEquals(new JsonApiObject('1.1'), $configuration->jsonapi);
+        self::assertNull($configuration->maxIncludeDepth);
     }
 
     public function test_an_empty_array_gives_the_defaults(): void
@@ -55,6 +56,7 @@ final class ConfigurationTest extends TestCase
             'fields' => ['relationships' => 'keep'],
             'definitions' => ['paths' => ['/app/Http/Resources']],
             'rendering' => ['stages' => [self::class]],
+            'include' => ['max-depth' => 3],
             'document' => ['jsonapi' => [
                 'version' => '1.0',
                 'ext' => ['https://jsonapi.org/ext/atomic'],
@@ -71,6 +73,7 @@ final class ConfigurationTest extends TestCase
         self::assertSame(SparseRelationships::Keep, $configuration->sparseRelationships);
         self::assertSame(['/app/Http/Resources'], $configuration->resourcePaths);
         self::assertSame([self::class], $configuration->renderingStages);
+        self::assertSame(3, $configuration->maxIncludeDepth);
         self::assertEquals(
             new JsonApiObject('1.0', ['https://jsonapi.org/ext/atomic'], ['https://example.com/profile'], ['copyright' => 'ACME']),
             $configuration->jsonapi,
@@ -123,6 +126,8 @@ final class ConfigurationTest extends TestCase
         yield 'fields.relationships' => [['fields' => ['relationships' => 'drop']], 'fields.relationships'];
         yield 'definitions.paths' => [['definitions' => ['paths' => 'app']], 'definitions.paths'];
         yield 'rendering.stages not a list' => [['rendering' => ['stages' => 'Stage']], 'rendering.stages'];
+        yield 'include.max-depth zero' => [['include' => ['max-depth' => 0]], 'include.max-depth'];
+        yield 'include.max-depth string' => [['include' => ['max-depth' => '3']], 'include.max-depth'];
         yield 'document.jsonapi' => [['document' => ['jsonapi' => true]], 'document.jsonapi'];
         yield 'document.jsonapi.version' => [['document' => ['jsonapi' => ['version' => 1.1]]], 'document.jsonapi.version'];
         yield 'document.jsonapi.ext' => [['document' => ['jsonapi' => ['ext' => 'atomic']]], 'document.jsonapi.ext'];

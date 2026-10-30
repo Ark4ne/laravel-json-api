@@ -27,8 +27,11 @@ présentes malgré `fields[user]=name`.
 ### Identification
 
 - [x] **E1.1** `id` toujours sérialisé en `string`, quel que soit le retour de `toIdentifier()` 🔴
-- [ ] **E1.7** `toAttributes()` par défaut : exclure `id`, `type` et les clés étrangères des relations déclarées 🔴
-- [ ] **E1.7b** Un attribut ou une relation nommé `id` ou `type` produit un diagnostic (E3.6)
+- [x] **E1.7** `toAttributes()` par défaut : exclure `id`, `type` et les clés étrangères des relations déclarées 🔴
+      (clé du modèle et relations chargées exclues aussi ; clés étrangères des `BelongsTo` / `MorphTo` dont la source
+      est connue)
+- [x] **E1.7b** Un attribut ou une relation nommé `id` ou `type` produit un diagnostic (E3.6) — livré avec E3.6
+      (`DefinitionCompiler::RESERVED_NAME`, niveau erreur)
 
 ### Relationships
 
@@ -41,7 +44,8 @@ présentes malgré `fields[user]=name`.
 ### Compound documents
 
 - [x] **E1.5** `included` ne contient ni doublon `type:id`, ni les ressources primaires (identity map, E4.3) 🔴
-- [ ] **E1.11** Profondeur maximale d'include configurable (protection contre les includes abusifs)
+- [x] **E1.11** Profondeur maximale d'include configurable (protection contre les includes abusifs) :
+      `include.max-depth` (`null` par défaut), refus par la règle `Includes`, coupure dans `IncludeTree::parse()`
 - [x] **E1.12** Les sparse fieldsets s'appliquent par **type** aux ressources incluses (test dédié)
 
 ### Sparse fieldsets

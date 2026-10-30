@@ -36,7 +36,7 @@ final readonly class JsonApiContext
         return new self(
             $request,
             $configuration,
-            IncludeTree::parse($request->query('include')),
+            IncludeTree::parse($request->query('include'), $configuration->maxIncludeDepth),
             SparseFieldsets::parse($request->query('fields')),
             new Diagnostics(),
         );
