@@ -231,9 +231,9 @@ final class DefinitionCompilerTest extends TestCase
         $definition = $this->compile(TypedResource::class);
 
         self::assertSame(['author', 'comments', 'reviewer'], array_keys($definition->relationships));
-        self::assertSame(UserResource::class, $definition->relationships['author']->related);
+        self::assertSame([UserResource::class], $definition->relationships['author']->related);
         self::assertSame(Cardinality::One, $definition->relationships['author']->cardinality);
-        self::assertSame(CommentResource::class, $definition->relationships['comments']->related);
+        self::assertSame([CommentResource::class], $definition->relationships['comments']->related);
         self::assertSame(Cardinality::Many, $definition->relationships['comments']->cardinality);
     }
 

@@ -30,7 +30,8 @@ aujourd'hui la relation non incluse est chargée ressource par ressource (`getRe
       autres relations, `withLoad()` / `whenIncluded()` servent à réduire
 - [x] **E5.1b** Autres relations (`HasMany`, `BelongsToMany`…) : un `loadMissing` groupé par relation et par niveau,
       sur toute la collection, au lieu d'une requête par ressource
-- [ ] **E5.1b2** Option : ne charger que les clés (`select` de la clé primaire) quand la relation n'est pas incluse
+- [x] **E5.1b2** ~~Option : ne charger que les clés (`select` de la clé primaire) quand la relation n'est pas incluse~~
+      — abandonné : un modèle réduit à sa clé fausse `toType()`, `toIdentifier()`, `identifierMeta()` et les filtres
 - [x] **E5.1c** Ressources non Eloquent : la valeur est lue telle quelle, comme aujourd'hui
 
 ### Chargement
@@ -54,8 +55,10 @@ aujourd'hui la relation non incluse est chargée ressource par ressource (`getRe
 - [x] **E5.6** Auto-include côté serveur : `UserResource::make($user)->include('posts.comments')`, porté par le
       contexte (reprise de `withInclude()`) : union avec l'`include` de la requête, ni validé ni limité par
       `include.max-depth`
-- [ ] **E5.7** Relations polymorphiques (`morphTo`) : ressource liée résolue par `#[UseResource]` /
-      `Model::toResource()` ou par une map explicite
+- [x] **E5.7** Relations polymorphiques (`morphTo`) : ressource liée résolue par `#[UseResource]` /
+      `Model::toResource()` ou par une map explicite — map explicite (`morph()`, `morphMany()`, `->morphs()`) ;
+      `RelationshipDefinition::$related` devient une liste, `$morphs` la map ; la résolution automatique est reportée
+      à E6.8
 - [x] **E5.8** Pivot BelongsToMany exposé en `meta` sur le resource identifier (avec E1.10) : `->pivotMeta(['role'])`
 - [x] **E5.9** Support des ressources non Eloquent (tableaux, DTO) conservé et couvert par des tests : c'est un
       différenciant face au natif, qui ne gère que des modèles : `LinkageTest`, `LoadPlanTest`, `LoadedRelationsTest`
@@ -64,5 +67,6 @@ aujourd'hui la relation non incluse est chargée ressource par ressource (`getRe
 
 - [x] Tests à compteur de requêtes SQL : aucun N+1 sur les scénarios de linkage et d'include (E10.6) :
       `tests/Feature/Loading/LinkageTest.php` (60 → 2 requêtes pour 30 posts, 220 → 4 avec `include=comments.user`)
-- [ ] Documents identiques à la v1.9 en mode `always` (hors corrections de conformité d'E1) — écarts décidés : la
-      contrainte d'un `withLoad()` filtre aussi le linkage, une relation `whenLoaded()` incluse est chargée
+- [x] Documents identiques à la v1.9 en mode `always` (hors corrections de conformité d'E1) — écarts décidés : la
+      contrainte d'un `withLoad()` filtre aussi le linkage, une relation `whenLoaded()` incluse est chargée ; le reste
+      est couvert par les tests Feature existants (inchangés depuis la 1.9) et les scénarios de `LinkageTest`

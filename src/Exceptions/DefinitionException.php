@@ -28,6 +28,14 @@ final class DefinitionException extends LogicException implements JsonApiExcepti
     }
 
     /**
+     * A polymorphic relationship was given no resource to render its related models with.
+     */
+    public static function emptyMorphMap(): self
+    {
+        return new self('A polymorphic relationship needs the resource of each model class it relates to.');
+    }
+
+    /**
      * Running the hooks of the resource on a probe threw.
      */
     public static function cannotCompile(string $class, Throwable $previous): self

@@ -65,6 +65,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `->pivotMeta(['role'], 'pivot')` on a relationship renders attributes of the pivot of each related model in the meta
   of its resource identifier.
 - A `filter-on-unloaded` diagnostic when relationship filters run on a relation that is not loaded.
+- **Polymorphic relationships**: `$this->morph([Post::class => PostResource::class, Video::class =>
+  VideoResource::class])` (a `morphTo`), `$this->morphMany([...])`, or `->morphs([...])` on any relationship, render
+  each related model with the resource of the first class of the map it is an instance of (a collection class stands
+  for the resource it collects; `null` items of a to-many are left out); a model of a class out of the map throws a
+  `RenderingException`. The definition exposes the map (`morphs`, `isPolymorphic()`), the validation rules accept an
+  include or a fieldset one of the related resources has (path by path), and the related models are loaded resource
+  by resource.
 
 ### Changed
 
@@ -133,6 +140,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   it out unless the application had loaded it).
 - **Breaking:** `Filters` is immutable: `can()` and `when()` return a copy. The closure given to `->filters()` must
   return the filters it built (`fn(Filters $filters) => $filters->can('view')`).
+- **Breaking:** `RelationshipDefinition::$related` is a list of resource classes: one, or several for a polymorphic
+  relationship. Compiled definitions must be compiled again (`php artisan jsonapi:cache`).
 - **Breaking:** `RelationshipDefinition::$whenIncluded` is replaced by `$linkage` (`Linkage|null`, `null` for the
   configured one), which the compilation no longer fills from the configuration.
 

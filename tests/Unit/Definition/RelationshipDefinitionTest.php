@@ -9,7 +9,11 @@ use Ark4ne\JsonApi\Definition\Cardinality;
 use Ark4ne\JsonApi\Definition\LoadDefinition;
 use Ark4ne\JsonApi\Definition\RelationshipDefinition;
 use PHPUnit\Framework\TestCase;
+use Test\app\Http\Resources\CommentResource;
+use Test\app\Http\Resources\PostResource;
 use Test\app\Http\Resources\UserResource;
+use Test\app\Models\Comment;
+use Test\app\Models\Post;
 
 final class RelationshipDefinitionTest extends TestCase
 {
@@ -18,7 +22,7 @@ final class RelationshipDefinitionTest extends TestCase
         $relationship = RelationshipDefinition::one('author', UserResource::class);
 
         self::assertSame('author', $relationship->name);
-        self::assertSame(UserResource::class, $relationship->related);
+        self::assertSame([UserResource::class], $relationship->related);
         self::assertSame(Cardinality::One, $relationship->cardinality);
         self::assertTrue($relationship->load->isEmpty());
         self::assertFalse($relationship->conditional);
@@ -60,5 +64,17 @@ final class RelationshipDefinitionTest extends TestCase
         self::assertNull($changed->linkage(null)->linkage);
         self::assertSame(Linkage::Included, $changed->name('other')->linkage);
         self::assertNull($changed->source(null)->source);
+    }
+
+    public function test_a_polymorphic_relationship_relates_the_resources_of_its_map(): void
+    {
+        $relationship = RelationshipDefinition::one('commentable', PostResource::class);
+
+        $morph = $relationship->morphs([Post::class => PostResource::class, Comment::class => CommentResource::class]);
+
+        self::assertFalse($relationship->isPolymorphic());
+        self::assertTrue($morph->isPolymorphic());
+        self::assertSame([PostResource::class, CommentResource::class], $morph->related);
+        self::assertSame($relationship, $relationship->morphs([]));
     }
 }

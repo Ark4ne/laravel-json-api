@@ -7,20 +7,23 @@ namespace Ark4ne\JsonApi\Resources;
 use Ark4ne\JsonApi\Configuration\Linkage;
 use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Definition\Cardinality;
+use Ark4ne\JsonApi\Definition\DefinitionSource;
 use Ark4ne\JsonApi\Definition\DescribesRelationship;
 use Ark4ne\JsonApi\Definition\LoadDefinition;
 use Ark4ne\JsonApi\Definition\RelatedResource;
 use Ark4ne\JsonApi\Definition\RelationshipDefinition;
+use Ark4ne\JsonApi\Exceptions\DefinitionException;
+use Ark4ne\JsonApi\Exceptions\RenderingException;
 use Ark4ne\JsonApi\Filters\Filters;
 use Ark4ne\JsonApi\Rendering\RelationshipSource;
 use Ark4ne\JsonApi\Rendering\RenderableResource;
 use Ark4ne\JsonApi\Rendering\ResolvedRelationship;
+use Ark4ne\JsonApi\Support\Morphs;
 use Ark4ne\JsonApi\Support\Values;
 use Ark4ne\JsonApi\Traits\HasRelationLoad;
 use Closure;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Http\Resources\MissingValue;
-use Illuminate\Support\Collection;
 use Traversable;
 
 use function value;
@@ -40,6 +43,11 @@ class Relationship implements DescribesRelationship, RelationshipSource
     protected bool $asCollection = false;
 
     protected ?Linkage $linkage = null;
+
+    /**
+     * @var array<class-string, class-string<DefinitionSource>> Resource class by model class (`withMorphs()`)
+     */
+    protected array $morphs = [];
 
     /**
      * @var (Closure(): bool)|null Whether the relation is loaded, for `Linkage::Loaded`; `null` when unknown
@@ -175,6 +183,26 @@ class Relationship implements DescribesRelationship, RelationshipSource
     }
 
     /**
+     * Renders each related model with the resource of its class (a polymorphic relationship): the first class of the
+     * map the model is an instance of.
+     *
+     * @param array<class-string, class-string> $morphs Resource class by model class
+     *
+     * @return $this
+     *
+     * @throws DefinitionException when the map is empty
+     */
+    public function withMorphs(array $morphs): static
+    {
+        // A collection class stands for the resource it collects, as in the definition.
+        $this->morphs = $morphs !== []
+            ? array_map(RelatedResource::resolve(...), $morphs)
+            : throw DefinitionException::emptyMorphMap();
+
+        return $this;
+    }
+
+    /**
      * Whether filters apply to the related resources.
      *
      * @internal Read by the resource, which then tells whether the relation is loaded (`loadedWhen()`).
@@ -223,6 +251,7 @@ class Relationship implements DescribesRelationship, RelationshipSource
         return ($this->asCollection
             ? RelationshipDefinition::many($name, $related)
             : RelationshipDefinition::one($name, $related))
+            ->morphs(array_map(RelatedResource::resolve(...), $this->morphs))
             ->load(LoadDefinition::fromDeclaration($this->load ?? false, $name))
             ->linkage($this->linkage)
             ->hasLinks($this->links !== null)
@@ -291,9 +320,20 @@ class Relationship implements DescribesRelationship, RelationshipSource
         }
 
         $many = $this->asCollection || is_subclass_of($this->resource, ResourceCollection::class);
-        $resource = $this->asCollection && !is_subclass_of($this->resource, ResourceCollection::class)
-            ? $this->resource::collection($value)
-            : new $this->resource($value);
+        $resource = match (true) {
+            $this->morphs !== [] && $value !== null && !Values::isMissing($value) => $many
+                ? new JsonApiCollection(
+                    array_map(
+                        $this->morphResource(...),
+                        array_values(array_filter(is_iterable($value) ? iterator_to_array($value, false) : [$value], self::isNotNull(...))),
+                    ),
+                    JsonApiResource::class,
+                )
+                : $this->morphResource($value),
+            $this->asCollection && !is_subclass_of($this->resource, ResourceCollection::class)
+                => $this->resource::collection($value),
+            default => new $this->resource($value),
+        };
 
         $links = self::members(\value($this->links, $resource));
         $meta = self::members(\value($this->meta, $resource));
@@ -324,6 +364,25 @@ class Relationship implements DescribesRelationship, RelationshipSource
         return $resource->renderedModel() !== null
             ? ResolvedRelationship::toOne($resource, $links, $meta, $this->identifierMetaOf($resource))
             : ResolvedRelationship::toOne(null, $links, $meta);
+    }
+
+    /**
+     * The resource the map gives for the model (`Support\Morphs`, as the loading reads it).
+     *
+     * @throws RenderingException when the map has no resource for the class of the model
+     */
+    private function morphResource(mixed $model): RenderableResource
+    {
+        $resource = Morphs::of($this->morphs, $model)
+            ?? throw RenderingException::unmappedMorph(get_debug_type($model), array_keys($this->morphs));
+        $related = new $resource($model);
+
+        return $related instanceof RenderableResource ? $related : throw DefinitionException::notADefinitionSource($resource);
+    }
+
+    private static function isNotNull(mixed $value): bool
+    {
+        return $value !== null;
     }
 
     private function rendersLinkage(JsonApiContext $context): bool

@@ -492,6 +492,28 @@ UserResource::collection(User::all()); // => JsonApiCollection
 | `one`   | For relationship with a single value: `HasOne`, `BelongsTo`, ...  |
 | `many`  | For relationship with many value: `HasMany`, `BelongsToMany`, ... |
 
+### Polymorphic relationships
+
+A `morphTo` (or a closure giving models of several classes) renders each related model with the resource of the first
+class of the map it is an instance of: list a subclass before its parent. A model of a class out of the map throws a
+`RenderingException`; the `null` items of a to-many are left out.
+
+```php
+protected function toRelationships(Request $request): array
+{
+    return [
+        'commentable' => $this->morph([
+            Post::class => PostResource::class,
+            Video::class => VideoResource::class,
+        ]),
+        'feed' => $this->morphMany([Post::class => PostResource::class, Video::class => VideoResource::class], 'items'),
+    ];
+}
+```
+
+`include=commentable.author` is valid when one of the related resources has `author`, path by path:
+`include=commentable.author,commentable.channel` is valid when posts have `author` and videos `channel`.
+
 ### Linkage and loading
 _**@see** [{json:api}: resource linkage](https://jsonapi.org/format/#document-resource-object-linkage)_
 

@@ -6,6 +6,7 @@ namespace Test\Unit\Loading;
 
 use Ark4ne\JsonApi\Loading\LoadPlan;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 use Test\app\Models\Comment;
 use Test\app\Models\Post;
 use Test\app\Models\User;
@@ -52,5 +53,28 @@ class LoadPlanTest extends TestCase
 
         self::assertSame([$user], LoadPlan::related($posts, 'user'));
         self::assertSame([$comment], LoadPlan::related($posts, 'comments'));
+    }
+
+    public function test_a_plan_for_a_resource_of_a_map_leaves_the_models_the_map_gives_another_resource_for(): void
+    {
+        $comment = new Comment();
+        $post = (new Post())->setRelation('user', null);
+
+        // Only the comment would be loaded: the post is skipped, and its `user` is already loaded anyway.
+        (new LoadPlan(['user' => null], ['user'], morphs: [Post::class => 'post', Comment::class => 'comment'], resource: 'post'))
+            ->apply([$comment, $post]);
+
+        self::assertFalse($comment->relationLoaded('user'));
+    }
+
+    public function test_a_model_of_several_classes_of_a_map_is_planned_with_the_first_one_only(): void
+    {
+        $post = new Post();
+
+        // A post is also a model: the map gives it `post`, the plan for `model` leaves it as it is.
+        (new LoadPlan(['user' => null], ['user'], morphs: [Post::class => 'post', Model::class => 'model'], resource: 'model'))
+            ->apply([$post]);
+
+        self::assertFalse($post->relationLoaded('user'));
     }
 }

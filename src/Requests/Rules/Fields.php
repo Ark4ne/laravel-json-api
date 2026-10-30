@@ -132,7 +132,9 @@ class Fields implements ValidationRule
         $resources[$definition->type] = $definition->fields();
 
         foreach ($definition->relationships as $relationship) {
-            $resources = $this->fieldsByType($relationship->related, $resources);
+            foreach ($relationship->related as $related) {
+                $resources = $this->fieldsByType($related, $resources);
+            }
         }
 
         return $resources;

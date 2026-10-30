@@ -78,6 +78,8 @@ public static function collection($resource): UserCollection
 - `whenIncluded($request, $type, $value)` of the resources is renamed `whenInIncludes($request, $relationship,
   $value)`.
 - `RelationshipDefinition::$whenIncluded` is `$linkage` (`Configuration\Linkage|null`).
+- `RelationshipDefinition::$related` is a list of resource classes (`$relationship->related[0]` for a relationship
+  that is not polymorphic). Run `php artisan jsonapi:cache` again after upgrading.
 - `Filters` is immutable: `->filters(fn(Filters $filters) => $filters->can('view'))` works as before, but a closure
   calling `can()` / `when()` without returning their result loses the rules. Chain them and return the result.
 

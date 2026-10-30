@@ -128,7 +128,7 @@ final readonly class AttributeDefinition
 | --- | --- |
 | `ResourceDefinition` | Resource class, `type`, attributes, relationships, declared links and meta, diagnostics of its compilation |
 | `AttributeDefinition` | Name, dotted path inside structs, `ValueType`, nullable, format, enum class, item type, children (structs), conditional, sparse (`whenInFields`: out unless requested) |
-| `RelationshipDefinition` | Name, related resource class, `Cardinality::One` / `Many`, `LoadDefinition`, `linkage`, declared links and meta, conditional, source |
+| `RelationshipDefinition` | Name, related resource classes (`related`: one, or those of `morphs`, the resource class of each model class of a polymorphic relationship), `Cardinality::One` / `Many`, `LoadDefinition`, `linkage`, declared links and meta, conditional, source |
 | `LoadDefinition` | Relation paths eager-loaded when the relationship is included, and those loaded with a constraint closure |
 | `ValueType` | The type of a value as the tools need it: `string`, `integer`, `number`, `boolean`, `date`, `enum`, `array`, `struct`, `mixed`, or a custom type of the registry |
 
@@ -227,6 +227,9 @@ It accepts a plain `Illuminate\Http\Request` or Laravel's native `JsonApiRequest
 - The plan is applied **once** on the root collection, then level by level, with `loadMissing()` grouped by model
   class: one query per relation and per level.
 - Non-Eloquent resources (arrays, DTOs) are read as they are: loading does not apply.
+- The related models of a polymorphic relationship get one plan per resource of its map (`LoadPlan::$resource`),
+  applied to the models the map gives that resource for: the first class of the map they are an instance of
+  (`Support\Morphs`, shared with the rendering). A model the map gives another resource for is left as it is.
 
 ## 8. Rendering
 

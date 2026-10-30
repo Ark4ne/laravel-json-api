@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Loading;
 
+use Ark4ne\JsonApi\Support\Morphs;
 use Closure;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -18,11 +19,17 @@ final readonly class LoadPlan
      * @param list<string> $sources Paths among `$relations` a relationship is read from: loaded only when they are
      *                              relations of the model, an attribute being read as it is
      * @param array<string, list<LoadPlan>> $nested Plans of the related models, by the relation path reaching them
+     * @param array<class-string, string> $morphs The map of the polymorphic relationship reaching the models, empty
+     *                                           otherwise
+     * @param string|null $resource The resource of the map the plan is for: it applies only to the models the map gives
+     *                              it for (`Support\Morphs`), the others being left as they are; `null` for every model
      */
     public function __construct(
         public array $relations = [],
         public array $sources = [],
         public array $nested = [],
+        public array $morphs = [],
+        public ?string $resource = null,
     ) {}
 
     public function isEmpty(): bool
@@ -40,7 +47,7 @@ final readonly class LoadPlan
     {
         $eloquent = [];
         foreach ($models as $model) {
-            if ($model instanceof Model) {
+            if ($model instanceof Model && ($this->resource === null || Morphs::of($this->morphs, $model) === $this->resource)) {
                 $eloquent[spl_object_id($model)] = $model;
             }
         }

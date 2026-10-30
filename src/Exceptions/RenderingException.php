@@ -37,6 +37,19 @@ final class RenderingException extends LogicException implements JsonApiExceptio
     }
 
     /**
+     * A related model of a polymorphic relationship has a class its map does not know.
+     *
+     * @param list<string> $known The model classes of the map
+     */
+    public static function unmappedMorph(string $class, array $known): self
+    {
+        return new self(
+            "No resource renders a related [{$class}] of a polymorphic relationship: map it, along with ["
+            . implode(', ', $known) . '].',
+        );
+    }
+
+    /**
      * A member that must be a JSON object (`attributes`, `relationships`, `links`, `meta`) would be serialized as a
      * list: its keys are `0, 1, …` instead of names.
      *

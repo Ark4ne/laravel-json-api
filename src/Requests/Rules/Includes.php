@@ -53,7 +53,7 @@ class Includes implements ValidationRule
         }
 
         // Parsed as the rendering parses it, every segment kept: the depth is checked here.
-        if (!$this->assert($this->resource, IncludeTree::parse($value))) {
+        if (!$this->assert([$this->resource], IncludeTree::parse($value))) {
             foreach ($this->message() as $message) {
                 $fail($message);
             }
@@ -90,27 +90,38 @@ class Includes implements ValidationRule
     }
 
     /**
-     * Checks the relationships included under `$path` against the definition of `$class`, then their own includes.
+     * Checks the relationships included under `$path` against the definitions of `$classes`, then their own includes.
+     * Several classes are the related resources of a polymorphic relationship: each relationship needs only one of
+     * them to have it, path by path.
+     *
+     * @param non-empty-list<string> $classes
      */
-    private function assert(string $class, IncludeTree $include, string $path = ''): bool
+    private function assert(array $classes, IncludeTree $include, string $path = ''): bool
     {
-        $definition = Definitions::for(RelatedResource::resolve($class));
+        $definitions = array_map(
+            static fn(string $class) => Definitions::for(RelatedResource::resolve($class)),
+            $classes,
+        );
 
         $maxDepth = $this->maxDepth ?? Definitions::configuration()->maxIncludeDepth;
 
         foreach ($include->children($path) as $relation) {
-            $relationship = $definition->relationship($relation);
             $child = $path === '' ? $relation : "{$path}.{$relation}";
+
+            $related = [];
+            foreach ($definitions as $definition) {
+                $related = [...$related, ...$definition->relationship($relation)->related ?? []];
+            }
 
             if ($maxDepth !== null && substr_count($child, '.') >= $maxDepth) {
                 $this->tooDeep[] = $child;
-            } elseif ($relationship === null) {
+            } elseif ($related === []) {
                 $this->failures[] = [
-                    ':include' => $path === '' ? $definition->type : $path,
+                    ':include' => $path === '' ? $definitions[0]->type : $path,
                     ':relation' => $relation,
                 ];
             } else {
-                $this->assert($relationship->related, $include, $child);
+                $this->assert(array_values(array_unique($related)), $include, $child);
             }
         }
 

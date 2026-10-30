@@ -23,6 +23,7 @@ use stdClass;
 use Test\app\Http\Resources\CommentResource;
 use Test\app\Http\Resources\UserCollection;
 use Test\app\Http\Resources\UserResource;
+use Test\app\Models\Comment;
 use Test\app\Models\Post;
 use Test\app\Models\User;
 use Test\Support\Reflect;
@@ -229,16 +230,16 @@ class RelationTest extends TestCase
         $many = (new RelationMany(CommentResource::class, null))->definition('comments');
 
         self::assertSame('author', $one->name);
-        self::assertSame(UserResource::class, $one->related);
+        self::assertSame([UserResource::class], $one->related);
         self::assertSame(Cardinality::One, $one->cardinality);
-        self::assertSame(CommentResource::class, $many->related);
+        self::assertSame([CommentResource::class], $many->related);
         self::assertSame(Cardinality::Many, $many->cardinality);
     }
 
     public function test_the_definition_of_a_collection_relates_the_collected_resource(): void
     {
         self::assertSame(
-            UserResource::class,
+            [UserResource::class],
             (new RelationMany(UserCollection::class, null))->definition('users')->related,
         );
     }
@@ -392,5 +393,22 @@ class RelationTest extends TestCase
 
         self::assertNotSame($original, $modified);
         self::assertEquals($before, $original->definition('author'));
+    }
+
+    public function test_a_polymorphic_relationship_needs_a_resource_for_a_model_class(): void
+    {
+        $this->expectException(DefinitionException::class);
+
+        (new RelationOne(UserResource::class, null))->morphs([]);
+    }
+
+    public function test_the_definition_of_a_polymorphic_relationship_records_its_map(): void
+    {
+        $definition = (new RelationOne(UserResource::class, 'author'))
+            ->morphs([User::class => UserResource::class, Comment::class => CommentResource::class])
+            ->definition('author');
+
+        self::assertSame([User::class => UserResource::class, Comment::class => CommentResource::class], $definition->morphs);
+        self::assertSame([UserResource::class, CommentResource::class], $definition->related);
     }
 }

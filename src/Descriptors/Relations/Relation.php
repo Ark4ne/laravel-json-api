@@ -42,6 +42,11 @@ abstract class Relation extends Describer implements DescribesRelationship
     protected ?Filters $filters = null;
 
     /**
+     * @var array<class-string, class-string> Resource class by model class (`morphs()`)
+     */
+    protected array $morphs = [];
+
+    /**
      * @param class-string<\Ark4ne\JsonApi\Resources\JsonApiResource|\Ark4ne\JsonApi\Resources\JsonApiCollection> $related
      * @param string|Closure|null $relation
      */
@@ -64,6 +69,19 @@ abstract class Relation extends Describer implements DescribesRelationship
     public function retriever(): string|Closure|null
     {
         return $this->relation;
+    }
+
+    /**
+     * A polymorphic relationship: each related model is rendered with the resource of its class, the first class of the
+     * map it is an instance of (`$this->morph()`, `$this->morphMany()`).
+     *
+     * @param array<class-string, class-string> $morphs Resource class by model class
+     *
+     * @throws DefinitionException when the map is empty
+     */
+    public function morphs(array $morphs): static
+    {
+        return $this->with('morphs', $morphs !== [] ? $morphs : throw DefinitionException::emptyMorphMap());
     }
 
     public function links(Closure $links): static
@@ -263,6 +281,10 @@ abstract class Relation extends Describer implements DescribesRelationship
             $relation->linkage($this->linkage);
         }
 
+        if ($this->morphs !== []) {
+            $relation->withMorphs($this->morphs);
+        }
+
         if ($this->filters !== null) {
             $relation->withFilters($this->filters);
         }
@@ -308,7 +330,8 @@ abstract class Relation extends Describer implements DescribesRelationship
             ->hasMeta($this->meta !== null)
             ->hasIdentifierMeta($this->identifierMeta !== null)
             ->source($computed ? null : $this->relation ?? $name)
-            ->computed($computed);
+            ->computed($computed)
+            ->morphs(array_map(RelatedResource::resolve(...), $this->morphs));
     }
 
     /**

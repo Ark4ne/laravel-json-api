@@ -24,7 +24,8 @@ final readonly class LoadPlanner
      * The plan of the resources of `$class` rendered in `$context`. For each relationship rendered (sparse fieldsets):
      *
      * - included: every path of its load, then the plan of its related resources, reached through the relation it is
-     *   read from or the roots of its load;
+     *   read from or the roots of its load; for a polymorphic relationship, one plan per resource of its map, applied
+     *   to the models the map gives it for;
      * - not included and rendering its linkage (`Linkage::Always`): the roots of its load;
      * - otherwise, nothing.
      *
@@ -79,15 +80,26 @@ final readonly class LoadPlanner
                 continue;
             }
 
-            $plan = $this->plan(RelatedResource::resolve($relationship->related), $context->withPath($name));
-
-            if ($plan->isEmpty()) {
-                continue;
+            $reach = $relationship->source !== null ? [$relationship->source] : $relationship->load->roots();
+            // The related models of a polymorphic relationship are planned by class, with the resource of their class.
+            $plans = [];
+            if ($relationship->isPolymorphic()) {
+                foreach (array_unique($relationship->morphs) as $related) {
+                    $plan = $this->plan(RelatedResource::resolve($related), $context->withPath($name));
+                    $plans[] = new LoadPlan($plan->relations, $plan->sources, $plan->nested, $relationship->morphs, $related);
+                }
+            } else {
+                $plans[] = $this->plan(RelatedResource::resolve($relationship->related[0]), $context->withPath($name));
             }
 
-            $reach = $relationship->source !== null ? [$relationship->source] : $relationship->load->roots();
-            foreach ($reach as $path) {
-                $nested[$path][] = $plan;
+            foreach ($plans as $plan) {
+                if ($plan->isEmpty()) {
+                    continue;
+                }
+
+                foreach ($reach as $path) {
+                    $nested[$path][] = $plan;
+                }
             }
         }
 

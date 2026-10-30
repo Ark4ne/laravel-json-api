@@ -9,15 +9,17 @@ use Ark4ne\JsonApi\Configuration\Linkage;
 /**
  * What a resource declares about one relationship.
  *
- * The related resource is referenced by its class only: definitions never nest one another, so cycles
- * (`post.author.posts`) cost nothing. Read the related definition with `Definitions::for($relationship->related)`.
+ * The related resources are referenced by their class only: definitions never nest one another, so cycles
+ * (`post.author.posts`) cost nothing. Read a related definition with `Definitions::for($class)` for each class of
+ * `$related`: one, or several for a polymorphic relationship (`morphs`).
  *
  * Immutable, serializable. Public contract: semver (docs/architecture.md §3).
  */
 final readonly class RelationshipDefinition
 {
     /**
-     * @param class-string<DefinitionSource> $related Resource class of the related resources
+     * @param non-empty-list<class-string<DefinitionSource>> $related Resource classes of the related resources: one,
+     *                                                               several for a polymorphic relationship
      * @param bool $conditional Whether the relationship may be left out (`when()`, `can()`, `whenLoaded()`…)
      * @param Linkage|null $linkage When it renders its linkage while not included (`whenIncluded()`, `whenLoaded()`);
      *                             `null` for the configured one (`relationship.linkage`)
@@ -26,10 +28,12 @@ final readonly class RelationshipDefinition
      * @param string|null $source Relation of the model it is read from, when known
      * @param bool $computed Whether its value is computed by a closure rather than read from the model
      * @param bool $hasIdentifierMeta Whether it declares meta on its resource identifiers (`identifierMeta()`)
+     * @param array<class-string, class-string<DefinitionSource>> $morphs The resource class rendering each model class
+     *                                                                   of a polymorphic relationship; empty otherwise
      */
     private function __construct(
         public string $name,
-        public string $related,
+        public array $related,
         public Cardinality $cardinality,
         public LoadDefinition $load,
         public bool $conditional = false,
@@ -39,6 +43,7 @@ final readonly class RelationshipDefinition
         public ?string $source = null,
         public bool $computed = false,
         public bool $hasIdentifierMeta = false,
+        public array $morphs = [],
     ) {}
 
     /**
@@ -46,7 +51,7 @@ final readonly class RelationshipDefinition
      */
     public static function one(string $name, string $related): self
     {
-        return new self($name, $related, Cardinality::One, LoadDefinition::none());
+        return new self($name, [$related], Cardinality::One, LoadDefinition::none());
     }
 
     /**
@@ -54,7 +59,23 @@ final readonly class RelationshipDefinition
      */
     public static function many(string $name, string $related): self
     {
-        return new self($name, $related, Cardinality::Many, LoadDefinition::none());
+        return new self($name, [$related], Cardinality::Many, LoadDefinition::none());
+    }
+
+    /**
+     * A polymorphic relationship: its related resources are those of the map, by model class. An empty map leaves the
+     * relationship as it is.
+     *
+     * @param array<class-string, class-string<DefinitionSource>> $morphs
+     */
+    public function morphs(array $morphs): self
+    {
+        return $morphs === [] ? $this : $this->copy(related: array_values(array_unique($morphs)), morphs: $morphs);
+    }
+
+    public function isPolymorphic(): bool
+    {
+        return $this->morphs !== [];
     }
 
     public function name(string $name): self
@@ -107,7 +128,7 @@ final readonly class RelationshipDefinition
      *
      * @param array{
      *     name: string,
-     *     related: class-string<DefinitionSource>,
+     *     related: non-empty-list<class-string<DefinitionSource>>,
      *     cardinality: Cardinality,
      *     load: LoadDefinition,
      *     conditional: bool,
@@ -117,6 +138,7 @@ final readonly class RelationshipDefinition
      *     source: string|null,
      *     computed: bool,
      *     hasIdentifierMeta?: bool,
+     *     morphs?: array<class-string, class-string<DefinitionSource>>,
      * } $properties
      */
     public static function __set_state(array $properties): self
@@ -124,8 +146,13 @@ final readonly class RelationshipDefinition
         return new self(...$properties);
     }
 
+    /**
+     * @param non-empty-list<class-string<DefinitionSource>>|null $related
+     * @param array<class-string, class-string<DefinitionSource>>|null $morphs
+     */
     private function copy(
         ?string $name = null,
+        ?array $related = null,
         ?LoadDefinition $load = null,
         ?bool $conditional = null,
         Linkage|false|null $linkage = false,
@@ -134,10 +161,11 @@ final readonly class RelationshipDefinition
         string|false|null $source = false,
         ?bool $computed = null,
         ?bool $hasIdentifierMeta = null,
+        ?array $morphs = null,
     ): self {
         return new self(
             name: $name ?? $this->name,
-            related: $this->related,
+            related: $related ?? $this->related,
             cardinality: $this->cardinality,
             load: $load ?? $this->load,
             conditional: $conditional ?? $this->conditional,
@@ -147,6 +175,7 @@ final readonly class RelationshipDefinition
             source: $source === false ? $this->source : $source,
             computed: $computed ?? $this->computed,
             hasIdentifierMeta: $hasIdentifierMeta ?? $this->hasIdentifierMeta,
+            morphs: $morphs ?? $this->morphs,
         );
     }
 }
