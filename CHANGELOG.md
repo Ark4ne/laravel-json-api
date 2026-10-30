@@ -33,6 +33,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   An application adds its own `Rendering\Stage`s in `rendering.stages`; they run after those of the package on every
   resource object, primary or included.
 - `JsonApiCollection::toMeta()`: document meta of a collection, winning over those of its resources.
+- **`jsonapi` member** in every document, configured in `document.jsonapi` (`version`, `ext`, `profile`, `meta`):
+  `{"version": "1.1"}` by default, `false` to leave it out.
 - `Exceptions\RenderingException`, thrown when a member that must be a JSON object would be rendered as a list.
 
 ### Changed

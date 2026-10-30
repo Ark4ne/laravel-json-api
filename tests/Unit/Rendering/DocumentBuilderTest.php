@@ -23,6 +23,7 @@ final class DocumentBuilderTest extends TestCase
         $document = (new DocumentBuilder())->resource($user, Contexts::of('include=boss'));
 
         self::assertSame([
+            'jsonapi' => ['version' => '1.1'],
             'data' => [
                 'type' => 'user',
                 'id' => '1',
@@ -36,7 +37,7 @@ final class DocumentBuilderTest extends TestCase
 
     public function test_a_missing_resource_gives_null_data(): void
     {
-        self::assertSame(['data' => null], (new DocumentBuilder())->resource(null, Contexts::of())->toArray());
+        self::assertSame(['jsonapi' => ['version' => '1.1'], 'data' => null], (new DocumentBuilder())->resource(null, Contexts::of())->toArray());
     }
 
     public function test_a_collection_never_includes_its_primary_resources(): void
@@ -62,7 +63,7 @@ final class DocumentBuilderTest extends TestCase
 
     public function test_an_empty_collection_gives_an_empty_list(): void
     {
-        self::assertSame(['data' => []], (new DocumentBuilder())->collection([], Contexts::of())->toArray());
+        self::assertSame(['jsonapi' => ['version' => '1.1'], 'data' => []], (new DocumentBuilder())->collection([], Contexts::of())->toArray());
     }
 
     public function test_the_document_meta_of_every_resource_of_a_collection_are_merged(): void
@@ -104,6 +105,22 @@ final class DocumentBuilderTest extends TestCase
 
         $document = (new DocumentBuilder($renderer))->resource(new FakeResource('user', 1, ['name' => 'Ada']), Contexts::of());
 
-        self::assertSame(['data' => ['type' => 'user', 'id' => '1']], $document->toArray());
+        self::assertSame(['type' => 'user', 'id' => '1'], $document->toArray()['data']);
+    }
+
+    public function test_the_jsonapi_member_of_the_configuration_is_added_to_every_document(): void
+    {
+        $builder = new DocumentBuilder();
+
+        self::assertSame(['version' => '1.1'], $builder->resource(null, Contexts::of())->toArray()['jsonapi'] ?? null);
+        self::assertSame(
+            ['version' => '1.1', 'ext' => ['https://jsonapi.org/ext/atomic']],
+            $builder->collection([], Contexts::of(config: ['document' => ['jsonapi' => ['ext' => ['https://jsonapi.org/ext/atomic']]]]))
+                ->toArray()['jsonapi'] ?? null,
+        );
+        self::assertArrayNotHasKey(
+            'jsonapi',
+            $builder->resource(null, Contexts::of(config: ['document' => ['jsonapi' => false]]))->toArray(),
+        );
     }
 }

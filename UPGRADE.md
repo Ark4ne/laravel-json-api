@@ -63,6 +63,8 @@ argument of `toArray()` (`$included` / `$minimal`) is removed: remove it from yo
 
 Clients reading the documents must expect:
 
+- a top-level `jsonapi` member, `{"version": "1.1"}` by default. Set `document.jsonapi` to `false` in
+  `config/jsonapi.php` to leave it out;
 - `id` always a string, in resource objects and in relationship linkage;
 - `{"data": null}` for an empty to-one relationship, `{"data": []}` for an empty to-many; a relationship that has
   neither data, links nor meta is left out;

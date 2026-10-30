@@ -86,6 +86,7 @@ class CollectionTest extends FeatureTestCase
         $isLaravel12 = ((int) explode('.', Application::VERSION, 2)[0]) >= 12;
 
         return collect(array_filter([
+            'jsonapi' => ['version' => '1.1'],
             'data' => $data,
             'included' => $include->uniqueStrict()->values()->all(),
             "links" => [

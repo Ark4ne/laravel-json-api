@@ -7,7 +7,8 @@ namespace Ark4ne\JsonApi\Rendering;
 use Ark4ne\JsonApi\Context\JsonApiContext;
 
 /**
- * Builds the document of a resource or a collection (pattern Builder, docs/architecture.md §8): primary data,
+ * Builds the document of a resource or a collection (pattern Builder, docs/architecture.md §8): the `jsonapi` member
+ * of the configuration, primary data,
  * `included` through one `IncludedRegistry`, and the top-level `meta` the primary resources add (the first one setting a
  * key keeps it; included resources add none).
  */
@@ -26,12 +27,12 @@ final readonly class DocumentBuilder
     public function resource(?RenderableResource $resource, JsonApiContext $context): Document
     {
         if ($resource === null) {
-            return new Document(null);
+            return new Document(null, jsonapi: $context->configuration->jsonapi);
         }
 
         [[$object], $included, $meta] = $this->render([$resource], $context);
 
-        return new Document($object, $included, $meta);
+        return new Document($object, $included, $meta, jsonapi: $context->configuration->jsonapi);
     }
 
     /**
@@ -41,7 +42,7 @@ final readonly class DocumentBuilder
     {
         [$objects, $included, $meta] = $this->render(array_values([...$resources]), $context);
 
-        return new Document($objects, $included, $meta);
+        return new Document($objects, $included, $meta, jsonapi: $context->configuration->jsonapi);
     }
 
     /**

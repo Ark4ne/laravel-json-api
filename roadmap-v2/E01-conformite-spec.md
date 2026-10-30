@@ -52,7 +52,8 @@ présentes malgré `fields[user]=name`.
 
 ### Membres optionnels
 
-- [ ] **E1.8** Membre `jsonapi` (`version: "1.1"`, `ext`, `profile`, `meta`) configurable
+- [x] **E1.8** Membre `jsonapi` (`version: "1.1"`, `ext`, `profile`, `meta`) configurable (`document.jsonapi`,
+      rendu par défaut, `false` pour l'omettre ; les paramètres `ext` / `profile` du media type relèvent d'E7.5)
 - [ ] **E1.9** `links.self` du document (URL courante) et des ressources (convention de route ou callback),
       activables par la configuration
 - [ ] **E1.10** `meta` sur les resource identifiers (pivot BelongsToMany par exemple), en option

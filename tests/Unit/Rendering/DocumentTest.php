@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Test\Unit\Rendering;
 
+use Ark4ne\JsonApi\Configuration\JsonApiObject;
 use Ark4ne\JsonApi\Exceptions\RenderingException;
 use Ark4ne\JsonApi\Rendering\Document;
 use Ark4ne\JsonApi\Rendering\ResourceObject;
@@ -71,5 +72,16 @@ final class DocumentTest extends TestCase
 
         self::assertSame([2023 => 'a', 2024 => 'b'], $document->meta);
         self::assertSame([404 => '/help'], $document->links);
+    }
+
+    public function test_the_jsonapi_member_is_rendered_when_given(): void
+    {
+        $document = (new Document(null))->withJsonApi(new JsonApiObject('1.1', meta: ['copyright' => 'ACME']));
+
+        self::assertSame(
+            ['jsonapi' => ['version' => '1.1', 'meta' => ['copyright' => 'ACME']], 'data' => null],
+            $document->toArray(),
+        );
+        self::assertSame(['data' => null], $document->withJsonApi(null)->toArray());
     }
 }

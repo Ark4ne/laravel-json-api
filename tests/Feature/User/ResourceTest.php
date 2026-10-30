@@ -240,6 +240,7 @@ class ResourceTest extends FeatureTestCase
             : array_intersect_key($relationships, array_flip($attributes));
 
         return array_filter([
+            'jsonapi' => ['version' => '1.1'],
             'data' => array_filter([
                 'id' => (string) $user->id,
                 'type' => 'user',

@@ -255,6 +255,9 @@ interface Stage
 - **`IncludedRegistry`** keys every resource object by `type:id`: O(1) insertion, primary resources excluded, a
   resource reached through two paths rendered once per path and merged (its relationships accumulate). Its slot is
   reserved before it is rendered, so a resource always precedes the resources it includes.
+- **`jsonapi` member**, from `document.jsonapi` (`Configuration\JsonApiObject`): `{"version": "1.1"}` by default,
+  with the `ext`, `profile` and `meta` configured; `false` leaves it out. The media type parameters `ext` / `profile`
+  are the HTTP layer's (E7).
 - **Document meta** (`toMeta()`) come from the primary resources only, never from the included ones. In a
   collection, the first resource setting a key keeps it, and the collection's own `toMeta()` wins over those of its
   resources (pagination meta in between).

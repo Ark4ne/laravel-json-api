@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Rendering;
 
+use Ark4ne\JsonApi\Configuration\JsonApiObject;
 use Ark4ne\JsonApi\Exceptions\RenderingException;
 use JsonSerializable;
 
@@ -25,6 +26,7 @@ final readonly class Document implements JsonSerializable
         public array $included = [],
         public array $meta = [],
         public array $links = [],
+        public ?JsonApiObject $jsonapi = null,
     ) {
         foreach (['meta' => $meta, 'links' => $links] as $name => $member) {
             if ($member !== [] && array_is_list($member)) {
@@ -38,7 +40,7 @@ final readonly class Document implements JsonSerializable
      */
     public function withMeta(array $meta): self
     {
-        return new self($this->data, $this->included, array_replace($this->meta, $meta), $this->links);
+        return new self($this->data, $this->included, array_replace($this->meta, $meta), $this->links, $this->jsonapi);
     }
 
     /**
@@ -46,17 +48,27 @@ final readonly class Document implements JsonSerializable
      */
     public function withLinks(array $links): self
     {
-        return new self($this->data, $this->included, $this->meta, array_replace($this->links, $links));
+        return new self($this->data, $this->included, $this->meta, array_replace($this->links, $links), $this->jsonapi);
     }
 
     /**
-     * `data` always; `included`, `links` and `meta` only when not empty.
+     * The `jsonapi` member (https://jsonapi.org/format/#document-jsonapi-object), `null` for none.
+     */
+    public function withJsonApi(?JsonApiObject $jsonapi): self
+    {
+        return new self($this->data, $this->included, $this->meta, $this->links, $jsonapi);
+    }
+
+    /**
+     * `jsonapi` when given, `data` always; `included`, `links` and `meta` only when not empty.
      *
      * @return array<string, mixed>
      */
     public function toArray(): array
     {
-        $document = [
+        $document = $this->jsonapi === null ? [] : ['jsonapi' => $this->jsonapi->toArray()];
+
+        $document += [
             'data' => match (true) {
                 $this->data instanceof ResourceObject => $this->data->toArray(),
                 is_array($this->data) => array_map(static fn(ResourceObject $object) => $object->toArray(), $this->data),

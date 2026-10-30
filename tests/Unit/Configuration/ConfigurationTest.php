@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Test\Unit\Configuration;
 
 use Ark4ne\JsonApi\Configuration\Configuration;
+use Ark4ne\JsonApi\Configuration\JsonApiObject;
 use Ark4ne\JsonApi\Configuration\SparseRelationships;
 use Ark4ne\JsonApi\Exceptions\InvalidConfigurationException;
 use DateTimeInterface;
@@ -33,6 +34,7 @@ final class ConfigurationTest extends TestCase
         self::assertSame(SparseRelationships::Filter, $configuration->sparseRelationships);
         self::assertSame([], $configuration->resourcePaths);
         self::assertSame([], $configuration->renderingStages);
+        self::assertEquals(new JsonApiObject('1.1'), $configuration->jsonapi);
     }
 
     public function test_an_empty_array_gives_the_defaults(): void
@@ -53,6 +55,12 @@ final class ConfigurationTest extends TestCase
             'fields' => ['relationships' => 'keep'],
             'definitions' => ['paths' => ['/app/Http/Resources']],
             'rendering' => ['stages' => [self::class]],
+            'document' => ['jsonapi' => [
+                'version' => '1.0',
+                'ext' => ['https://jsonapi.org/ext/atomic'],
+                'profile' => ['https://example.com/profile'],
+                'meta' => ['copyright' => 'ACME'],
+            ]],
         ]);
 
         self::assertFalse($configuration->nullable);
@@ -63,6 +71,23 @@ final class ConfigurationTest extends TestCase
         self::assertSame(SparseRelationships::Keep, $configuration->sparseRelationships);
         self::assertSame(['/app/Http/Resources'], $configuration->resourcePaths);
         self::assertSame([self::class], $configuration->renderingStages);
+        self::assertEquals(
+            new JsonApiObject('1.0', ['https://jsonapi.org/ext/atomic'], ['https://example.com/profile'], ['copyright' => 'ACME']),
+            $configuration->jsonapi,
+        );
+    }
+
+    public function test_the_jsonapi_member_is_disabled_by_false(): void
+    {
+        self::assertNull(Configuration::fromArray(['document' => ['jsonapi' => false]])->jsonapi);
+    }
+
+    public function test_a_partial_jsonapi_member_takes_the_defaults_for_the_rest(): void
+    {
+        self::assertEquals(
+            new JsonApiObject('1.1', meta: ['copyright' => 'ACME']),
+            Configuration::fromArray(['document' => ['jsonapi' => ['meta' => ['copyright' => 'ACME']]]])->jsonapi,
+        );
     }
 
     public function test_when_has_true_enables_every_scope(): void
@@ -98,6 +123,11 @@ final class ConfigurationTest extends TestCase
         yield 'fields.relationships' => [['fields' => ['relationships' => 'drop']], 'fields.relationships'];
         yield 'definitions.paths' => [['definitions' => ['paths' => 'app']], 'definitions.paths'];
         yield 'rendering.stages not a list' => [['rendering' => ['stages' => 'Stage']], 'rendering.stages'];
+        yield 'document.jsonapi' => [['document' => ['jsonapi' => true]], 'document.jsonapi'];
+        yield 'document.jsonapi.version' => [['document' => ['jsonapi' => ['version' => 1.1]]], 'document.jsonapi.version'];
+        yield 'document.jsonapi.ext' => [['document' => ['jsonapi' => ['ext' => 'atomic']]], 'document.jsonapi.ext'];
+        yield 'document.jsonapi.profile' => [['document' => ['jsonapi' => ['profile' => [1]]]], 'document.jsonapi.profile'];
+        yield 'document.jsonapi.meta' => [['document' => ['jsonapi' => ['meta' => ['a']]]], 'document.jsonapi.meta'];
         yield 'rendering.stages unknown class' => [['rendering' => ['stages' => ['App\\Unknown']]], 'rendering.stages'];
     }
 

@@ -26,8 +26,8 @@ nouveau moteur corrige structurellement la plupart des écarts d'E1 et plusieurs
 
 ### Document
 
-- [ ] **E4.2** `DocumentBuilder` : assemble `data`, `included`, `links`, `meta` et `jsonapi`. C'est le seul endroit qui
-      connaît la forme du document 🔴 (le membre `jsonapi` arrive avec E1.8)
+- [x] **E4.2** `DocumentBuilder` : assemble `data`, `included`, `links`, `meta` et `jsonapi`. C'est le seul endroit qui
+      connaît la forme du document 🔴
 - [x] **E4.3** `IncludedRegistry` (identity map `type:id`) : ajout en O(1), ressources primaires exclues, fusion si une
       même ressource est atteinte par deux chemins 🔴
 - [x] **E4.6** Objets vides sérialisés en `{}` par construction, et non par `array_filter` 🔴 (décision : un membre

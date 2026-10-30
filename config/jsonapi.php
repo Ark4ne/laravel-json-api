@@ -129,4 +129,23 @@ return [
         */
         'stages' => [],
     ],
+
+    'document' => [
+        /*
+        |--------------------------------------------------------------------------
+        | JSON:API object
+        |--------------------------------------------------------------------------
+        |
+        | The top-level `jsonapi` member of every document: the version of the
+        | specification, the URIs of the extensions and profiles applied, and
+        | its meta. `false` to leave the member out.
+        |
+        */
+        'jsonapi' => [
+            'version' => '1.1',
+            'ext' => [],
+            'profile' => [],
+            'meta' => [],
+        ],
+    ],
 ];

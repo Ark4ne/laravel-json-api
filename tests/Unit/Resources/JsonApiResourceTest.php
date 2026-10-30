@@ -35,7 +35,7 @@ class JsonApiResourceTest extends TestCase
         self::assertEquals($data, $resource->toArray($request));
         self::assertEquals([], $resource->with($request));
         self::assertEquals(
-            ['data' => $data],
+            ['jsonapi' => ['version' => '1.1'], 'data' => $data],
             $resource->toResponse($request)->getData(true),
         );
     }
@@ -77,6 +77,7 @@ class JsonApiResourceTest extends TestCase
         self::assertEquals([], $resource->with($request));
         self::assertEquals(
             [
+                'jsonapi' => ['version' => '1.1'],
                 'data' => $data,
                 'meta' => ['hash' => 'azerty'],
             ],

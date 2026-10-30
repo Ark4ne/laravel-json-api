@@ -29,6 +29,7 @@ final readonly class Configuration
      * @param list<string> $resourcePaths Directories scanned for resources by the Artisan commands
      *                                    (`definitions.paths`); empty for the application's default
      * @param list<class-string> $renderingStages Stages run after those of the package (`rendering.stages`)
+     * @param JsonApiObject|null $jsonapi The `jsonapi` member of the documents, `null` for none (`document.jsonapi`)
      */
     private function __construct(
         public bool $nullable,
@@ -39,6 +40,7 @@ final readonly class Configuration
         public SparseRelationships $sparseRelationships,
         public array $resourcePaths,
         public array $renderingStages,
+        public ?JsonApiObject $jsonapi,
     ) {}
 
     /**
@@ -55,6 +57,7 @@ final readonly class Configuration
             sparseRelationships: SparseRelationships::Filter,
             resourcePaths: [],
             renderingStages: [],
+            jsonapi: new JsonApiObject(),
         );
     }
 
@@ -78,6 +81,7 @@ final readonly class Configuration
             sparseRelationships: self::sparseRelationships($config, $defaults->sparseRelationships),
             resourcePaths: self::paths($config, $defaults->resourcePaths),
             renderingStages: self::stages($config, $defaults->renderingStages),
+            jsonapi: self::jsonapi($config),
         );
     }
 
@@ -218,5 +222,49 @@ final readonly class Configuration
         }
 
         return $stages;
+    }
+
+    /**
+     * @param array<array-key, mixed> $config
+     */
+    private static function jsonapi(array $config): ?JsonApiObject
+    {
+        $value = self::read($config, 'document.jsonapi') ?? [];
+
+        if ($value === false) {
+            return null;
+        }
+
+        if (!is_array($value)) {
+            throw InvalidConfigurationException::forKey('document.jsonapi', 'an array or false');
+        }
+
+        $defaults = new JsonApiObject();
+        $meta = $value['meta'] ?? $defaults->meta;
+
+        if (!is_array($meta) || ($meta !== [] && array_is_list($meta))) {
+            throw InvalidConfigurationException::forKey('document.jsonapi.meta', 'an array of named members');
+        }
+
+        /** @var array<string, mixed> $meta */
+        return new JsonApiObject(
+            version: self::string($config, 'document.jsonapi.version', $defaults->version),
+            ext: self::uris($value['ext'] ?? $defaults->ext, 'document.jsonapi.ext'),
+            profile: self::uris($value['profile'] ?? $defaults->profile, 'document.jsonapi.profile'),
+            meta: $meta,
+        );
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function uris(mixed $value, string $key): array
+    {
+        if (!is_array($value) || !array_is_list($value) || array_filter($value, is_string(...)) !== $value) {
+            throw InvalidConfigurationException::forKey($key, 'a list of URIs');
+        }
+
+        /** @var list<string> $value */
+        return $value;
     }
 }
