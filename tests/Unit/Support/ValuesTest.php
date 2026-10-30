@@ -17,9 +17,9 @@ class ValuesTest extends TestCase
     public function testMergeValues(): void
     {
         $actual = Values::mergeValues([]);
-        $this->assertEquals([], $actual);
+        self::assertEquals([], $actual);
         $actual = Values::mergeValues(collect());
-        $this->assertEquals([], $actual);
+        self::assertEquals([], $actual);
 
         $expected = $sample = [
             'a' => 'abc',
@@ -30,15 +30,15 @@ class ValuesTest extends TestCase
             'f' => new MissingValue(),
         ];
         $actual = Values::mergeValues($sample);
-        $this->assertEquals($expected, $actual);
+        self::assertEquals($expected, $actual);
         $actual = Values::mergeValues(collect($sample));
-        $this->assertEquals($expected, $actual);
+        self::assertEquals($expected, $actual);
 
         $sampleWithMerge = $sample;
         $sampleWithMerge[] = new MergeValue($sample);
 
         $actual = Values::mergeValues($sampleWithMerge);
-        $this->assertEquals($expected, $actual);
+        self::assertEquals($expected, $actual);
 
         $actual = Values::mergeValues(
             $sample + [
@@ -68,7 +68,7 @@ class ValuesTest extends TestCase
                 ]),
             ],
         );
-        $this->assertEquals($sample + [
+        self::assertEquals($sample + [
             'g' => '12345',
             'h' => [
                 'i' => 'def',
@@ -98,15 +98,15 @@ class ValuesTest extends TestCase
             }
         };
 
-        $this->assertEquals(false, Values::isMissing(true));
-        $this->assertEquals(false, Values::isMissing(false));
-        $this->assertEquals(false, Values::isMissing(null));
+        self::assertEquals(false, Values::isMissing(true));
+        self::assertEquals(false, Values::isMissing(false));
+        self::assertEquals(false, Values::isMissing(null));
 
-        $this->assertEquals(true, Values::isMissing(new MissingValue()));
-        $this->assertEquals(true, Values::isMissing($maybeMissing(true)));
-        $this->assertEquals(false, Values::isMissing($maybeMissing(false)));
+        self::assertEquals(true, Values::isMissing(new MissingValue()));
+        self::assertEquals(true, Values::isMissing($maybeMissing(true)));
+        self::assertEquals(false, Values::isMissing($maybeMissing(false)));
 
-        $this->assertEquals(true, Values::isMissing(new JsonResource(new MissingValue())));
+        self::assertEquals(true, Values::isMissing(new JsonResource(new MissingValue())));
     }
 
 
@@ -138,7 +138,7 @@ class ValuesTest extends TestCase
     #[DataProvider('dataAttribute')]
     public function testHasAttribute($data, $attribute, $expected, $_ignored): void
     {
-        $this->assertEquals($expected, Values::hasAttribute($data, $attribute));
+        self::assertEquals($expected, Values::hasAttribute($data, $attribute));
     }
 
     /**
@@ -147,6 +147,6 @@ class ValuesTest extends TestCase
     #[DataProvider('dataAttribute')]
     public function testGetAttribute($data, $attribute, $has, $expected): void
     {
-        $this->assertEquals($expected, Values::getAttribute($data, $attribute));
+        self::assertEquals($expected, Values::getAttribute($data, $attribute));
     }
 }

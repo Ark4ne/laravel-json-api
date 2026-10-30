@@ -1513,24 +1513,6 @@ parameters:
 			path: tests/Feature/Post/DeepIncludeDeduplicationTest.php
 
 		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertContains\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 2
-			path: tests/Feature/Post/DeepIncludeDeduplicationTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertCount\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 1
-			path: tests/Feature/Post/DeepIncludeDeduplicationTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertSame\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 1
-			path: tests/Feature/Post/DeepIncludeDeduplicationTest.php
-
-		-
 			message: '#^Parameter \#1 \$value of function collect expects Illuminate\\Contracts\\Support\\Arrayable\<\(int\|string\), mixed\>\|iterable\<\(int\|string\), mixed\>\|null, mixed given\.$#'
 			identifier: argument.type
 			count: 2
@@ -1687,18 +1669,6 @@ parameters:
 			path: tests/Feature/RelationshipFiltersTest.php
 
 		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertCount\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 3
-			path: tests/Feature/RelationshipFiltersTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertEquals\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 3
-			path: tests/Feature/RelationshipFiltersTest.php
-
-		-
 			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Feature/RelationshipFiltersTest\.php\:37\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Descriptors\\Relations\\Relation does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
@@ -1747,13 +1717,13 @@ parameters:
 			path: tests/Feature/RelationshipFiltersTest.php
 
 		-
-			message: '#^Parameter \#1 \$expectedCount of method PHPUnit\\Framework\\Assert\:\:assertCount\(\) expects int, mixed given\.$#'
+			message: '#^Parameter \#1 \$expectedCount of static method PHPUnit\\Framework\\Assert\:\:assertCount\(\) expects int, mixed given\.$#'
 			identifier: argument.type
 			count: 3
 			path: tests/Feature/RelationshipFiltersTest.php
 
 		-
-			message: '#^Parameter \#2 \$haystack of method PHPUnit\\Framework\\Assert\:\:assertCount\(\) expects Countable\|iterable, mixed given\.$#'
+			message: '#^Parameter \#2 \$haystack of static method PHPUnit\\Framework\\Assert\:\:assertCount\(\) expects Countable\|iterable, mixed given\.$#'
 			identifier: argument.type
 			count: 3
 			path: tests/Feature/RelationshipFiltersTest.php
@@ -2035,24 +2005,6 @@ parameters:
 			path: tests/Unit/Descriptors/DescriptorsTraitTest.php
 
 		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertEquals\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 1
-			path: tests/Unit/Descriptors/DescriptorsTraitTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 4
-			path: tests/Unit/Descriptors/DescriptorsTraitTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertNull\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 1
-			path: tests/Unit/Descriptors/DescriptorsTraitTest.php
-
-		-
 			message: '#^Method Test\\Unit\\Descriptors\\DescriptorsTraitTest\:\:methods\(\) has no return type specified\.$#'
 			identifier: missingType.return
 			count: 1
@@ -2107,7 +2059,7 @@ parameters:
 			path: tests/Unit/Descriptors/DescriptorsTraitTest.php
 
 		-
-			message: '#^Parameter \#1 \$expected of method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\) expects class\-string\<object\>, mixed given\.$#'
+			message: '#^Parameter \#1 \$expected of static method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\) expects class\-string\<object\>, mixed given\.$#'
 			identifier: argument.type
 			count: 3
 			path: tests/Unit/Descriptors/DescriptorsTraitTest.php
@@ -2119,45 +2071,9 @@ parameters:
 			path: tests/Unit/Descriptors/DescriptorsTraitTest.php
 
 		-
-			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\) with ''Ark4ne\\\\JsonApi\\\\Resources\\\\Relationship'' and Ark4ne\\JsonApi\\Resources\\Relationship will always evaluate to true\.$#'
-			identifier: method.alreadyNarrowedType
+			message: '#^Call to static method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\) with ''Ark4ne\\\\JsonApi\\\\Resources\\\\Relationship'' and Ark4ne\\JsonApi\\Resources\\Relationship will always evaluate to true\.$#'
+			identifier: staticMethod.alreadyNarrowedType
 			count: 8
-			path: tests/Unit/Descriptors/RelationTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertEmpty\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 2
-			path: tests/Unit/Descriptors/RelationTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertEquals\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 2
-			path: tests/Unit/Descriptors/RelationTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertFalse\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 3
-			path: tests/Unit/Descriptors/RelationTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 12
-			path: tests/Unit/Descriptors/RelationTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertNull\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 1
-			path: tests/Unit/Descriptors/RelationTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertTrue\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 3
 			path: tests/Unit/Descriptors/RelationTest.php
 
 		-
@@ -2257,18 +2173,6 @@ parameters:
 			path: tests/Unit/Descriptors/ResolverTest.php
 
 		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertEquals\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 2
-			path: tests/Unit/Descriptors/ResolverTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertNull\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 1
-			path: tests/Unit/Descriptors/ResolverTest.php
-
-		-
 			message: '#^Parameter \#1 \$items of class Illuminate\\Support\\Collection constructor expects Illuminate\\Contracts\\Support\\Arrayable\<\(int\|string\), mixed\>\|iterable\<\(int\|string\), mixed\>\|null, iterable given\.$#'
 			identifier: argument.type
 			count: 1
@@ -2287,62 +2191,14 @@ parameters:
 			path: tests/Unit/Descriptors/ResolverTest.php
 
 		-
-			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertIsArray\(\) with array\<mixed\> will always evaluate to true\.$#'
-			identifier: method.alreadyNarrowedType
+			message: '#^Call to static method PHPUnit\\Framework\\Assert\:\:assertIsArray\(\) with array\<mixed\> will always evaluate to true\.$#'
+			identifier: staticMethod.alreadyNarrowedType
 			count: 6
-			path: tests/Unit/Descriptors/TypedArrayTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertCount\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 6
-			path: tests/Unit/Descriptors/TypedArrayTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertIsArray\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 6
-			path: tests/Unit/Descriptors/TypedArrayTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertSame\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 5
 			path: tests/Unit/Descriptors/TypedArrayTest.php
 
 		-
 			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
 			identifier: foreach.nonIterable
-			count: 1
-			path: tests/Unit/Descriptors/ValueTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertEquals\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 13
-			path: tests/Unit/Descriptors/ValueTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertFalse\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 1
-			path: tests/Unit/Descriptors/ValueTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 3
-			path: tests/Unit/Descriptors/ValueTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertNull\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 2
-			path: tests/Unit/Descriptors/ValueTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertTrue\(\)\.$#'
-			identifier: staticMethod.dynamicCall
 			count: 1
 			path: tests/Unit/Descriptors/ValueTest.php
 
@@ -2533,12 +2389,6 @@ parameters:
 			path: tests/Unit/Descriptors/ValueTest.php
 
 		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertEquals\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 1
-			path: tests/Unit/Requests/Rules/FieldsTest.php
-
-		-
 			message: '#^Method Test\\Unit\\Requests\\Rules\\FieldsTest\:\:testPasses\(\) has parameter \$expected with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -2555,12 +2405,6 @@ parameters:
 			identifier: argument.type
 			count: 1
 			path: tests/Unit/Requests/Rules/FieldsTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertEquals\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 1
-			path: tests/Unit/Requests/Rules/IncludesTest.php
 
 		-
 			message: '#^Method Test\\Unit\\Requests\\Rules\\IncludesTest\:\:testPasses\(\) has parameter \$expected with no value type specified in iterable type array\.$#'
@@ -2953,12 +2797,6 @@ parameters:
 			path: tests/Unit/Resources/Concerns/AttributesTest.php
 
 		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertEquals\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 8
-			path: tests/Unit/Resources/Concerns/AttributesTest.php
-
-		-
 			message: '#^Method Illuminate\\Http\\Resources\\Json\\JsonResource@anonymous/tests/Unit/Resources/Concerns/AttributesTest\.php\:19\:\:prepareData\(\) should return iterable\<TKey of \(int\|string\), TValue\> but returns array\<mixed\>\|null\.$#'
 			identifier: return.type
 			count: 1
@@ -3181,18 +3019,6 @@ parameters:
 			path: tests/Unit/Resources/Concerns/ConditionallyLoadsAttributesTest.php
 
 		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertEquals\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 18
-			path: tests/Unit/Resources/Concerns/ConditionallyLoadsAttributesTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 11
-			path: tests/Unit/Resources/Concerns/ConditionallyLoadsAttributesTest.php
-
-		-
 			message: '#^Method Illuminate\\Http\\Resources\\Json\\JsonResource@anonymous/tests/Unit/Resources/Concerns/ConditionallyLoadsAttributesTest\.php\:57\:\:toType\(\) has no return type specified\.$#'
 			identifier: missingType.return
 			count: 1
@@ -3301,12 +3127,6 @@ parameters:
 			path: tests/Unit/Resources/Concerns/IdentifierTest.php
 
 		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertEquals\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 4
-			path: tests/Unit/Resources/Concerns/IdentifierTest.php
-
-		-
 			message: '#^Method Illuminate\\Http\\Resources\\Json\\JsonResource@anonymous/tests/Unit/Resources/Concerns/IdentifierTest\.php\:19\:\:toIdentifier\(\) should return int\|string but returns mixed\.$#'
 			identifier: return.type
 			count: 2
@@ -3369,12 +3189,6 @@ parameters:
 		-
 			message: '#^Cannot assign offset int\|string to \(Illuminate\\Support\\Collection&TReduceInitial of mixed\)\|\(Illuminate\\Support\\Collection&TReduceReturnType of mixed\)\|Illuminate\\Support\\Collection\<\*NEVER\*, \*NEVER\*\>\.$#'
 			identifier: offsetAssign.dimType
-			count: 2
-			path: tests/Unit/Resources/Concerns/LinksTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertEquals\(\)\.$#'
-			identifier: staticMethod.dynamicCall
 			count: 2
 			path: tests/Unit/Resources/Concerns/LinksTest.php
 
@@ -3495,12 +3309,6 @@ parameters:
 		-
 			message: '#^Cannot assign offset int\|string to \(Illuminate\\Support\\Collection&TReduceInitial of mixed\)\|\(Illuminate\\Support\\Collection&TReduceReturnType of mixed\)\|Illuminate\\Support\\Collection\<\*NEVER\*, \*NEVER\*\>\.$#'
 			identifier: offsetAssign.dimType
-			count: 4
-			path: tests/Unit/Resources/Concerns/MetaTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertEquals\(\)\.$#'
-			identifier: staticMethod.dynamicCall
 			count: 4
 			path: tests/Unit/Resources/Concerns/MetaTest.php
 
@@ -3742,12 +3550,6 @@ parameters:
 			message: '#^Cannot clone mixed\.$#'
 			identifier: clone.nonObject
 			count: 2
-			path: tests/Unit/Resources/Concerns/RelationshipsTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertEquals\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 13
 			path: tests/Unit/Resources/Concerns/RelationshipsTest.php
 
 		-
@@ -4057,12 +3859,6 @@ parameters:
 			path: tests/Unit/Resources/JsonApiCollectionTest.php
 
 		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertEquals\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 9
-			path: tests/Unit/Resources/JsonApiCollectionTest.php
-
-		-
 			message: '#^Implicit array creation is not allowed \- variable \$models might not exist\.$#'
 			identifier: variable.implicitArray
 			count: 1
@@ -4123,38 +3919,14 @@ parameters:
 			path: tests/Unit/Resources/JsonApiResourceTest.php
 
 		-
-			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\) with ''Ark4ne\\\\JsonApi\\\\Resources\\\\JsonApiCollection'' and Ark4ne\\JsonApi\\Resources\\JsonApiCollection\<Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:162\> will always evaluate to true\.$#'
-			identifier: method.alreadyNarrowedType
+			message: '#^Call to static method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\) with ''Ark4ne\\\\JsonApi\\\\Resources\\\\JsonApiCollection'' and Ark4ne\\JsonApi\\Resources\\JsonApiCollection\<Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:162\> will always evaluate to true\.$#'
+			identifier: staticMethod.alreadyNarrowedType
 			count: 1
 			path: tests/Unit/Resources/JsonApiResourceTest.php
 
 		-
-			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\) with ''Ark4ne\\\\JsonApi\\\\Resources\\\\JsonApiCollection'' and Ark4ne\\JsonApi\\Resources\\JsonApiCollection\<Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:178\> will always evaluate to true\.$#'
-			identifier: method.alreadyNarrowedType
-			count: 1
-			path: tests/Unit/Resources/JsonApiResourceTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertEquals\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 15
-			path: tests/Unit/Resources/JsonApiResourceTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 2
-			path: tests/Unit/Resources/JsonApiResourceTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertNull\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 1
-			path: tests/Unit/Resources/JsonApiResourceTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertTrue\(\)\.$#'
-			identifier: staticMethod.dynamicCall
+			message: '#^Call to static method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\) with ''Ark4ne\\\\JsonApi\\\\Resources\\\\JsonApiCollection'' and Ark4ne\\JsonApi\\Resources\\JsonApiCollection\<Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:178\> will always evaluate to true\.$#'
+			identifier: staticMethod.alreadyNarrowedType
 			count: 1
 			path: tests/Unit/Resources/JsonApiResourceTest.php
 
@@ -4228,12 +4000,6 @@ parameters:
 			message: '#^Cannot access property \$resource on mixed\.$#'
 			identifier: property.nonObject
 			count: 6
-			path: tests/Unit/Resources/RelationshipTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertEquals\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 8
 			path: tests/Unit/Resources/RelationshipTest.php
 
 		-
@@ -4369,81 +4135,45 @@ parameters:
 			path: tests/Unit/Resources/TypedArrayResourceTest.php
 
 		-
-			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertIsArray\(\) with string will always evaluate to false\.$#'
-			identifier: method.impossibleType
+			message: '#^Call to static method PHPUnit\\Framework\\Assert\:\:assertIsArray\(\) with string will always evaluate to false\.$#'
+			identifier: staticMethod.impossibleType
 			count: 13
 			path: tests/Unit/Resources/TypedArrayResourceTest.php
 
 		-
-			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertSame\(\) with array\{''admin'', ''super''\} and string will always evaluate to false\.$#'
-			identifier: method.impossibleType
+			message: '#^Call to static method PHPUnit\\Framework\\Assert\:\:assertSame\(\) with array\{''admin'', ''super''\} and string will always evaluate to false\.$#'
+			identifier: staticMethod.impossibleType
 			count: 1
 			path: tests/Unit/Resources/TypedArrayResourceTest.php
 
 		-
-			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertSame\(\) with array\{''php'', ''laravel''\} and string will always evaluate to false\.$#'
-			identifier: method.impossibleType
+			message: '#^Call to static method PHPUnit\\Framework\\Assert\:\:assertSame\(\) with array\{''php'', ''laravel''\} and string will always evaluate to false\.$#'
+			identifier: staticMethod.impossibleType
 			count: 4
 			path: tests/Unit/Resources/TypedArrayResourceTest.php
 
 		-
-			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertSame\(\) with array\{1, 2, 3, 4, 5, 6, 7, 8, \.\.\.\} and string will always evaluate to false\.$#'
-			identifier: method.impossibleType
+			message: '#^Call to static method PHPUnit\\Framework\\Assert\:\:assertSame\(\) with array\{1, 2, 3, 4, 5, 6, 7, 8, \.\.\.\} and string will always evaluate to false\.$#'
+			identifier: staticMethod.impossibleType
 			count: 1
 			path: tests/Unit/Resources/TypedArrayResourceTest.php
 
 		-
-			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertSame\(\) with array\{1, 2, 3\} and string will always evaluate to false\.$#'
-			identifier: method.impossibleType
+			message: '#^Call to static method PHPUnit\\Framework\\Assert\:\:assertSame\(\) with array\{1, 2, 3\} and string will always evaluate to false\.$#'
+			identifier: staticMethod.impossibleType
 			count: 3
 			path: tests/Unit/Resources/TypedArrayResourceTest.php
 
 		-
-			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertSame\(\) with array\{95, 87, 92\} and string will always evaluate to false\.$#'
-			identifier: method.impossibleType
+			message: '#^Call to static method PHPUnit\\Framework\\Assert\:\:assertSame\(\) with array\{95, 87, 92\} and string will always evaluate to false\.$#'
+			identifier: staticMethod.impossibleType
 			count: 2
 			path: tests/Unit/Resources/TypedArrayResourceTest.php
 
 		-
-			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertSame\(\) with array\{true, false, true, false\} and string will always evaluate to false\.$#'
-			identifier: method.impossibleType
+			message: '#^Call to static method PHPUnit\\Framework\\Assert\:\:assertSame\(\) with array\{true, false, true, false\} and string will always evaluate to false\.$#'
+			identifier: staticMethod.impossibleType
 			count: 2
-			path: tests/Unit/Resources/TypedArrayResourceTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertArrayHasKey\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 53
-			path: tests/Unit/Resources/TypedArrayResourceTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertArrayNotHasKey\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 7
-			path: tests/Unit/Resources/TypedArrayResourceTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertEmpty\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 1
-			path: tests/Unit/Resources/TypedArrayResourceTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertEquals\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 56
-			path: tests/Unit/Resources/TypedArrayResourceTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertIsArray\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 13
-			path: tests/Unit/Resources/TypedArrayResourceTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertSame\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 24
 			path: tests/Unit/Resources/TypedArrayResourceTest.php
 
 		-
@@ -4469,12 +4199,6 @@ parameters:
 			identifier: argument.type
 			count: 2
 			path: tests/Unit/Resources/TypedArrayResourceTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertEquals\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 6
-			path: tests/Unit/Support/ArrTest.php
 
 		-
 			message: '#^Method Test\\Unit\\Support\\ArrTest\:\:mergeProvider\(\) has no return type specified\.$#'
@@ -4609,12 +4333,6 @@ parameters:
 			path: tests/Unit/Support/ArrTest.php
 
 		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertEquals\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 5
-			path: tests/Unit/Support/FieldsTest.php
-
-		-
 			message: '#^Method Test\\Unit\\Support\\FieldsTest\:\:fieldsGetProvider\(\) has no return type specified\.$#'
 			identifier: missingType.return
 			count: 1
@@ -4639,12 +4357,6 @@ parameters:
 			path: tests/Unit/Support/IncludesTest.php
 
 		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertEquals\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 10
-			path: tests/Unit/Support/IncludesTest.php
-
-		-
 			message: '#^Method Test\\Unit\\Support\\IncludesTest\:\:assert\(\) has parameter \$actual with no type specified\.$#'
 			identifier: missingType.parameter
 			count: 1
@@ -4663,7 +4375,7 @@ parameters:
 			path: tests/Unit/Support/IncludesTest.php
 
 		-
-			message: '#^Parameter \#3 \$message of method PHPUnit\\Framework\\Assert\:\:assertEquals\(\) expects string, mixed given\.$#'
+			message: '#^Parameter \#3 \$message of static method PHPUnit\\Framework\\Assert\:\:assertEquals\(\) expects string, mixed given\.$#'
 			identifier: argument.type
 			count: 1
 			path: tests/Unit/Support/IncludesTest.php
@@ -4673,12 +4385,6 @@ parameters:
 			identifier: missingType.property
 			count: 1
 			path: tests/Unit/Support/IncludesTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertEquals\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 15
-			path: tests/Unit/Support/ValuesTest.php
 
 		-
 			message: '#^Method Test\\Unit\\Support\\ValuesTest\:\:dataAttribute\(\) has no return type specified\.$#'
@@ -4757,12 +4463,6 @@ parameters:
 			identifier: argument.type
 			count: 1
 			path: tests/Unit/Support/ValuesTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertEquals\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 2
-			path: tests/Unit/Support/WithTest.php
 
 		-
 			message: '#^Method Test\\Unit\\Support\\WithTest\:\:mergeProvider\(\) has no return type specified\.$#'

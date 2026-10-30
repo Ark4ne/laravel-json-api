@@ -27,7 +27,7 @@ class FieldsTest extends TestCase
         $rule->validate('fields', $values, function ($message) use (&$errors): void {
             $errors[] = $message;
         });
-        $this->assertEquals($expected, $errors);
+        self::assertEquals($expected, $errors);
     }
 
     public static function validationDataProvider()

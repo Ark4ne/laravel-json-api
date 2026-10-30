@@ -54,13 +54,13 @@ class DescriptorsTraitTest extends TestCase
         };
         /** @var \Ark4ne\JsonApi\Descriptors\Describer $descriptor */
         $descriptor = Reflect::invoke($mock, $method, ...$args);
-        $this->assertInstanceOf($expected, $descriptor);
-        $this->assertNull($descriptor->retriever());
+        self::assertInstanceOf($expected, $descriptor);
+        self::assertNull($descriptor->retriever());
         $descriptor = Reflect::invoke($mock, $method, ...[...$args, 'test']);
-        $this->assertInstanceOf($expected, $descriptor);
-        $this->assertEquals('test', $descriptor->retriever());
+        self::assertInstanceOf($expected, $descriptor);
+        self::assertEquals('test', $descriptor->retriever());
         $descriptor = Reflect::invoke($mock, $method, ...[...$args, fn() => 'closure']);
-        $this->assertInstanceOf($expected, $descriptor);
-        $this->assertInstanceOf(Closure::class, $descriptor->retriever());
+        self::assertInstanceOf($expected, $descriptor);
+        self::assertInstanceOf(Closure::class, $descriptor->retriever());
     }
 }

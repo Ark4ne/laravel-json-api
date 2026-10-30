@@ -66,18 +66,18 @@ class IncludesTest extends TestCase
         });
 
         $this->assert(array_shift($expected), Includes::get($request), 'root');
-        $this->assertEquals('final', array_shift($expected));
+        self::assertEquals('final', array_shift($expected));
     }
 
     public function assert($expected, $actual, $message = ''): void
     {
-        $this->assertEquals($expected, $actual, $message);
+        self::assertEquals($expected, $actual, $message);
         $this->count++;
     }
 
     public function testParse(): void
     {
-        $this->assertEquals([], Includes::parse(''));
+        self::assertEquals([], Includes::parse(''));
 
         $parsed = Includes::parse(implode(',', [
             'user',
@@ -90,7 +90,7 @@ class IncludesTest extends TestCase
             'posts.test',
         ]));
 
-        $this->assertEquals([
+        self::assertEquals([
             'user' => [],
             'posts' => [
                 'user' => [
@@ -106,19 +106,19 @@ class IncludesTest extends TestCase
     {
         $request = new Request();
 
-        $this->assertEquals([], Includes::get($request));
+        self::assertEquals([], Includes::get($request));
 
         $request = new Request(['include' => null]);
 
-        $this->assertEquals([], Includes::get($request));
+        self::assertEquals([], Includes::get($request));
 
         $request = new Request(['include' => '']);
 
-        $this->assertEquals([], Includes::get($request));
+        self::assertEquals([], Includes::get($request));
 
         $request = new Request(['include' => 'foo.bar,baz']);
 
-        $this->assertEquals(['foo', 'baz'], Includes::get($request));
+        self::assertEquals(['foo', 'baz'], Includes::get($request));
     }
 
     public function testIncludes(): void
@@ -136,7 +136,7 @@ class IncludesTest extends TestCase
             ]),
         ]);
 
-        $this->assertEquals([
+        self::assertEquals([
             'user',
             'posts.user.comment',
             'posts.user.posts',
@@ -144,7 +144,7 @@ class IncludesTest extends TestCase
         ], Includes::includes($request));
 
         Includes::through('posts', function () use ($request): void {
-            $this->assertEquals([
+            self::assertEquals([
                 'user.comment',
                 'user.posts',
                 'test',

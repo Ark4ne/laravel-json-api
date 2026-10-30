@@ -42,13 +42,13 @@ class RelationshipsTest extends TestCase
 
         $actual = Reflect::invoke($stub, 'mapRelationship', $minimal, $request, $relationship);
 
-        $this->assertEquals([
+        self::assertEquals([
             'data' => [['id' => 'abc-123', 'type' => 'child']],
             'links' => ['self' => "://api.com/child/abc-123"],
             'meta' => ['total' => 1],
         ], $actual);
 
-        $this->assertEquals([], $stub->with($request));
+        self::assertEquals([], $stub->with($request));
     }
 
     public function testMapRelationshipFull(): void
@@ -84,12 +84,12 @@ class RelationshipsTest extends TestCase
 
         $actual = Reflect::invoke($stub, 'mapRelationship', $minimal, $request, $relationship);
 
-        $this->assertEquals([
+        self::assertEquals([
             'data' => [['id' => 'abc-123', 'type' => 'child']],
             'links' => ['self' => "://api.com/child/abc-123"],
             'meta' => ['total' => 1],
         ], $actual);
-        $this->assertEquals([
+        self::assertEquals([
             'with-some' => ['some-value'],
             'included' => [
                 [
@@ -110,8 +110,8 @@ class RelationshipsTest extends TestCase
 
         $actual = Reflect::invoke($resource, 'requestedRelationships', new Request());
 
-        $this->assertEquals([], $actual);
-        $this->assertEquals([], $resource->with);
+        self::assertEquals([], $actual);
+        self::assertEquals([], $resource->with);
     }
 
     public function testRequestedRelationshipsNoInclude(): void
@@ -121,7 +121,7 @@ class RelationshipsTest extends TestCase
 
         $actual = Reflect::invoke($stub, 'requestedRelationships', new Request());
 
-        $this->assertEquals([
+        self::assertEquals([
             'clone' => [
                 'data' => ['id' => 2, 'type' => 'my-type'],
             ],
@@ -130,7 +130,7 @@ class RelationshipsTest extends TestCase
                 'links' => ['self' => "://api.com/my-type/3"],
             ],
         ], $actual);
-        $this->assertEquals([], $stub->with);
+        self::assertEquals([], $stub->with);
     }
 
     public function testRequestedRelationshipsOneDepthInclude(): void
@@ -142,7 +142,7 @@ class RelationshipsTest extends TestCase
             'include' => 'clone',
         ]));
 
-        $this->assertEquals([
+        self::assertEquals([
             'clone' => [
                 'data' => ['id' => 2, 'type' => 'my-type'],
             ],
@@ -151,7 +151,7 @@ class RelationshipsTest extends TestCase
                 'links' => ['self' => "://api.com/my-type/5"],
             ],
         ], $actual);
-        $this->assertEquals([
+        self::assertEquals([
             'included' => [
                 [
                     'id' => 2,
@@ -180,7 +180,7 @@ class RelationshipsTest extends TestCase
             'include' => 'clone.clone-links',
         ]));
 
-        $this->assertEquals([
+        self::assertEquals([
             'clone' => [
                 'data' => ['id' => 2, 'type' => 'my-type'],
             ],
@@ -189,7 +189,7 @@ class RelationshipsTest extends TestCase
                 'links' => ['self' => "://api.com/my-type/7"],
             ],
         ], $actual);
-        $this->assertEquals([
+        self::assertEquals([
             'included' => [
                 [
                     'id' => 2,
@@ -246,7 +246,7 @@ class RelationshipsTest extends TestCase
 
         $actual = Reflect::invoke($resource, 'requestedRelationships', new Request());
 
-        $this->assertEquals([
+        self::assertEquals([
             'foo' => [
                 'data' => [
                     'id' => 2,

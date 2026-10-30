@@ -58,8 +58,8 @@ class RelationshipFiltersTest extends FeatureTestCase
         $result = $resource->toArray($this->createRequest());
 
         // Should only contain the public post
-        $this->assertCount($this->postPublic->count(), $result['relationships']['posts']['data']);
-        $this->assertEquals($this->postPublic->first()->id, $result['relationships']['posts']['data'][0]['id']);
+        self::assertCount($this->postPublic->count(), $result['relationships']['posts']['data']);
+        self::assertEquals($this->postPublic->first()->id, $result['relationships']['posts']['data'][0]['id']);
     }
 
     public function test_can_filter_relationship_with_custom_callback(): void
@@ -79,8 +79,8 @@ class RelationshipFiltersTest extends FeatureTestCase
         $result = $resource->toArray($this->createRequest());
 
         // Should only contain the public post
-        $this->assertCount($this->postPublic->count(), $result['relationships']['posts']['data']);
-        $this->assertEquals($this->postPublic->first()->id, $result['relationships']['posts']['data'][0]['id']);
+        self::assertCount($this->postPublic->count(), $result['relationships']['posts']['data']);
+        self::assertEquals($this->postPublic->first()->id, $result['relationships']['posts']['data'][0]['id']);
     }
 
     public function test_can_combine_multiple_filters(): void
@@ -102,8 +102,8 @@ class RelationshipFiltersTest extends FeatureTestCase
         $result = $resource->toArray($this->createRequest());
 
         // Should only contain the public post that passes both filters
-        $this->assertCount($this->postPublic->count(), $result['relationships']['posts']['data']);
-        $this->assertEquals($this->postPublic->first()->id, $result['relationships']['posts']['data'][0]['id']);
+        self::assertCount($this->postPublic->count(), $result['relationships']['posts']['data']);
+        self::assertEquals($this->postPublic->first()->id, $result['relationships']['posts']['data'][0]['id']);
     }
 
     protected function createRequest(): Request

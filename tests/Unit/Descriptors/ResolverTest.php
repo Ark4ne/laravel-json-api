@@ -32,10 +32,10 @@ class ResolverTest extends TestCase
         $request = new Request();
 
         $actual = Reflect::invoke($stub, 'resolveValues', $request, null);
-        $this->assertNull($actual);
+        self::assertNull($actual);
 
         $actual = Reflect::invoke($stub, 'resolveValues', $request, []);
-        $this->assertEquals([], $actual);
+        self::assertEquals([], $actual);
 
         $actual = Reflect::invoke($stub, 'resolveValues', $request, [
             'a' => 'abc',
@@ -45,7 +45,7 @@ class ResolverTest extends TestCase
             new ValueMixed('e'),
             new ValueMixed('f'),
         ]);
-        $this->assertEquals([
+        self::assertEquals([
             'a' => 'abc',
             'b' => 1,
             'c' => null,

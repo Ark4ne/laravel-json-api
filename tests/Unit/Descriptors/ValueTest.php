@@ -99,7 +99,7 @@ class ValueTest extends TestCase
     {
         /** @var \Ark4ne\JsonApi\Descriptors\Values\Value $v */
         $v = new $class(null);
-        $this->assertEquals($excepted, Reflect::invoke($v, 'value', $value, new Request()));
+        self::assertEquals($excepted, Reflect::invoke($v, 'value', $value, new Request()));
     }
 
     /**
@@ -112,7 +112,7 @@ class ValueTest extends TestCase
 
         /** @var \Ark4ne\JsonApi\Descriptors\Values\Value $v */
         $v = new $class('attr');
-        $this->assertEquals(
+        self::assertEquals(
             $excepted,
             $v->valueFor(new Request(), $model, 'attr'),
         );
@@ -128,7 +128,7 @@ class ValueTest extends TestCase
 
         /** @var \Ark4ne\JsonApi\Descriptors\Values\Value $v */
         $v = new $class('attr');
-        $this->assertNull($v->valueFor(new Request(), $model, 'attr'));
+        self::assertNull($v->valueFor(new Request(), $model, 'attr'));
     }
 
     /**
@@ -141,13 +141,13 @@ class ValueTest extends TestCase
 
         /** @var \Ark4ne\JsonApi\Descriptors\Values\Value $v */
         $v = new $class('attr');
-        $this->assertNull($v->valueFor(new Request(), $model, 'attr'));
+        self::assertNull($v->valueFor(new Request(), $model, 'attr'));
         /** @var \Ark4ne\JsonApi\Descriptors\Values\Value $v */
         $v = new $class('attr');
-        $this->assertTrue($v->isNullable());
+        self::assertTrue($v->isNullable());
         $v = $v->nullable(false);
-        $this->assertFalse($v->isNullable());
-        $this->assertEquals($excepted, $v->valueFor(new Request(), $model, 'attr'));
+        self::assertFalse($v->isNullable());
+        self::assertEquals($excepted, $v->valueFor(new Request(), $model, 'attr'));
     }
 
     /**
@@ -243,40 +243,40 @@ class ValueTest extends TestCase
     {
         $request = new Request();
         $v = new ValueFloat(null);
-        $this->assertEquals(123.12, Reflect::invoke($v, 'value', '123.12', $request));
+        self::assertEquals(123.12, Reflect::invoke($v, 'value', '123.12', $request));
         $v = $v->precision(2);
-        $this->assertEquals(123.12, Reflect::invoke($v, 'value', '123.12', $request));
+        self::assertEquals(123.12, Reflect::invoke($v, 'value', '123.12', $request));
         $v = $v->precision(1);
-        $this->assertEquals(123.1, Reflect::invoke($v, 'value', '123.12', $request));
+        self::assertEquals(123.1, Reflect::invoke($v, 'value', '123.12', $request));
         $v = $v->precision(0);
-        $this->assertEquals(123, Reflect::invoke($v, 'value', '123.12', $request));
+        self::assertEquals(123, Reflect::invoke($v, 'value', '123.12', $request));
     }
 
     public function testValueDateFormat(): void
     {
         $request = new Request();
         $v = new ValueDate(null);
-        $this->assertEquals('2022-01-01T00:00:00+00:00', Reflect::invoke($v, 'value', '2022-01-01 00:00:00', $request));
+        self::assertEquals('2022-01-01T00:00:00+00:00', Reflect::invoke($v, 'value', '2022-01-01 00:00:00', $request));
         $v = $v->format('Y-m-d H:i:s');
-        $this->assertEquals('2022-01-01 00:00:00', Reflect::invoke($v, 'value', '2022-01-01 00:00:00', $request));
+        self::assertEquals('2022-01-01 00:00:00', Reflect::invoke($v, 'value', '2022-01-01 00:00:00', $request));
         $v = $v->format('U');
-        $this->assertEquals('1640995200', Reflect::invoke($v, 'value', '2022-01-01 00:00:00', $request));
+        self::assertEquals('1640995200', Reflect::invoke($v, 'value', '2022-01-01 00:00:00', $request));
     }
 
     private function throughRetrieverTest(&$model, Closure $missing, Closure $update, Closure $check, $expected): void
     {
         $valueWithRetriever = new ValueBool('attr');
-        $this->assertInstanceOf(MissingValue::class, $missing($valueWithRetriever));
+        self::assertInstanceOf(MissingValue::class, $missing($valueWithRetriever));
         $valueNoRetriever = new ValueBool(null);
-        $this->assertInstanceOf(MissingValue::class, $missing($valueNoRetriever));
+        self::assertInstanceOf(MissingValue::class, $missing($valueNoRetriever));
         $valueClosureRetriever = new ValueBool(fn() => data_get($model, 'attr'));
-        $this->assertInstanceOf(MissingValue::class, $missing($valueClosureRetriever));
+        self::assertInstanceOf(MissingValue::class, $missing($valueClosureRetriever));
 
         $update();
         $actual = $check($valueWithRetriever);
-        $this->assertEquals($expected, $actual);
-        $this->assertEquals($expected, $actual = $check($valueNoRetriever));
-        $this->assertEquals($expected, $actual = $check($valueClosureRetriever));
+        self::assertEquals($expected, $actual);
+        self::assertEquals($expected, $actual = $check($valueNoRetriever));
+        self::assertEquals($expected, $actual = $check($valueClosureRetriever));
     }
 
     /**

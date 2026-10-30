@@ -20,7 +20,7 @@ class IdentifierTest extends TestCase
             use Identifier;
         };
 
-        $this->assertEquals('anonymous', Reflect::invoke($stub, 'toType', new Request()));
+        self::assertEquals('anonymous', Reflect::invoke($stub, 'toType', new Request()));
 
         $stub = new class (new JsonResource(null)) extends JsonResource {
             use Identifier;
@@ -31,7 +31,7 @@ class IdentifierTest extends TestCase
             }
         };
 
-        $this->assertEquals(
+        self::assertEquals(
             "my-type",
             Reflect::invoke($stub, 'toType', new Request()),
         );
@@ -57,7 +57,7 @@ class IdentifierTest extends TestCase
             use Identifier;
         };
 
-        $this->assertEquals($id, Reflect::invoke($stub, 'toIdentifier', new Request()));
+        self::assertEquals($id, Reflect::invoke($stub, 'toIdentifier', new Request()));
 
         $stub = new class ($object) extends JsonResource {
             use Identifier;
@@ -68,7 +68,7 @@ class IdentifierTest extends TestCase
             }
         };
 
-        $this->assertEquals(
+        self::assertEquals(
             Str::afterLast($id, '-'),
             Reflect::invoke($stub, 'toIdentifier', new Request()),
         );

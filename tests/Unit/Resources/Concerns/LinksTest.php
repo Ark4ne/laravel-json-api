@@ -33,7 +33,7 @@ class LinksTest extends TestCase
             use Links;
         };
 
-        $this->assertEquals(null, Reflect::invoke($stub, 'toLinks', new Request()));
+        self::assertEquals(null, Reflect::invoke($stub, 'toLinks', new Request()));
 
         $stub = new class ($object) extends JsonResource {
             use Links;
@@ -50,6 +50,6 @@ class LinksTest extends TestCase
             'self' => "://api.com/my-type/{$id}",
         ];
 
-        $this->assertEquals($links, Reflect::invoke($stub, 'toLinks', new Request()));
+        self::assertEquals($links, Reflect::invoke($stub, 'toLinks', new Request()));
     }
 }

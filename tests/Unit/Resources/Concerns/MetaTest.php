@@ -33,7 +33,7 @@ class MetaTest extends TestCase
             use Meta;
         };
 
-        $this->assertEquals(null, Reflect::invoke($stub, 'toMeta', new Request()));
+        self::assertEquals(null, Reflect::invoke($stub, 'toMeta', new Request()));
 
 
         $stub = new class ($object) extends JsonResource {
@@ -51,7 +51,7 @@ class MetaTest extends TestCase
             'copyright' => 'CC MyApp',
         ];
 
-        $this->assertEquals($meta, Reflect::invoke($stub, 'toMeta', new Request()));
+        self::assertEquals($meta, Reflect::invoke($stub, 'toMeta', new Request()));
     }
 
     public function testToResourceMeta(): void
@@ -74,7 +74,7 @@ class MetaTest extends TestCase
             use Meta;
         };
 
-        $this->assertEquals(null, Reflect::invoke($stub, 'toResourceMeta', new Request()));
+        self::assertEquals(null, Reflect::invoke($stub, 'toResourceMeta', new Request()));
 
         $stub = new class ($object) extends JsonResource {
             use Meta;
@@ -91,6 +91,6 @@ class MetaTest extends TestCase
             'hash' => sha1($id),
         ];
 
-        $this->assertEquals($meta, Reflect::invoke($stub, 'toResourceMeta', new Request()));
+        self::assertEquals($meta, Reflect::invoke($stub, 'toResourceMeta', new Request()));
     }
 }

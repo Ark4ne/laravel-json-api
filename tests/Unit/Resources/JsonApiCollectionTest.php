@@ -29,9 +29,9 @@ class JsonApiCollectionTest extends TestCase
             ['id' => 2],
             ['id' => 3],
         ];
-        $this->assertEquals($collect, $collection->toArray($request));
-        $this->assertEquals([], $collection->with($request));
-        $this->assertEquals([
+        self::assertEquals($collect, $collection->toArray($request));
+        self::assertEquals([], $collection->with($request));
+        self::assertEquals([
             'data' => $collect,
         ], $collection->toResponse($request)->getData(true));
     }
@@ -51,14 +51,14 @@ class JsonApiCollectionTest extends TestCase
             ['type' => 'my-model', 'id' => 2],
             ['type' => 'my-model', 'id' => 3],
         ];
-        $this->assertEquals($collect, $collection->toArray($request));
-        $this->assertEquals([
+        self::assertEquals($collect, $collection->toArray($request));
+        self::assertEquals([
             'meta' => ['foo' => ['bar-1', 'bar-2', 'bar-3']],
             'included' => $collect,
         ], $collection->with($request));
 
         $collection->with = [];
-        $this->assertEquals([
+        self::assertEquals([
             'data' => $collect,
             'meta' => ['foo' => ['bar-1', 'bar-2', 'bar-3']],
             'included' => $collect,
@@ -86,15 +86,15 @@ class JsonApiCollectionTest extends TestCase
             ['type' => 'my-model', 'id' => 2],
             ['type' => 'my-model', 'id' => 3],
         ];
-        $this->assertEquals($collect, $collection->toArray($request, true));
-        $this->assertEquals([
+        self::assertEquals($collect, $collection->toArray($request, true));
+        self::assertEquals([
             'meta' => [
                 'foo' => ['bar-1', 'bar-2', 'bar-3'],
             ],
             'other' => 'slug',
         ], $collection->with($request));
         $collection->with = [];
-        $this->assertEquals([
+        self::assertEquals([
             'data' => $collect,
             'meta' => ['foo' => ['bar-1', 'bar-2', 'bar-3']],
             'other' => 'slug',

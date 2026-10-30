@@ -29,9 +29,9 @@ class TypedArrayTest extends TestCase
         $input = ['php', 'laravel', 'json-api', true, 1.0];
         $result = $array->value($input, $this->request);
 
-        $this->assertIsArray($result);
-        $this->assertCount(5, $result);
-        $this->assertSame(['php', 'laravel', 'json-api', '1', '1'], $result);
+        self::assertIsArray($result);
+        self::assertCount(5, $result);
+        self::assertSame(['php', 'laravel', 'json-api', '1', '1'], $result);
     }
 
     public function testArrayOfIntegers(): void
@@ -42,9 +42,9 @@ class TypedArrayTest extends TestCase
         $input = [1.5, '2', 3, '4.9'];
         $result = $array->value($input, $this->request);
 
-        $this->assertIsArray($result);
-        $this->assertCount(4, $result);
-        $this->assertSame([1, 2, 3, 4], $result);
+        self::assertIsArray($result);
+        self::assertCount(4, $result);
+        self::assertSame([1, 2, 3, 4], $result);
     }
 
     public function testArrayOfEnums(): void
@@ -59,9 +59,9 @@ class TypedArrayTest extends TestCase
         ];
         $result = $array->value($input, $this->request);
 
-        $this->assertIsArray($result);
-        $this->assertCount(3, $result);
-        $this->assertSame([1, 0, 2], $result); // Assuming backed enum values
+        self::assertIsArray($result);
+        self::assertCount(3, $result);
+        self::assertSame([1, 0, 2], $result); // Assuming backed enum values
     }
 
     public function testNestedArrays(): void
@@ -79,9 +79,9 @@ class TypedArrayTest extends TestCase
         ];
         $result = $outerArray->value($input, $this->request);
 
-        $this->assertIsArray($result);
-        $this->assertCount(3, $result);
-        $this->assertSame([
+        self::assertIsArray($result);
+        self::assertCount(3, $result);
+        self::assertSame([
             [1, 2, 3],
             [4, 5, 6],
             [7, 8, 9],
@@ -95,8 +95,8 @@ class TypedArrayTest extends TestCase
 
         $result = $array->value([], $this->request);
 
-        $this->assertIsArray($result);
-        $this->assertCount(0, $result);
+        self::assertIsArray($result);
+        self::assertCount(0, $result);
     }
 
     public function testArrayWithoutTypeSpecification(): void
@@ -106,9 +106,9 @@ class TypedArrayTest extends TestCase
         $input = [1, 'string', true, 3.14];
         $result = $array->value($input, $this->request);
 
-        $this->assertIsArray($result);
-        $this->assertCount(4, $result);
-        $this->assertSame([1, 'string', true, 3.14], $result);
+        self::assertIsArray($result);
+        self::assertCount(4, $result);
+        self::assertSame([1, 'string', true, 3.14], $result);
     }
 }
 

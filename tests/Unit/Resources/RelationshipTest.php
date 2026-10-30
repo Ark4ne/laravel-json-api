@@ -21,7 +21,7 @@ class RelationshipTest extends TestCase
 
         $relation = new Relationship($resource::class, fn() => $resource->resource);
 
-        $this->assertEquals([
+        self::assertEquals([
             'data' => [
                 'data' => [
                     'type' => 'my-model',
@@ -50,7 +50,7 @@ class RelationshipTest extends TestCase
             'hash' => 'azerty',
         ]);
 
-        $this->assertEquals([
+        self::assertEquals([
             'data' => [
                 'data' => [
                     'type' => 'my-model',
@@ -67,7 +67,7 @@ class RelationshipTest extends TestCase
         $resource = $this->getResourceCollection();
         $relation = new Relationship($resource::class, fn() => $resource->resource);
 
-        $this->assertEquals([
+        self::assertEquals([
             'data' => [
                 'data' => [
                     [
@@ -109,7 +109,7 @@ class RelationshipTest extends TestCase
                 'total' => 2,
             ]);
 
-        $this->assertEquals([
+        self::assertEquals([
             'data' => [
                 'data' => [
                     [
@@ -136,7 +136,7 @@ class RelationshipTest extends TestCase
             'hash' => 'azerty',
         ]);
 
-        $this->assertEquals([
+        self::assertEquals([
             'data' => [
                 'links' => ['self' => 'link'],
                 'meta' => ['hash' => 'azerty'],
@@ -153,7 +153,7 @@ class RelationshipTest extends TestCase
             'hash' => 'azerty',
         ]);
 
-        $this->assertEquals([
+        self::assertEquals([
             'data' => [
                 'links' => ['self' => 'link'],
                 'meta' => ['hash' => 'azerty'],
@@ -171,7 +171,7 @@ class RelationshipTest extends TestCase
                 'hash' => 'azerty',
             ]);
 
-        $this->assertEquals([
+        self::assertEquals([
             'data' => [
                 'data' => [
                     'foo' => 'bar',
@@ -191,7 +191,7 @@ class RelationshipTest extends TestCase
                 'hash' => 'azerty',
             ]);
 
-        $this->assertEquals([
+        self::assertEquals([
             'data' => [
                 'data' => [
                     'obj' => ['foo' => 'bar'],

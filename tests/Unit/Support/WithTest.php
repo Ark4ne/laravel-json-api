@@ -69,7 +69,7 @@ class WithTest extends TestCase
     #[DataProvider('mergeProvider')]
     public function testMerge($expected, $base, $with): void
     {
-        $this->assertEquals($expected, With::merge($base, $with));
+        self::assertEquals($expected, With::merge($base, $with));
     }
 
     public static function washProvider()
@@ -98,6 +98,6 @@ class WithTest extends TestCase
     #[DataProvider('washProvider')]
     public function testWash($expected, $base): void
     {
-        $this->assertEquals($expected, With::wash($base));
+        self::assertEquals($expected, With::wash($base));
     }
 }

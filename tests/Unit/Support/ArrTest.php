@@ -69,7 +69,7 @@ class ArrTest extends TestCase
     #[DataProvider('mergeProvider')]
     public function testMerge($expected, $base, $with): void
     {
-        $this->assertEquals($expected, Arr::merge($base, $with));
+        self::assertEquals($expected, Arr::merge($base, $with));
     }
 
     public static function washProvider()
@@ -98,7 +98,7 @@ class ArrTest extends TestCase
     #[DataProvider('washProvider')]
     public function testWash($expected, $base): void
     {
-        $this->assertEquals($expected, Arr::wash($base));
+        self::assertEquals($expected, Arr::wash($base));
     }
 
     public static function toArrayProvider()
@@ -126,7 +126,7 @@ class ArrTest extends TestCase
     #[DataProvider('toArrayProvider')]
     public function testToArray($expected, $base): void
     {
-        $this->assertEquals($expected, Arr::toArray($base));
+        self::assertEquals($expected, Arr::toArray($base));
     }
 
     public function testUndot(): void
@@ -167,7 +167,7 @@ class ArrTest extends TestCase
             ],
         ];
 
-        $this->assertEquals($expected, Arr::undot($stub, '--saved--'));
+        self::assertEquals($expected, Arr::undot($stub, '--saved--'));
     }
 
     public function testFlatDot(): void
@@ -199,7 +199,7 @@ class ArrTest extends TestCase
             'test.a.3.2' => 'test.a.3.2',
         ];
 
-        $this->assertEquals($expected, Arr::flatDot($stub));
+        self::assertEquals($expected, Arr::flatDot($stub));
 
         $expected = [
             'key.test' => 'test',
@@ -211,6 +211,6 @@ class ArrTest extends TestCase
             'key.test.a.3.2' => 'test.a.3.2',
         ];
 
-        $this->assertEquals($expected, Arr::flatDot($stub, 'key'));
+        self::assertEquals($expected, Arr::flatDot($stub, 'key'));
     }
 }

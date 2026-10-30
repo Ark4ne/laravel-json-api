@@ -29,22 +29,22 @@ class FieldsTest extends TestCase
     #[DataProvider('fieldsGetProvider')]
     public function testGet(array $query, string $type, ?array $expected): void
     {
-        $this->assertEquals($expected, Fields::get(new Request(['fields' => $query]), $type));
+        self::assertEquals($expected, Fields::get(new Request(['fields' => $query]), $type));
     }
 
     public function testGetWithContext(): void
     {
         Fields::through('test', function (): void {
-            $this->assertEquals(null, Fields::get(new Request()));
-            $this->assertEquals(['a', 'b', 'c'], Fields::get(new Request(['fields' => ['test' => 'a,b,c']])));
+            self::assertEquals(null, Fields::get(new Request()));
+            self::assertEquals(['a', 'b', 'c'], Fields::get(new Request(['fields' => ['test' => 'a,b,c']])));
         });
     }
 
     public function testHasWithContext(): void
     {
         Fields::through('test', function (): void {
-            $this->assertEquals(false, Fields::has(new Request(), 'b'));
-            $this->assertEquals(true, Fields::has(new Request(['fields' => ['test' => 'a,b,c']]), 'b'));
+            self::assertEquals(false, Fields::has(new Request(), 'b'));
+            self::assertEquals(true, Fields::has(new Request(['fields' => ['test' => 'a,b,c']]), 'b'));
         });
     }
 

@@ -35,12 +35,12 @@ class TypedArrayResourceTest extends TestCase
         $request = new Request();
         $result = $resource->toArray($request);
 
-        $this->assertEquals('article', $result['type']);
-        $this->assertEquals('1', $result['id']);
-        $this->assertArrayHasKey('attributes', $result);
-        $this->assertArrayHasKey('tags', $result['attributes']);
-        $this->assertIsArray($result['attributes']['tags']);
-        $this->assertSame(['php', 'laravel', 'json-api', '1', '1'], $result['attributes']['tags']);
+        self::assertEquals('article', $result['type']);
+        self::assertEquals('1', $result['id']);
+        self::assertArrayHasKey('attributes', $result);
+        self::assertArrayHasKey('tags', $result['attributes']);
+        self::assertIsArray($result['attributes']['tags']);
+        self::assertSame(['php', 'laravel', 'json-api', '1', '1'], $result['attributes']['tags']);
     }
 
     public function testResourceWithArrayOfIntegers(): void
@@ -67,12 +67,12 @@ class TypedArrayResourceTest extends TestCase
         $request = new Request();
         $result = $resource->toArray($request);
 
-        $this->assertEquals('game', $result['type']);
-        $this->assertEquals('2', $result['id']);
-        $this->assertArrayHasKey('attributes', $result);
-        $this->assertArrayHasKey('scores', $result['attributes']);
-        $this->assertIsArray($result['attributes']['scores']);
-        $this->assertSame([1, 2, 3, 4], $result['attributes']['scores']);
+        self::assertEquals('game', $result['type']);
+        self::assertEquals('2', $result['id']);
+        self::assertArrayHasKey('attributes', $result);
+        self::assertArrayHasKey('scores', $result['attributes']);
+        self::assertIsArray($result['attributes']['scores']);
+        self::assertSame([1, 2, 3, 4], $result['attributes']['scores']);
     }
 
     public function testResourceWithArrayOfFloats(): void
@@ -99,12 +99,12 @@ class TypedArrayResourceTest extends TestCase
         $request = new Request();
         $result = $resource->toArray($request);
 
-        $this->assertEquals('product', $result['type']);
-        $this->assertEquals('3', $result['id']);
-        $this->assertArrayHasKey('attributes', $result);
-        $this->assertArrayHasKey('prices', $result['attributes']);
-        $this->assertIsArray($result['attributes']['prices']);
-        $this->assertEquals([10.0, 20.5, 30.75, 40.0], $result['attributes']['prices']);
+        self::assertEquals('product', $result['type']);
+        self::assertEquals('3', $result['id']);
+        self::assertArrayHasKey('attributes', $result);
+        self::assertArrayHasKey('prices', $result['attributes']);
+        self::assertIsArray($result['attributes']['prices']);
+        self::assertEquals([10.0, 20.5, 30.75, 40.0], $result['attributes']['prices']);
     }
 
     public function testResourceWithNestedTypedArrays(): void
@@ -138,12 +138,12 @@ class TypedArrayResourceTest extends TestCase
         $request = new Request();
         $result = $resource->toArray($request);
 
-        $this->assertEquals('matrix', $result['type']);
-        $this->assertEquals('4', $result['id']);
-        $this->assertArrayHasKey('attributes', $result);
-        $this->assertArrayHasKey('matrix', $result['attributes']);
-        $this->assertIsArray($result['attributes']['matrix']);
-        $this->assertSame([
+        self::assertEquals('matrix', $result['type']);
+        self::assertEquals('4', $result['id']);
+        self::assertArrayHasKey('attributes', $result);
+        self::assertArrayHasKey('matrix', $result['attributes']);
+        self::assertIsArray($result['attributes']['matrix']);
+        self::assertSame([
             [1, 2, 3],
             [4, 5, 6],
             [7, 8, 9],
@@ -174,12 +174,12 @@ class TypedArrayResourceTest extends TestCase
         $request = new Request();
         $result = $resource->toArray($request);
 
-        $this->assertEquals('article', $result['type']);
-        $this->assertEquals('5', $result['id']);
-        $this->assertArrayHasKey('attributes', $result);
-        $this->assertArrayHasKey('tags', $result['attributes']);
-        $this->assertIsArray($result['attributes']['tags']);
-        $this->assertEmpty($result['attributes']['tags']);
+        self::assertEquals('article', $result['type']);
+        self::assertEquals('5', $result['id']);
+        self::assertArrayHasKey('attributes', $result);
+        self::assertArrayHasKey('tags', $result['attributes']);
+        self::assertIsArray($result['attributes']['tags']);
+        self::assertEmpty($result['attributes']['tags']);
     }
 
     public function testResourceWithUntypedArray(): void
@@ -206,12 +206,12 @@ class TypedArrayResourceTest extends TestCase
         $request = new Request();
         $result = $resource->toArray($request);
 
-        $this->assertEquals('mixed-data', $result['type']);
-        $this->assertEquals('6', $result['id']);
-        $this->assertArrayHasKey('attributes', $result);
-        $this->assertArrayHasKey('mixed', $result['attributes']);
-        $this->assertIsArray($result['attributes']['mixed']);
-        $this->assertSame([1, 'string', true, 3.14], $result['attributes']['mixed']);
+        self::assertEquals('mixed-data', $result['type']);
+        self::assertEquals('6', $result['id']);
+        self::assertArrayHasKey('attributes', $result);
+        self::assertArrayHasKey('mixed', $result['attributes']);
+        self::assertIsArray($result['attributes']['mixed']);
+        self::assertSame([1, 'string', true, 3.14], $result['attributes']['mixed']);
     }
 
     public function testResourceWithMultipleTypedArrays(): void
@@ -242,18 +242,18 @@ class TypedArrayResourceTest extends TestCase
         $request = new Request();
         $result = $resource->toArray($request);
 
-        $this->assertEquals('complex', $result['type']);
-        $this->assertEquals('7', $result['id']);
-        $this->assertArrayHasKey('attributes', $result);
+        self::assertEquals('complex', $result['type']);
+        self::assertEquals('7', $result['id']);
+        self::assertArrayHasKey('attributes', $result);
 
-        $this->assertArrayHasKey('tags', $result['attributes']);
-        $this->assertSame(['php', 'laravel'], $result['attributes']['tags']);
+        self::assertArrayHasKey('tags', $result['attributes']);
+        self::assertSame(['php', 'laravel'], $result['attributes']['tags']);
 
-        $this->assertArrayHasKey('scores', $result['attributes']);
-        $this->assertSame([95, 87, 92], $result['attributes']['scores']);
+        self::assertArrayHasKey('scores', $result['attributes']);
+        self::assertSame([95, 87, 92], $result['attributes']['scores']);
 
-        $this->assertArrayHasKey('prices', $result['attributes']);
-        $this->assertEquals([10.5, 20.75], $result['attributes']['prices']);
+        self::assertArrayHasKey('prices', $result['attributes']);
+        self::assertEquals([10.5, 20.75], $result['attributes']['prices']);
     }
 
     public function testResourceWithArrayOfBooleans(): void
@@ -280,12 +280,12 @@ class TypedArrayResourceTest extends TestCase
         $request = new Request();
         $result = $resource->toArray($request);
 
-        $this->assertEquals('flags', $result['type']);
-        $this->assertEquals('8', $result['id']);
-        $this->assertArrayHasKey('attributes', $result);
-        $this->assertArrayHasKey('flags', $result['attributes']);
-        $this->assertIsArray($result['attributes']['flags']);
-        $this->assertSame([true, false, true, false, true, false], $result['attributes']['flags']);
+        self::assertEquals('flags', $result['type']);
+        self::assertEquals('8', $result['id']);
+        self::assertArrayHasKey('attributes', $result);
+        self::assertArrayHasKey('flags', $result['attributes']);
+        self::assertIsArray($result['attributes']['flags']);
+        self::assertSame([true, false, true, false, true, false], $result['attributes']['flags']);
     }
 
     public function testResourceWithArrayAndClosure(): void
@@ -315,12 +315,12 @@ class TypedArrayResourceTest extends TestCase
         $request = new Request();
         $result = $resource->toArray($request);
 
-        $this->assertEquals('calculated', $result['type']);
-        $this->assertEquals('9', $result['id']);
-        $this->assertArrayHasKey('attributes', $result);
-        $this->assertArrayHasKey('doubled', $result['attributes']);
-        $this->assertIsArray($result['attributes']['doubled']);
-        $this->assertSame([2, 4, 6, 8, 10], $result['attributes']['doubled']);
+        self::assertEquals('calculated', $result['type']);
+        self::assertEquals('9', $result['id']);
+        self::assertArrayHasKey('attributes', $result);
+        self::assertArrayHasKey('doubled', $result['attributes']);
+        self::assertIsArray($result['attributes']['doubled']);
+        self::assertSame([2, 4, 6, 8, 10], $result['attributes']['doubled']);
     }
 
     // Edge cases with conditions
@@ -356,12 +356,12 @@ class TypedArrayResourceTest extends TestCase
         $request = new Request();
         $result = $resource->toArray($request);
 
-        $this->assertEquals('conditional-item', $result['type']);
-        $this->assertEquals('10', $result['id']);
-        $this->assertArrayHasKey('attributes', $result);
-        $this->assertArrayHasKey('flags', $result['attributes']);
+        self::assertEquals('conditional-item', $result['type']);
+        self::assertEquals('10', $result['id']);
+        self::assertArrayHasKey('attributes', $result);
+        self::assertArrayHasKey('flags', $result['attributes']);
         // Items are still included because when() on item type doesn't filter items
-        $this->assertSame([true, false, true, false], $result['attributes']['flags']);
+        self::assertSame([true, false, true, false], $result['attributes']['flags']);
     }
 
     public function testArrayWithArrayTypeWhenFalse(): void
@@ -389,9 +389,9 @@ class TypedArrayResourceTest extends TestCase
         $result = $resource->toArray($request);
 
         // When the array itself has when(false), the entire attribute should not appear
-        $this->assertEquals('conditional-array', $result['type']);
-        $this->assertEquals('12', $result['id']);
-        $this->assertArrayNotHasKey('attributes', $result);
+        self::assertEquals('conditional-array', $result['type']);
+        self::assertEquals('12', $result['id']);
+        self::assertArrayNotHasKey('attributes', $result);
     }
 
     public function testArrayWithArrayTypeWhenTrue(): void
@@ -418,11 +418,11 @@ class TypedArrayResourceTest extends TestCase
         $request = new Request();
         $result = $resource->toArray($request);
 
-        $this->assertEquals('conditional-array-true', $result['type']);
-        $this->assertEquals('13', $result['id']);
-        $this->assertArrayHasKey('attributes', $result);
-        $this->assertArrayHasKey('flags', $result['attributes']);
-        $this->assertSame([true, false, true, false], $result['attributes']['flags']);
+        self::assertEquals('conditional-array-true', $result['type']);
+        self::assertEquals('13', $result['id']);
+        self::assertArrayHasKey('attributes', $result);
+        self::assertArrayHasKey('flags', $result['attributes']);
+        self::assertSame([true, false, true, false], $result['attributes']['flags']);
     }
 
     public function testArrayWithWhenNotNull(): void
@@ -451,12 +451,12 @@ class TypedArrayResourceTest extends TestCase
         $request = new Request();
         $result = $resource->toArray($request);
 
-        $this->assertEquals('when-not-null', $result['type']);
-        $this->assertEquals('14', $result['id']);
-        $this->assertArrayHasKey('attributes', $result);
-        $this->assertArrayHasKey('present', $result['attributes']);
-        $this->assertArrayNotHasKey('absent', $result['attributes']);
-        $this->assertSame([1, 2, 3], $result['attributes']['present']);
+        self::assertEquals('when-not-null', $result['type']);
+        self::assertEquals('14', $result['id']);
+        self::assertArrayHasKey('attributes', $result);
+        self::assertArrayHasKey('present', $result['attributes']);
+        self::assertArrayNotHasKey('absent', $result['attributes']);
+        self::assertSame([1, 2, 3], $result['attributes']['present']);
     }
 
     public function testArrayWithWhenFilled(): void
@@ -485,13 +485,13 @@ class TypedArrayResourceTest extends TestCase
         $request = new Request();
         $result = $resource->toArray($request);
 
-        $this->assertEquals('when-filled', $result['type']);
-        $this->assertEquals('15', $result['id']);
-        $this->assertArrayHasKey('attributes', $result);
-        $this->assertArrayHasKey('filled', $result['attributes']);
+        self::assertEquals('when-filled', $result['type']);
+        self::assertEquals('15', $result['id']);
+        self::assertArrayHasKey('attributes', $result);
+        self::assertArrayHasKey('filled', $result['attributes']);
         // Empty array is not "filled" so should not appear
-        $this->assertArrayNotHasKey('empty', $result['attributes']);
-        $this->assertSame([1, 2, 3], $result['attributes']['filled']);
+        self::assertArrayNotHasKey('empty', $result['attributes']);
+        self::assertSame([1, 2, 3], $result['attributes']['filled']);
     }
 
     public function testArrayWithWhenHas(): void
@@ -519,12 +519,12 @@ class TypedArrayResourceTest extends TestCase
         $request = new Request();
         $result = $resource->toArray($request);
 
-        $this->assertEquals('when-has', $result['type']);
-        $this->assertEquals('16', $result['id']);
-        $this->assertArrayHasKey('attributes', $result);
-        $this->assertArrayHasKey('existing', $result['attributes']);
-        $this->assertArrayNotHasKey('missing', $result['attributes']);
-        $this->assertSame([1, 2, 3], $result['attributes']['existing']);
+        self::assertEquals('when-has', $result['type']);
+        self::assertEquals('16', $result['id']);
+        self::assertArrayHasKey('attributes', $result);
+        self::assertArrayHasKey('existing', $result['attributes']);
+        self::assertArrayNotHasKey('missing', $result['attributes']);
+        self::assertSame([1, 2, 3], $result['attributes']['existing']);
     }
 
     public function testArrayWithUnless(): void
@@ -552,12 +552,12 @@ class TypedArrayResourceTest extends TestCase
         $request = new Request();
         $result = $resource->toArray($request);
 
-        $this->assertEquals('unless', $result['type']);
-        $this->assertEquals('17', $result['id']);
-        $this->assertArrayHasKey('attributes', $result);
-        $this->assertArrayHasKey('visible', $result['attributes']);
-        $this->assertArrayNotHasKey('hidden', $result['attributes']);
-        $this->assertSame(['php', 'laravel'], $result['attributes']['visible']);
+        self::assertEquals('unless', $result['type']);
+        self::assertEquals('17', $result['id']);
+        self::assertArrayHasKey('attributes', $result);
+        self::assertArrayHasKey('visible', $result['attributes']);
+        self::assertArrayNotHasKey('hidden', $result['attributes']);
+        self::assertSame(['php', 'laravel'], $result['attributes']['visible']);
     }
 
     public function testArrayWithClosureCondition(): void
@@ -593,12 +593,12 @@ class TypedArrayResourceTest extends TestCase
         $request = new Request();
         $result = $resource->toArray($request);
 
-        $this->assertEquals('closure-condition', $result['type']);
-        $this->assertEquals('18', $result['id']);
-        $this->assertArrayHasKey('attributes', $result);
-        $this->assertArrayHasKey('admin_tags', $result['attributes']);
-        $this->assertArrayNotHasKey('user_tags', $result['attributes']);
-        $this->assertSame(['admin', 'super'], $result['attributes']['admin_tags']);
+        self::assertEquals('closure-condition', $result['type']);
+        self::assertEquals('18', $result['id']);
+        self::assertArrayHasKey('attributes', $result);
+        self::assertArrayHasKey('admin_tags', $result['attributes']);
+        self::assertArrayNotHasKey('user_tags', $result['attributes']);
+        self::assertSame(['admin', 'super'], $result['attributes']['admin_tags']);
     }
 
     public function testArrayWithMultipleConditions(): void
@@ -629,11 +629,11 @@ class TypedArrayResourceTest extends TestCase
         $request = new Request();
         $result = $resource->toArray($request);
 
-        $this->assertEquals('multiple-conditions', $result['type']);
-        $this->assertEquals('19', $result['id']);
-        $this->assertArrayHasKey('attributes', $result);
-        $this->assertArrayHasKey('tags', $result['attributes']);
-        $this->assertSame(['php', 'laravel'], $result['attributes']['tags']);
+        self::assertEquals('multiple-conditions', $result['type']);
+        self::assertEquals('19', $result['id']);
+        self::assertArrayHasKey('attributes', $result);
+        self::assertArrayHasKey('tags', $result['attributes']);
+        self::assertSame(['php', 'laravel'], $result['attributes']['tags']);
     }
 
     public function testArrayWithMultipleConditionsOneFalse(): void
@@ -664,9 +664,9 @@ class TypedArrayResourceTest extends TestCase
         $request = new Request();
         $result = $resource->toArray($request);
 
-        $this->assertEquals('multiple-conditions-false', $result['type']);
-        $this->assertEquals('20', $result['id']);
-        $this->assertArrayNotHasKey('attributes', $result);
+        self::assertEquals('multiple-conditions-false', $result['type']);
+        self::assertEquals('20', $result['id']);
+        self::assertArrayNotHasKey('attributes', $result);
     }
 
     // Alternative syntax: array()->of()
@@ -699,10 +699,10 @@ class TypedArrayResourceTest extends TestCase
 
         // Since no attribute is specified and array() returns null by default,
         // this should result in an empty array or the behavior depends on implementation
-        $this->assertEquals('of-syntax-no-attr', $result['type']);
-        $this->assertEquals('21', $result['id']);
-        $this->assertArrayHasKey('attributes', $result);
-        $this->assertArrayHasKey('flags', $result['attributes']);
+        self::assertEquals('of-syntax-no-attr', $result['type']);
+        self::assertEquals('21', $result['id']);
+        self::assertArrayHasKey('attributes', $result);
+        self::assertArrayHasKey('flags', $result['attributes']);
     }
 
     public function testArrayWithOfSyntaxWithAttribute(): void
@@ -729,12 +729,12 @@ class TypedArrayResourceTest extends TestCase
         $request = new Request();
         $result = $resource->toArray($request);
 
-        $this->assertEquals('of-syntax-with-attr', $result['type']);
-        $this->assertEquals('22', $result['id']);
-        $this->assertArrayHasKey('attributes', $result);
-        $this->assertArrayHasKey('abc', $result['attributes']);
-        $this->assertIsArray($result['attributes']['abc']);
-        $this->assertSame(['php', 'laravel', 'json-api', '1', '1'], $result['attributes']['abc']);
+        self::assertEquals('of-syntax-with-attr', $result['type']);
+        self::assertEquals('22', $result['id']);
+        self::assertArrayHasKey('attributes', $result);
+        self::assertArrayHasKey('abc', $result['attributes']);
+        self::assertIsArray($result['attributes']['abc']);
+        self::assertSame(['php', 'laravel', 'json-api', '1', '1'], $result['attributes']['abc']);
     }
 
     public function testArrayWithOfSyntaxWithClosure(): void
@@ -761,12 +761,12 @@ class TypedArrayResourceTest extends TestCase
         $request = new Request();
         $result = $resource->toArray($request);
 
-        $this->assertEquals('of-syntax-with-closure', $result['type']);
-        $this->assertEquals('23', $result['id']);
-        $this->assertArrayHasKey('attributes', $result);
-        $this->assertArrayHasKey('def', $result['attributes']);
-        $this->assertIsArray($result['attributes']['def']);
-        $this->assertSame([1, 2, 3, 4, 5], $result['attributes']['def']);
+        self::assertEquals('of-syntax-with-closure', $result['type']);
+        self::assertEquals('23', $result['id']);
+        self::assertArrayHasKey('attributes', $result);
+        self::assertArrayHasKey('def', $result['attributes']);
+        self::assertIsArray($result['attributes']['def']);
+        self::assertSame([1, 2, 3, 4, 5], $result['attributes']['def']);
     }
 
     public function testArrayWithOfSyntaxAndTransformation(): void
@@ -794,12 +794,12 @@ class TypedArrayResourceTest extends TestCase
         $request = new Request();
         $result = $resource->toArray($request);
 
-        $this->assertEquals('of-syntax-transformation', $result['type']);
-        $this->assertEquals('24', $result['id']);
-        $this->assertArrayHasKey('attributes', $result);
-        $this->assertArrayHasKey('doubled', $result['attributes']);
-        $this->assertIsArray($result['attributes']['doubled']);
-        $this->assertSame([2, 4, 6], $result['attributes']['doubled']);
+        self::assertEquals('of-syntax-transformation', $result['type']);
+        self::assertEquals('24', $result['id']);
+        self::assertArrayHasKey('attributes', $result);
+        self::assertArrayHasKey('doubled', $result['attributes']);
+        self::assertIsArray($result['attributes']['doubled']);
+        self::assertSame([2, 4, 6], $result['attributes']['doubled']);
     }
 
     public function testArrayWithOfSyntaxWithConditions(): void
@@ -829,12 +829,12 @@ class TypedArrayResourceTest extends TestCase
         $request = new Request();
         $result = $resource->toArray($request);
 
-        $this->assertEquals('of-syntax-conditions', $result['type']);
-        $this->assertEquals('25', $result['id']);
-        $this->assertArrayHasKey('attributes', $result);
-        $this->assertArrayHasKey('scores', $result['attributes']);
-        $this->assertIsArray($result['attributes']['scores']);
-        $this->assertSame([95, 87, 92, 78], $result['attributes']['scores']);
+        self::assertEquals('of-syntax-conditions', $result['type']);
+        self::assertEquals('25', $result['id']);
+        self::assertArrayHasKey('attributes', $result);
+        self::assertArrayHasKey('scores', $result['attributes']);
+        self::assertIsArray($result['attributes']['scores']);
+        self::assertSame([95, 87, 92, 78], $result['attributes']['scores']);
     }
 
     public function testArrayWithOfSyntaxNested(): void
@@ -866,12 +866,12 @@ class TypedArrayResourceTest extends TestCase
         $request = new Request();
         $result = $resource->toArray($request);
 
-        $this->assertEquals('of-syntax-nested', $result['type']);
-        $this->assertEquals('26', $result['id']);
-        $this->assertArrayHasKey('attributes', $result);
-        $this->assertArrayHasKey('matrix', $result['attributes']);
-        $this->assertIsArray($result['attributes']['matrix']);
-        $this->assertSame([
+        self::assertEquals('of-syntax-nested', $result['type']);
+        self::assertEquals('26', $result['id']);
+        self::assertArrayHasKey('attributes', $result);
+        self::assertArrayHasKey('matrix', $result['attributes']);
+        self::assertIsArray($result['attributes']['matrix']);
+        self::assertSame([
             [1, 2, 3],
             [4, 5, 6],
         ], $result['attributes']['matrix']);
@@ -905,15 +905,15 @@ class TypedArrayResourceTest extends TestCase
         $request = new Request();
         $result = $resource->toArray($request);
 
-        $this->assertEquals('mixed-syntax', $result['type']);
-        $this->assertEquals('27', $result['id']);
-        $this->assertArrayHasKey('attributes', $result);
+        self::assertEquals('mixed-syntax', $result['type']);
+        self::assertEquals('27', $result['id']);
+        self::assertArrayHasKey('attributes', $result);
 
-        $this->assertArrayHasKey('tags', $result['attributes']);
-        $this->assertSame(['php', 'laravel'], $result['attributes']['tags']);
+        self::assertArrayHasKey('tags', $result['attributes']);
+        self::assertSame(['php', 'laravel'], $result['attributes']['tags']);
 
-        $this->assertArrayHasKey('scores', $result['attributes']);
-        $this->assertSame([95, 87, 92], $result['attributes']['scores']);
+        self::assertArrayHasKey('scores', $result['attributes']);
+        self::assertSame([95, 87, 92], $result['attributes']['scores']);
     }
 
     /**
@@ -949,13 +949,13 @@ class TypedArrayResourceTest extends TestCase
         $request = new Request();
         $result = $resource->toArray($request);
 
-        $this->assertEquals('conditional-items', $result['type']);
-        $this->assertEquals('28', $result['id']);
-        $this->assertArrayHasKey('attributes', $result);
-        $this->assertArrayHasKey('even-numbers', $result['attributes']);
+        self::assertEquals('conditional-items', $result['type']);
+        self::assertEquals('28', $result['id']);
+        self::assertArrayHasKey('attributes', $result);
+        self::assertArrayHasKey('even-numbers', $result['attributes']);
 
         // All items are included, even though we specified a condition on the item type
         // The when() doesn't filter individual items, it's applied at the descriptor level
-        $this->assertSame([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], $result['attributes']['even-numbers']);
+        self::assertSame([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], $result['attributes']['even-numbers']);
     }
 }

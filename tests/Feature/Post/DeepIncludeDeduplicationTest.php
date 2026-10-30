@@ -78,11 +78,11 @@ class DeepIncludeDeduplicationTest extends FeatureTestCase
         $postAuthorInIncluded = collect($included)
             ->filter(fn($item) => $item['type'] === 'user' && $item['id'] === $postAuthor->id)
             ->count();
-        $this->assertSame(1, $postAuthorInIncluded, 'Post author must appear exactly once (deduplication)');
+        self::assertSame(1, $postAuthorInIncluded, 'Post author must appear exactly once (deduplication)');
 
         $usersInIncluded = collect($included)->filter(fn($item) => $item['type'] === 'user')->pluck('id')->all();
-        $this->assertCount(2, $usersInIncluded, 'There should be exactly 2 users in included');
-        $this->assertContains($postAuthor->id, $usersInIncluded, 'Post author must be included');
-        $this->assertContains($commentAuthor->id, $usersInIncluded, 'Comment author must be included');
+        self::assertCount(2, $usersInIncluded, 'There should be exactly 2 users in included');
+        self::assertContains($postAuthor->id, $usersInIncluded, 'Post author must be included');
+        self::assertContains($commentAuthor->id, $usersInIncluded, 'Comment author must be included');
     }
 }

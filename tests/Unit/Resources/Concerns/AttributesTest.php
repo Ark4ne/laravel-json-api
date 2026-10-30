@@ -34,7 +34,7 @@ class AttributesTest extends TestCase
             }
         };
 
-        $this->assertEquals(
+        self::assertEquals(
             $object->toArray(),
             Reflect::invoke($stub($object), 'toAttributes', new Request()),
         );
@@ -43,21 +43,21 @@ class AttributesTest extends TestCase
             'test' => 'abc',
         ];
 
-        $this->assertEquals(
+        self::assertEquals(
             $array,
             Reflect::invoke($stub($array), 'toAttributes', new Request()),
         );
 
         $iterable = new ArrayIterator($array);
 
-        $this->assertEquals(
+        self::assertEquals(
             $array,
             Reflect::invoke($stub($iterable), 'toAttributes', new Request()),
         );
 
         $stdClass = (object) [];
 
-        $this->assertEquals(
+        self::assertEquals(
             [],
             Reflect::invoke($stub($stdClass), 'toAttributes', new Request()),
         );
@@ -112,17 +112,17 @@ class AttributesTest extends TestCase
             'merged-true' => 'merged-true',
         ];
 
-        $this->assertEquals(
+        self::assertEquals(
             $allAttributes,
             Reflect::invoke($stub, 'requestedAttributes', new Request()),
         );
 
-        $this->assertEquals(
+        self::assertEquals(
             array_intersect_key($allAttributes, array_fill_keys(['foo', 'baz'], true)),
             Reflect::invoke($stub, 'requestedAttributes', new Request(['fields' => ['my-type' => 'foo,baz']])),
         );
 
-        $this->assertEquals(
+        self::assertEquals(
             array_intersect_key($allAttributes, array_fill_keys(['foo', 'merged-true'], true)),
             Reflect::invoke(
                 $stub,
@@ -131,7 +131,7 @@ class AttributesTest extends TestCase
             ),
         );
 
-        $this->assertEquals(
+        self::assertEquals(
             [],
             Reflect::invoke($stub, 'requestedAttributes', new Request(['fields' => ['my-type' => '']])),
         );

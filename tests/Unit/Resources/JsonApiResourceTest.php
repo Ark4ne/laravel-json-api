@@ -31,9 +31,9 @@ class JsonApiResourceTest extends TestCase
                 'id' => '1',
             ],
         ];
-        $this->assertEquals($data, $resource->toArray($request));
-        $this->assertEquals([], $resource->with($request));
-        $this->assertEquals(
+        self::assertEquals($data, $resource->toArray($request));
+        self::assertEquals([], $resource->with($request));
+        self::assertEquals(
             ['data' => $data],
             $resource->toResponse($request)->getData(true),
         );
@@ -60,9 +60,9 @@ class JsonApiResourceTest extends TestCase
             'type' => 'my-model',
             'id' => '1',
         ];
-        $this->assertEquals($data, $resource->toArray($request));
-        $this->assertEquals([], $resource->with($request));
-        $this->assertEquals(
+        self::assertEquals($data, $resource->toArray($request));
+        self::assertEquals([], $resource->with($request));
+        self::assertEquals(
             ['data' => $data],
             $resource->toResponse($request)->getData(true),
         );
@@ -100,11 +100,11 @@ class JsonApiResourceTest extends TestCase
                 'self' => '1',
             ],
         ];
-        $this->assertEquals($data, $resource->toArray($request));
-        $this->assertEquals([
+        self::assertEquals($data, $resource->toArray($request));
+        self::assertEquals([
             'meta' => ['hash' => 'azerty'],
         ], $resource->with($request));
-        $this->assertEquals(
+        self::assertEquals(
             [
                 'data' => $data,
                 'meta' => ['hash' => 'azerty'],
@@ -144,11 +144,11 @@ class JsonApiResourceTest extends TestCase
             'type' => 'my-model',
             'id' => '1',
         ];
-        $this->assertEquals($data, $resource->toArray($request));
-        $this->assertEquals([
+        self::assertEquals($data, $resource->toArray($request));
+        self::assertEquals([
             'meta' => ['hash' => 'azerty'],
         ], $resource->with($request));
-        $this->assertEquals(
+        self::assertEquals(
             [
                 'data' => $data,
                 'meta' => ['hash' => 'azerty'],
@@ -168,9 +168,9 @@ class JsonApiResourceTest extends TestCase
 
         $collection = $resource::collection(\collect(Stub::model(['id' => 1])));
 
-        $this->assertInstanceOf(JsonApiCollection::class, $collection);
-        $this->assertEquals($resource::class, $collection->collects);
-        $this->assertNull($collection->preserveKeys);
+        self::assertInstanceOf(JsonApiCollection::class, $collection);
+        self::assertEquals($resource::class, $collection->collects);
+        self::assertNull($collection->preserveKeys);
     }
 
     public function testToCollectionPreserveKeys(): void
@@ -186,9 +186,9 @@ class JsonApiResourceTest extends TestCase
 
         $collection = $resource::collection(\collect(Stub::model(['id' => 1])));
 
-        $this->assertInstanceOf(JsonApiCollection::class, $collection);
-        $this->assertEquals($resource::class, $collection->collects);
-        $this->assertTrue(property_exists($collection, 'preserveKeys'));
+        self::assertInstanceOf(JsonApiCollection::class, $collection);
+        self::assertEquals($resource::class, $collection->collects);
+        self::assertTrue(property_exists($collection, 'preserveKeys'));
     }
 
     public function testReturnArray(): void
@@ -290,6 +290,6 @@ class JsonApiResourceTest extends TestCase
             ],
         ];
 
-        $this->assertEquals($expected, $actual);
+        self::assertEquals($expected, $actual);
     }
 }
