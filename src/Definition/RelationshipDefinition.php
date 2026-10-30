@@ -22,6 +22,7 @@ final readonly class RelationshipDefinition
      * @param bool $hasMeta Whether it declares meta (`meta()`)
      * @param string|null $source Relation of the model it is read from, when known
      * @param bool $computed Whether its value is computed by a closure rather than read from the model
+     * @param bool $hasIdentifierMeta Whether it declares meta on its resource identifiers (`identifierMeta()`)
      */
     private function __construct(
         public string $name,
@@ -34,6 +35,7 @@ final readonly class RelationshipDefinition
         public bool $hasMeta = false,
         public ?string $source = null,
         public bool $computed = false,
+        public bool $hasIdentifierMeta = false,
     ) {}
 
     /**
@@ -82,6 +84,11 @@ final readonly class RelationshipDefinition
         return $this->copy(hasMeta: $hasMeta);
     }
 
+    public function hasIdentifierMeta(bool $hasIdentifierMeta = true): self
+    {
+        return $this->copy(hasIdentifierMeta: $hasIdentifierMeta);
+    }
+
     public function source(?string $source): self
     {
         return $this->copy(source: $source);
@@ -106,6 +113,7 @@ final readonly class RelationshipDefinition
      *     hasMeta: bool,
      *     source: string|null,
      *     computed: bool,
+     *     hasIdentifierMeta?: bool,
      * } $properties
      */
     public static function __set_state(array $properties): self
@@ -122,6 +130,7 @@ final readonly class RelationshipDefinition
         ?bool $hasMeta = null,
         string|false|null $source = false,
         ?bool $computed = null,
+        ?bool $hasIdentifierMeta = null,
     ): self {
         return new self(
             name: $name ?? $this->name,
@@ -134,6 +143,7 @@ final readonly class RelationshipDefinition
             hasMeta: $hasMeta ?? $this->hasMeta,
             source: $source === false ? $this->source : $source,
             computed: $computed ?? $this->computed,
+            hasIdentifierMeta: $hasIdentifierMeta ?? $this->hasIdentifierMeta,
         );
     }
 }

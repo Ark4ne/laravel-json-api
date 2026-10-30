@@ -37,6 +37,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `{"version": "1.1"}` by default, `false` to leave it out.
 - **Maximum include depth**, `include.max-depth` (no limit by default): the `Includes` rule rejects a deeper path
   (`invalid_depth`), and nothing deeper is loaded nor rendered, even without validation.
+- **Meta of resource identifiers**: `->identifierMeta(fn($related) => [...])` on a relationship (`withIdentifierMeta()`
+  on `Relationship`) renders a `meta` in each identifier of its linkage (`data.meta`, `data[].meta`), for data of the
+  link itself such as a pivot. The `meta()` of the relationship object is unchanged. `RelationshipDefinition` exposes
+  `hasIdentifierMeta`.
 - `Exceptions\RenderingException`, thrown when a member that must be a JSON object would be rendered as a list.
 
 ### Changed
@@ -44,6 +48,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **Breaking:** requires PHP `^8.3` and Laravel `^12.46` or `^13.0`. PHP 8.1 and 8.2, Laravel 10 and 11 are no longer
   supported.
 - Every source file declares `strict_types=1`.
+- The links and meta of a relationship are resolved like the other members: a descriptor (`$this->integer(...)`), a
+  closure or a condition (`when()`) in them is rendered as its value instead of an empty object, as in
+  `toResourceMeta()`. The members of `meta()` / `links()` are resolved against the resource, those of
+  `identifierMeta()` against each related resource.
 - **Breaking:** descriptors are immutable: every fluent method (`->nullable()`, `->when()`, `->format()`,
   `->withLoad()`…) returns a copy. A descriptor modified without using the returned value is left unchanged.
 - **Breaking:** the service provider is `Ark4ne\JsonApi\Laravel\JsonApiServiceProvider` (was

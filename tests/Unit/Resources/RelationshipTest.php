@@ -54,6 +54,43 @@ class RelationshipTest extends TestCase
         self::assertSame(['hash' => 'azerty'], $resolved->meta);
     }
 
+    public function test_the_identifier_meta_are_resolved_with_each_related_resource(): void
+    {
+        $meta = static fn(MyModelResource $resource) => ['position' => $resource->resource->position];
+
+        $many = (new Relationship(MyModelResource::class, static fn() => [
+            (object) ['id' => 1, 'position' => 2],
+            (object) ['id' => 2, 'position' => 1],
+        ]))->asCollection()->withIdentifierMeta($meta)->resolve(Contexts::of(), false);
+        $one = (new Relationship(MyModelResource::class, static fn() => (object) ['id' => 1, 'position' => 3]))
+            ->withIdentifierMeta($meta)
+            ->resolve(Contexts::of(), false);
+
+        self::assertSame([['position' => 2], ['position' => 1]], $many->identifierMeta);
+        self::assertSame([['position' => 3]], $one->identifierMeta);
+    }
+
+    public function test_the_identifier_meta_are_not_resolved_without_data(): void
+    {
+        $called = false;
+        $identifierMeta = static function () use (&$called): array {
+            $called = true;
+
+            return ['position' => 1];
+        };
+
+        $missing = (new Relationship(MyModelResource::class, static fn() => new MissingValue()))
+            ->withIdentifierMeta($identifierMeta)
+            ->resolve(Contexts::of(), true);
+        $null = (new Relationship(MyModelResource::class, static fn() => null))
+            ->withIdentifierMeta($identifierMeta)
+            ->resolve(Contexts::of(), true);
+
+        self::assertSame([], $missing->identifierMeta);
+        self::assertSame([], $null->identifierMeta);
+        self::assertFalse($called);
+    }
+
     public function test_a_missing_value_leaves_the_data_out_and_keeps_links_and_meta(): void
     {
         $resolved = (new Relationship(MyModelResource::class, static fn() => new MissingValue()))

@@ -240,14 +240,17 @@ class RelationTest extends TestCase
         $full = (new RelationOne(UserResource::class, null))
             ->links(static fn() => [])
             ->meta(static fn() => [])
+            ->identifierMeta(static fn() => [])
             ->whenIncluded(false)
             ->definition('author');
 
         self::assertFalse($plain->hasLinks);
         self::assertFalse($plain->hasMeta);
+        self::assertFalse($plain->hasIdentifierMeta);
         self::assertNull($plain->whenIncluded);
         self::assertTrue($full->hasLinks);
         self::assertTrue($full->hasMeta);
+        self::assertTrue($full->hasIdentifierMeta);
         self::assertFalse($full->whenIncluded);
     }
 
@@ -265,6 +268,7 @@ class RelationTest extends TestCase
     {
         yield 'links' => [static fn(RelationOne $relation) => $relation->links(static fn() => [])];
         yield 'meta' => [static fn(RelationOne $relation) => $relation->meta(static fn() => [])];
+        yield 'identifierMeta' => [static fn(RelationOne $relation) => $relation->identifierMeta(static fn() => [])];
         yield 'whenIncluded' => [static fn(RelationOne $relation) => $relation->whenIncluded()];
         yield 'whenLoaded' => [static fn(RelationOne $relation) => $relation->whenLoaded()];
         yield 'when' => [static fn(RelationOne $relation) => $relation->when(false)];

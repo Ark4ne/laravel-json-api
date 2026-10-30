@@ -16,7 +16,7 @@ final readonly class ResourceObject
 {
     /**
      * @param array<array-key, mixed> $attributes
-     * @param array<string, array{data?: array{type: string, id: string}|list<array{type: string, id: string}>|null, links?: array<array-key, mixed>, meta?: array<array-key, mixed>}> $relationships
+     * @param array<string, array{data?: array{type: string, id: string, meta?: array<array-key, mixed>}|list<array{type: string, id: string, meta?: array<array-key, mixed>}>|null, links?: array<array-key, mixed>, meta?: array<array-key, mixed>}> $relationships
      * @param array<array-key, mixed> $links
      * @param array<array-key, mixed> $meta
      */
@@ -43,11 +43,21 @@ final readonly class ResourceObject
     }
 
     /**
-     * @param array<string, array{data?: array{type: string, id: string}|list<array{type: string, id: string}>|null, links?: array<array-key, mixed>, meta?: array<array-key, mixed>}> $relationships
+     * @param array<string, array{data?: array{type: string, id: string, meta?: array<array-key, mixed>}|list<array{type: string, id: string, meta?: array<array-key, mixed>}>|null, links?: array<array-key, mixed>, meta?: array<array-key, mixed>}> $relationships
      */
     public function withRelationships(array $relationships): self
     {
         foreach ($relationships as $name => $relationship) {
+            $data = $relationship['data'] ?? [];
+            $identifiers = array_is_list($data) ? $data : ['' => $data];
+
+            foreach ($identifiers as $index => $identifier) {
+                $path = $index === '' ? "relationships.{$name}.data.meta" : "relationships.{$name}.data.{$index}.meta";
+                $meta = $identifier['meta'] ?? [];
+
+                $this->object(is_array($meta) ? $meta : throw RenderingException::memberNotAnObject($path, $this->key()), $path);
+            }
+
             $this->object($relationship['links'] ?? [], "relationships.{$name}.links");
             $this->object($relationship['meta'] ?? [], "relationships.{$name}.meta");
         }
@@ -116,7 +126,7 @@ final readonly class ResourceObject
     }
 
     /**
-     * @return array{type: string, id: string, attributes?: array<array-key, mixed>, relationships?: array<string, array{data?: array{type: string, id: string}|list<array{type: string, id: string}>|null, links?: array<array-key, mixed>, meta?: array<array-key, mixed>}>, links?: array<array-key, mixed>, meta?: array<array-key, mixed>}
+     * @return array{type: string, id: string, attributes?: array<array-key, mixed>, relationships?: array<string, array{data?: array{type: string, id: string, meta?: array<array-key, mixed>}|list<array{type: string, id: string, meta?: array<array-key, mixed>}>|null, links?: array<array-key, mixed>, meta?: array<array-key, mixed>}>, links?: array<array-key, mixed>, meta?: array<array-key, mixed>}
      */
     public function toArray(): array
     {
@@ -156,7 +166,7 @@ final readonly class ResourceObject
 
     /**
      * @param array<array-key, mixed>|null $attributes
-     * @param array<string, array{data?: array{type: string, id: string}|list<array{type: string, id: string}>|null, links?: array<array-key, mixed>, meta?: array<array-key, mixed>}>|null $relationships
+     * @param array<string, array{data?: array{type: string, id: string, meta?: array<array-key, mixed>}|list<array{type: string, id: string, meta?: array<array-key, mixed>}>|null, links?: array<array-key, mixed>, meta?: array<array-key, mixed>}>|null $relationships
      * @param array<array-key, mixed>|null $links
      * @param array<array-key, mixed>|null $meta
      */

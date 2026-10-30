@@ -15,6 +15,6 @@ class RelationOne extends Relation
 {
     protected function value(Closure $value): Relationship
     {
-        return new Relationship($this->related, $value, $this->links, $this->meta);
+        return new Relationship($this->related, $value, $this->links, $this->meta, $this->identifierMeta);
     }
 }

@@ -21,6 +21,16 @@ final class ResolvedRelationshipTest extends TestCase
         self::assertSame([], ResolvedRelationship::withoutData(Cardinality::Many)->resources());
     }
 
+    public function test_the_identifier_meta_follow_the_related_resources(): void
+    {
+        $user = new FakeResource('user', 1);
+
+        self::assertSame([['since' => 2020]], ResolvedRelationship::toOne($user, identifierMeta: ['since' => 2020])->identifierMeta);
+        self::assertSame([[]], ResolvedRelationship::toOne($user)->identifierMeta);
+        self::assertSame([], ResolvedRelationship::toOne(null, identifierMeta: ['since' => 2020])->identifierMeta);
+        self::assertSame([], ResolvedRelationship::withoutData(Cardinality::One)->identifierMeta);
+    }
+
     public function test_a_relationship_without_data_says_so(): void
     {
         $relationship = ResolvedRelationship::withoutData(Cardinality::One, ['related' => '/boss']);

@@ -44,12 +44,14 @@ class Relationship implements DescribesRelationship, RelationshipSource
      * @param Closure $value
      * @param Closure|null $links
      * @param Closure|null $meta
+     * @param Closure|null $identifierMeta
      */
     public function __construct(
         protected string   $resource,
         protected Closure  $value,
         protected ?Closure $links = null,
         protected ?Closure $meta = null,
+        protected ?Closure $identifierMeta = null,
     ) {}
 
     /**
@@ -90,6 +92,20 @@ class Relationship implements DescribesRelationship, RelationshipSource
     public function withMeta(Closure $meta): self
     {
         $this->meta = $meta;
+
+        return $this;
+    }
+
+    /**
+     * Set callback for the meta of each resource identifier, called with each related resource
+     *
+     * @param Closure $identifierMeta
+     *
+     * @return $this
+     */
+    public function withIdentifierMeta(Closure $identifierMeta): self
+    {
+        $this->identifierMeta = $identifierMeta;
 
         return $this;
     }
@@ -151,6 +167,7 @@ class Relationship implements DescribesRelationship, RelationshipSource
             ->whenIncluded($this->whenIncluded)
             ->hasLinks($this->links !== null)
             ->hasMeta($this->meta !== null)
+            ->hasIdentifierMeta($this->identifierMeta !== null)
             ->computed();
     }
 
@@ -189,7 +206,7 @@ class Relationship implements DescribesRelationship, RelationshipSource
     /**
      * The related resources of one resource: none when the relationship is resolved only when included and is not, or
      * when its condition fails (`MissingValue`); links and meta are resolved in every case, with the related resource
-     * (or collection) as argument.
+     * (or collection) as argument, the meta of the identifiers with each related resource, only when there is data.
      *
      * @internal Read by the renderer.
      */
@@ -224,10 +241,25 @@ class Relationship implements DescribesRelationship, RelationshipSource
                 }
             }
 
-            return ResolvedRelationship::toMany($related, $links, $meta);
+            return ResolvedRelationship::toMany(
+                $related,
+                $links,
+                $meta,
+                $this->identifierMeta === null ? [] : array_map($this->identifierMetaOf(...), $related),
+            );
         }
 
-        return ResolvedRelationship::toOne($resource->renderedModel() !== null ? $resource : null, $links, $meta);
+        return $resource->renderedModel() !== null
+            ? ResolvedRelationship::toOne($resource, $links, $meta, $this->identifierMetaOf($resource))
+            : ResolvedRelationship::toOne(null, $links, $meta);
+    }
+
+    /**
+     * @return array<array-key, mixed>
+     */
+    private function identifierMetaOf(RenderableResource $related): array
+    {
+        return $this->identifierMeta === null ? [] : self::members(($this->identifierMeta)($related));
     }
 
     /**

@@ -24,6 +24,7 @@ final class RelationshipDefinitionTest extends TestCase
         self::assertNull($relationship->whenIncluded);
         self::assertFalse($relationship->hasLinks);
         self::assertFalse($relationship->hasMeta);
+        self::assertFalse($relationship->hasIdentifierMeta);
         self::assertNull($relationship->source);
         self::assertFalse($relationship->computed);
         self::assertSame(Cardinality::Many, RelationshipDefinition::many('posts', UserResource::class)->cardinality);
@@ -40,6 +41,7 @@ final class RelationshipDefinitionTest extends TestCase
             ->whenIncluded(true)
             ->hasLinks()
             ->hasMeta()
+            ->hasIdentifierMeta()
             ->source('author')
             ->computed();
 
@@ -50,6 +52,8 @@ final class RelationshipDefinitionTest extends TestCase
         self::assertTrue($changed->whenIncluded);
         self::assertTrue($changed->hasLinks);
         self::assertTrue($changed->hasMeta);
+        self::assertTrue($changed->hasIdentifierMeta);
+        self::assertFalse($relationship->hasIdentifierMeta);
         self::assertSame('author', $changed->source);
         self::assertTrue($changed->computed);
         self::assertNull($changed->whenIncluded(null)->whenIncluded);

@@ -16,7 +16,7 @@ class RelationMany extends Relation
 {
     protected function value(Closure $value): Relationship
     {
-        $relation = new Relationship($this->related, $value, $this->links, $this->meta);
+        $relation = new Relationship($this->related, $value, $this->links, $this->meta, $this->identifierMeta);
         $relation->asCollection();
 
         return $relation;

@@ -13,6 +13,7 @@ trait Relationize
      * @param Closure      $value
      * @param Closure|null $links
      * @param Closure|null $meta
+     * @param Closure|null $identifierMeta
      *
      * @return \Ark4ne\JsonApi\Resources\Relationship<static>
      */
@@ -20,7 +21,8 @@ trait Relationize
         Closure $value,
         ?Closure $links = null,
         ?Closure $meta = null,
+        ?Closure $identifierMeta = null,
     ): Relationship {
-        return new Relationship(static::class, $value, $links, $meta);
+        return new Relationship(static::class, $value, $links, $meta, $identifierMeta);
     }
 }

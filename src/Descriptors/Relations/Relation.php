@@ -32,6 +32,7 @@ abstract class Relation extends Describer implements DescribesRelationship
 
     protected ?Closure $links = null;
     protected ?Closure $meta = null;
+    protected ?Closure $identifierMeta = null;
     protected ?bool $whenIncluded = null;
     protected ?Filters $filters = null;
 
@@ -68,6 +69,18 @@ abstract class Relation extends Describer implements DescribesRelationship
     public function meta(Closure $meta): static
     {
         return $this->with('meta', $meta);
+    }
+
+    /**
+     * Meta of each resource identifier of the linkage (`data.meta`, `data[].meta`): data of the link itself, such as the
+     * pivot of a many-to-many relation. The closure receives each related resource; the meta of the relationship
+     * object stay those of `meta()`.
+     *
+     * @see https://jsonapi.org/format/#document-resource-identifier-objects
+     */
+    public function identifierMeta(Closure $meta): static
+    {
+        return $this->with('identifierMeta', $meta);
     }
 
     /**
@@ -211,6 +224,7 @@ abstract class Relation extends Describer implements DescribesRelationship
             ->whenIncluded($this->whenIncluded)
             ->hasLinks($this->links !== null)
             ->hasMeta($this->meta !== null)
+            ->hasIdentifierMeta($this->identifierMeta !== null)
             ->source($computed ? null : $this->relation ?? $name)
             ->computed($computed);
     }

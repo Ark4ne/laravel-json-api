@@ -358,6 +358,33 @@ protected function toRelationships(Request $request): array
 }
 ```
 
+#### Resource identifier meta
+_**@see** [{json:api}: resource-identifier-objects](https://jsonapi.org/format/#document-resource-identifier-objects)_
+
+The `meta()` of a relationship describes the relationship as a whole. Data that belongs to the link to one related
+resource, such as a pivot, goes to the meta of its resource identifier: the closure receives each related resource.
+
+```php
+protected function toRelationships(Request $request): array
+{
+    return [
+        'tags' => $this->many(TagResource::class)
+            ->identifierMeta(fn(TagResource $tag) => [
+                'position' => $tag->resource->pivot->position,
+            ]),
+    ];
+}
+```
+
+```json
+"tags": {
+  "data": [
+    { "type": "tag", "id": "3", "meta": { "position": 1 } },
+    { "type": "tag", "id": "7", "meta": { "position": 2 } }
+  ]
+}
+```
+
 
 ### toLinks
 _**@see** [{json:api}: resource-linkage](https://jsonapi.org/format/#document-resource-object-links)_

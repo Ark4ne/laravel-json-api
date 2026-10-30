@@ -58,11 +58,15 @@ présentes malgré `fields[user]=name`.
 
 - [x] **E1.8** Membre `jsonapi` (`version: "1.1"`, `ext`, `profile`, `meta`) configurable (`document.jsonapi`,
       rendu par défaut, `false` pour l'omettre ; les paramètres `ext` / `profile` du media type relèvent d'E7.5)
-- [ ] **E1.9** `links.self` du document (URL courante) et des ressources (convention de route ou callback),
-      activables par la configuration
-- [ ] **E1.10** `meta` sur les resource identifiers (pivot BelongsToMany par exemple), en option
+- ~~E1.9 `links.self` du document et des ressources~~ : abandonné, un lien deviné impose une route par type ;
+  `toLinks()` (ressource, collection) et `->links()` (relation) couvrent le besoin
+- [x] **E1.10** `meta` sur les resource identifiers (pivot BelongsToMany par exemple), en option :
+      `->identifierMeta(fn($related) => [...])` (`withIdentifierMeta()` sur `Relationship`), `hasIdentifierMeta` dans
+      la définition. Au passage, les links / meta des relations sont résolus comme les autres membres (un
+      `$this->integer()` y était rendu `{}`)
 
 ## Critères de sortie
 
-- [ ] Un test de non-régression rouge-puis-vert par livrable
-- [ ] Tous les documents des tests Feature valident contre le JSON Schema JSON:API 1.1 (E10.1)
+- [x] Un test de non-régression rouge-puis-vert par livrable
+- [x] Tous les documents des tests Feature valident contre le JSON Schema JSON:API 1.1 (E10.1) :
+      `FeatureTestCase::createTestResponse()`

@@ -87,6 +87,24 @@ final class ResourceObjectTest extends TestCase
             static fn(ResourceObject $object) => $object->withRelationships(['author' => ['meta' => ['x']]]),
             'relationships.author.meta',
         ];
+        yield 'identifier meta' => [
+            static fn(ResourceObject $object) => $object->withRelationships([
+                'author' => ['data' => ['type' => 'user', 'id' => '2', 'meta' => ['x']]],
+            ]),
+            'relationships.author.data.meta',
+        ];
+        yield 'meta of an identifier in a list' => [
+            static fn(ResourceObject $object) => $object->withRelationships([
+                'tags' => ['data' => [['type' => 'tag', 'id' => '2'], ['type' => 'tag', 'id' => '3', 'meta' => ['x']]]],
+            ]),
+            'relationships.tags.data.1.meta',
+        ];
+        yield 'identifier meta that is not an array' => [
+            static fn(ResourceObject $object) => $object->withRelationships([
+                'author' => ['data' => ['type' => 'user', 'id' => '2', 'meta' => 'x']],
+            ]),
+            'relationships.author.data.meta',
+        ];
         yield 'relationship links' => [
             static fn(ResourceObject $object) => $object->withRelationships(['author' => ['links' => ['/a']]]),
             'relationships.author.links',

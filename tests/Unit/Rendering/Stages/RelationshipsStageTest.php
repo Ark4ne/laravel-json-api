@@ -6,11 +6,13 @@ namespace Test\Unit\Rendering\Stages;
 
 use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Definition\Cardinality;
+use Ark4ne\JsonApi\Descriptors\Values\ValueInteger;
 use Ark4ne\JsonApi\Rendering\IncludedRegistry;
 use Ark4ne\JsonApi\Rendering\ResolvedRelationship;
 use Ark4ne\JsonApi\Rendering\ResourceObject;
 use Ark4ne\JsonApi\Rendering\ResourceObjectRenderer;
 use Ark4ne\JsonApi\Rendering\Stages\RelationshipsStage;
+use Illuminate\Http\Resources\MissingValue;
 use PHPUnit\Framework\TestCase;
 use Test\Unit\Rendering\Fixtures\Contexts;
 use Test\Unit\Rendering\Fixtures\FakeRelationship;
@@ -47,6 +49,52 @@ final class RelationshipsStageTest extends TestCase
             ],
             'friends' => ['data' => [['type' => 'user', 'id' => '3'], ['type' => 'user', 'id' => '4']]],
         ], $object->relationships);
+    }
+
+    public function test_the_meta_of_a_resource_identifier_are_rendered_in_its_linkage(): void
+    {
+        $object = self::render(new FakeResource('user', 1, relationships: [
+            'boss' => new FakeRelationship(ResolvedRelationship::toOne(
+                new FakeResource('user', 2),
+                meta: ['count' => 1],
+                identifierMeta: ['since' => 2020],
+            )),
+            'friends' => new FakeRelationship(ResolvedRelationship::toMany(
+                [new FakeResource('user', 3), new FakeResource('user', 4)],
+                identifierMeta: [['position' => 1], []],
+            )),
+        ]), Contexts::of());
+
+        self::assertSame([
+            'boss' => [
+                'data' => ['type' => 'user', 'id' => '2', 'meta' => ['since' => 2020]],
+                'meta' => ['count' => 1],
+            ],
+            'friends' => ['data' => [
+                ['type' => 'user', 'id' => '3', 'meta' => ['position' => 1]],
+                ['type' => 'user', 'id' => '4'],
+            ]],
+        ], $object->relationships);
+    }
+
+    public function test_the_links_and_meta_of_a_relationship_and_of_its_identifiers_are_resolved(): void
+    {
+        $friend = new FakeResource('user', 2, model: ['position' => 3]);
+
+        $object = self::render(new FakeResource('user', 1, model: ['friends' => 4], relationships: [
+            'friends' => new FakeRelationship(ResolvedRelationship::toMany(
+                [$friend],
+                ['related' => static fn() => '/users/1/friends'],
+                ['count' => new ValueInteger('friends'), 'hidden' => new MissingValue()],
+                [['position' => new ValueInteger('position')]],
+            )),
+        ]), Contexts::of());
+
+        self::assertSame(['friends' => [
+            'data' => [['type' => 'user', 'id' => '2', 'meta' => ['position' => 3]]],
+            'links' => ['related' => '/users/1/friends'],
+            'meta' => ['count' => 4],
+        ]], $object->relationships);
     }
 
     public function test_a_relationship_without_data_renders_its_links_and_meta_or_is_left_out(): void
