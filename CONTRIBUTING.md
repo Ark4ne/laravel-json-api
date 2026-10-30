@@ -38,6 +38,11 @@ composer test:coverage   # line coverage, minimum 90 %
   disallowed calls. `phpstan-baseline.neon` holds the debt of the 1.x code: it may only shrink, never grow.
 - **Tests:** PHPUnit, on PHP 8.3 to 8.5 and Laravel 12 and 13 in the CI.
 - **Mutation testing:** Infection (`composer mutation`, requires `infection` installed globally).
+- **Performance:** `composer benchmark` renders 1,000 posts with 3 includes with this package, with 1.9 and with
+  Laravel's JSON:API resources (`bin/benchmark/`). It fails when the implementations do not render the same resources,
+  or when time or peak memory regresses beyond 10 % (`--tolerance`) against 1.9 or against
+  `bin/benchmark/reference.json`, the ratios to Laravel's resources measured on the same run. Run it on a change of
+  the rendering engine; `--update-reference` records the new ratios after a deliberate change.
 
 ## Changes
 

@@ -28,6 +28,7 @@ composer stan            # PHPStan max + Larastan + phpat architecture rules + d
 composer stan:baseline   # regenerate phpstan-baseline.neon (it may only shrink)
 composer cs              # code style check (PER-CS); composer cs:fix to fix
 composer ci              # every blocking check except coverage and mutation
+composer benchmark       # rendering time and memory against 1.9 and Laravel's JSON:API (fails on regression)
 
 vendor/bin/phpunit --filter test_name
 vendor/bin/phpunit tests/Unit

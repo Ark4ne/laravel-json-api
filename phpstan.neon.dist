@@ -30,6 +30,8 @@ parameters:
             allowIn:
                 - src/Laravel/*
                 - tests/*
+                # Boots a Laravel application, as the tests do.
+                - bin/benchmark/*
     disallowedFunctionCalls:
         -
             function:

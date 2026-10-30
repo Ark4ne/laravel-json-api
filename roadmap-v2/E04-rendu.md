@@ -45,11 +45,26 @@ nouveau moteur corrige structurellement la plupart des écarts d'E1 et plusieurs
 
 ### Performance
 
-- [ ] **E4.7** `composer benchmark` : collection de 1 000 ressources avec 3 includes, temps et pic mémoire, comparés à
+- [x] **E4.7** `composer benchmark` : collection de 1 000 ressources avec 3 includes, temps et pic mémoire, comparés à
       la v1.9 et au JSON:API natif de Laravel
 
 ## Critères de sortie
 
 - [x] `toArray()` appelé deux fois produit deux fois le même résultat
 - [x] Aucun état statique mutable dans `Rendering/` et `Context/`
-- [ ] Le benchmark ne régresse pas par rapport à la v1.9
+- [x] Le benchmark ne régresse pas par rapport à la v1.9
+
+## Mesures
+
+`composer benchmark` du 2026-10-30 (PHP 8.5.3, Laravel 13, Xdebug off) : 1 000 posts,
+`include=user,comments,comments.user` (3 100 ressources incluses, 4 requêtes), médiane de 5 rendus.
+
+| | médiane (ms) | pic mémoire (Mo) |
+| --- | --- | --- |
+| v2 | 123 | 17,8 |
+| v1.9 | 8 375 | 38,6 |
+| JSON:API natif Laravel | 262 | 30,1 |
+
+La v2 est ~68× plus rapide que la v1.9 (fusion O(n²) d'`included` supprimée) avec ~2,2× moins de mémoire, et ~2×
+plus rapide que le natif. Le seuil bloquant compare aussi les rapports v2 / natif (mesurés dans le même run, donc
+indépendants de la machine) à `bin/benchmark/reference.json` : 0,45 en temps, 0,59 en mémoire.
