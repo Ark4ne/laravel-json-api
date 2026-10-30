@@ -93,6 +93,8 @@ La release 1.10 de dépréciation (E11.1) se prépare dès que les ruptures sont
 | 2026-10-30 | Q5 — `toMeta()` renommé `toDocumentMeta()` et lève une exception en V2 ; `toResourceMeta()` inchangé (E6.4b) |
 | 2026-10-30 | Q6 — `sort`, `filter`, `page` hors périmètre : on ne s'écarte pas de Laravel (E7) |
 | 2026-10-30 | Q7 — Code, `docs/` et `docs/architecture.md` en anglais (ce dossier de suivi reste en français) |
+| 2026-10-30 | Sparse fieldsets : `fields[type]` filtre attributs et relations par défaut (conforme) ; `fields.relationships = 'keep'` rétablit le comportement 1.x, écart à la spec assumé et opt-in (E1.6) |
+| 2026-10-30 | Définitions paresseuses : le boot ne pose que la configuration et le chemin du fichier compilé, lu au premier `Definitions::for()` (E3) |
 | 2026-10-30 | Les libs `openapi-writer` et `laravel-openapi-generator` sont des modèles, sans dépendance ; le générateur nous consomme indirectement (E9) |
 | 2026-10-30 | Traits autorisés uniquement dans `Resources/` (façade utilisateur), interdits ailleurs (E0) |
 | 2026-10-30 | Dette 1.x gelée dans `phpstan-baseline.neon` (PHPStan max, phpat, disallowed calls) : la baseline ne peut que diminuer et doit être vide avant 2.0.0 (E0.2b) |

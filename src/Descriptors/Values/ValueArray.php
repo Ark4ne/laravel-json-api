@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Descriptors\Values;
 
+use Ark4ne\JsonApi\Definition\ValueType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 
@@ -49,5 +50,10 @@ class ValueArray extends Value
         return (new Collection($of))
             ->map(fn($item) => $type->value($item, $request))
             ->toArray();
+    }
+
+    protected function valueType(): ValueType
+    {
+        return ValueType::Array;
     }
 }

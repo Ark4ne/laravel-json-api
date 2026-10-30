@@ -4,11 +4,16 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Resources;
 
+use Ark4ne\JsonApi\Compilation\Definitions;
+use Ark4ne\JsonApi\Definition\DefinitionSource;
+use Ark4ne\JsonApi\Definition\ResourceDefinition;
+use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Support\Arr;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\Json\ResourceCollection;
+use ReflectionClass;
 
 /**
  * @template T as JsonApiResource
@@ -23,6 +28,20 @@ class JsonApiCollection extends ResourceCollection implements Resourceable
      * @var class-string<T>
      */
     public $collects;
+
+    /**
+     * The definition of the resources this collection collects.
+     */
+    public static function definition(): ResourceDefinition
+    {
+        $collects = (new ReflectionClass(static::class))->getDefaultProperties()['collects'] ?? null;
+
+        if (!is_string($collects) || !is_subclass_of($collects, DefinitionSource::class)) {
+            throw DefinitionException::notADefinitionSource(static::class);
+        }
+
+        return Definitions::for($collects);
+    }
 
     /**
      * Create a new anonymous resource collection.

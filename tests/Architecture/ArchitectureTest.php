@@ -37,6 +37,7 @@ final class ArchitectureTest
         'Resources',
         'Http',
         'Laravel',
+        'Testing',
     ];
 
     /**

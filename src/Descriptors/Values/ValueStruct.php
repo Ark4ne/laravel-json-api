@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Descriptors\Values;
 
+use Ark4ne\JsonApi\Definition\ValueType;
 use Ark4ne\JsonApi\Descriptors\Resolver;
 use Ark4ne\JsonApi\Support\Values;
 use Closure;
@@ -43,5 +44,10 @@ class ValueStruct extends Value
         $attributes = Values::mergeValues($this->resolveValues($request, Values::mergeValues($of)));
 
         return (new Collection($attributes))->toArray();
+    }
+
+    protected function valueType(): ValueType
+    {
+        return ValueType::Struct;
     }
 }

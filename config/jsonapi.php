@@ -86,4 +86,20 @@ return [
         */
         'when-included' => false,
     ],
+
+    'fields' => [
+        /*
+        |--------------------------------------------------------------------------
+        | Relationships
+        |--------------------------------------------------------------------------
+        |
+        | How `fields[type]` treats the relationships of a resource.
+        |
+        | 'filter' => fields restrict attributes and relationships (JSON:API)
+        | 'keep'   => fields restrict attributes only, every relationship is
+        |             rendered (1.x behaviour, not compliant)
+        |
+        */
+        'relationships' => 'filter',
+    ],
 ];

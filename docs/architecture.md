@@ -66,7 +66,7 @@ Resource / Collection ──► LoadPlanner ──► DocumentBuilder ──► 
 ## 2. Layers and dependency rule
 
 ```
-Support ← Configuration ← Definition ← Descriptors ← Compilation ← Context ← Loading ← Rendering ← Resources ← Http ← Laravel
+Support ← Configuration ← Definition ← Descriptors ← Compilation ← Context ← Loading ← Rendering ← Resources ← Http ← Laravel ← Testing
                                     (Exceptions: usable by every layer)
 ```
 
@@ -83,12 +83,14 @@ Support ← Configuration ← Definition ← Descriptors ← Compilation ← Con
 | Resources | `src/Resources/` | The user façade: `JsonApiResource`, `JsonApiCollection` and their concerns |
 | Http | `src/Http/` | Validation rules, `JsonApiFormRequest`, content negotiation middleware, `ErrorRenderer`s |
 | Laravel | `src/Laravel/` | Service provider, Artisan commands, container bindings, `JsonApi` facade, configuration loading |
+| Testing | `src/Testing/` | Assertions for the test suites of applications (`ResourceAssertions`) |
 | Exceptions | `src/Exceptions/` | Single exception hierarchy |
 
 - A layer depends only on the layers to its left. Checked by `phpat` (`tests/Architecture/ArchitectureTest.php`).
 - **Inversion at the Resources boundary.** `Compilation` and `Rendering` never depend on `Resources`: they work on the
-  `Definition\DefinitionSource` contract, which `JsonApiResource` implements through `@internal` bridge methods. The
-  user hooks stay `protected`.
+  `Definition\DefinitionSource` contract, which `JsonApiResource` implements through `@internal` bridge methods
+  (`newDefinitionSource()`, `predefinedDefinition()`, `describeType()`, `describeAttributes()`,
+  `describeRelationships()`, `describeLinks()`, `describeResourceMeta()`). The user hooks stay `protected`.
 - **Laravel.** Every layer may depend on `Illuminate\Contracts\*`, on `Illuminate\Http\Request` and on the Laravel
   classes it documents (`JsonResource`, `Model`, `Relation`…). Only the `Laravel` layer uses facades, global helpers
   (`config()`, `app()`, `request()`…) and the container. Checked by `phpat` and `spaze/phpstan-disallowed-calls`.
@@ -126,19 +128,23 @@ final readonly class AttributeDefinition
 | --- | --- |
 | `ResourceDefinition` | Resource class, `type`, attributes, relationships, declared links and meta, diagnostics of its compilation |
 | `AttributeDefinition` | Name, dotted path inside structs, `ValueType`, nullable, format, enum class, item type, children (structs), conditional, sparse (`whenInFields`: out unless requested) |
-| `RelationshipDefinition` | Name, related resource class, `Cardinality::One` / `Many`, load plan, linkage mode, declared links and meta, conditional |
+| `RelationshipDefinition` | Name, related resource class, `Cardinality::One` / `Many`, `LoadDefinition`, `whenIncluded`, declared links and meta, conditional, source |
+| `LoadDefinition` | Relation paths eager-loaded when the relationship is included, and those loaded with a constraint closure |
 | `ValueType` | The type of a value as the tools need it: `string`, `integer`, `number`, `boolean`, `date`, `enum`, `array`, `struct`, `mixed`, or a custom type of the registry |
 
 Rules:
 
 1. **`final readonly` classes**, private constructor, named constructors, `copy()` for every change.
-2. **No closure, no model, no request** inside a definition: it must be serializable with `var_export`. What depends on
-   runtime (a closure retriever, a constrained eager-load) is recorded as a flag (`computed`, `constrained`) and
-   resolved by the renderer from the resource instance.
-3. **Defaults resolved at compilation.** A descriptor without explicit nullability or date format stores "unset"; the
+2. **No closure, no model, no request** inside a definition: it must be serializable with `var_export` (every class has
+   `__set_state()`). What depends on runtime (a closure retriever, a constrained eager-load) is recorded as a flag
+   (`computed`, `LoadDefinition::$constrained`) and resolved from the resource at runtime
+   (`Definitions::loadConstraints()`).
+3. **No nesting.** A relationship references its related resource by class only; the related definition is read with
+   `Definitions::for()`. Cycles (`post.author.posts`) cost nothing.
+4. **Defaults resolved at compilation.** A descriptor without explicit nullability or date format stores "unset"; the
    compiler resolves it from the `Configuration`, so a definition is always complete.
-4. **Semver.** Every public property and method of `Definition\*` and `Compilation\Definitions::for()` follows semver:
-   a change is a major version.
+5. **Semver.** Every public property and method of `Definition\*`, `Compilation\Definitions::for()` and
+   `JsonApiResource::definition()` follows semver: a change is a major version.
 
 ## 4. Compilation: the probe
 
@@ -153,14 +159,16 @@ Patterns: **Null Object** (the probe), **Builder** (descriptors build definition
   `->when()`, `->unless()` or `applyWhen()`. A resource whose attributes differ between two probe runs gets a
   diagnostic.
 - **`mergeWhen` hides fields** from the definition: `applyWhen` is the documented way to group conditional fields.
-- **Opt-in escape hatch.** A resource may override `public static function definition(): ResourceDefinition` and
+- **Reading a definition:** `PostResource::definition()` (or `PostCollection::definition()`, which reads the
+  collected resource) returns `Definitions::for(PostResource::class)`. It replaces 1.x `schema()` and `Skeleton`.
+- **Opt-in escape hatch.** A resource may override `protected static function toDefinition(): ?ResourceDefinition` and
   build its definition by hand; it is then never probed.
 
 ### Cache
 
 | Level | Where | Lifetime | Filled by |
 | --- | --- | --- | --- |
-| Memory | `Definitions` (pure cache, the only static state allowed) | Process | First use of a class |
+| Memory | `Definitions`: the only static state of the package, a pure cache plus the `Configuration` and the compiled file set once at boot by the Laravel layer (`Definitions::configure()`, which compiles and reads nothing), so that `definition()` works anywhere without the container | Process | First use of a class; the compiled file is read on the first `for()` |
 | Compiled | `bootstrap/cache/jsonapi.php` (`var_export`, served by OPcache) | Until `jsonapi:clear` | `php artisan jsonapi:cache`, called by `php artisan optimize` |
 
 Without the compiled cache, PHP-FPM compiles each used class once per request; with it, a definition costs one
@@ -234,7 +242,10 @@ interface Stage
 - **Shape guarantees**, by construction and not by `array_filter`: `id` is always a string; an empty to-one is
   `{"data": null}`, an empty to-many `{"data": []}`; a relationship object always has `data`, `links` or `meta`, or is
   omitted; `attributes`, `relationships`, `links` and `meta` are always JSON objects.
-- **Sparse fieldsets** restrict attributes **and** relationships, for primary and included resources alike.
+- **Sparse fieldsets** restrict attributes **and** relationships, for primary and included resources alike
+  (`fields.relationships = 'filter'`, the default). `'keep'` restricts attributes only and renders every relationship,
+  as 1.x did: a deliberate, opt-in departure from the specification; a relationship named in `fields` is then accepted
+  and ignored. `ResourceDefinition::fields()` lists the names `fields[type]` accepts in both modes.
 - **Pagination** keeps Laravel's paginated output (`links.first/last/prev/next`, `meta`): it already complies with the
   specification.
 
@@ -303,7 +314,7 @@ Registries order their entries by priority, never by the order of a configuratio
 | --- | --- |
 | Classes | `final` by default. Extensible base classes, listed in the architecture test: `JsonApiResource`, `JsonApiCollection`, `Descriptors\Values\Value` |
 | Traits | Only in `src/Resources/` |
-| Global state | No singleton, no mutable static property; the only static cache is `Compilation\Definitions` (pure) |
+| Global state | No singleton, no mutable static property; the only static state is `Compilation\Definitions` (pure cache, configuration set once at boot) |
 | Facades and helpers | Only in `src/Laravel/` |
 | Types | `declare(strict_types=1)`, every signature typed, PHPStan max; `mixed` only for free values, documented |
 | PHPDoc | Generics on the public API (`JsonApiResource<User>`, `Value<User>`, `Closure(User): mixed`); no redundant PHPDoc |

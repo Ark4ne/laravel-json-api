@@ -12,7 +12,6 @@ class Reflect
     {
         $reflect = new ReflectionClass($object);
         $reflectMethod = $reflect->getMethod($method);
-        $reflectMethod->setAccessible(true);
 
         return $reflectMethod->invoke($object, ...$args);
     }
@@ -21,7 +20,6 @@ class Reflect
     {
         $reflect = new ReflectionClass($object);
         $reflectProperty = $reflect->getProperty($property);
-        $reflectProperty->setAccessible(true);
 
         $reflectProperty->setValue($object, $value);
     }
@@ -30,7 +28,6 @@ class Reflect
     {
         $reflect = new ReflectionClass($object);
         $reflectProperty = $reflect->getProperty($property);
-        $reflectProperty->setAccessible(true);
 
         return $reflectProperty->getValue($object);
     }

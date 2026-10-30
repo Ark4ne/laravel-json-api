@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Resources;
 
+use Ark4ne\JsonApi\Definition\DefinitionSource;
 use Ark4ne\JsonApi\Descriptors;
 use Ark4ne\JsonApi\Support\Arr;
 use Illuminate\Database\Eloquent\Model;
@@ -15,7 +16,7 @@ use JsonSerializable;
  * @template T
  * @property T $resource
  */
-abstract class JsonApiResource extends JsonResource implements Resourceable
+abstract class JsonApiResource extends JsonResource implements DefinitionSource, Resourceable
 {
     use Descriptors\Relations;
     use Descriptors\Values;
@@ -27,6 +28,7 @@ abstract class JsonApiResource extends JsonResource implements Resourceable
     use Concerns\Links;
     use Concerns\Meta;
     use Concerns\Schema;
+    use Concerns\Definable;
     use Concerns\ToResponse;
 
     /** @var T */

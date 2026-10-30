@@ -2569,7 +2569,7 @@ parameters:
 			path: tests/Unit/Descriptors/RelationTest.php
 
 		-
-			message: '#^Variable property access on Illuminate\\Database\\Eloquent\\Model@anonymous/tests/Unit/Descriptors/RelationTest\.php\:142\.$#'
+			message: '#^Variable property access on Illuminate\\Database\\Eloquent\\Model@anonymous/tests/Unit/Descriptors/RelationTest\.php\:147\.$#'
 			identifier: property.dynamicName
 			count: 1
 			path: tests/Unit/Descriptors/RelationTest.php

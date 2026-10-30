@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Descriptors\Values;
 
+use Ark4ne\JsonApi\Definition\ValueType;
 use BackedEnum;
 use Illuminate\Http\Request;
 use UnitEnum;
@@ -42,5 +43,10 @@ class ValueEnum extends Value
         }
 
         return $of;
+    }
+
+    protected function valueType(): ValueType
+    {
+        return ValueType::Enum;
     }
 }

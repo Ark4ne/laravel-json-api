@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Descriptors\Values;
 
+use Ark4ne\JsonApi\Definition\ValueType;
 use Ark4ne\JsonApi\Support\Config;
 use Closure;
 use Illuminate\Http\Request;
@@ -38,5 +39,10 @@ class ValueFloat extends Value
         }
 
         return (float) $of;
+    }
+
+    protected function valueType(): ValueType
+    {
+        return ValueType::Number;
     }
 }

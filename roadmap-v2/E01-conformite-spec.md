@@ -47,7 +47,8 @@ présentes malgré `fields[user]=name`.
 ### Sparse fieldsets
 
 - [ ] **E1.6** `fields[type]` filtre aussi les `relationships`. La spec en fait la seule exception admise à la
-      « full linkage » 🔴
+      « full linkage » 🔴. Configurable : `fields.relationships` = `filter` (défaut, conforme) ou `keep`
+      (comportement 1.x, attributs seuls ; un nom de relation dans `fields` est accepté et ignoré)
 
 ### Membres optionnels
 

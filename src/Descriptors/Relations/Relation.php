@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Descriptors\Relations;
 
+use Ark4ne\JsonApi\Definition\DefinitionSource;
+use Ark4ne\JsonApi\Definition\RelationshipDefinition;
 use Ark4ne\JsonApi\Descriptors\Describer;
+use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Filters\Filters;
 use Ark4ne\JsonApi\Resources\Relationship;
 use Ark4ne\JsonApi\Traits\HasRelationLoad;
@@ -14,6 +17,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MissingValue;
 use Illuminate\Support\Arr;
+use ReflectionClass;
 
 /**
  * @template T
@@ -186,6 +190,39 @@ abstract class Relation extends Describer
     public function valueFor(Request $request, mixed $model, string $attribute): mixed
     {
         return $this->resolveFor($request, $model, $attribute);
+    }
+
+    /**
+     * What this descriptor declares under a name: related resource, cardinality, eager-load, conditions, links and meta
+     * (docs/architecture.md §3).
+     */
+    public function definition(string $name): RelationshipDefinition
+    {
+        return RelationshipDefinition::one($name, $this->relatedResource());
+    }
+
+    /**
+     * The resource class of the related resources: the related class itself, or the class a related collection
+     * collects (`$collects`).
+     *
+     * @return class-string<DefinitionSource>
+     *
+     * @throws DefinitionException when neither is a resource
+     */
+    protected function relatedResource(): string
+    {
+        $related = $this->related;
+
+        if (!is_subclass_of($related, DefinitionSource::class)) {
+            $collects = (new ReflectionClass($related))->getDefaultProperties()['collects'] ?? null;
+            $related = is_string($collects) ? $collects : $related;
+        }
+
+        if (!is_subclass_of($related, DefinitionSource::class)) {
+            throw DefinitionException::notADefinitionSource($related);
+        }
+
+        return $related;
     }
 
     abstract protected function value(Closure $value): Relationship;

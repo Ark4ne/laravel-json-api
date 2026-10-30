@@ -19,6 +19,7 @@
     "require": {
         "php": "^8.3",
         "illuminate/collections": "^12.46 || ^13.0",
+        "illuminate/console": "^12.46 || ^13.0",
         "illuminate/http": "^12.46 || ^13.0",
         "illuminate/support": "^12.46 || ^13.0"
     },
@@ -32,6 +33,9 @@
         "phpstan/phpstan-strict-rules": "^2.0",
         "phpunit/phpunit": "^11.5 || ^12.5 || ^13.0",
         "spaze/phpstan-disallowed-calls": "^4.5"
+    },
+    "suggest": {
+        "phpunit/phpunit": "Required by Testing\\ResourceAssertions to assert resource definitions in the application tests."
     },
     "autoload": {
         "psr-4": {

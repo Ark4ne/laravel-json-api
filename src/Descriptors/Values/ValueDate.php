@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Descriptors\Values;
 
+use Ark4ne\JsonApi\Definition\ValueType;
 use Ark4ne\JsonApi\Support\Config;
 use Closure;
 use DateTime;
@@ -48,5 +49,10 @@ class ValueDate extends Value
         }
 
         return (new DateTime($of))->format($this->format);
+    }
+
+    protected function valueType(): ValueType
+    {
+        return ValueType::Date;
     }
 }

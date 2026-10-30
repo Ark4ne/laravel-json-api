@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Descriptors\Values;
 
+use Ark4ne\JsonApi\Definition\AttributeDefinition;
+use Ark4ne\JsonApi\Definition\ValueType;
 use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Support\Config;
 use Ark4ne\JsonApi\Support\Fields;
@@ -120,6 +122,26 @@ abstract class Value extends Describer
         }
 
         return parent::check($request, $model, $attribute);
+    }
+
+    /**
+     * What this descriptor declares under a name: type, nullability, format, conditions, source
+     * (docs/architecture.md §3). Defaults left unset are resolved by the compiler.
+     *
+     * @param mixed $subject What the compiler runs the descriptor on (the resource instance holding a probe), for the
+     *                       values whose definition depends on a closure (structs)
+     */
+    public function definition(string $name, mixed $subject = null): AttributeDefinition
+    {
+        return AttributeDefinition::of($name, $this->valueType());
+    }
+
+    /**
+     * The type of the values this descriptor renders; `mixed` unless a subclass knows better.
+     */
+    protected function valueType(): ValueType
+    {
+        return ValueType::Mixed;
     }
 
     abstract protected function value(mixed $of, Request $request): mixed;
