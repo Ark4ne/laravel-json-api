@@ -23,6 +23,8 @@ final readonly class Configuration
      * @param bool $nullable Values are nullable unless a descriptor says otherwise (`describer.nullable`)
      * @param string $dateFormat Default format of date values (`describer.date`)
      * @param int|null $precision Default precision of float values, `null` for none (`describer.precision`)
+     * @param bool $strict A value that is not nullable and has no meaningful value for `null` throws instead of
+     *                     rendering `null` (`describer.strict`)
      * @param list<string> $whenHas Scopes where `whenHas()` applies automatically (`describer.when-has`)
      * @param bool $whenIncluded Relationships are resolved only when included (`relationship.when-included`)
      * @param SparseRelationships $sparseRelationships How `fields[type]` treats relationships (`fields.relationships`)
@@ -36,6 +38,7 @@ final readonly class Configuration
         public bool $nullable,
         public string $dateFormat,
         public ?int $precision,
+        public bool $strict,
         public array $whenHas,
         public bool $whenIncluded,
         public SparseRelationships $sparseRelationships,
@@ -54,6 +57,7 @@ final readonly class Configuration
             nullable: true,
             dateFormat: DateTimeInterface::ATOM,
             precision: null,
+            strict: false,
             whenHas: [],
             whenIncluded: false,
             sparseRelationships: SparseRelationships::Filter,
@@ -79,6 +83,7 @@ final readonly class Configuration
             nullable: self::bool($config, 'describer.nullable', $defaults->nullable),
             dateFormat: self::string($config, 'describer.date', $defaults->dateFormat),
             precision: self::precision($config, $defaults->precision),
+            strict: self::bool($config, 'describer.strict', $defaults->strict),
             whenHas: self::whenHas($config, $defaults->whenHas),
             whenIncluded: self::bool($config, 'relationship.when-included', $defaults->whenIncluded),
             sparseRelationships: self::sparseRelationships($config, $defaults->sparseRelationships),

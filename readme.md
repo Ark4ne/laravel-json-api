@@ -17,6 +17,7 @@ composer require ark4ne/laravel-json-api
 | `describer.nullable`         | `bool`                   | For describer notation, defined if a value is nullable by default.                      |
 | `describer.date`             | `string` datetime format | For describer notation, defined default date time format.                               |
 | `describer.precision`        | `int` \ `null`           | For describer notation, decimal precision for float value. `null` for disable rounding. |
+| `describer.strict`           | `bool`                   | A value that is not nullable and has no value for `null` (a date) throws instead of rendering `null`. `APP_DEBUG` by default. |
 | `describer.when-has`         | `bool` \ `string[]`      | For describer notation, Apply automatically whenHas condition on attributes.            |
 | `relationship.when-included` | `bool`                   | Allow to disabled by default the loading of relationship data.                          |
 | `fields.relationships`       | `'filter'` \ `'keep'`    | `fields[type]` restricts the relationships too (`filter`, JSON:API) or not (`keep`, 1.x). |
@@ -464,9 +465,9 @@ UserResource::collection(User::all()); // => JsonApiCollection
 |-----------|-----------------------------------------------------------------|
 | `bool`    | Cast to boolean                                                 |
 | `integer` | Cast to integer                                                 |
-| `float`   | Cast to float                                                   |
+| `float`   | Cast to float, rounded to `->precision(2)`, or `->truncate()`d  |
 | `string`  | Cast to string                                                  |
-| `date`    | Cast to date, allow to use custom format                        |
+| `date`    | Cast to date, allow to use custom format; `null` stays `null`   |
 | `array`   | Cast to array, supports typed arrays with `->of()`              |
 | `arrayOf` | Helper method for typed arrays (alternative to `array()->of()`) |
 | `mixed`   | Don't cast, return as is                                        |

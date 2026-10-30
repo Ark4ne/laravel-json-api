@@ -31,6 +31,21 @@ application lists `Ark4ne\JsonApi\Providers\LaravelJsonApiProvider` in `bootstra
 `config/jsonapi.php` is validated at boot: a value of the wrong type throws an `InvalidConfigurationException` that
 names the key. Compare your published file with the package one for the new keys.
 
+### Values
+
+- A float with a precision is rounded instead of floored: `$this->float()->precision(2)` renders `1.24` for `1.239`
+  (1.x: `1.23`), `1.15` for `1.15` (1.x: `1.14`). Add `->truncate()` to truncate.
+- A date declared `nullable(false)` renders `null` for `null` (1.x: `1970-01-01T00:00:00+00:00`). With
+  `describer.strict`, true by default when `APP_DEBUG` is, it throws a `RenderingException` instead: make the value
+  nullable, or give it a value.
+- A custom value extending `Descriptors\Values\Value` receives the configuration:
+
+  ```php
+  protected function value(mixed $of, Request $request, Configuration $configuration): mixed
+  ```
+
+  `Support\Config` is removed: read the defaults (`$configuration->nullable`, `dateFormat`, `precision`) from it.
+
 ### Schema and assertions
 
 `JsonApiResource::schema()`, `JsonApiCollection::schema()` and `Skeleton` are removed: `PostResource::definition()`

@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Test\Unit\Rendering;
 
+use Ark4ne\JsonApi\Descriptors\Values\ValueDate;
+use Ark4ne\JsonApi\Descriptors\Values\ValueFloat;
 use Ark4ne\JsonApi\Descriptors\Values\ValueInteger;
 use Ark4ne\JsonApi\Descriptors\Values\ValueString;
 use Ark4ne\JsonApi\Descriptors\Values\ValueStruct;
 use Ark4ne\JsonApi\Rendering\ValueResolver;
+use DateTimeImmutable;
 use Illuminate\Http\Resources\MergeValue;
 use Illuminate\Http\Resources\MissingValue;
 use Illuminate\Support\Collection;
@@ -29,6 +32,24 @@ final class ValueResolverTest extends TestCase
         ], self::MODEL, Contexts::of());
 
         self::assertSame(['name' => 'Ada', 'age' => 36, 'computed' => 'value', 'raw' => 'raw'], $resolved);
+    }
+
+    public function test_the_values_read_their_defaults_from_the_configuration_of_the_context(): void
+    {
+        $model = ['price' => 1.239, 'at' => new DateTimeImmutable('2024-05-01 10:00:00+00:00'), 'note' => null];
+        $members = ['price' => new ValueFloat('price'), 'at' => new ValueDate('at'), 'note' => new ValueString('note')];
+
+        $resolved = (new ValueResolver())->resolve($members, $model, Contexts::of(config: ['describer' => [
+            'precision' => 1,
+            'date' => 'Y-m-d',
+            'nullable' => false,
+        ]]));
+
+        self::assertSame(['price' => 1.2, 'at' => '2024-05-01', 'note' => ''], $resolved);
+        self::assertSame(
+            ['price' => 1.239, 'at' => '2024-05-01T10:00:00+00:00', 'note' => null],
+            (new ValueResolver())->resolve($members, $model, Contexts::of()),
+        );
     }
 
     public function test_arrayable_values_are_rendered_as_plain_arrays(): void

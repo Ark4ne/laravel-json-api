@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Descriptors;
 
+use Ark4ne\JsonApi\Configuration\Configuration;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MissingValue;
@@ -83,16 +84,22 @@ abstract class Describer
      * @param \Illuminate\Http\Request $request
      * @param T $model
      * @param string $attribute
+     * @param Configuration|null $configuration The defaults the descriptor leaves unset; those of a fresh installation
+     *                                          if `null`
      *
      * @return mixed
      */
-    public function valueFor(Request $request, mixed $model, string $attribute): mixed
-    {
+    public function valueFor(
+        Request $request,
+        mixed $model,
+        string $attribute,
+        ?Configuration $configuration = null,
+    ): mixed {
         if (!$this->check($request, $model, $attribute)) {
             return new MissingValue();
         }
 
-        return $this->resolveFor($request, $model, $attribute);
+        return $this->resolveFor($request, $model, $attribute, $configuration);
     }
 
     /**
@@ -171,10 +178,16 @@ abstract class Describer
      * @param \Illuminate\Http\Request $request
      * @param T $model
      * @param string $attribute
+     * @param Configuration|null $configuration
      *
      * @return mixed
      */
-    abstract protected function resolveFor(Request $request, mixed $model, string $attribute): mixed;
+    abstract protected function resolveFor(
+        Request $request,
+        mixed $model,
+        string $attribute,
+        ?Configuration $configuration = null,
+    ): mixed;
 
     /**
      * @return string|Closure|null

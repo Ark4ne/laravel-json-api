@@ -42,7 +42,7 @@ class ValueEnum extends Value
         return parent::definition($name, $subject, $configuration)->enum($this->type);
     }
 
-    protected function value(mixed $of, Request $request): mixed
+    protected function value(mixed $of, Request $request, Configuration $configuration): mixed
     {
         if ($of instanceof BackedEnum) {
             return $of->value;

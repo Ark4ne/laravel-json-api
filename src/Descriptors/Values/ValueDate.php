@@ -7,7 +7,6 @@ namespace Ark4ne\JsonApi\Descriptors\Values;
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Definition\AttributeDefinition;
 use Ark4ne\JsonApi\Definition\ValueType;
-use Ark4ne\JsonApi\Support\Config;
 use DateTime;
 use DateTimeInterface;
 use Exception;
@@ -37,21 +36,23 @@ class ValueDate extends Value
     }
 
     /**
+     * `null` stays `null`, even when not nullable: no date stands for it.
+     *
      * @throws Exception
      */
-    public function value(mixed $of, Request $request): string
+    public function value(mixed $of, Request $request, Configuration $configuration): ?string
     {
         if ($of === null) {
-            return (new DateTime("@0"))->format($this->format ?? Config::$date);
+            return null;
         }
         if ($of instanceof DateTimeInterface) {
-            return $of->format($this->format ?? Config::$date);
+            return $of->format($this->format ?? $configuration->dateFormat);
         }
         if (is_numeric($of)) {
-            return (new DateTime("@$of"))->format($this->format ?? Config::$date);
+            return (new DateTime("@$of"))->format($this->format ?? $configuration->dateFormat);
         }
 
-        return (new DateTime($of))->format($this->format ?? Config::$date);
+        return (new DateTime($of))->format($this->format ?? $configuration->dateFormat);
     }
 
     protected function valueType(): ValueType

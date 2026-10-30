@@ -49,7 +49,7 @@ class ValueArray extends Value
      * @param Request $request
      * @return array<array-key, mixed>
      */
-    public function value(mixed $of, Request $request): array
+    public function value(mixed $of, Request $request, Configuration $configuration): array
     {
         if (!$this->type) {
             return (new Collection($of))->toArray();
@@ -60,7 +60,7 @@ class ValueArray extends Value
             : $this->type;
 
         return (new Collection($of))
-            ->map(fn($item) => $type->value($item, $request))
+            ->map(fn($item) => $type->value($item, $request, $configuration))
             ->toArray();
     }
 

@@ -8,7 +8,7 @@ use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Definition\AttributeDefinition;
 use Ark4ne\JsonApi\Definition\ValueType;
 use Ark4ne\JsonApi\Descriptors\Describer;
-use Ark4ne\JsonApi\Support\Config;
+use Ark4ne\JsonApi\Exceptions\RenderingException;
 use Ark4ne\JsonApi\Support\Values;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
@@ -49,9 +49,12 @@ abstract class Value extends Describer
         return $this->sparse;
     }
 
-    public function isNullable(): bool
+    /**
+     * @param Configuration|null $configuration Decides when the descriptor does not; that of a fresh installation if `null`
+     */
+    public function isNullable(?Configuration $configuration = null): bool
     {
-        return $this->nullable ?? Config::$nullable;
+        return $this->nullable ?? ($configuration ?? Configuration::defaults())->nullable;
     }
 
     /**
@@ -105,17 +108,30 @@ abstract class Value extends Describer
         ): bool => Values::hasAttribute($model, $field ?? $attribute));
     }
 
-    public function resolveFor(Request $request, mixed $model, string $field): mixed
-    {
+    public function resolveFor(
+        Request $request,
+        mixed $model,
+        string $field,
+        ?Configuration $configuration = null,
+    ): mixed {
+        $configuration ??= Configuration::defaults();
+
         if ($this->attribute instanceof Closure) {
             $value = ($this->attribute)($model, $field);
         } else {
             $value = Values::getAttribute($model, $this->attribute ?? $field);
         }
 
-        return $value === null && $this->isNullable()
-            ? null
-            : $this->value($value, $request);
+        if ($value === null && $this->isNullable($configuration)) {
+            return null;
+        }
+
+        $resolved = $this->value($value, $request, $configuration);
+
+        // Not nullable, but no value stands for null (a date): an error to see in strict mode, `null` otherwise.
+        return $value === null && $resolved === null && $configuration->strict
+            ? throw RenderingException::nullNotNullable($field)
+            : $resolved;
     }
 
     protected function check(Request $request, mixed $model, string $attribute): bool
@@ -174,5 +190,10 @@ abstract class Value extends Describer
         return ValueType::Mixed;
     }
 
-    abstract protected function value(mixed $of, Request $request): mixed;
+    /**
+     * The value rendered for what the model holds.
+     *
+     * @param Configuration $configuration The defaults the descriptor leaves unset (`describer.*`)
+     */
+    abstract protected function value(mixed $of, Request $request, Configuration $configuration): mixed;
 }

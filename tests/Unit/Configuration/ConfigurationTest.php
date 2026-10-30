@@ -29,6 +29,7 @@ final class ConfigurationTest extends TestCase
         self::assertTrue($configuration->nullable);
         self::assertSame(DateTimeInterface::ATOM, $configuration->dateFormat);
         self::assertNull($configuration->precision);
+        self::assertFalse($configuration->strict);
         self::assertSame([], $configuration->whenHas);
         self::assertFalse($configuration->whenIncluded);
         self::assertSame(SparseRelationships::Filter, $configuration->sparseRelationships);
@@ -50,6 +51,7 @@ final class ConfigurationTest extends TestCase
                 'nullable' => false,
                 'date' => 'Y-m-d',
                 'precision' => 2,
+                'strict' => true,
                 'when-has' => ['attributes'],
             ],
             'relationship' => ['when-included' => true],
@@ -68,6 +70,7 @@ final class ConfigurationTest extends TestCase
         self::assertFalse($configuration->nullable);
         self::assertSame('Y-m-d', $configuration->dateFormat);
         self::assertSame(2, $configuration->precision);
+        self::assertTrue($configuration->strict);
         self::assertSame(['attributes'], $configuration->whenHas);
         self::assertTrue($configuration->whenIncluded);
         self::assertSame(SparseRelationships::Keep, $configuration->sparseRelationships);
@@ -121,6 +124,7 @@ final class ConfigurationTest extends TestCase
         yield 'nullable' => [['describer' => ['nullable' => 'yes']], 'describer.nullable'];
         yield 'date' => [['describer' => ['date' => 1]], 'describer.date'];
         yield 'precision' => [['describer' => ['precision' => 'two']], 'describer.precision'];
+        yield 'strict' => [['describer' => ['strict' => 1]], 'describer.strict'];
         yield 'when-has scope' => [['describer' => ['when-has' => ['unknown']]], 'describer.when-has'];
         yield 'when-included' => [['relationship' => ['when-included' => 1]], 'relationship.when-included'];
         yield 'fields.relationships' => [['fields' => ['relationships' => 'drop']], 'fields.relationships'];

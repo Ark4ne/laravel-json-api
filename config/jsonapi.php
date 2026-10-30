@@ -45,6 +45,19 @@ return [
 
         /*
         |--------------------------------------------------------------------------
+        | Strict
+        |--------------------------------------------------------------------------
+        |
+        | A value that is not nullable (`nullable(false)`) and has no value to
+        | stand for null (a date) throws a RenderingException when strict, and
+        | renders null otherwise. Strict while debugging by default.
+        |
+        */
+        // @phpstan-ignore larastan.noEnvCallsOutsideOfConfig (the configuration file of the package, merged by Laravel)
+        'strict' => (bool) env('APP_DEBUG', false),
+
+        /*
+        |--------------------------------------------------------------------------
         | When Has
         |--------------------------------------------------------------------------
         |

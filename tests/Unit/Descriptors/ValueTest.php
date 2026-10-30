@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Test\Unit\Descriptors;
 
+use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Definition\ValueType;
 use Ark4ne\JsonApi\Descriptors\Values\Value;
 use Ark4ne\JsonApi\Descriptors\Values\ValueArray;
@@ -15,9 +16,11 @@ use Ark4ne\JsonApi\Descriptors\Values\ValueInteger;
 use Ark4ne\JsonApi\Descriptors\Values\ValueMixed;
 use Ark4ne\JsonApi\Descriptors\Values\ValueString;
 use Ark4ne\JsonApi\Descriptors\Values\ValueStruct;
+use Ark4ne\JsonApi\Exceptions\RenderingException;
 use Carbon\Carbon;
 use Closure;
 use DateTime;
+use DateTimeImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MissingValue;
@@ -67,11 +70,11 @@ class ValueTest extends TestCase
             'mixed.4' => [ValueMixed::class, 'abc', 'abc', null],
             'mixed.5' => [ValueMixed::class, [], [], null],
             'mixed.6' => [ValueMixed::class, collect(), collect(), null],
-            'date.0' => [ValueDate::class, '2022-01-01', '2022-01-01T00:00:00+00:00', '1970-01-01T00:00:00+00:00'],
-            'date.1' => [ValueDate::class, '2022-01-01 00:00:00', '2022-01-01T00:00:00+00:00', '1970-01-01T00:00:00+00:00'],
-            'date.2' => [ValueDate::class, 1640995200, '2022-01-01T00:00:00+00:00', '1970-01-01T00:00:00+00:00'],
-            'date.3' => [ValueDate::class, new DateTime("@1640995200"), '2022-01-01T00:00:00+00:00', '1970-01-01T00:00:00+00:00'],
-            'date.4' => [ValueDate::class, new Carbon("@1640995200"), '2022-01-01T00:00:00+00:00', '1970-01-01T00:00:00+00:00'],
+            'date.0' => [ValueDate::class, '2022-01-01', '2022-01-01T00:00:00+00:00', null],
+            'date.1' => [ValueDate::class, '2022-01-01 00:00:00', '2022-01-01T00:00:00+00:00', null],
+            'date.2' => [ValueDate::class, 1640995200, '2022-01-01T00:00:00+00:00', null],
+            'date.3' => [ValueDate::class, new DateTime("@1640995200"), '2022-01-01T00:00:00+00:00', null],
+            'date.4' => [ValueDate::class, new Carbon("@1640995200"), '2022-01-01T00:00:00+00:00', null],
             'enum.0' => [ValueEnum::class, TestUnitEnum::A, 'A', null],
             'enum.1' => [ValueEnum::class, TestBackendEnum::A, 'aaa', null],
         ];
@@ -98,7 +101,7 @@ class ValueTest extends TestCase
     {
         /** @var \Ark4ne\JsonApi\Descriptors\Values\Value $v */
         $v = new $class(null);
-        self::assertEquals($excepted, Reflect::invoke($v, 'value', $value, new Request()));
+        self::assertEquals($excepted, Reflect::invoke($v, 'value', $value, new Request(), Configuration::defaults()));
     }
 
     /**
@@ -226,28 +229,99 @@ class ValueTest extends TestCase
         self::assertSame('abc', $value->valueFor(new Request(), ['attr' => 'abc'], 'attr'));
     }
 
+    /**
+     * @return iterable<string, array{float, int, float, float}>
+     */
+    public static function precisions(): iterable
+    {
+        yield '1.15' => [1.15, 2, 1.15, 1.15];
+        yield '0.29' => [0.29, 2, 0.29, 0.29];
+        yield '-1.111' => [-1.111, 2, -1.11, -1.11];
+        yield '1.239' => [1.239, 2, 1.24, 1.23];
+        yield '-1.239' => [-1.239, 2, -1.24, -1.23];
+        yield '125.5' => [125.5, 0, 126.0, 125.0];
+        yield '0.9999999' => [0.9999999, 0, 1.0, 0.0];
+        yield '1.2399999999' => [1.2399999999, 2, 1.24, 1.23];
+    }
+
+    #[DataProvider('precisions')]
+    public function test_a_float_is_rounded_to_its_precision_or_truncated_on_demand(
+        float $value,
+        int $precision,
+        float $rounded,
+        float $truncated,
+    ): void {
+        $float = (new ValueFloat('price'))->precision($precision);
+
+        self::assertSame($rounded, $float->valueFor(new Request(), ['price' => $value], 'price'));
+        self::assertSame($truncated, $float->truncate()->valueFor(new Request(), ['price' => $value], 'price'));
+    }
+
+    public function test_a_null_date_that_is_not_nullable_throws_when_strict(): void
+    {
+        $date = (new ValueDate('published_at'))->nullable(false);
+
+        self::assertNull($date->valueFor(new Request(), ['published_at' => null], 'published_at'));
+
+        $this->expectException(RenderingException::class);
+        $this->expectExceptionMessage('[published_at] is not nullable but null was given');
+
+        $date->valueFor(new Request(), ['published_at' => null], 'published_at', Configuration::fromArray(['describer' => ['strict' => true]]));
+    }
+
+    public function test_strict_mode_throws_only_for_a_null_given_to_a_value_that_is_not_nullable(): void
+    {
+        $strict = Configuration::fromArray(['describer' => ['strict' => true]]);
+        // A value rendering null for something that is not null.
+        $blankAsNull = new class ('note') extends Value {
+            protected function value(mixed $of, Request $request, Configuration $configuration): mixed
+            {
+                return $of === '' ? null : $of;
+            }
+        };
+
+        self::assertNull($blankAsNull->valueFor(new Request(), ['note' => ''], 'note', $strict));
+        self::assertNull($blankAsNull->nullable(false)->valueFor(new Request(), ['note' => ''], 'note', $strict));
+        self::assertNull((new ValueDate('at'))->valueFor(new Request(), ['at' => null], 'at', $strict));
+    }
+
+    public function test_the_members_of_a_struct_use_the_configuration_given(): void
+    {
+        $struct = new ValueStruct(static fn() => ['at' => new ValueDate('at'), 'price' => new ValueFloat('price')]);
+
+        self::assertSame(
+            ['at' => '2024-05-01', 'price' => 1.24],
+            $struct->valueFor(
+                new Request(),
+                ['at' => new DateTimeImmutable('2024-05-01 10:00:00'), 'price' => 1.239],
+                'struct',
+                Configuration::fromArray(['describer' => ['date' => 'Y-m-d', 'precision' => 2]]),
+            ),
+        );
+    }
+
     public function testValueFloatPrecision(): void
     {
         $request = new Request();
         $v = new ValueFloat(null);
-        self::assertEquals(123.12, Reflect::invoke($v, 'value', '123.12', $request));
+        self::assertEquals(123.12, Reflect::invoke($v, 'value', '123.12', $request, Configuration::defaults()));
         $v = $v->precision(2);
-        self::assertEquals(123.12, Reflect::invoke($v, 'value', '123.12', $request));
+        self::assertEquals(123.12, Reflect::invoke($v, 'value', '123.12', $request, Configuration::defaults()));
         $v = $v->precision(1);
-        self::assertEquals(123.1, Reflect::invoke($v, 'value', '123.12', $request));
+        self::assertEquals(123.1, Reflect::invoke($v, 'value', '123.12', $request, Configuration::defaults()));
         $v = $v->precision(0);
-        self::assertEquals(123, Reflect::invoke($v, 'value', '123.12', $request));
+        self::assertEquals(123, Reflect::invoke($v, 'value', '123.12', $request, Configuration::defaults()));
     }
 
     public function testValueDateFormat(): void
     {
         $request = new Request();
         $v = new ValueDate(null);
-        self::assertEquals('2022-01-01T00:00:00+00:00', Reflect::invoke($v, 'value', '2022-01-01 00:00:00', $request));
+        self::assertEquals('2022-01-01T00:00:00+00:00', Reflect::invoke($v, 'value', '2022-01-01 00:00:00', $request, Configuration::defaults()));
         $v = $v->format('Y-m-d H:i:s');
-        self::assertEquals('2022-01-01 00:00:00', Reflect::invoke($v, 'value', '2022-01-01 00:00:00', $request));
+        self::assertEquals('2022-01-01 00:00:00', Reflect::invoke($v, 'value', '2022-01-01 00:00:00', $request, Configuration::defaults()));
         $v = $v->format('U');
-        self::assertEquals('1640995200', Reflect::invoke($v, 'value', '2022-01-01 00:00:00', $request));
+        self::assertEquals('1640995200', Reflect::invoke($v, 'value', '2022-01-01 00:00:00', $request, Configuration::defaults()));
     }
 
     private function throughRetrieverTest(&$model, Closure $missing, Closure $update, Closure $check, $expected): void

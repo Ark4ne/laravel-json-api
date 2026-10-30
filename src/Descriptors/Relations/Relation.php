@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Descriptors\Relations;
 
+use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Definition\Cardinality;
 use Ark4ne\JsonApi\Definition\DescribesRelationship;
 use Ark4ne\JsonApi\Definition\LoadDefinition;
@@ -168,8 +169,12 @@ abstract class Relation extends Describer implements DescribesRelationship
         );
     }
 
-    public function resolveFor(Request $request, mixed $model, string $attribute): Relationship
-    {
+    public function resolveFor(
+        Request $request,
+        mixed $model,
+        string $attribute,
+        ?Configuration $configuration = null,
+    ): Relationship {
         $retriever = $this->retriever();
 
         if ($retriever instanceof Closure) {
@@ -202,9 +207,13 @@ abstract class Relation extends Describer implements DescribesRelationship
      *
      * @return mixed
      */
-    public function valueFor(Request $request, mixed $model, string $attribute): mixed
-    {
-        return $this->resolveFor($request, $model, $attribute);
+    public function valueFor(
+        Request $request,
+        mixed $model,
+        string $attribute,
+        ?Configuration $configuration = null,
+    ): mixed {
+        return $this->resolveFor($request, $model, $attribute, $configuration);
     }
 
     /**

@@ -90,7 +90,7 @@ trait Renderable
             $name = (string) Describer::retrieveName($relationship, $key);
 
             if ($relationship instanceof Relation) {
-                yield $name => $relationship->resolveFor($context->request, $this->resource, $name);
+                yield $name => $relationship->resolveFor($context->request, $this->resource, $name, $context->configuration);
             } elseif ($relationship instanceof Relationship) {
                 yield $name => $relationship;
             }

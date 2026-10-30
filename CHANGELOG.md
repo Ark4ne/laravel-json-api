@@ -37,6 +37,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `{"version": "1.1"}` by default, `false` to leave it out.
 - **Maximum include depth**, `include.max-depth` (no limit by default): the `Includes` rule rejects a deeper path
   (`invalid_depth`), and nothing deeper is loaded nor rendered, even without validation.
+- **`describer.strict`** (`APP_DEBUG` by default): a value declared `nullable(false)` with no value to stand for
+  `null` (a date) throws a `RenderingException` naming the attribute, instead of rendering `null`.
+- `->truncate()` on a float value truncates to its precision, towards zero, instead of rounding.
 - **Meta of resource identifiers**: `->identifierMeta(fn($related) => [...])` on a relationship (`withIdentifierMeta()`
   on `Relationship`) renders a `meta` in each identifier of its linkage (`data.meta`, `data[].meta`), for data of the
   link itself such as a pivot. The `meta()` of the relationship object is unchanged. `RelationshipDefinition` exposes
@@ -48,6 +51,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **Breaking:** requires PHP `^8.3` and Laravel `^12.46` or `^13.0`. PHP 8.1 and 8.2, Laravel 10 and 11 are no longer
   supported.
 - Every source file declares `strict_types=1`.
+- **Breaking:** a float with a precision is rounded (`1.239` gives `1.24`, `-1.111` gives `-1.11`) instead of floored
+  (`1.15` gave `1.14`). `->truncate()` truncates towards zero.
+- **Breaking:** a date declared `nullable(false)` renders `null` for `null` instead of `1970-01-01T00:00:00+00:00`, or
+  throws with `describer.strict`.
+- A published `config/jsonapi.php` missing a nested key (`describer.strict`) takes the default of the package for
+  it: the package file is merged recursively, not only by top-level key.
+- **Breaking:** the configuration is passed to the values: `Value::value(mixed $of, Request $request, Configuration
+  $configuration)`, and `valueFor()` / `resolveFor()` take an optional `Configuration`. `Support\Config` (static
+  properties set at boot) is removed.
 - The links and meta of a relationship are resolved like the other members: a descriptor (`$this->integer(...)`), a
   closure or a condition (`when()`) in them is rendered as its value instead of an empty object, as in
   `toResourceMeta()`. The members of `meta()` / `links()` are resolved against the resource, those of

@@ -30,11 +30,15 @@ class ValueStruct extends Value
         parent::__construct($values);
     }
 
-    public function resolveFor(Request $request, mixed $model, string $field): mixed
-    {
+    public function resolveFor(
+        Request $request,
+        mixed $model,
+        string $field,
+        ?Configuration $configuration = null,
+    ): mixed {
         $this->resource = $model;
 
-        return parent::resolveFor($request, $model, $field);
+        return parent::resolveFor($request, $model, $field, $configuration);
     }
 
     /**
@@ -43,9 +47,9 @@ class ValueStruct extends Value
      *
      * @return array<array-key, mixed>
      */
-    public function value(mixed $of, Request $request): array
+    public function value(mixed $of, Request $request, Configuration $configuration): array
     {
-        $attributes = Values::mergeValues($this->resolveValues($request, Values::mergeValues($of)));
+        $attributes = Values::mergeValues($this->resolveValues($request, Values::mergeValues($of), $configuration));
 
         return (new Collection($attributes))->toArray();
     }

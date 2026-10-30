@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Descriptors\Values;
 
+use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Definition\ValueType;
 use Illuminate\Http\Request;
 
@@ -13,7 +14,7 @@ use Illuminate\Http\Request;
  */
 class ValueInteger extends Value
 {
-    public function value(mixed $of, Request $request): int
+    public function value(mixed $of, Request $request, Configuration $configuration): int
     {
         return (int) $of;
     }

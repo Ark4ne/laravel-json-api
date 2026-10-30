@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Test\Unit\Descriptors;
 
+use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Descriptors\Values\ValueArray;
 use Ark4ne\JsonApi\Descriptors\Values\ValueEnum;
 use Ark4ne\JsonApi\Descriptors\Values\ValueInteger;
@@ -27,7 +28,7 @@ class TypedArrayTest extends TestCase
         $array = $array->of(new ValueString(null));
 
         $input = ['php', 'laravel', 'json-api', true, 1.0];
-        $result = $array->value($input, $this->request);
+        $result = $array->value($input, $this->request, Configuration::defaults());
 
         self::assertIsArray($result);
         self::assertCount(5, $result);
@@ -40,7 +41,7 @@ class TypedArrayTest extends TestCase
         $array = $array->of(new ValueInteger(null));
 
         $input = [1.5, '2', 3, '4.9'];
-        $result = $array->value($input, $this->request);
+        $result = $array->value($input, $this->request, Configuration::defaults());
 
         self::assertIsArray($result);
         self::assertCount(4, $result);
@@ -57,7 +58,7 @@ class TypedArrayTest extends TestCase
             Status::INACTIVE,
             Status::PENDING,
         ];
-        $result = $array->value($input, $this->request);
+        $result = $array->value($input, $this->request, Configuration::defaults());
 
         self::assertIsArray($result);
         self::assertCount(3, $result);
@@ -77,7 +78,7 @@ class TypedArrayTest extends TestCase
             [4, '5', 6],
             [7, 8, '9'],
         ];
-        $result = $outerArray->value($input, $this->request);
+        $result = $outerArray->value($input, $this->request, Configuration::defaults());
 
         self::assertIsArray($result);
         self::assertCount(3, $result);
@@ -93,7 +94,7 @@ class TypedArrayTest extends TestCase
         $array = new ValueArray('tags');
         $array = $array->of(new ValueString(null));
 
-        $result = $array->value([], $this->request);
+        $result = $array->value([], $this->request, Configuration::defaults());
 
         self::assertIsArray($result);
         self::assertCount(0, $result);
@@ -104,7 +105,7 @@ class TypedArrayTest extends TestCase
         $array = new ValueArray('mixed');
 
         $input = [1, 'string', true, 3.14];
-        $result = $array->value($input, $this->request);
+        $result = $array->value($input, $this->request, Configuration::defaults());
 
         self::assertIsArray($result);
         self::assertCount(4, $result);

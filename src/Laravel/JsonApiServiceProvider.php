@@ -11,7 +11,6 @@ use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Laravel\Commands\CacheDefinitionsCommand;
 use Ark4ne\JsonApi\Laravel\Commands\CheckDefinitionsCommand;
 use Ark4ne\JsonApi\Laravel\Commands\ClearDefinitionsCommand;
-use Ark4ne\JsonApi\Support\Config;
 use Ark4ne\JsonApi\Support\Fields;
 use Ark4ne\JsonApi\Support\Includes;
 use Illuminate\Contracts\Foundation\Application;
@@ -39,8 +38,12 @@ final class JsonApiServiceProvider extends ServiceProvider
         $this->app->singleton(Configuration::class, static function (Application $app): Configuration {
             /** @var array<array-key, mixed> $jsonapi */
             $jsonapi = $app->make('config')->get('jsonapi', []);
+            /** @var array<array-key, mixed> $package */
+            $package = require self::CONFIG;
 
-            return Configuration::fromArray($jsonapi);
+            // `mergeConfigFrom()` merges the top-level keys only: a file published before a nested key existed
+            // (`describer.strict`) takes the default of the package for it.
+            return Configuration::fromArray(array_replace_recursive($package, $jsonapi));
         });
 
         $this->app->singleton(CompiledDefinitions::class, fn(): CompiledDefinitions => $this->compiledDefinitions());
@@ -74,8 +77,6 @@ final class JsonApiServiceProvider extends ServiceProvider
         $compiled = $this->app->make(CompiledDefinitions::class);
 
         Definitions::configure($configuration, $compiled);
-        // 1.x rendering still reads the configuration through its static facade.
-        Config::boot();
 
         $this->publishes([self::CONFIG => $this->app->configPath('jsonapi.php')], 'config');
 

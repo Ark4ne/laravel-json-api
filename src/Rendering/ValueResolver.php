@@ -96,7 +96,7 @@ final readonly class ValueResolver
         }
 
         if ($member instanceof Describer) {
-            return $member->valueFor($context->request, $model, $name);
+            return $member->valueFor($context->request, $model, $name, $context->configuration);
         }
 
         return $member instanceof Closure ? $member() : $member;

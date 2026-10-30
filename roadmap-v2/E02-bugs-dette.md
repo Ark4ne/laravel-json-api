@@ -11,10 +11,13 @@ inutiles avec les nouvelles versions minimales.
 
 ### Bugs de valeurs
 
-- [ ] **E2.1** `ValueFloat::precision()` arrondit (`round()`) au lieu de tronquer avec `floor()`. Aujourd'hui
+- [x] **E2.1** `ValueFloat::precision()` arrondit (`round()`) au lieu de tronquer avec `floor()`. Aujourd'hui
       `1.15 → 1.14`, `0.29 → 0.28`, `-1.111 → -1.12`. Option `->truncate()` pour qui veut vraiment tronquer 🔴
-- [ ] **E2.2** `ValueDate` avec `nullable(false)` et une valeur `null` ne produit plus `1970-01-01T00:00:00+00:00` :
-      retourne `null` et ajoute un diagnostic, ou lève une exception explicite 🔴
+      (troncature vers zéro, insensible aux erreurs binaires : `1.15` reste `1.15`)
+- [x] **E2.2** `ValueDate` avec `nullable(false)` et une valeur `null` ne produit plus `1970-01-01T00:00:00+00:00` :
+      retourne `null` et ajoute un diagnostic, ou lève une exception explicite 🔴 — décision : `describer.strict`
+      (`APP_DEBUG` par défaut) lève une `RenderingException`, sinon `null` ; s'applique à toute valeur sans équivalent
+      de `null` (date, mixed), les autres types gardent leur cast (`0`, `''`, `false`)
 - [ ] **E2.3** `Value::check()` avec `autoWhenHas` n'empile plus une règle `whenHas` à chaque appel (correction
       définitive avec les descripteurs immuables, E6.1)
 - [ ] **E2.9** `ValueEnum::of()` : le type déclaré est utilisé (validation du cast, définition)
@@ -27,7 +30,8 @@ inutiles avec les nouvelles versions minimales.
 
 ### État global
 
-- [ ] **E2.10** `Support\Config` (statiques mutables) remplacé par un objet `Configuration` readonly injecté 🔴
+- [x] **E2.10** `Support\Config` (statiques mutables) remplacé par un objet `Configuration` readonly injecté 🔴 :
+      `Value::value($of, $request, $configuration)`, passé par le `ValueResolver` depuis le contexte
 - [ ] **E2.11** `Support\Includes` et `Support\Fields` (piles et caches statiques) remplacés par le contexte (E4.1) ;
       le listener Octane `RequestReceived` disparaît 🔴
 

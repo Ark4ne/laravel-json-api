@@ -387,7 +387,7 @@ parameters:
 		-
 			message: '#^Cannot cast mixed to float\.$#'
 			identifier: cast.double
-			count: 2
+			count: 1
 			path: src/Descriptors/Values/ValueFloat.php
 
 		-
@@ -851,60 +851,6 @@ parameters:
 			identifier: offsetAccess.invalidOffset
 			count: 1
 			path: src/Support/Arr.php
-
-		-
-			message: '#^Ark4ne\\JsonApi\\Support\\Config should be final$#'
-			identifier: phpat.testClassesAreFinal
-			count: 1
-			path: src/Support/Config.php
-
-		-
-			message: '#^Calling config\(\) is forbidden, global helpers are reserved to src/Laravel/\: inject a dependency instead\.$#'
-			identifier: disallowed.function
-			count: 5
-			path: src/Support/Config.php
-
-		-
-			message: '#^Parameter \#1 \$keys of function array_fill_keys expects an array of values castable to string, array given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Support/Config.php
-
-		-
-			message: '#^Static property Ark4ne\\JsonApi\\Support\\Config\:\:\$autoWhenHas \(array\<string, bool\>\|bool\) does not accept array\<true\>\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: src/Support/Config.php
-
-		-
-			message: '#^Static property Ark4ne\\JsonApi\\Support\\Config\:\:\$autoWhenHas \(array\<string, bool\>\|bool\) does not accept mixed\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: src/Support/Config.php
-
-		-
-			message: '#^Static property Ark4ne\\JsonApi\\Support\\Config\:\:\$autoWhenIncluded \(bool\) does not accept mixed\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: src/Support/Config.php
-
-		-
-			message: '#^Static property Ark4ne\\JsonApi\\Support\\Config\:\:\$date \(string\) does not accept mixed\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: src/Support/Config.php
-
-		-
-			message: '#^Static property Ark4ne\\JsonApi\\Support\\Config\:\:\$nullable \(bool\) does not accept mixed\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: src/Support/Config.php
-
-		-
-			message: '#^Static property Ark4ne\\JsonApi\\Support\\Config\:\:\$precision \(int\|null\) does not accept mixed\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: src/Support/Config.php
 
 		-
 			message: '#^Ark4ne\\JsonApi\\Support\\Fields should be final$#'
