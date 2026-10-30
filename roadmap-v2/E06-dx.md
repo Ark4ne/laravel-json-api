@@ -34,10 +34,13 @@
 
 ### Nommage
 
-- [ ] **E6.4** `links()` / `meta()` partout ; suppression de `withLinks()` / `withMeta()` sur `Relationship` 🔴
-- [ ] **E6.4b** `toMeta()` (meta du document) renommé `toDocumentMeta()` ; `toMeta()` lève une exception explicite en
+- [x] **E6.4** `links()` / `meta()` partout ; suppression de `withLinks()` / `withMeta()` sur `Relationship` 🔴 —
+      `withIdentifierMeta()` renommé `identifierMeta()` avec ; les `with*()` de `Document` / `ResourceObject` restent
+      (withers immuables internes)
+- [x] **E6.4b** `toMeta()` (meta du document) renommé `toDocumentMeta()` ; `toMeta()` lève une exception explicite en
       V2 pour éviter un changement de sens silencieux. `toResourceMeta()` inchangé (décision Q5). Vaut aussi pour
-      `JsonApiCollection::toMeta()` 🔴
+      `JsonApiCollection::toMeta()` 🔴 — `DefinitionException::renamedHook()` : à la compilation pour une ressource,
+      au rendu pour une collection (pas de définition)
 
 ### Liens
 

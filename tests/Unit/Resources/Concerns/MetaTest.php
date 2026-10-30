@@ -4,93 +4,50 @@ declare(strict_types=1);
 
 namespace Test\Unit\Resources\Concerns;
 
-use Ark4ne\JsonApi\Resources\Concerns\Meta;
+use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
-use stdClass;
 use Test\Support\Reflect;
 use Test\TestCase;
 
 class MetaTest extends TestCase
 {
-    public function testToMeta(): void
+    public function test_a_resource_has_no_meta_by_default(): void
     {
-        $id = uniqid('id', true);
+        $stub = new class ((object) ['id' => 1]) extends JsonApiResource {};
 
-        $object = new class ($id) extends stdClass {
-            public $foo = 'bar';
-            public $baz = 'tar';
-
-            public function __construct(public $id) {}
-
-            public function toArray()
-            {
-                return (array) $this;
-            }
-        };
-
-        $stub = new class ($object) extends JsonResource {
-            use Meta;
-        };
-
-        self::assertEquals(null, Reflect::invoke($stub, 'toMeta', new Request()));
-
-
-        $stub = new class ($object) extends JsonResource {
-            use Meta;
-
-            protected function toMeta(Request $request): ?iterable
-            {
-                return [
-                    'copyright' => 'CC MyApp',
-                ];
-            }
-        };
-
-        $meta = [
-            'copyright' => 'CC MyApp',
-        ];
-
-        self::assertEquals($meta, Reflect::invoke($stub, 'toMeta', new Request()));
+        self::assertNull(Reflect::invoke($stub, 'toDocumentMeta', new Request()));
+        self::assertNull(Reflect::invoke($stub, 'toResourceMeta', new Request()));
     }
 
-    public function testToResourceMeta(): void
+    public function test_the_document_meta_hook_gives_the_document_meta(): void
+    {
+        $stub = new class ((object) ['id' => 1]) extends JsonApiResource {
+            /**
+             * @return array<string, string>
+             */
+            protected function toDocumentMeta(Request $request): array
+            {
+                return ['copyright' => 'CC MyApp'];
+            }
+        };
+
+        self::assertSame(['copyright' => 'CC MyApp'], Reflect::invoke($stub, 'toDocumentMeta', new Request()));
+    }
+
+    public function test_the_resource_meta_hook_gives_the_resource_meta(): void
     {
         $id = uniqid('id', true);
 
-        $object = new class ($id) extends stdClass {
-            public $foo = 'bar';
-            public $baz = 'tar';
-
-            public function __construct(public $id) {}
-
-            public function toArray()
+        $stub = new class ((object) ['id' => $id]) extends JsonApiResource {
+            /**
+             * @return array<string, string>
+             */
+            protected function toResourceMeta(Request $request): array
             {
-                return (array) $this;
+                return ['hash' => sha1((string) $this->toIdentifier($request))];
             }
         };
 
-        $stub = new class ($object) extends JsonResource {
-            use Meta;
-        };
-
-        self::assertEquals(null, Reflect::invoke($stub, 'toResourceMeta', new Request()));
-
-        $stub = new class ($object) extends JsonResource {
-            use Meta;
-
-            protected function toResourceMeta(Request $request): ?iterable
-            {
-                return [
-                    'hash' => sha1($this->id),
-                ];
-            }
-        };
-
-        $meta = [
-            'hash' => sha1($id),
-        ];
-
-        self::assertEquals($meta, Reflect::invoke($stub, 'toResourceMeta', new Request()));
+        self::assertSame(['hash' => sha1($id)], Reflect::invoke($stub, 'toResourceMeta', new Request()));
     }
 }

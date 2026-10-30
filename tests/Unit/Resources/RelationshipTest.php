@@ -50,8 +50,8 @@ class RelationshipTest extends TestCase
     public function test_links_and_meta_are_resolved_with_the_related_resource(): void
     {
         $resolved = (new Relationship(MyModelResource::class, static fn() => (object) ['id' => 7]))
-            ->withLinks(static fn(MyModelResource $resource) => ['self' => 'link/' . $resource->toArray(new Request())['id']])
-            ->withMeta(static fn() => ['hash' => 'azerty'])
+            ->links(static fn(MyModelResource $resource) => ['self' => 'link/' . $resource->toArray(new Request())['id']])
+            ->meta(static fn() => ['hash' => 'azerty'])
             ->resolve(Contexts::of(), false);
 
         self::assertSame(['self' => 'link/7'], $resolved->links);
@@ -65,9 +65,9 @@ class RelationshipTest extends TestCase
         $many = (new Relationship(MyModelResource::class, static fn() => [
             (object) ['id' => 1, 'position' => 2],
             (object) ['id' => 2, 'position' => 1],
-        ]))->asCollection()->withIdentifierMeta($meta)->resolve(Contexts::of(), false);
+        ]))->asCollection()->identifierMeta($meta)->resolve(Contexts::of(), false);
         $one = (new Relationship(MyModelResource::class, static fn() => (object) ['id' => 1, 'position' => 3]))
-            ->withIdentifierMeta($meta)
+            ->identifierMeta($meta)
             ->resolve(Contexts::of(), false);
 
         self::assertSame([['position' => 2], ['position' => 1]], $many->identifierMeta);
@@ -84,10 +84,10 @@ class RelationshipTest extends TestCase
         };
 
         $missing = (new Relationship(MyModelResource::class, static fn() => new MissingValue()))
-            ->withIdentifierMeta($identifierMeta)
+            ->identifierMeta($identifierMeta)
             ->resolve(Contexts::of(), true);
         $null = (new Relationship(MyModelResource::class, static fn() => null))
-            ->withIdentifierMeta($identifierMeta)
+            ->identifierMeta($identifierMeta)
             ->resolve(Contexts::of(), true);
 
         self::assertSame([], $missing->identifierMeta);
@@ -98,7 +98,7 @@ class RelationshipTest extends TestCase
     public function test_a_missing_value_leaves_the_data_out_and_keeps_links_and_meta(): void
     {
         $resolved = (new Relationship(MyModelResource::class, static fn() => new MissingValue()))
-            ->withLinks(static fn() => ['self' => 'link'])
+            ->links(static fn() => ['self' => 'link'])
             ->resolve(Contexts::of(), true);
 
         self::assertFalse($resolved->hasData);

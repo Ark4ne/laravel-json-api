@@ -32,7 +32,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   is not requested by the sparse fieldset is never called, and `included` is built in linear time.
   An application adds its own `Rendering\Stage`s in `rendering.stages`; they run after those of the package on every
   resource object, primary or included.
-- `JsonApiCollection::toMeta()`: document meta of a collection, winning over those of its resources.
+- `JsonApiCollection::toDocumentMeta()`: document meta of a collection, winning over those of its resources.
 - **`jsonapi` member** in every document, configured in `document.jsonapi` (`version`, `ext`, `profile`, `meta`):
   `{"version": "1.1"}` by default, `false` to leave it out.
 - **Maximum include depth**, `include.max-depth` (no limit by default): the `Includes` rule rejects a deeper path
@@ -45,7 +45,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `UserResource`).
 - `can()` given a class that does not implement Laravel's `Gate` contract throws a `DefinitionException` instead of
   failing on a method call.
-- **Meta of resource identifiers**: `->identifierMeta(fn($related) => [...])` on a relationship (`withIdentifierMeta()`
+- **Meta of resource identifiers**: `->identifierMeta(fn($related) => [...])` on a relationship (`identifierMeta()`
   on `Relationship`) renders a `meta` in each identifier of its linkage (`data.meta`, `data[].meta`), for data of the
   link itself such as a pivot. The `meta()` of the relationship object is unchanged. `RelationshipDefinition` exposes
   `hasIdentifierMeta`.
@@ -123,7 +123,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   several paths keeps the relationships rendered on each of them.
 - **Breaking:** `fields[type]` restricts the relationships of the type too, as the specification says. Set
   `fields.relationships` to `'keep'` to render every relationship as 1.x did.
-- **Breaking:** only the primary resources add document meta (`toMeta()`), the included ones no longer do. In a
+- **Breaking:** only the primary resources add document meta (`toDocumentMeta()`), the included ones no longer do. In a
   collection they are merged key by key, the first resource setting a key keeping it (1.x gathered the values of a
   shared key into a list).
 - **Breaking:** without `toAttributes()`, the attributes of a model are read with `attributesToArray()` (loaded
@@ -149,6 +149,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   relationship. Compiled definitions must be compiled again (`php artisan jsonapi:cache`).
 - **Breaking:** `RelationshipDefinition::$whenIncluded` is replaced by `$linkage` (`Linkage|null`, `null` for the
   configured one), which the compilation no longer fills from the configuration.
+- **Breaking:** `toMeta()` (document meta) is renamed `toDocumentMeta()` on resources and collections; a class still
+  declaring `toMeta()` throws a `DefinitionException` rather than losing its meta silently.
+- **Breaking:** `Relationship::withLinks()`, `withMeta()` and `withIdentifierMeta()` are renamed `links()`, `meta()`
+  and `identifierMeta()`, as on the relationship descriptors.
 
 ### Removed
 

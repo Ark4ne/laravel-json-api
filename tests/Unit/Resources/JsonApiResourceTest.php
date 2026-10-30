@@ -51,7 +51,7 @@ class JsonApiResourceTest extends TestCase
                 return ['self' => $this->id];
             }
 
-            public function toMeta(Request $request): ?iterable
+            public function toDocumentMeta(Request $request): iterable
             {
                 return ['hash' => 'azerty'];
             }

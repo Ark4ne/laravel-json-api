@@ -8,6 +8,7 @@ use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Definition\RelatedResource;
 use Ark4ne\JsonApi\Definition\ResourceDefinition;
+use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Loading\LoadPlanner;
 use Ark4ne\JsonApi\Rendering\Document;
 use Ark4ne\JsonApi\Rendering\DocumentBuilder;
@@ -87,21 +88,26 @@ class JsonApiCollection extends ResourceCollection
             $document = $document->withLinks($pagination['links'] ?? [])->withMeta($pagination['meta'] ?? []);
         }
 
+        if (method_exists($this, 'toMeta')) {
+            throw DefinitionException::renamedHook(static::class, 'toMeta', 'toDocumentMeta');
+        }
+
         // The meta of the collection win over those of its resources.
         return $document->withMeta(
-            (new ValueResolver())->resolve($this->toMeta($context->request) ?? [], $this->resource, $context),
+            (new ValueResolver())->resolve($this->toDocumentMeta($context->request) ?? [], $this->resource, $context),
         );
     }
 
     /**
      * Top-level meta of the document of the collection. They win over the document meta of the collected resources
-     * (`JsonApiResource::toMeta()`), merged the first resource first.
+     * (`JsonApiResource::toDocumentMeta()`), merged the first resource first. `toMeta()` of 1.x, renamed: a collection
+     * still declaring `toMeta()` throws when rendered.
      *
      * @see https://jsonapi.org/format/#document-meta
      *
      * @return iterable<string, mixed>|iterable<array-key, \Ark4ne\JsonApi\Descriptors\Values\Value>|null
      */
-    protected function toMeta(Request $request): ?iterable
+    protected function toDocumentMeta(Request $request): ?iterable
     {
         return null;
     }

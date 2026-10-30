@@ -28,6 +28,14 @@ final class DefinitionException extends LogicException implements JsonApiExcepti
     }
 
     /**
+     * The resource declares a hook of 1.x that was renamed: kept, it would be ignored silently.
+     */
+    public static function renamedHook(string $class, string $hook, string $replacement): self
+    {
+        return new self("[{$class}] declares {$hook}(), renamed {$replacement}() in 2.0.");
+    }
+
+    /**
      * A polymorphic relationship was given no resource to render its related models with.
      */
     public static function emptyMorphMap(): self

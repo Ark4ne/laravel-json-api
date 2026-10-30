@@ -146,7 +146,7 @@ trait Renderable
         $this->renderingContext = $context;
 
         return $this->autoWhenHas(
-            $this->toMeta($context->request) ?? [],
+            $this->toDocumentMeta($context->request) ?? [],
             $context->configuration->autoWhenHas('meta'),
         );
     }

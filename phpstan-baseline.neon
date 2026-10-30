@@ -1939,90 +1939,6 @@ parameters:
 			path: tests/Unit/Resources/Concerns/LinksTest.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Http\\Resources\\Json\\JsonResource@anonymous/tests/Unit/Resources/Concerns/MetaTest\.php\:79\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Resources/Concerns/MetaTest.php
-
-		-
-			message: '#^Method Illuminate\\Http\\Resources\\Json\\JsonResource@anonymous/tests/Unit/Resources/Concerns/MetaTest\.php\:39\:\:toMeta\(\) never returns null so it can be removed from the return type\.$#'
-			identifier: return.unusedType
-			count: 1
-			path: tests/Unit/Resources/Concerns/MetaTest.php
-
-		-
-			message: '#^Method Illuminate\\Http\\Resources\\Json\\JsonResource@anonymous/tests/Unit/Resources/Concerns/MetaTest\.php\:39\:\:toMeta\(\) return type has no value type specified in iterable type iterable\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: tests/Unit/Resources/Concerns/MetaTest.php
-
-		-
-			message: '#^Method Illuminate\\Http\\Resources\\Json\\JsonResource@anonymous/tests/Unit/Resources/Concerns/MetaTest\.php\:79\:\:toResourceMeta\(\) never returns null so it can be removed from the return type\.$#'
-			identifier: return.unusedType
-			count: 1
-			path: tests/Unit/Resources/Concerns/MetaTest.php
-
-		-
-			message: '#^Method Illuminate\\Http\\Resources\\Json\\JsonResource@anonymous/tests/Unit/Resources/Concerns/MetaTest\.php\:79\:\:toResourceMeta\(\) return type has no value type specified in iterable type iterable\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: tests/Unit/Resources/Concerns/MetaTest.php
-
-		-
-			message: '#^Method stdClass@anonymous/tests/Unit/Resources/Concerns/MetaTest\.php\:20\:\:__construct\(\) has parameter \$id with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: tests/Unit/Resources/Concerns/MetaTest.php
-
-		-
-			message: '#^Method stdClass@anonymous/tests/Unit/Resources/Concerns/MetaTest\.php\:20\:\:toArray\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: tests/Unit/Resources/Concerns/MetaTest.php
-
-		-
-			message: '#^Method stdClass@anonymous/tests/Unit/Resources/Concerns/MetaTest\.php\:61\:\:__construct\(\) has parameter \$id with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: tests/Unit/Resources/Concerns/MetaTest.php
-
-		-
-			message: '#^Method stdClass@anonymous/tests/Unit/Resources/Concerns/MetaTest\.php\:61\:\:toArray\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: tests/Unit/Resources/Concerns/MetaTest.php
-
-		-
-			message: '#^Parameter \#1 \$string of function sha1 expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/Unit/Resources/Concerns/MetaTest.php
-
-		-
-			message: '#^Property stdClass@anonymous/tests/Unit/Resources/Concerns/MetaTest\.php\:20\:\:\$baz has no type specified\.$#'
-			identifier: missingType.property
-			count: 1
-			path: tests/Unit/Resources/Concerns/MetaTest.php
-
-		-
-			message: '#^Property stdClass@anonymous/tests/Unit/Resources/Concerns/MetaTest\.php\:20\:\:\$foo has no type specified\.$#'
-			identifier: missingType.property
-			count: 1
-			path: tests/Unit/Resources/Concerns/MetaTest.php
-
-		-
-			message: '#^Property stdClass@anonymous/tests/Unit/Resources/Concerns/MetaTest\.php\:61\:\:\$baz has no type specified\.$#'
-			identifier: missingType.property
-			count: 1
-			path: tests/Unit/Resources/Concerns/MetaTest.php
-
-		-
-			message: '#^Property stdClass@anonymous/tests/Unit/Resources/Concerns/MetaTest\.php\:61\:\:\$foo has no type specified\.$#'
-			identifier: missingType.property
-			count: 1
-			path: tests/Unit/Resources/Concerns/MetaTest.php
-
-		-
 			message: '#^Access to an undefined property Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:43\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 1
@@ -2031,12 +1947,6 @@ parameters:
 		-
 			message: '#^Call to static method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\) with ''Ark4ne\\\\JsonApi\\\\Resources\\\\JsonApiCollection'' and Ark4ne\\JsonApi\\Resources\\JsonApiCollection\<Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:84\> will always evaluate to true\.$#'
 			identifier: staticMethod.alreadyNarrowedType
-			count: 1
-			path: tests/Unit/Resources/JsonApiResourceTest.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:43\:\:toMeta\(\) never returns null so it can be removed from the return type\.$#'
-			identifier: return.unusedType
 			count: 1
 			path: tests/Unit/Resources/JsonApiResourceTest.php
 

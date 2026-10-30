@@ -123,7 +123,7 @@ final class CollectedResource extends JsonApiResource
         return ['rank' => $this->resource->id];
     }
 
-    protected function toMeta(Request $request): iterable
+    protected function toDocumentMeta(Request $request): iterable
     {
         return ["meta-{$this->resource->id}" => "bar-{$this->resource->id}"];
     }
@@ -134,7 +134,7 @@ final class CollectedResource extends JsonApiResource
  */
 final class MetaCollection extends JsonApiCollection
 {
-    protected function toMeta(Request $request): iterable
+    protected function toDocumentMeta(Request $request): iterable
     {
         return ['meta-1' => 'collection', 'total' => static fn() => 3];
     }

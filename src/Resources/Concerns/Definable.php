@@ -6,6 +6,7 @@ namespace Ark4ne\JsonApi\Resources\Concerns;
 
 use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Definition\ResourceDefinition;
+use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Resources\Attributes\JsonApiType;
 use Ark4ne\JsonApi\Support\Probe;
 use Illuminate\Http\Request;
@@ -40,6 +41,11 @@ trait Definable
      */
     public static function newDefinitionSource(Probe $probe): static
     {
+        // Kept, it would be ignored silently: its meaning changed with its name.
+        if (method_exists(static::class, 'toMeta')) {
+            throw DefinitionException::renamedHook(static::class, 'toMeta', 'toDocumentMeta');
+        }
+
         $instance = (new ReflectionClass(static::class))->newInstanceWithoutConstructor();
         // The probe stands for the model of any resource: it is set past the type of `$resource`.
         (new ReflectionProperty($instance, 'resource'))->setValue($instance, $probe);

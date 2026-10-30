@@ -266,8 +266,8 @@ interface Stage
 - **`jsonapi` member**, from `document.jsonapi` (`Configuration\JsonApiObject`): `{"version": "1.1"}` by default,
   with the `ext`, `profile` and `meta` configured; `false` leaves it out. The media type parameters `ext` / `profile`
   are the HTTP layer's (E7).
-- **Document meta** (`toMeta()`) come from the primary resources only, never from the included ones. In a
-  collection, the first resource setting a key keeps it, and the collection's own `toMeta()` wins over those of its
+- **Document meta** (`toDocumentMeta()`) come from the primary resources only, never from the included ones. In a
+  collection, the first resource setting a key keeps it, and the collection's own `toDocumentMeta()` wins over those of its
   resources (pagination meta in between).
 - **Shape guarantees**, by construction and not by `array_filter`: `id` is always a string; an empty to-one is
   `{"data": null}`, an empty to-many `{"data": []}`; a relationship object always has `data`, `links` or `meta`, or is

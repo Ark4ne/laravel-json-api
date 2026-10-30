@@ -86,13 +86,13 @@ class Relationship implements DescribesRelationship, RelationshipSource
     }
 
     /**
-     * Set callback for links for relation
+     * Links of the relationship object, the closure receiving the related resource (or collection)
      *
      * @param Closure $links
      *
      * @return $this
      */
-    public function withLinks(Closure $links): self
+    public function links(Closure $links): self
     {
         $this->links = $links;
 
@@ -100,13 +100,13 @@ class Relationship implements DescribesRelationship, RelationshipSource
     }
 
     /**
-     * Set callback for meta for relation
+     * Meta of the relationship object, the closure receiving the related resource (or collection)
      *
      * @param Closure $meta
      *
      * @return $this
      */
-    public function withMeta(Closure $meta): self
+    public function meta(Closure $meta): self
     {
         $this->meta = $meta;
 
@@ -120,7 +120,7 @@ class Relationship implements DescribesRelationship, RelationshipSource
      *
      * @return $this
      */
-    public function withIdentifierMeta(Closure $identifierMeta): self
+    public function identifierMeta(Closure $identifierMeta): self
     {
         $this->identifierMeta = $identifierMeta;
 

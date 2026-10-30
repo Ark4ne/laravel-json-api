@@ -105,7 +105,7 @@ protected function toRelationships(Request $request): iterable;
 
 protected function toResourceMeta(Request $request): ?iterable;
 
-protected function toMeta(Request $request): ?iterable;
+protected function toDocumentMeta(Request $request): ?iterable;
 ```
 
 Example:
@@ -298,7 +298,7 @@ protected function toRelationships(Request $request): array
         // as collection, with conditional value
         'comments' => CommentResource::relationship(fn() => $this->whenLoaded('comments'))->asCollection(),
         // with relationship (allow to include links and meta on relation)
-        'posts' => PostResource::relationship(fn() => $this->posts)->withLinks(fn() => [
+        'posts' => PostResource::relationship(fn() => $this->posts)->links(fn() => [
             'self' => "https://api.example.com/user/{$this->id}/relationships/posts",
             'related' => "https://api.example.com/user/{$this->id}/posts",
         ])->asCollection(),
@@ -363,11 +363,11 @@ Returns links and meta for a relation.
 protected function toRelationships(Request $request): array
 {
     return [
-        'posts' => PostResource::relationship(fn() => $this->posts)->withLinks(fn() => [
+        'posts' => PostResource::relationship(fn() => $this->posts)->links(fn() => [
             // links
             'self' => "https://api.example.com/user/{$this->id}/relationships/posts",
             'related' => "https://api.example.com/user/{$this->id}/posts",
-        ])->withMeta(fn() => [
+        ])->meta(fn() => [
             // meta
             'creator' => $this->name,
         ])
@@ -446,13 +446,14 @@ protected function toResourceMeta(Request $request): ?iterable
 }
 ```
 
-### toMeta
+### toDocumentMeta
 _**@see** [{json:api}: document-meta](https://jsonapi.org/format/#document-meta)_
 
-Returns document meta.
+Returns document meta (`toMeta()` in 1.x: a resource or a collection still declaring `toMeta()` throws a
+`DefinitionException`).
 
 ```php
-protected function toMeta(Request $request): ?iterable
+protected function toDocumentMeta(Request $request): ?iterable
 {
     return [
         "copyright": "Copyright 2022 My Awesome Api",
@@ -461,14 +462,14 @@ protected function toMeta(Request $request): ?iterable
 ```
 
 Only the primary resources add document meta, never the included ones. In a collection, the first resource setting a
-key keeps it, and the collection's own `toMeta()` wins over those of its resources:
+key keeps it, and the collection's own `toDocumentMeta()` wins over those of its resources:
 
 ```php
 class UserCollection extends JsonApiCollection
 {
     public $collects = UserResource::class;
 
-    protected function toMeta(Request $request): ?iterable
+    protected function toDocumentMeta(Request $request): ?iterable
     {
         return ['total' => fn() => $this->collection->count()];
     }

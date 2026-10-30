@@ -111,7 +111,7 @@ the specification defines them. A middleware adding a default include on a `GET`
 `toArray($request)` returns the resource object only (`type`, `id`, `attributes`, `relationships`, `links`, `meta`),
 and a collection the list of them. `included`, the document meta and the pagination are only in the response:
 return the resource from the controller, or call `->toResponse($request)`. `with()` no longer returns `included` nor
-the meta of `toMeta()`; what you add in `with()` or `additional()` is still merged into the response. The second
+the meta of `toDocumentMeta()`; what you add in `with()` or `additional()` is still merged into the response. The second
 argument of `toArray()` (`$included` / `$minimal`) is removed: remove it from your overrides.
 
 `Resources\Resourceable` and `Relationship::toArray()` are removed. A relationship points to a `JsonApiResource` or a
@@ -139,9 +139,17 @@ Clients reading the documents must expect:
   'fields' => ['relationships' => 'keep'],
   ```
 
-- document meta (`toMeta()`) from the primary resources only: an included resource adds none. In a collection they
+- document meta (`toDocumentMeta()`) from the primary resources only: an included resource adds none. In a collection they
   are merged key by key, the first resource setting a key keeping it, instead of gathered into lists. To set document
-  meta for the whole collection, override `toMeta()` on the collection class: it wins over those of the resources.
+  meta for the whole collection, override `toDocumentMeta()` on the collection class: it wins over those of the resources.
+
+### Renamed methods
+
+- `toMeta()` (document meta) is renamed `toDocumentMeta()`, on resources and collections: a class still declaring
+  `toMeta()` throws a `DefinitionException` (when compiled for a resource, when rendered for a collection) instead
+  of losing its meta silently. `toResourceMeta()` is unchanged.
+- On `Relationship` (`PostResource::relationship(...)`), `withLinks()`, `withMeta()` and `withIdentifierMeta()` are
+  renamed `links()`, `meta()` and `identifierMeta()`, as on the relationship descriptors.
 
 ### Deployment
 
