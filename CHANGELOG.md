@@ -33,6 +33,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   An application adds its own `Rendering\Stage`s in `rendering.stages`; they run after those of the package on every
   resource object, primary or included.
 - `JsonApiCollection::toMeta()`: document meta of a collection, winning over those of its resources.
+- `Exceptions\RenderingException`, thrown when a member that must be a JSON object would be rendered as a list.
 
 ### Changed
 
@@ -55,7 +56,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **Breaking:** the `id` of a resource object and of a resource identifier is always a string.
 - **Breaking:** an empty to-one relationship renders `{"data": null}` and an empty to-many `{"data": []}`; a
   relationship with neither data, links nor meta is left out; empty `attributes`, `relationships`, `links` and `meta`
-  are left out instead of rendered as `[]`.
+  are left out instead of rendered as `[]`. A hook returning members without names (`return ['a', 'b'];`) throws a
+  `RenderingException` instead of rendering a JSON list.
 - **Breaking:** `included` never repeats a primary resource and holds each `type:id` once; a resource reached through
   several paths keeps the relationships rendered on each of them.
 - **Breaking:** `fields[type]` restricts the relationships of the type too, as the specification says. Set

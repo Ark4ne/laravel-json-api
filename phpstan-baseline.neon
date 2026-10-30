@@ -2887,55 +2887,55 @@ parameters:
 			path: tests/Unit/Resources/Concerns/MetaTest.php
 
 		-
-			message: '#^Access to an undefined property Ark4ne\\JsonApi\\Resources\\JsonApiCollection\<Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:88\>\:\:\$preserveKeys\.$#'
+			message: '#^Access to an undefined property Ark4ne\\JsonApi\\Resources\\JsonApiCollection\<Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:89\>\:\:\$preserveKeys\.$#'
 			identifier: property.notFound
 			count: 1
 			path: tests/Unit/Resources/JsonApiResourceTest.php
 
 		-
-			message: '#^Access to an undefined property Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:45\:\:\$id\.$#'
+			message: '#^Access to an undefined property Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:46\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 1
 			path: tests/Unit/Resources/JsonApiResourceTest.php
 
 		-
-			message: '#^Call to static method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\) with ''Ark4ne\\\\JsonApi\\\\Resources\\\\JsonApiCollection'' and Ark4ne\\JsonApi\\Resources\\JsonApiCollection\<Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:104\> will always evaluate to true\.$#'
+			message: '#^Call to static method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\) with ''Ark4ne\\\\JsonApi\\\\Resources\\\\JsonApiCollection'' and Ark4ne\\JsonApi\\Resources\\JsonApiCollection\<Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:105\> will always evaluate to true\.$#'
 			identifier: staticMethod.alreadyNarrowedType
 			count: 1
 			path: tests/Unit/Resources/JsonApiResourceTest.php
 
 		-
-			message: '#^Call to static method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\) with ''Ark4ne\\\\JsonApi\\\\Resources\\\\JsonApiCollection'' and Ark4ne\\JsonApi\\Resources\\JsonApiCollection\<Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:88\> will always evaluate to true\.$#'
+			message: '#^Call to static method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\) with ''Ark4ne\\\\JsonApi\\\\Resources\\\\JsonApiCollection'' and Ark4ne\\JsonApi\\Resources\\JsonApiCollection\<Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:89\> will always evaluate to true\.$#'
 			identifier: staticMethod.alreadyNarrowedType
 			count: 1
 			path: tests/Unit/Resources/JsonApiResourceTest.php
 
 		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:122\:\:toLinks\(\) return type with generic class Ark4ne\\JsonApi\\Descriptors\\Values\\Value does not specify its types\: T$#'
+			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:123\:\:toLinks\(\) return type with generic class Ark4ne\\JsonApi\\Descriptors\\Values\\Value does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
 			path: tests/Unit/Resources/JsonApiResourceTest.php
 
 		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:122\:\:toLinks\(\) should return iterable\<\(int\|string\), Ark4ne\\JsonApi\\Descriptors\\Values\\Value\|string\> but returns Illuminate\\Support\\Collection\<string, array\<string, Illuminate\\Support\\Collection\<string, int\|string\>\|int\|string\>\|int\|string\>\.$#'
+			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:123\:\:toLinks\(\) should return iterable\<\(int\|string\), Ark4ne\\JsonApi\\Descriptors\\Values\\Value\|string\> but returns Illuminate\\Support\\Collection\<string, array\<string, Illuminate\\Support\\Collection\<string, int\|string\>\|int\|string\>\|int\|string\>\.$#'
 			identifier: return.type
 			count: 1
 			path: tests/Unit/Resources/JsonApiResourceTest.php
 
 		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:45\:\:toMeta\(\) never returns null so it can be removed from the return type\.$#'
+			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:46\:\:toMeta\(\) never returns null so it can be removed from the return type\.$#'
 			identifier: return.unusedType
 			count: 1
 			path: tests/Unit/Resources/JsonApiResourceTest.php
 
 		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:45\:\:toResourceMeta\(\) never returns null so it can be removed from the return type\.$#'
+			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:46\:\:toResourceMeta\(\) never returns null so it can be removed from the return type\.$#'
 			identifier: return.unusedType
 			count: 1
 			path: tests/Unit/Resources/JsonApiResourceTest.php
 
 		-
-			message: '#^Property Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:104\:\:\$preserveKeys has no type specified\.$#'
+			message: '#^Property Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:105\:\:\$preserveKeys has no type specified\.$#'
 			identifier: missingType.property
 			count: 1
 			path: tests/Unit/Resources/JsonApiResourceTest.php

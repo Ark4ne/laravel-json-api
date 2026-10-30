@@ -35,7 +35,7 @@ présentes malgré `fields[user]=name`.
 - [x] **E1.2** Relation to-one `null` → `{"data": null}` (aujourd'hui `[]`) 🔴
 - [x] **E1.3** Relation to-many vide → `{"data": []}` (aujourd'hui `[]`) 🔴
 - [x] **E1.4** Un relationship object contient toujours au moins `data`, `links` ou `meta` ; sinon la clé est omise 🔴
-- [ ] **E1.4b** `attributes`, `relationships`, `links` et `meta` sont toujours des objets JSON (`{}`), jamais des
+- [x] **E1.4b** `attributes`, `relationships`, `links` et `meta` sont toujours des objets JSON (`{}`), jamais des
       listes 🔴
 
 ### Compound documents

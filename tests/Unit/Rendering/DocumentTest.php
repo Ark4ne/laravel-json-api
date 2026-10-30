@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Test\Unit\Rendering;
 
+use Ark4ne\JsonApi\Exceptions\RenderingException;
 use Ark4ne\JsonApi\Rendering\Document;
 use Ark4ne\JsonApi\Rendering\ResourceObject;
 use PHPUnit\Framework\TestCase;
@@ -46,5 +47,29 @@ final class DocumentTest extends TestCase
 
         self::assertSame(['a' => 1, 'b' => 2], $document->meta);
         self::assertSame(['self' => '/a', 'next' => '/b'], $document->links);
+    }
+
+    public function test_document_meta_given_as_a_list_throws(): void
+    {
+        $this->expectException(RenderingException::class);
+        $this->expectExceptionMessage('The [meta] of [the document] must be a JSON object');
+
+        (new Document(null))->withMeta(['a']);
+    }
+
+    public function test_document_links_given_as_a_list_throw(): void
+    {
+        $this->expectException(RenderingException::class);
+        $this->expectExceptionMessage('The [links] of [the document] must be a JSON object');
+
+        new Document(null, links: ['/users']);
+    }
+
+    public function test_merged_meta_and_links_keep_their_integer_names(): void
+    {
+        $document = (new Document(null, meta: [2023 => 'a']))->withMeta([2024 => 'b'])->withLinks([404 => '/help']);
+
+        self::assertSame([2023 => 'a', 2024 => 'b'], $document->meta);
+        self::assertSame([404 => '/help'], $document->links);
     }
 }

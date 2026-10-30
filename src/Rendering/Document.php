@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Rendering;
 
+use Ark4ne\JsonApi\Exceptions\RenderingException;
 use JsonSerializable;
 
 /**
@@ -16,20 +17,28 @@ final readonly class Document implements JsonSerializable
      * @param list<ResourceObject> $included
      * @param array<array-key, mixed> $meta
      * @param array<array-key, mixed> $links
+     *
+     * @throws RenderingException when `meta` or `links` is a list
      */
     public function __construct(
         public ResourceObject|array|null $data,
         public array $included = [],
         public array $meta = [],
         public array $links = [],
-    ) {}
+    ) {
+        foreach (['meta' => $meta, 'links' => $links] as $name => $member) {
+            if ($member !== [] && array_is_list($member)) {
+                throw RenderingException::memberNotAnObject($name, 'the document');
+            }
+        }
+    }
 
     /**
      * @param array<array-key, mixed> $meta
      */
     public function withMeta(array $meta): self
     {
-        return new self($this->data, $this->included, [...$this->meta, ...$meta], $this->links);
+        return new self($this->data, $this->included, array_replace($this->meta, $meta), $this->links);
     }
 
     /**
@@ -37,7 +46,7 @@ final readonly class Document implements JsonSerializable
      */
     public function withLinks(array $links): self
     {
-        return new self($this->data, $this->included, $this->meta, [...$this->links, ...$links]);
+        return new self($this->data, $this->included, $this->meta, array_replace($this->links, $links));
     }
 
     /**

@@ -260,7 +260,9 @@ interface Stage
   resources (pagination meta in between).
 - **Shape guarantees**, by construction and not by `array_filter`: `id` is always a string; an empty to-one is
   `{"data": null}`, an empty to-many `{"data": []}`; a relationship object always has `data`, `links` or `meta`, or is
-  omitted; `attributes`, `relationships`, `links` and `meta` are always JSON objects.
+  omitted; `attributes`, `relationships`, `links` and `meta` are always JSON objects: an empty one is left out,
+  `ResourceObject` and `Document` refuse one that would be serialized as a list (keys `0, 1, …`) with a
+  `RenderingException`.
 - **Sparse fieldsets** restrict attributes **and** relationships, for primary and included resources alike
   (`fields.relationships = 'filter'`, the default). `'keep'` restricts attributes only and renders every relationship,
   as 1.x did: a deliberate, opt-in departure from the specification; a relationship named in `fields` is then accepted

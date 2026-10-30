@@ -30,9 +30,9 @@ nouveau moteur corrige structurellement la plupart des écarts d'E1 et plusieurs
       connaît la forme du document 🔴 (le membre `jsonapi` arrive avec E1.8)
 - [x] **E4.3** `IncludedRegistry` (identity map `type:id`) : ajout en O(1), ressources primaires exclues, fusion si une
       même ressource est atteinte par deux chemins 🔴
-- [ ] **E4.6** Objets vides sérialisés en `{}` par construction, et non par `array_filter` 🔴 (aujourd'hui les
-      membres vides sont omis via un `array_filter` dans `ResourceObject::toArray()`, et un membre à clés numériques
-      sort encore en liste JSON)
+- [x] **E4.6** Objets vides sérialisés en `{}` par construction, et non par `array_filter` 🔴 (décision : un membre
+      vide est omis ; `ResourceObject` et `Document` refusent un membre qui sortirait en liste JSON,
+      `RenderingException`)
 
 ### Pipeline
 

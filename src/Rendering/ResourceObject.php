@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Rendering;
 
+use Ark4ne\JsonApi\Exceptions\RenderingException;
+
 /**
  * A rendered resource object (https://jsonapi.org/format/#document-resource-objects), built stage by stage.
  *
- * Shape guarantees hold by construction: `id` is a string, empty members are left out.
+ * Shape guarantees hold by construction: `id` is a string, `attributes`, `relationships`, `links` and `meta` are JSON
+ * objects (a list is refused), an empty one is left out.
  */
 final readonly class ResourceObject
 {
@@ -36,7 +39,7 @@ final readonly class ResourceObject
      */
     public function withAttributes(array $attributes): self
     {
-        return $this->copy(attributes: $attributes);
+        return $this->copy(attributes: $this->object($attributes, 'attributes'));
     }
 
     /**
@@ -44,6 +47,11 @@ final readonly class ResourceObject
      */
     public function withRelationships(array $relationships): self
     {
+        foreach ($relationships as $name => $relationship) {
+            $this->object($relationship['links'] ?? [], "relationships.{$name}.links");
+            $this->object($relationship['meta'] ?? [], "relationships.{$name}.meta");
+        }
+
         return $this->copy(relationships: $relationships);
     }
 
@@ -52,7 +60,7 @@ final readonly class ResourceObject
      */
     public function withLinks(array $links): self
     {
-        return $this->copy(links: $links);
+        return $this->copy(links: $this->object($links, 'links'));
     }
 
     /**
@@ -60,7 +68,7 @@ final readonly class ResourceObject
      */
     public function withMeta(array $meta): self
     {
-        return $this->copy(meta: $meta);
+        return $this->copy(meta: $this->object($meta, 'meta'));
     }
 
     /**
@@ -112,15 +120,38 @@ final readonly class ResourceObject
      */
     public function toArray(): array
     {
-        return [
-            ...$this->identifier(),
-            ...array_filter([
-                'attributes' => $this->attributes,
-                'relationships' => $this->relationships,
-                'links' => $this->links,
-                'meta' => $this->meta,
-            ], static fn(array $member) => $member !== []),
-        ];
+        $object = $this->identifier();
+
+        if ($this->attributes !== []) {
+            $object['attributes'] = $this->attributes;
+        }
+        if ($this->relationships !== []) {
+            $object['relationships'] = $this->relationships;
+        }
+        if ($this->links !== []) {
+            $object['links'] = $this->links;
+        }
+        if ($this->meta !== []) {
+            $object['meta'] = $this->meta;
+        }
+
+        return $object;
+    }
+
+    /**
+     * A member serialized as a JSON list (keys `0, 1, …`) is refused: it must be a JSON object.
+     *
+     * @param array<array-key, mixed> $member
+     *
+     * @return array<array-key, mixed>
+     *
+     * @throws RenderingException
+     */
+    private function object(array $member, string $name): array
+    {
+        return $member !== [] && array_is_list($member)
+            ? throw RenderingException::memberNotAnObject($name, $this->key())
+            : $member;
     }
 
     /**

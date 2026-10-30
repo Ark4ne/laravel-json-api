@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Test\Unit\Rendering;
 
+use Ark4ne\JsonApi\Exceptions\RenderingException;
 use Ark4ne\JsonApi\Rendering\ResourceObject;
+use Closure;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class ResourceObjectTest extends TestCase
@@ -70,5 +73,42 @@ final class ResourceObjectTest extends TestCase
         $object->withAttributes(['name' => 'Ada']);
 
         self::assertSame([], $object->attributes);
+    }
+
+    /**
+     * @return iterable<string, array{Closure(ResourceObject): ResourceObject, string}>
+     */
+    public static function listMembers(): iterable
+    {
+        yield 'attributes' => [static fn(ResourceObject $object) => $object->withAttributes(['a', 'b']), 'attributes'];
+        yield 'links' => [static fn(ResourceObject $object) => $object->withLinks(['/users/1']), 'links'];
+        yield 'meta' => [static fn(ResourceObject $object) => $object->withMeta(['new']), 'meta'];
+        yield 'relationship meta' => [
+            static fn(ResourceObject $object) => $object->withRelationships(['author' => ['meta' => ['x']]]),
+            'relationships.author.meta',
+        ];
+        yield 'relationship links' => [
+            static fn(ResourceObject $object) => $object->withRelationships(['author' => ['links' => ['/a']]]),
+            'relationships.author.links',
+        ];
+    }
+
+    /**
+     * @param Closure(ResourceObject): ResourceObject $with
+     */
+    #[DataProvider('listMembers')]
+    public function test_a_member_given_as_a_list_throws_naming_it(Closure $with, string $member): void
+    {
+        $this->expectException(RenderingException::class);
+        $this->expectExceptionMessage("The [{$member}] of [user:1] must be a JSON object");
+
+        $with(ResourceObject::identify('user', 1));
+    }
+
+    public function test_a_member_with_integer_names_is_an_object(): void
+    {
+        $object = ResourceObject::identify('user', 1)->withMeta([2024 => 'year']);
+
+        self::assertSame('{"type":"user","id":"1","meta":{"2024":"year"}}', json_encode($object->toArray()));
     }
 }

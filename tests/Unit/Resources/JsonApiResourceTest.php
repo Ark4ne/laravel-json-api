@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Test\Unit\Resources;
 
+use Ark4ne\JsonApi\Exceptions\RenderingException;
 use Ark4ne\JsonApi\Resources\JsonApiCollection;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Http\Request;
@@ -217,5 +218,25 @@ class JsonApiResourceTest extends TestCase
         ];
 
         self::assertEquals($expected, $actual);
+    }
+
+    public function test_attributes_without_names_throw_instead_of_rendering_a_list(): void
+    {
+        $resource = new class (Stub::model(['id' => 1])) extends JsonApiResource {
+            public function toType(Request $request): string
+            {
+                return 'my-model';
+            }
+
+            public function toAttributes(Request $request): iterable
+            {
+                return ['a', 'b'];
+            }
+        };
+
+        $this->expectException(RenderingException::class);
+        $this->expectExceptionMessage('The [attributes] of [my-model:1] must be a JSON object');
+
+        $resource->toArray(new Request());
     }
 }

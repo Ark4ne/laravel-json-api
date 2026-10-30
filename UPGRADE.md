@@ -66,7 +66,9 @@ Clients reading the documents must expect:
 - `id` always a string, in resource objects and in relationship linkage;
 - `{"data": null}` for an empty to-one relationship, `{"data": []}` for an empty to-many; a relationship that has
   neither data, links nor meta is left out;
-- empty `attributes`, `relationships`, `links` or `meta` left out instead of `[]`;
+- empty `attributes`, `relationships`, `links` or `meta` left out instead of `[]`. A hook returning members without
+  names (`toAttributes()` returning `['a', 'b']`, `toMeta()` returning `['x']`) now throws a `RenderingException`:
+  give each member a name;
 - `included` without the primary resources and without duplicates;
 - `fields[type]` restricting the relationships of the type too. To keep the 1.x behaviour:
 
