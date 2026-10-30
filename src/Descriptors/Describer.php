@@ -116,6 +116,16 @@ abstract class Describer
     }
 
     /**
+     * Whether the conditions of the descriptor pass for the model, without resolving its value.
+     *
+     * @internal Read by the renderer.
+     */
+    public function passes(Request $request, mixed $model, string $attribute): bool
+    {
+        return $this->check($request, $model, $attribute);
+    }
+
+    /**
      * Whether a condition applies: the field may be left out of the rendering.
      */
     public function isConditional(): bool

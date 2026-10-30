@@ -26,27 +26,27 @@ présentes malgré `fields[user]=name`.
 
 ### Identification
 
-- [ ] **E1.1** `id` toujours sérialisé en `string`, quel que soit le retour de `toIdentifier()` 🔴
+- [x] **E1.1** `id` toujours sérialisé en `string`, quel que soit le retour de `toIdentifier()` 🔴
 - [ ] **E1.7** `toAttributes()` par défaut : exclure `id`, `type` et les clés étrangères des relations déclarées 🔴
 - [ ] **E1.7b** Un attribut ou une relation nommé `id` ou `type` produit un diagnostic (E3.6)
 
 ### Relationships
 
-- [ ] **E1.2** Relation to-one `null` → `{"data": null}` (aujourd'hui `[]`) 🔴
-- [ ] **E1.3** Relation to-many vide → `{"data": []}` (aujourd'hui `[]`) 🔴
-- [ ] **E1.4** Un relationship object contient toujours au moins `data`, `links` ou `meta` ; sinon la clé est omise 🔴
+- [x] **E1.2** Relation to-one `null` → `{"data": null}` (aujourd'hui `[]`) 🔴
+- [x] **E1.3** Relation to-many vide → `{"data": []}` (aujourd'hui `[]`) 🔴
+- [x] **E1.4** Un relationship object contient toujours au moins `data`, `links` ou `meta` ; sinon la clé est omise 🔴
 - [ ] **E1.4b** `attributes`, `relationships`, `links` et `meta` sont toujours des objets JSON (`{}`), jamais des
       listes 🔴
 
 ### Compound documents
 
-- [ ] **E1.5** `included` ne contient ni doublon `type:id`, ni les ressources primaires (identity map, E4.3) 🔴
+- [x] **E1.5** `included` ne contient ni doublon `type:id`, ni les ressources primaires (identity map, E4.3) 🔴
 - [ ] **E1.11** Profondeur maximale d'include configurable (protection contre les includes abusifs)
-- [ ] **E1.12** Les sparse fieldsets s'appliquent par **type** aux ressources incluses (test dédié)
+- [x] **E1.12** Les sparse fieldsets s'appliquent par **type** aux ressources incluses (test dédié)
 
 ### Sparse fieldsets
 
-- [ ] **E1.6** `fields[type]` filtre aussi les `relationships`. La spec en fait la seule exception admise à la
+- [x] **E1.6** `fields[type]` filtre aussi les `relationships`. La spec en fait la seule exception admise à la
       « full linkage » 🔴. Configurable : `fields.relationships` = `filter` (défaut, conforme) ou `keep`
       (comportement 1.x, attributs seuls ; un nom de relation dans `fields` est accepté et ignoré)
 

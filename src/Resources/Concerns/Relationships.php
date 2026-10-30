@@ -4,16 +4,12 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
-use Ark4ne\JsonApi\Descriptors\Resolver;
 use Ark4ne\JsonApi\Resources\Relationship;
-use Ark4ne\JsonApi\Support\Includes;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 
 trait Relationships
 {
     use PrepareData;
-    use Resolver;
 
     /**
      * @see https://jsonapi.org/format/#document-resource-object-relationships
@@ -35,76 +31,5 @@ trait Relationships
     protected function toRelationships(Request $request): iterable
     {
         return [];
-    }
-
-    /**
-     * @param \Illuminate\Http\Request $request
-     *
-     * @return array<string, array{data?: mixed, links?: mixed, meta?: mixed}>
-     */
-    private function requestedRelationships(Request $request): array
-    {
-        $relations = [];
-        $relationships = $this->toRelationships($request);
-        $relationships = $this->mergeValues($relationships);
-        $relationships = $this->autoWhenIncluded($relationships);
-        $relationships = $this->resolveValues($request, $relationships);
-        $relationships = $this->filter($relationships);
-
-        foreach ($relationships as $name => $relationship) {
-            $relationship->forRelation($name);
-
-            $included = Includes::include($request, $name);
-
-            $relations[$name] = Includes::through($name, fn() => $this->mapRelationship(
-                $included,
-                $request,
-                $relationship,
-            ));
-        }
-
-        return $relations;
-    }
-
-    /**
-     * @param bool $included
-     * @param \Illuminate\Http\Request $request
-     * @param \Ark4ne\JsonApi\Resources\Relationship $relationship
-     *
-     * @return array{data?: mixed, links?: mixed, meta?: mixed}
-     */
-    private function mapRelationship(
-        bool         $included,
-        Request      $request,
-        Relationship $relationship,
-    ): array {
-        $resource = $relationship->toArray($request, $included);
-
-        if (isset($resource['included'])) {
-            $this->with['included'] = Includes::merge(
-                $this->with['included'] ?? [],
-                $resource['included'],
-            );
-        }
-
-        if (isset($resource['with']['included'])) {
-            $this->with['included'] = Includes::merge(
-                $this->with['included'] ?? [],
-                $resource['with']['included'],
-            );
-
-            unset($resource['with']['included']);
-        }
-
-        if (isset($resource['with'])) {
-            foreach ($resource['with'] as $key => $value) {
-                $this->with[$key] = array_merge(
-                    $this->with[$key] ?? [],
-                    (new Collection($value))->all(),
-                );
-            }
-        }
-
-        return $resource['data'] ?? [];
     }
 }

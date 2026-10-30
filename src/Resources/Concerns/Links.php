@@ -27,17 +27,4 @@ trait Links
     {
         return null;
     }
-
-    /**
-     * @param \Illuminate\Http\Request $request
-     *
-     * @return array<string, mixed>
-     */
-    private function requestedLinks(Request $request): array
-    {
-        $links = $this->toLinks($request) ?? [];
-        $links = $this->mergeValues($links);
-
-        return $this->resolveValues($request, $links);
-    }
 }

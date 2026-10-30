@@ -4,25 +4,30 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Resources;
 
+use Ark4ne\JsonApi\Context\JsonApiContext;
+use Ark4ne\JsonApi\Definition\Cardinality;
 use Ark4ne\JsonApi\Definition\DescribesRelationship;
 use Ark4ne\JsonApi\Definition\LoadDefinition;
 use Ark4ne\JsonApi\Definition\RelatedResource;
 use Ark4ne\JsonApi\Definition\RelationshipDefinition;
 use Ark4ne\JsonApi\Filters\Filters;
+use Ark4ne\JsonApi\Rendering\RelationshipSource;
+use Ark4ne\JsonApi\Rendering\RenderableResource;
+use Ark4ne\JsonApi\Rendering\ResolvedRelationship;
 use Ark4ne\JsonApi\Support\Values;
 use Ark4ne\JsonApi\Traits\HasRelationLoad;
 use Closure;
-use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Http\Resources\MissingValue;
 use Illuminate\Support\Collection;
+use Traversable;
 
 use function value;
 
 /**
  * @template T as JsonApiResource|JsonApiCollection
  */
-class Relationship implements DescribesRelationship, Resourceable
+class Relationship implements DescribesRelationship, RelationshipSource
 {
     use HasRelationLoad;
 
@@ -182,77 +187,58 @@ class Relationship implements DescribesRelationship, Resourceable
     }
 
     /**
-     * @param \Illuminate\Http\Request $request
-     * @param bool $included
+     * The related resources of one resource: none when the relationship is resolved only when included and is not, or
+     * when its condition fails (`MissingValue`); links and meta are resolved in every case, with the related resource
+     * (or collection) as argument.
      *
-     * @return array{data?: array{data?:mixed, links?:mixed, meta?:mixed}, included?: mixed, with?: mixed}
+     * @internal Read by the renderer.
      */
-    public function toArray(mixed $request, bool $included = true): array
+    public function resolve(JsonApiContext $context, bool $included): ResolvedRelationship
     {
-        $value = $this->whenIncluded && !$included
-            ? null
-            : \value($this->value);
-        $value ??= new MissingValue();
+        $value = $this->whenIncluded && !$included ? new MissingValue() : \value($this->value);
 
-        // Apply filters if they are defined and we have data
         if ($this->filters !== null && !Values::isMissing($value)) {
-            $value = $this->filters->apply($request, $value);
+            $value = $this->filters->apply($context->request, $value);
         }
 
-        if ($this->asCollection && !is_subclass_of($this->resource, ResourceCollection::class)) {
-            $resource = $this->resource::collection($value);
-        } else {
-            $resource = new $this->resource($value);
+        $many = $this->asCollection || is_subclass_of($this->resource, ResourceCollection::class);
+        $resource = $this->asCollection && !is_subclass_of($this->resource, ResourceCollection::class)
+            ? $this->resource::collection($value)
+            : new $this->resource($value);
+
+        $links = self::members(\value($this->links, $resource));
+        $meta = self::members(\value($this->meta, $resource));
+        $cardinality = $many ? Cardinality::Many : Cardinality::One;
+
+        if (Values::isMissing($value)) {
+            return ResolvedRelationship::withoutData($cardinality, $links, $meta);
         }
-
-        $data = [
-            'data' => [],
-            'links' => \value($this->links, $resource),
-            'meta' => \value($this->meta, $resource),
-        ];
-
-        if (Values::isMissing($resource)) {
-            return [
-                'data' => array_filter($data),
-            ];
-        }
-
-        if (is_object($resource) && method_exists($resource, 'toArray')) {
-            $datum = $resource->toArray($request, $included);
-        } else {
-            $datum = (new Collection($resource))->toArray();
-        }
-
-        $includes = [];
 
         if ($resource instanceof ResourceCollection) {
-            foreach ($datum as $value) {
-                $data['data'][] = [
-                    'type' => $value['type'],
-                    'id' => $value['id'],
-                ];
-                if ($included) {
-                    $includes[] = $value;
+            /** @var iterable<mixed> $collected */
+            $collected = $resource->collection ?? [];
+            $related = [];
+            foreach ($collected as $item) {
+                if ($item instanceof RenderableResource) {
+                    $related[] = $item;
                 }
             }
-        } elseif ($resource instanceof JsonResource) {
-            $data['data'] = [
-                'type' => $datum['type'],
-                'id' => $datum['id'],
-            ];
-            if ($included) {
-                $includes[] = $datum;
-            }
-        } else {
-            $data['data'] = $datum;
+
+            return ResolvedRelationship::toMany($related, $links, $meta);
         }
 
-        return array_filter([
-            'data' => array_filter($data),
-            'included' => $includes,
-            'with' => is_object($resource) && method_exists($resource, 'with')
-                ? $resource->with($request)
-                : null,
-        ]);
+        return ResolvedRelationship::toOne($resource->renderedModel() !== null ? $resource : null, $links, $meta);
+    }
+
+    /**
+     * @return array<array-key, mixed>
+     */
+    private static function members(mixed $members): array
+    {
+        return match (true) {
+            is_array($members) => $members,
+            $members instanceof Traversable => iterator_to_array($members),
+            default => [],
+        };
     }
 }

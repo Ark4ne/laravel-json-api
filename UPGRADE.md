@@ -48,6 +48,37 @@ empty request: write it with `->when()`, `->unless()` or `applyWhen()` (README, 
 the specification defines them. A middleware adding a default include on a `GET` request
 (`$request->merge(['include' => …])`) keeps working: Laravel merges into the query of a `GET`.
 
+### `toArray()` returns the resource object
+
+`toArray($request)` returns the resource object only (`type`, `id`, `attributes`, `relationships`, `links`, `meta`),
+and a collection the list of them. `included`, the document meta and the pagination are only in the response:
+return the resource from the controller, or call `->toResponse($request)`. `with()` no longer returns `included` nor
+the meta of `toMeta()`; what you add in `with()` or `additional()` is still merged into the response. The second
+argument of `toArray()` (`$included` / `$minimal`) is removed: remove it from your overrides.
+
+`Resources\Resourceable` and `Relationship::toArray()` are removed. A relationship points to a `JsonApiResource` or a
+`JsonApiCollection`, and a collection collects `JsonApiResource`s: anything else renders no resource object.
+
+### The JSON follows the specification
+
+Clients reading the documents must expect:
+
+- `id` always a string, in resource objects and in relationship linkage;
+- `{"data": null}` for an empty to-one relationship, `{"data": []}` for an empty to-many; a relationship that has
+  neither data, links nor meta is left out;
+- empty `attributes`, `relationships`, `links` or `meta` left out instead of `[]`;
+- `included` without the primary resources and without duplicates;
+- `fields[type]` restricting the relationships of the type too. To keep the 1.x behaviour:
+
+  ```php
+  // config/jsonapi.php
+  'fields' => ['relationships' => 'keep'],
+  ```
+
+- document meta (`toMeta()`) from the primary resources only: an included resource adds none. In a collection they
+  are merged key by key, the first resource setting a key keeping it, instead of gathered into lists. To set document
+  meta for the whole collection, override `toMeta()` on the collection class: it wins over those of the resources.
+
 ### Deployment
 
 Add nothing if you already run `php artisan optimize`: it now compiles the resource definitions too

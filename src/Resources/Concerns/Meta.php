@@ -41,32 +41,4 @@ trait Meta
     {
         return null;
     }
-
-    /**
-     * @param \Illuminate\Http\Request $request
-     *
-     * @return array<string, mixed>
-     */
-    private function requestedResourceMeta(Request $request): array
-    {
-        $meta = $this->toResourceMeta($request) ?? [];
-        $meta = $this->mergeValues($meta);
-        $meta = $this->autoWhenHas($meta, 'resource-meta');
-
-        return $this->resolveValues($request, $meta);
-    }
-
-    /**
-     * @param \Illuminate\Http\Request $request
-     *
-     * @return array<string, mixed>
-     */
-    private function requestedMeta(Request $request): array
-    {
-        $meta = $this->toMeta($request) ?? [];
-        $meta = $this->mergeValues($meta);
-        $meta = $this->autoWhenHas($meta, 'meta');
-
-        return $this->resolveValues($request, $meta);
-    }
 }

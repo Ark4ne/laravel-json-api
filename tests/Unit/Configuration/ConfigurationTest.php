@@ -32,6 +32,7 @@ final class ConfigurationTest extends TestCase
         self::assertFalse($configuration->whenIncluded);
         self::assertSame(SparseRelationships::Filter, $configuration->sparseRelationships);
         self::assertSame([], $configuration->resourcePaths);
+        self::assertSame([], $configuration->renderingStages);
     }
 
     public function test_an_empty_array_gives_the_defaults(): void
@@ -51,6 +52,7 @@ final class ConfigurationTest extends TestCase
             'relationship' => ['when-included' => true],
             'fields' => ['relationships' => 'keep'],
             'definitions' => ['paths' => ['/app/Http/Resources']],
+            'rendering' => ['stages' => [self::class]],
         ]);
 
         self::assertFalse($configuration->nullable);
@@ -60,6 +62,7 @@ final class ConfigurationTest extends TestCase
         self::assertTrue($configuration->whenIncluded);
         self::assertSame(SparseRelationships::Keep, $configuration->sparseRelationships);
         self::assertSame(['/app/Http/Resources'], $configuration->resourcePaths);
+        self::assertSame([self::class], $configuration->renderingStages);
     }
 
     public function test_when_has_true_enables_every_scope(): void
@@ -94,6 +97,8 @@ final class ConfigurationTest extends TestCase
         yield 'when-included' => [['relationship' => ['when-included' => 1]], 'relationship.when-included'];
         yield 'fields.relationships' => [['fields' => ['relationships' => 'drop']], 'fields.relationships'];
         yield 'definitions.paths' => [['definitions' => ['paths' => 'app']], 'definitions.paths'];
+        yield 'rendering.stages not a list' => [['rendering' => ['stages' => 'Stage']], 'rendering.stages'];
+        yield 'rendering.stages unknown class' => [['rendering' => ['stages' => ['App\\Unknown']]], 'rendering.stages'];
     }
 
     /**

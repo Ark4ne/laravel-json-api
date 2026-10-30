@@ -28,6 +28,7 @@ final readonly class Configuration
      * @param SparseRelationships $sparseRelationships How `fields[type]` treats relationships (`fields.relationships`)
      * @param list<string> $resourcePaths Directories scanned for resources by the Artisan commands
      *                                    (`definitions.paths`); empty for the application's default
+     * @param list<class-string> $renderingStages Stages run after those of the package (`rendering.stages`)
      */
     private function __construct(
         public bool $nullable,
@@ -37,6 +38,7 @@ final readonly class Configuration
         public bool $whenIncluded,
         public SparseRelationships $sparseRelationships,
         public array $resourcePaths,
+        public array $renderingStages,
     ) {}
 
     /**
@@ -52,6 +54,7 @@ final readonly class Configuration
             whenIncluded: false,
             sparseRelationships: SparseRelationships::Filter,
             resourcePaths: [],
+            renderingStages: [],
         );
     }
 
@@ -74,6 +77,7 @@ final readonly class Configuration
             whenIncluded: self::bool($config, 'relationship.when-included', $defaults->whenIncluded),
             sparseRelationships: self::sparseRelationships($config, $defaults->sparseRelationships),
             resourcePaths: self::paths($config, $defaults->resourcePaths),
+            renderingStages: self::stages($config, $defaults->renderingStages),
         );
     }
 
@@ -188,5 +192,31 @@ final readonly class Configuration
 
         /** @var list<string> $value */
         return $value;
+    }
+
+    /**
+     * Only the existence of the classes is checked here: the renderer checks they are stages.
+     *
+     * @param array<array-key, mixed> $config
+     * @param list<class-string> $default
+     *
+     * @return list<class-string>
+     */
+    private static function stages(array $config, array $default): array
+    {
+        $value = self::read($config, 'rendering.stages') ?? $default;
+
+        if (!is_array($value) || !array_is_list($value)) {
+            throw InvalidConfigurationException::forKey('rendering.stages', 'a list of stage classes');
+        }
+
+        $stages = [];
+        foreach ($value as $stage) {
+            $stages[] = is_string($stage) && class_exists($stage)
+                ? $stage
+                : throw InvalidConfigurationException::forKey('rendering.stages', 'a list of stage classes');
+        }
+
+        return $stages;
     }
 }

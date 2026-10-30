@@ -59,6 +59,15 @@ final class DefinitionsTest extends TestCase
         self::assertFalse(Definitions::for(TypedResource::class)->attribute('title')?->nullable);
     }
 
+    public function test_the_configuration_set_at_boot_is_given_to_the_resources(): void
+    {
+        $configuration = Configuration::fromArray(['describer' => ['nullable' => false]]);
+
+        Definitions::configure($configuration);
+
+        self::assertSame($configuration, Definitions::configuration());
+    }
+
     public function test_configuring_flushes_the_cache(): void
     {
         Definitions::for(TypedResource::class);

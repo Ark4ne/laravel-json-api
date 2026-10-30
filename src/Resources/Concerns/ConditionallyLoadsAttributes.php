@@ -8,8 +8,6 @@ use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Descriptors\Relations\RelationRaw;
 use Ark4ne\JsonApi\Descriptors\Values\ValueMixed;
 use Ark4ne\JsonApi\Resources\Relationship;
-use Ark4ne\JsonApi\Support\Fields;
-use Ark4ne\JsonApi\Support\Includes;
 use Ark4ne\JsonApi\Support\Supported;
 use Ark4ne\JsonApi\Support\Values;
 use Closure;
@@ -32,7 +30,12 @@ trait ConditionallyLoadsAttributes
      */
     protected function whenInFields(Request $request, string $attribute, mixed $value)
     {
-        return $this->when(in_array($attribute, Fields::get($request, $this->toType($request)) ?? [], true), $value);
+        $context = $this->renderingContext;
+
+        return $this->when(
+            $context !== null && $context->fields->requests($this->toType($request), $attribute),
+            $value,
+        );
     }
 
     /**
@@ -48,7 +51,7 @@ trait ConditionallyLoadsAttributes
      */
     protected function whenIncluded(Request $request, string $type, mixed $value)
     {
-        return $this->when(Includes::include($request, $type), $value);
+        return $this->when($this->renderingContext?->includes($type) ?? false, $value);
     }
 
     /**

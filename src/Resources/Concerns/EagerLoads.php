@@ -5,11 +5,10 @@ declare(strict_types=1);
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
 use Ark4ne\JsonApi\Compilation\Definitions;
+use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Definition\DefinitionSource;
 use Ark4ne\JsonApi\Definition\RelatedResource;
-use Ark4ne\JsonApi\Support\Includes;
 use Closure;
-use Illuminate\Http\Request;
 
 /**
  * The eager-loads of `JsonApiResource`, read from the definitions (`withLoad()`), until the loading layer (roadmap E5)
@@ -24,9 +23,9 @@ trait EagerLoads
      * @return array<string, Closure|array{}>
      * @internal
      */
-    public function requestedRelationshipsLoad(Request $request): array
+    public function requestedRelationshipsLoad(JsonApiContext $context): array
     {
-        $loads = $this->requestedLoadsOf($request, static::class);
+        $loads = $this->requestedLoadsOf($context, static::class);
 
         // A path loaded without constraint is implied by the deeper paths it prefixes.
         return array_filter(
@@ -41,21 +40,17 @@ trait EagerLoads
      *
      * @return array<string, Closure|array{}>
      */
-    private function requestedLoadsOf(Request $request, string $class): array
+    private function requestedLoadsOf(JsonApiContext $context, string $class): array
     {
         $loads = [];
         $constraints = Definitions::loadConstraints($class);
 
         foreach (Definitions::for($class)->relationships as $name => $relationship) {
-            if ($relationship->load->isEmpty() || !Includes::include($request, $name)) {
+            if ($relationship->load->isEmpty() || !$context->includes($name)) {
                 continue;
             }
 
-            /** @var array<string, Closure|array{}> $nested */
-            $nested = Includes::through($name, fn() => $this->requestedLoadsOf(
-                $request,
-                RelatedResource::resolve($relationship->related),
-            ));
+            $nested = $this->requestedLoadsOf($context->withPath($name), RelatedResource::resolve($relationship->related));
 
             $paths = $relationship->load->paths;
 

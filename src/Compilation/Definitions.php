@@ -44,6 +44,15 @@ final class Definitions
     }
 
     /**
+     * The configuration set at boot, those of a fresh installation otherwise: read by the resources to build the
+     * context of their rendering without the container.
+     */
+    public static function configuration(): Configuration
+    {
+        return self::$configuration ?? Configuration::defaults();
+    }
+
+    /**
      * Fills the cache with definitions compiled beforehand.
      *
      * @param array<class-string<DefinitionSource>, ResourceDefinition> $definitions
@@ -122,6 +131,6 @@ final class Definitions
 
     private static function compiler(): DefinitionCompiler
     {
-        return new DefinitionCompiler(self::$configuration ?? Configuration::defaults());
+        return new DefinitionCompiler(self::configuration());
     }
 }

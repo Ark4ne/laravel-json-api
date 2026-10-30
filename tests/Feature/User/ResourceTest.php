@@ -5,14 +5,15 @@ declare(strict_types=1);
 namespace Test\Feature\User;
 
 use Ark4ne\JsonApi\Support\Arr;
-use Ark4ne\JsonApi\Support\Config;
 use DateTimeInterface;
 use Illuminate\Http\Request;
+use Orchestra\Testbench\Attributes\DefineEnvironment;
 use Test\app\Http\Resources\CommentResource;
 use Test\app\Http\Resources\PostResource;
 use Test\app\Models\Comment;
 use Test\app\Models\Post;
 use Test\app\Models\User;
+use Test\app\Rendering\ServedStage;
 use Test\Feature\FeatureTestCase;
 
 class ResourceTest extends FeatureTestCase
@@ -82,8 +83,8 @@ class ResourceTest extends FeatureTestCase
     {
         $user = $this->dataSeed();
 
+        // The primary resource reached through posts.user is never repeated in included.
         $expected = $this->getJsonResult($user, null, ['posts']);
-        $expected['included'][] = $expected['data'];
 
         $response = $this->get("user/{$user->id}?include=posts.user");
 
@@ -92,6 +93,27 @@ class ResourceTest extends FeatureTestCase
         $response = $this->get("user/{$user->id}?include=posts.user.posts.user.posts.user");
 
         $response->assertExactJson($expected);
+    }
+
+    public function test_the_fieldset_of_a_type_restricts_its_included_resources_only(): void
+    {
+        $user = $this->dataSeed();
+
+        $response = $this->get("user/{$user->id}?include=posts&fields[post]=title,content");
+
+        $included = $response->json('included');
+        self::assertIsArray($included);
+        self::assertNotEmpty($included);
+
+        foreach ($included as $post) {
+            self::assertIsArray($post);
+            self::assertSame('post', $post['type'] ?? null);
+            self::assertSame(['title', 'content'], array_keys($post['attributes'] ?? []));
+            self::assertArrayNotHasKey('relationships', $post);
+        }
+
+        self::assertSame($user->name, $response->json('data.attributes.name'));
+        self::assertNotNull($response->json('data.relationships.posts'));
     }
 
     public function testShowFailWithAttributes(): void
@@ -154,9 +176,9 @@ class ResourceTest extends FeatureTestCase
         ]]);
     }
 
+    #[DefineEnvironment('resolveRelationshipsWhenIncluded')]
     public function testShowBasicAutoWhenIncluded(): void
     {
-        Config::$autoWhenIncluded = true;
         $user = $this->dataSeed();
 
         $response = $this->get("user/{$user->id}");
@@ -164,11 +186,47 @@ class ResourceTest extends FeatureTestCase
         $response->assertExactJson($this->getJsonResult($user, null, null, false));
     }
 
-    private function dataSeed()
+    #[DefineEnvironment('registerServedStage')]
+    public function test_a_stage_of_the_configuration_renders_the_primary_and_included_resources(): void
     {
-        return User::first();
+        $user = $this->dataSeed();
+
+        $response = $this->get("user/{$user->id}?include=posts");
+
+        self::assertTrue($response->json('data.meta.served'));
+        self::assertTrue($response->json('included.0.meta.served'));
     }
 
+    /**
+     * @param \Illuminate\Foundation\Application $app
+     */
+    protected function registerServedStage($app): void
+    {
+        $app['config']->set('jsonapi.rendering.stages', [ServedStage::class]);
+    }
+
+    /**
+     * @param \Illuminate\Foundation\Application $app
+     */
+    protected function resolveRelationshipsWhenIncluded($app): void
+    {
+        $app['config']->set('jsonapi.relationship.when-included', true);
+    }
+
+    private function dataSeed(): User
+    {
+        $user = User::first();
+        self::assertInstanceOf(User::class, $user);
+
+        return $user;
+    }
+
+    /**
+     * @param list<string>|null $attributes
+     * @param list<string>|null $relationships
+     *
+     * @return array<string, mixed>
+     */
     private function getJsonResult(User $user, ?array $attributes = null, ?array $relationships = null, bool $withIncluded = true): array
     {
         $request = new Request(array_merge(
@@ -176,9 +234,14 @@ class ResourceTest extends FeatureTestCase
             ($relationships !== null ? ['include' => implode(',', $relationships)] : []),
         ));
 
+        // fields[user] restricts the relationships too (fields.relationships = filter).
+        $relationshipsOf = static fn(array $relationships) => $attributes === null
+            ? $relationships
+            : array_intersect_key($relationships, array_flip($attributes));
+
         return array_filter([
-            'data' => [
-                'id' => $user->id,
+            'data' => array_filter([
+                'id' => (string) $user->id,
                 'type' => 'user',
                 'attributes' => Arr::intersectKeyStruct([
                     'name' => $user->name,
@@ -205,10 +268,11 @@ class ResourceTest extends FeatureTestCase
                     "with-apply-conditional-value",
                     "struct-set",
                 ], true))),
-                'relationships' => [
-                    'main-post' => [],
+                'relationships' => $relationshipsOf(array_filter([
+                    // Resolved only when included: without data nor links, it is left out.
+                    'main-post' => $withIncluded ? ['data' => null] : null,
                     'posts' => array_filter([
-                        'data' => $withIncluded ? $user->posts->map(fn(Post $post) => ['type' => 'post', 'id' => $post->id])->all() : null,
+                        'data' => $withIncluded ? $user->posts->map(fn(Post $post) => ['type' => 'post', 'id' => (string) $post->id])->all() : null,
                         'links' => [
                             'self' => "https://api.example.com/user/{$user->id}/relationships/posts",
                             'related' => "https://api.example.com/user/{$user->id}/posts",
@@ -222,7 +286,7 @@ class ResourceTest extends FeatureTestCase
                         'data' => $withIncluded && in_array('comments', $relationships ?? [], true)
                             ? $user->comments->map(fn(Comment $comment) => [
                                 'type' => 'comment',
-                                'id' => $comment->id,
+                                'id' => (string) $comment->id,
                             ])->all()
                             : null,
                         'links' => [
@@ -233,12 +297,12 @@ class ResourceTest extends FeatureTestCase
                             'total' => $user->comments->count(),
                         ],
                     ]),
-                ],
+                ], static fn($relationship) => $relationship !== null)),
                 'meta' => [
                     'created_at' => $user->created_at->format(DateTimeInterface::ATOM),
                     'updated_at' => $user->updated_at->format(DateTimeInterface::ATOM),
                 ],
-            ],
+            ], static fn($member) => $member !== []),
             'included' => collect()
                 ->merge(
                     in_array('posts', $relationships ?? [], true)

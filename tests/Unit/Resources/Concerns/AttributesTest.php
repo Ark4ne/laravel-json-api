@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Test\Unit\Resources\Concerns;
 
 use Ark4ne\JsonApi\Resources\Concerns\Attributes;
+use Ark4ne\JsonApi\Resources\JsonApiResource;
 use ArrayIterator;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -63,7 +64,7 @@ class AttributesTest extends TestCase
         );
     }
 
-    public function testRequestedAttributes(): void
+    public function test_the_requested_attributes_are_rendered(): void
     {
         $object = new class extends stdClass {
             public $foo = 'bar';
@@ -74,12 +75,15 @@ class AttributesTest extends TestCase
             }
         };
 
-        $stub = new class ($object) extends JsonResource {
-            use Attributes;
-
-            protected function toType(Request $request)
+        $stub = new class ($object) extends JsonApiResource {
+            protected function toType(Request $request): string
             {
                 return 'my-type';
+            }
+
+            protected function toIdentifier(Request $request): int
+            {
+                return 1;
             }
 
             public function toAttributes(Request $request): iterable
@@ -114,26 +118,22 @@ class AttributesTest extends TestCase
 
         self::assertEquals(
             $allAttributes,
-            Reflect::invoke($stub, 'requestedAttributes', new Request()),
+            $stub->toArray(new Request())['attributes'] ?? [],
         );
 
         self::assertEquals(
             array_intersect_key($allAttributes, array_fill_keys(['foo', 'baz'], true)),
-            Reflect::invoke($stub, 'requestedAttributes', new Request(['fields' => ['my-type' => 'foo,baz']])),
+            $stub->toArray(new Request(['fields' => ['my-type' => 'foo,baz']]))['attributes'] ?? [],
         );
 
         self::assertEquals(
             array_intersect_key($allAttributes, array_fill_keys(['foo', 'merged-true'], true)),
-            Reflect::invoke(
-                $stub,
-                'requestedAttributes',
-                new Request(['fields' => ['my-type' => 'foo,when_false,merged-true']]),
-            ),
+            $stub->toArray(new Request(['fields' => ['my-type' => 'foo,when_false,merged-true']]))['attributes'] ?? [],
         );
 
-        self::assertEquals(
-            [],
-            Reflect::invoke($stub, 'requestedAttributes', new Request(['fields' => ['my-type' => '']])),
+        self::assertArrayNotHasKey(
+            'attributes',
+            $stub->toArray(new Request(['fields' => ['my-type' => '']])),
         );
     }
 }

@@ -37,7 +37,7 @@ class CollectionTest extends FeatureTestCase
         ));
 
         $data = $comments->map(fn(Comment $comment) => [
-            'id' => $comment->id,
+            'id' => (string) $comment->id,
             'type' => 'comment',
             'attributes' => array_filter(array_intersect_key([
                 'content' => $comment->content,
@@ -45,7 +45,7 @@ class CollectionTest extends FeatureTestCase
             'relationships' => [
                 'user' => array_filter([
                     'data' => in_array('user', $relationships ?? [], true)
-                        ? ['type' => 'user', 'id' => $comment->user->id]
+                        ? ['type' => 'user', 'id' => (string) $comment->user->id]
                         : null,
                     'links' => [
                         'self' => "https://api.example.com/comment/{$comment->id}/relationships/user",
@@ -54,7 +54,7 @@ class CollectionTest extends FeatureTestCase
                 ]),
                 'post' => array_filter([
                     'data' => in_array('post', $relationships ?? [], true)
-                        ? ['type' => 'post', 'id' => $comment->post->id]
+                        ? ['type' => 'post', 'id' => (string) $comment->post->id]
                         : null,
                     'links' => [
                         'self' => "https://api.example.com/comment/{$comment->id}/relationships/post",

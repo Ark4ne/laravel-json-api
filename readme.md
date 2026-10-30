@@ -394,6 +394,21 @@ protected function toMeta(Request $request): ?iterable
 }
 ```
 
+Only the primary resources add document meta, never the included ones. In a collection, the first resource setting a
+key keeps it, and the collection's own `toMeta()` wins over those of its resources:
+
+```php
+class UserCollection extends JsonApiCollection
+{
+    public $collects = UserResource::class;
+
+    protected function toMeta(Request $request): ?iterable
+    {
+        return ['total' => fn() => $this->collection->count()];
+    }
+}
+```
+
 ## Collection
 _**@see** [laravel: resource-collection](https://laravel.com/docs/9.x/eloquent-resources#resource-collections)_
 

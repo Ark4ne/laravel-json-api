@@ -15,7 +15,6 @@ use Ark4ne\JsonApi\Descriptors\Values\ValueInteger;
 use Ark4ne\JsonApi\Descriptors\Values\ValueMixed;
 use Ark4ne\JsonApi\Descriptors\Values\ValueString;
 use Ark4ne\JsonApi\Descriptors\Values\ValueStruct;
-use Ark4ne\JsonApi\Support\Fields;
 use Carbon\Carbon;
 use Closure;
 use DateTime;
@@ -218,25 +217,13 @@ class ValueTest extends TestCase
         );
     }
 
-    /**
-     * @dataProvider models
-     */
-    #[DataProvider('models')]
-    public function testWhenInFields($model): void
+    public function test_when_in_fields_leaves_the_decision_to_the_renderer(): void
     {
-        Fields::through('test', function () use (&$model): void {
-            $this->throughRetrieverTest(
-                $model,
-                fn(Value $value) => $value->whenInFields()->valueFor(new Request(), $model, 'attr'),
-                fn() => data_set($model, 'attr', 'abc'),
-                fn(Value $value) => $value->valueFor(new Request([
-                    'fields' => [
-                        'test' => 'attr',
-                    ],
-                ]), $model, 'attr'),
-                true,
-            );
-        });
+        $value = (new ValueString(null))->whenInFields();
+
+        self::assertTrue($value->isSparse());
+        self::assertFalse((new ValueString(null))->isSparse());
+        self::assertSame('abc', $value->valueFor(new Request(), ['attr' => 'abc'], 'attr'));
     }
 
     public function testValueFloatPrecision(): void

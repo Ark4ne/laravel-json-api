@@ -58,8 +58,10 @@ class RelationshipFiltersTest extends FeatureTestCase
         $result = $resource->toArray($this->createRequest());
 
         // Should only contain the public post
-        self::assertCount($this->postPublic->count(), $result['relationships']['posts']['data']);
-        self::assertEquals($this->postPublic->first()->id, $result['relationships']['posts']['data'][0]['id']);
+        $posts = $result['relationships']['posts']['data'] ?? null;
+        self::assertIsArray($posts);
+        self::assertCount($this->postPublic->count(), $posts);
+        self::assertEquals($this->postPublic->first()->id, $posts[0]['id'] ?? null);
     }
 
     public function test_can_filter_relationship_with_custom_callback(): void
@@ -79,8 +81,10 @@ class RelationshipFiltersTest extends FeatureTestCase
         $result = $resource->toArray($this->createRequest());
 
         // Should only contain the public post
-        self::assertCount($this->postPublic->count(), $result['relationships']['posts']['data']);
-        self::assertEquals($this->postPublic->first()->id, $result['relationships']['posts']['data'][0]['id']);
+        $posts = $result['relationships']['posts']['data'] ?? null;
+        self::assertIsArray($posts);
+        self::assertCount($this->postPublic->count(), $posts);
+        self::assertEquals($this->postPublic->first()->id, $posts[0]['id'] ?? null);
     }
 
     public function test_can_combine_multiple_filters(): void
@@ -102,8 +106,10 @@ class RelationshipFiltersTest extends FeatureTestCase
         $result = $resource->toArray($this->createRequest());
 
         // Should only contain the public post that passes both filters
-        self::assertCount($this->postPublic->count(), $result['relationships']['posts']['data']);
-        self::assertEquals($this->postPublic->first()->id, $result['relationships']['posts']['data'][0]['id']);
+        $posts = $result['relationships']['posts']['data'] ?? null;
+        self::assertIsArray($posts);
+        self::assertCount($this->postPublic->count(), $posts);
+        self::assertEquals($this->postPublic->first()->id, $posts[0]['id'] ?? null);
     }
 
     protected function createRequest(): Request

@@ -58,7 +58,7 @@ Resource / Collection ──► LoadPlanner ──► DocumentBuilder ──► 
 3. **Loading.** Before rendering, the `LoadPlanner` computes from the definitions and the requested includes which
    relations must be eager-loaded, and loads them once on the whole root collection, level by level.
 4. **Rendering.** The `DocumentBuilder` asks the `ResourceObjectRenderer` for each primary resource object. The
-   renderer runs its stages (identification, attributes, relationships, links, meta); related resources go to the
+   renderer identifies it, then runs its stages (attributes, relationships, links, meta); related resources go to the
    `IncludedRegistry`. The builder assembles `data`, `included`, `links`, `meta` and `jsonapi`.
 5. **Response.** The document becomes a `JsonResponse` with the `application/vnd.api+json` media type. Rendering is
    idempotent: rendering twice gives the same document and mutates no resource.
@@ -230,16 +230,34 @@ Patterns: **Builder** (`DocumentBuilder`), **Pipeline** (stages), **Identity Map
 ```php
 interface Stage
 {
-    public function render(ResourceObject $object, RenderedResource $resource, JsonApiContext $context): ResourceObject;
+    public function render(
+        ResourceObject $object,
+        RenderableResource $resource,
+        JsonApiContext $context,
+        IncludedRegistry $included,
+    ): ResourceObject;
 }
 ```
 
-- **Stages**, in an explicit and tested order: `IdentificationStage` → `AttributesStage` → `RelationshipsStage` →
-  `LinksStage` → `MetaStage`. An application can insert its own stage.
+- **Inversion.** The engine only knows two interfaces, implemented in `Resources/`: `RenderableResource` (type,
+  identifier, model, and the members of each hook) and `RelationshipSource` (resolves a relationship into a
+  `ResolvedRelationship`: cardinality, related resources, links, meta). `Rendering` never depends on `Resources`.
+- **Stages**, in an explicit and tested order: `AttributesStage` → `RelationshipsStage` → `LinksStage` → `MetaStage`.
+  Identification is not a stage: the renderer starts every resource object from its `type` and `id`
+  (`ResourceObjectRenderer::identify()`). An application appends its stages in `rendering.stages` (classes built
+  without argument, run after those of the package by `ResourceObjectRenderer::configured()`), or with
+  `ResourceObjectRenderer::default()->with($stage)`.
+- **`toArray()` and `toResponse()`.** `toArray($request)` returns the resource object only (a list of them for a
+  collection) and is idempotent; `toResponse()` builds the whole document (`data`, `included`, document `meta`,
+  pagination) and merges what `with()` and `additional()` add.
 - **Attributes are lazy.** Definition → sparse fieldset filter → conditions → value resolution: a closure that is not
   requested is never called.
 - **`IncludedRegistry`** keys every resource object by `type:id`: O(1) insertion, primary resources excluded, a
-  resource reached through two paths rendered once.
+  resource reached through two paths rendered once per path and merged (its relationships accumulate). Its slot is
+  reserved before it is rendered, so a resource always precedes the resources it includes.
+- **Document meta** (`toMeta()`) come from the primary resources only, never from the included ones. In a
+  collection, the first resource setting a key keeps it, and the collection's own `toMeta()` wins over those of its
+  resources (pagination meta in between).
 - **Shape guarantees**, by construction and not by `array_filter`: `id` is always a string; an empty to-one is
   `{"data": null}`, an empty to-many `{"data": []}`; a relationship object always has `data`, `links` or `meta`, or is
   omitted; `attributes`, `relationships`, `links` and `meta` are always JSON objects.
@@ -286,7 +304,7 @@ the application handles them as it would in any Laravel API.
 | --- | --- | --- | --- |
 | Value type | `Descriptors\Values\Value` (abstract base) | `JsonApi::valueType()` | `MoneyValue` |
 | Condition | `Descriptors\Condition` | Descriptor method or `->when(new MyCondition)` | `WhenFeatureCondition` |
-| Rendering stage | `Rendering\Stage` | Configuration | `TimestampsMetaStage` |
+| Rendering stage | `Rendering\Stage` | Configuration (`rendering.stages`) | `TimestampsMetaStage` |
 | Error renderer | `Http\Errors\ErrorRenderer` | Configuration or service provider | `DomainErrorRenderer` |
 | Type naming | `Configuration\TypeNaming` | Configuration | `KebabPluralTypeNaming` |
 

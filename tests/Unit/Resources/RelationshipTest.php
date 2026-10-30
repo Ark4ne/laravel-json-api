@@ -4,275 +4,96 @@ declare(strict_types=1);
 
 namespace Test\Unit\Resources;
 
+use Ark4ne\JsonApi\Definition\Cardinality;
+use Ark4ne\JsonApi\Rendering\RenderableResource;
+use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Ark4ne\JsonApi\Resources\Relationship;
-use Ark4ne\JsonApi\Resources\Resourceable;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Http\Resources\MissingValue;
-use Illuminate\Support\Collection;
+use stdClass;
 use Test\TestCase;
+use Test\Unit\Rendering\Fixtures\Contexts;
 
 class RelationshipTest extends TestCase
 {
-    public function testToArrayResource(): void
+    public function test_a_to_one_relationship_resolves_its_related_resource(): void
     {
-        $resource = $this->getJsonResource();
+        $model = (object) ['id' => 1];
 
-        $relation = new Relationship($resource::class, fn() => $resource->resource);
+        $resolved = (new Relationship(MyModelResource::class, static fn() => $model))->resolve(Contexts::of(), true);
 
-        self::assertEquals([
-            'data' => [
-                'data' => [
-                    'type' => 'my-model',
-                    'id' => 1,
-                ],
-            ],
-            'included' => [
-                [
-                    'type' => 'my-model',
-                    'id' => 1,
-                    'attributes' => [
-                        'foo' => 'bar',
-                    ],
-                ],
-            ],
-        ], $relation->toArray(new Request()));
+        self::assertSame(Cardinality::One, $resolved->cardinality);
+        self::assertTrue($resolved->hasData);
+        self::assertInstanceOf(MyModelResource::class, $resolved->data);
+        self::assertSame($model, $resolved->data->renderedModel());
     }
 
-    public function testToArrayResourceMinimal(): void
+    public function test_a_to_many_relationship_resolves_each_related_resource(): void
     {
-        $resource = $this->getJsonResource();
+        $models = [(object) ['id' => 1], (object) ['id' => 2]];
 
-        $relation = (new Relationship($resource::class, fn() => $resource->resource))->withLinks(fn() => [
-            'self' => 'link',
-        ])->withMeta(fn() => [
-            'hash' => 'azerty',
-        ]);
+        $resolved = (new Relationship(MyModelResource::class, static fn() => $models))
+            ->asCollection()
+            ->resolve(Contexts::of(), true);
 
-        self::assertEquals([
-            'data' => [
-                'data' => [
-                    'type' => 'my-model',
-                    'id' => 1,
-                ],
-                'links' => ['self' => 'link'],
-                'meta' => ['hash' => 'azerty'],
-            ],
-        ], $relation->toArray(new Request(), false));
+        self::assertSame(Cardinality::Many, $resolved->cardinality);
+        self::assertSame($models, array_map(
+            static fn(RenderableResource $resource) => $resource->renderedModel(),
+            $resolved->resources(),
+        ));
     }
 
-    public function testToArrayCollection(): void
+    public function test_links_and_meta_are_resolved_with_the_related_resource(): void
     {
-        $resource = $this->getResourceCollection();
-        $relation = new Relationship($resource::class, fn() => $resource->resource);
+        $resolved = (new Relationship(MyModelResource::class, static fn() => (object) ['id' => 7]))
+            ->withLinks(static fn(MyModelResource $resource) => ['self' => 'link/' . $resource->toArray(new Request())['id']])
+            ->withMeta(static fn() => ['hash' => 'azerty'])
+            ->resolve(Contexts::of(), false);
 
-        self::assertEquals([
-            'data' => [
-                'data' => [
-                    [
-                        'type' => 'my-model',
-                        'id' => 1,
-                    ],
-                    [
-                        'type' => 'my-model',
-                        'id' => 2,
-                    ],
-                ],
-            ],
-            'included' => [
-                [
-                    'type' => 'my-model',
-                    'id' => 1,
-                    'attributes' => [
-                        'foo' => 'bar',
-                    ],
-                ],
-                [
-                    'type' => 'my-model',
-                    'id' => 2,
-                    'attributes' => [
-                        'baz' => 'tar',
-                    ],
-                ],
-            ],
-        ], $relation->toArray(new Request()));
+        self::assertSame(['self' => 'link/7'], $resolved->links);
+        self::assertSame(['hash' => 'azerty'], $resolved->meta);
     }
 
-    public function testToArrayCollectionMinimal(): void
+    public function test_a_missing_value_leaves_the_data_out_and_keeps_links_and_meta(): void
     {
-        $resource = $this->getResourceCollection();
-        $relation = (new Relationship($resource::class, fn() => $resource->resource))
-            ->withLinks(fn() => [
-                'self' => 'link',
-            ])->withMeta(fn() => [
-                'total' => 2,
-            ]);
+        $resolved = (new Relationship(MyModelResource::class, static fn() => new MissingValue()))
+            ->withLinks(static fn() => ['self' => 'link'])
+            ->resolve(Contexts::of(), true);
 
-        self::assertEquals([
-            'data' => [
-                'data' => [
-                    [
-                        'type' => 'my-model',
-                        'id' => 1,
-                    ],
-                    [
-                        'type' => 'my-model',
-                        'id' => 2,
-                    ],
-                ],
-                'links' => ['self' => 'link'],
-                'meta' => ['total' => 2],
-            ],
-        ], $relation->toArray(new Request(), false));
+        self::assertFalse($resolved->hasData);
+        self::assertSame(['self' => 'link'], $resolved->links);
     }
 
-    public function testToArrayMissingValue(): void
+    public function test_a_null_to_one_relationship_has_null_data(): void
     {
-        $resource = $this->getJsonResourceMissingValue();
-        $relation = (new Relationship($resource::class, fn() => $resource->resource))->withLinks(fn() => [
-            'self' => 'link',
-        ])->withMeta(fn() => [
-            'hash' => 'azerty',
-        ]);
+        $resolved = (new Relationship(MyModelResource::class, static fn() => null))->resolve(Contexts::of(), true);
 
-        self::assertEquals([
-            'data' => [
-                'links' => ['self' => 'link'],
-                'meta' => ['hash' => 'azerty'],
-            ],
-        ], $relation->toArray(new Request(), false));
+        self::assertTrue($resolved->hasData);
+        self::assertNull($resolved->data);
     }
 
-    public function testToArrayNullValue(): void
+    public function test_a_relationship_resolved_only_when_included_is_not_read_otherwise(): void
     {
-        $resource = $this->getJsonResourceNullValue();
-        $relation = (new Relationship($resource::class, fn() => $resource->resource))->withLinks(fn() => [
-            'self' => 'link',
-        ])->withMeta(fn() => [
-            'hash' => 'azerty',
-        ]);
+        $read = false;
+        $relationship = (new Relationship(MyModelResource::class, static function () use (&$read) {
+            $read = true;
 
-        self::assertEquals([
-            'data' => [
-                'links' => ['self' => 'link'],
-                'meta' => ['hash' => 'azerty'],
-            ],
-        ], $relation->toArray(new Request(), false));
+            return (object) ['id' => 1];
+        }))->whenIncluded();
+
+        self::assertFalse($relationship->resolve(Contexts::of(), false)->hasData);
+        self::assertFalse($read);
+        self::assertTrue($relationship->resolve(Contexts::of(), true)->hasData);
     }
+}
 
-    public function testCustomValue(): void
+/**
+ * @extends JsonApiResource<stdClass>
+ */
+final class MyModelResource extends JsonApiResource
+{
+    protected function toType(Request $request): string
     {
-        $relation = (new Relationship(Collection::class, fn() => ['foo' => 'bar']))
-            ->withLinks(fn() => [
-                'self' => 'link',
-            ])
-            ->withMeta(fn() => [
-                'hash' => 'azerty',
-            ]);
-
-        self::assertEquals([
-            'data' => [
-                'data' => [
-                    'foo' => 'bar',
-                ],
-                'links' => ['self' => 'link'],
-                'meta' => ['hash' => 'azerty'],
-            ],
-        ], $relation->toArray(new Request()));
-
-        $relation = (new Relationship((new class {
-            public function __construct(public $obj = null) {}
-        })::class, fn() => ['foo' => 'bar']))
-            ->withLinks(fn() => [
-                'self' => 'link',
-            ])
-            ->withMeta(fn() => [
-                'hash' => 'azerty',
-            ]);
-
-        self::assertEquals([
-            'data' => [
-                'data' => [
-                    'obj' => ['foo' => 'bar'],
-                ],
-                'links' => ['self' => 'link'],
-                'meta' => ['hash' => 'azerty'],
-            ],
-        ], $relation->toArray(new Request()));
+        return 'my-model';
     }
-
-    private function getJsonResource()
-    {
-        return new class ((object) ['id' => 1]) extends JsonResource implements Resourceable {
-            public function toArray($request, bool $minimal = false): array
-            {
-                return [
-                    'type' => 'my-model',
-                    'id' => $this->id,
-                    'attributes' => [
-                        'foo' => 'bar',
-                    ],
-                ];
-            }
-        };
-    }
-
-    private function getJsonResourceMissingValue()
-    {
-        return new class (new MissingValue()) extends JsonResource implements Resourceable {
-            public function toArray($request, bool $minimal = false): array
-            {
-                return [
-                    'type' => 'my-model',
-                    'id' => $this->id,
-                    'attributes' => [
-                        'foo' => 'bar',
-                    ],
-                ];
-            }
-        };
-    }
-
-    private function getJsonResourceNullValue()
-    {
-        return new class (null) extends JsonResource implements Resourceable {
-            public function toArray($request, bool $minimal = false): array
-            {
-                return [
-                    'type' => 'my-model',
-                    'id' => $this->id,
-                    'attributes' => [
-                        'foo' => 'bar',
-                    ],
-                ];
-            }
-        };
-    }
-
-    private function getResourceCollection()
-    {
-        return new class (\collect()) extends ResourceCollection implements Resourceable {
-            public function toArray($request, bool $minimal = false): array
-            {
-                return [
-                    [
-                        'type' => 'my-model',
-                        'id' => 1,
-                        'attributes' => [
-                            'foo' => 'bar',
-                        ],
-                    ],
-                    [
-                        'type' => 'my-model',
-                        'id' => 2,
-                        'attributes' => [
-                            'baz' => 'tar',
-                        ],
-                    ],
-                ];
-            }
-        };
-    }
-
 }

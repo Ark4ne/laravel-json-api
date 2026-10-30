@@ -5,119 +5,111 @@ declare(strict_types=1);
 namespace Test\Unit\Resources;
 
 use Ark4ne\JsonApi\Resources\JsonApiCollection;
-use Ark4ne\JsonApi\Resources\Resourceable;
-use Illuminate\Database\Eloquent\Model;
+use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
-use Test\Support\Stub;
 use Test\TestCase;
 
 class JsonApiCollectionTest extends TestCase
 {
-    public function testToArrayBasic(): void
+    public function test_to_array_renders_the_resource_object_of_each_resource(): void
     {
-        foreach (range(1, 3) as $idx) {
-            $models[] = Stub::model(['id' => $idx]);
-        }
-
-        $collection = new class (\collect($models), null) extends JsonApiCollection {};
+        $collection = CollectedResource::collection($this->models());
 
         $request = new Request();
 
-        $collect = [
-            ['id' => 1],
-            ['id' => 2],
-            ['id' => 3],
+        $data = [
+            ['type' => 'my-model', 'id' => '1', 'meta' => ['rank' => 1]],
+            ['type' => 'my-model', 'id' => '2', 'meta' => ['rank' => 2]],
+            ['type' => 'my-model', 'id' => '3', 'meta' => ['rank' => 3]],
         ];
-        self::assertEquals($collect, $collection->toArray($request));
-        self::assertEquals([], $collection->with($request));
-        self::assertEquals([
-            'data' => $collect,
-        ], $collection->toResponse($request)->getData(true));
+        self::assertSame($data, $collection->toArray($request));
+        self::assertSame($data, $collection->toArray($request), 'toArray() is idempotent');
+        self::assertSame([], $collection->with($request));
     }
 
-    public function testToArrayResource(): void
+    public function test_the_response_merges_the_document_meta_of_the_resources(): void
     {
-        foreach (range(1, 3) as $idx) {
-            $resources[] = $this->getResource(Stub::model(['id' => $idx]));
-        }
+        $collection = CollectedResource::collection($this->models());
 
-        $collection = new class (\collect($resources), null) extends JsonApiCollection {};
+        $document = $collection->toResponse(new Request())->getData(true);
 
-        $request = new Request();
-
-        $collect = [
-            ['type' => 'my-model', 'id' => 1],
-            ['type' => 'my-model', 'id' => 2],
-            ['type' => 'my-model', 'id' => 3],
-        ];
-        self::assertEquals($collect, $collection->toArray($request));
-        self::assertEquals([
-            'meta' => ['foo' => ['bar-1', 'bar-2', 'bar-3']],
-            'included' => $collect,
-        ], $collection->with($request));
-
-        $collection->with = [];
-        self::assertEquals([
-            'data' => $collect,
-            'meta' => ['foo' => ['bar-1', 'bar-2', 'bar-3']],
-            'included' => $collect,
-        ], $collection->toResponse($request)->getData(true));
+        self::assertIsArray($document);
+        self::assertSame(['meta-1' => 'bar-1', 'meta-2' => 'bar-2', 'meta-3' => 'bar-3'], $document['meta']);
     }
 
-    public function testToArrayResourceMinimal(): void
+    public function test_the_document_meta_of_the_collection_wins_over_those_of_its_resources(): void
     {
-        foreach (range(1, 3) as $idx) {
-            $resources[] = $this->getResource(Stub::model(['id' => $idx]));
-        }
+        $collection = new MetaCollection($this->models(), CollectedResource::class);
 
-        $collection = new class (\collect($resources), null) extends JsonApiCollection {
-            public function toArray($request, bool $included = true): array
-            {
-                $this->with = ['other' => 'slug'];
-                return parent::toArray($request, false);
-            }
-        };
+        $document = $collection->toResponse(new Request())->getData(true);
 
-        $request = new Request();
-
-        $collect = [
-            ['type' => 'my-model', 'id' => 1],
-            ['type' => 'my-model', 'id' => 2],
-            ['type' => 'my-model', 'id' => 3],
-        ];
-        self::assertEquals($collect, $collection->toArray($request, true));
-        self::assertEquals([
-            'meta' => [
-                'foo' => ['bar-1', 'bar-2', 'bar-3'],
-            ],
-            'other' => 'slug',
-        ], $collection->with($request));
-        $collection->with = [];
-        self::assertEquals([
-            'data' => $collect,
-            'meta' => ['foo' => ['bar-1', 'bar-2', 'bar-3']],
-            'other' => 'slug',
-        ], $collection->toResponse($request)->getData(true));
+        self::assertIsArray($document);
+        self::assertSame(
+            ['meta-1' => 'collection', 'meta-2' => 'bar-2', 'meta-3' => 'bar-3', 'total' => 3],
+            $document['meta'],
+        );
     }
 
-    private function getResource(Model $model)
+    public function test_the_response_keeps_what_with_adds(): void
     {
-        return new class ($model) extends JsonResource implements Resourceable {
-            public function toArray($request, bool $minimal = false): array
-            {
-                $this->with['bar'] = [];
-                $this->with['meta']['foo'] = "bar-{$this->id}";
-                $this->with['included'][] = [
-                    'type' => 'my-model',
-                    'id' => $this->id,
-                ] + $this->resource->toArray();
+        $collection = CollectedResource::collection($this->models());
+        $collection->with = ['other' => 'slug'];
 
-                return [
-                    'type' => 'my-model',
-                    'id' => $this->id,
-                ];
-            }
-        };
+        $document = $collection->toResponse(new Request())->getData(true);
+
+        self::assertIsArray($document);
+        self::assertSame('slug', $document['other']);
+        self::assertIsArray($document['data']);
+        self::assertCount(3, $document['data']);
+    }
+
+    /**
+     * @return list<Ranked>
+     */
+    private function models(): array
+    {
+        return array_map(static fn(int $id) => new Ranked($id), range(1, 3));
+    }
+}
+
+final readonly class Ranked
+{
+    public function __construct(public int $id) {}
+}
+
+/**
+ * @extends JsonApiResource<Ranked>
+ */
+final class CollectedResource extends JsonApiResource
+{
+    protected function toType(Request $request): string
+    {
+        return 'my-model';
+    }
+
+    public function toAttributes(Request $request): iterable
+    {
+        return [];
+    }
+
+    protected function toResourceMeta(Request $request): iterable
+    {
+        return ['rank' => $this->resource->id];
+    }
+
+    protected function toMeta(Request $request): iterable
+    {
+        return ["meta-{$this->resource->id}" => "bar-{$this->resource->id}"];
+    }
+}
+
+/**
+ * @extends JsonApiCollection<CollectedResource>
+ */
+final class MetaCollection extends JsonApiCollection
+{
+    protected function toMeta(Request $request): iterable
+    {
+        return ['meta-1' => 'collection', 'total' => static fn() => 3];
     }
 }

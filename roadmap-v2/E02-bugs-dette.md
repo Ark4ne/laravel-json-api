@@ -23,7 +23,7 @@ inutiles avec les nouvelles versions minimales.
 
 - [ ] **E2.4** `Relation::can()`, `whenLoaded()` et `whenPivotLoaded()` : retirer le typage `Model $model` des
       closures et dégrader proprement pour les ressources non Eloquent
-- [ ] **E2.5** Plus aucune mutation de `$this->with` pendant `toArray()` : le rendu est idempotent (résolu par E4.2) 🔴
+- [x] **E2.5** Plus aucune mutation de `$this->with` pendant `toArray()` : le rendu est idempotent (résolu par E4.2) 🔴
 
 ### État global
 
@@ -36,7 +36,7 @@ inutiles avec les nouvelles versions minimales.
 - [ ] **E2.6a** Supprimer `Support\With` (déprécié) et son test 🔴
 - [ ] **E2.6b** Supprimer `PrepareData::prepareData()` (déprécié) 🔴
 - [ ] **E2.6c** Supprimer `Support\Supported` (jamais booté) et les polyfills `unless` / `whenHas` 🔴
-- [ ] **E2.6d** Supprimer l'override `resolveResourceData()` « fix Laravel 12.45 » (rendu indépendant, E4)
+- [x] **E2.6d** Supprimer l'override `resolveResourceData()` « fix Laravel 12.45 » (rendu indépendant, E4)
 - [ ] **E2.7** Collections : remplacer la classe anonyme et le `(new static([]))->preserveKeys` par `newCollection()`
       et les propriétés `$collects` / `$preserveKeys` ; lire en plus `#[Collects]` / `#[PreserveKeys]` quand ils
       existent (Laravel 13, voir E0.10) 🔴

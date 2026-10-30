@@ -44,6 +44,10 @@ class DeepIncludeDeduplicationTest extends FeatureTestCase
         $commentByB = Comment::factory()->for($post)->for($commentAuthor)->create(); // User B comments
         $commentByA = Comment::factory()->for($post)->for($postAuthor)->create();    // User A comments → shared user, tests dedup
 
+        self::assertInstanceOf(User::class, $postAuthor);
+        self::assertInstanceOf(User::class, $commentAuthor);
+        self::assertInstanceOf(Comment::class, $commentByA);
+
         $response = $this->get("post/{$post->id}?include=user.posts,comments.user.comments");
 
         $response->assertJsonStructure([
@@ -69,20 +73,20 @@ class DeepIncludeDeduplicationTest extends FeatureTestCase
         ]);
 
         $response->assertJsonPath("included.0.type", 'user');
-        $response->assertJsonPath("included.0.id", $postAuthor->id);
-        $response->assertJsonPath("included.0.relationships.comments.data.0.id", $commentByA->id);
+        $response->assertJsonPath("included.0.id", (string) $postAuthor->id);
+        $response->assertJsonPath("included.0.relationships.comments.data.0.id", (string) $commentByA->id);
 
         // Explicit sub-assertions to document intent
         $included = $response->json('included');
 
         $postAuthorInIncluded = collect($included)
-            ->filter(fn($item) => $item['type'] === 'user' && $item['id'] === $postAuthor->id)
+            ->filter(fn($item) => $item['type'] === 'user' && $item['id'] === (string) $postAuthor->id)
             ->count();
         self::assertSame(1, $postAuthorInIncluded, 'Post author must appear exactly once (deduplication)');
 
         $usersInIncluded = collect($included)->filter(fn($item) => $item['type'] === 'user')->pluck('id')->all();
         self::assertCount(2, $usersInIncluded, 'There should be exactly 2 users in included');
-        self::assertContains($postAuthor->id, $usersInIncluded, 'Post author must be included');
-        self::assertContains($commentAuthor->id, $usersInIncluded, 'Comment author must be included');
+        self::assertContains((string) $postAuthor->id, $usersInIncluded, 'Post author must be included');
+        self::assertContains((string) $commentAuthor->id, $usersInIncluded, 'Comment author must be included');
     }
 }

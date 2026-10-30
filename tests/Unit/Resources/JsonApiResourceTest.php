@@ -39,35 +39,6 @@ class JsonApiResourceTest extends TestCase
         );
     }
 
-    public function testBasicMinimal(): void
-    {
-        $model = Stub::model(['id' => 1]);
-        $resource = new class ($model) extends JsonApiResource {
-            public function toArray($request, bool $included = true): array
-            {
-                return parent::toArray($request, false);
-            }
-
-            public function toType(Request $request): string
-            {
-                return 'my-model';
-            }
-        };
-
-        $request = new Request();
-
-        $data = [
-            'type' => 'my-model',
-            'id' => '1',
-        ];
-        self::assertEquals($data, $resource->toArray($request));
-        self::assertEquals([], $resource->with($request));
-        self::assertEquals(
-            ['data' => $data],
-            $resource->toResponse($request)->getData(true),
-        );
-    }
-
     public function testWithMeta(): void
     {
         $model = Stub::model(['id' => 1]);
@@ -101,53 +72,8 @@ class JsonApiResourceTest extends TestCase
             ],
         ];
         self::assertEquals($data, $resource->toArray($request));
-        self::assertEquals([
-            'meta' => ['hash' => 'azerty'],
-        ], $resource->with($request));
-        self::assertEquals(
-            [
-                'data' => $data,
-                'meta' => ['hash' => 'azerty'],
-            ],
-            $resource->toResponse($request)->getData(true),
-        );
-    }
-
-    public function testWithMetaMinimal(): void
-    {
-        $model = Stub::model(['id' => 1]);
-        $resource = new class ($model) extends JsonApiResource {
-            public function toArray($request, bool $included = true): array
-            {
-                return parent::toArray($request, false);
-            }
-
-            public function toType(Request $request): string
-            {
-                return 'my-model';
-            }
-
-            public function toResourceMeta(Request $request): ?iterable
-            {
-                return ['self' => $this->id];
-            }
-
-            public function toMeta(Request $request): ?iterable
-            {
-                return ['hash' => 'azerty'];
-            }
-        };
-
-        $request = new Request();
-
-        $data = [
-            'type' => 'my-model',
-            'id' => '1',
-        ];
-        self::assertEquals($data, $resource->toArray($request));
-        self::assertEquals([
-            'meta' => ['hash' => 'azerty'],
-        ], $resource->with($request));
+        // The document meta is not part of the resource object: only the document of the response has it.
+        self::assertEquals([], $resource->with($request));
         self::assertEquals(
             [
                 'data' => $data,
@@ -250,7 +176,7 @@ class JsonApiResourceTest extends TestCase
         $actual = $resource->toArray(new Request());
 
         $expected = [
-            'id' => 1,
+            'id' => '1',
             'type' => 'my-model',
             'attributes' => [
                 'int' => 123,

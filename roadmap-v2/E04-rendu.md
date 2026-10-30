@@ -27,18 +27,21 @@ nouveau moteur corrige structurellement la plupart des écarts d'E1 et plusieurs
 ### Document
 
 - [ ] **E4.2** `DocumentBuilder` : assemble `data`, `included`, `links`, `meta` et `jsonapi`. C'est le seul endroit qui
-      connaît la forme du document 🔴
-- [ ] **E4.3** `IncludedRegistry` (identity map `type:id`) : ajout en O(1), ressources primaires exclues, fusion si une
+      connaît la forme du document 🔴 (le membre `jsonapi` arrive avec E1.8)
+- [x] **E4.3** `IncludedRegistry` (identity map `type:id`) : ajout en O(1), ressources primaires exclues, fusion si une
       même ressource est atteinte par deux chemins 🔴
-- [ ] **E4.6** Objets vides sérialisés en `{}` par construction, et non par `array_filter` 🔴
+- [ ] **E4.6** Objets vides sérialisés en `{}` par construction, et non par `array_filter` 🔴 (aujourd'hui les
+      membres vides sont omis via un `array_filter` dans `ResourceObject::toArray()`, et un membre à clés numériques
+      sort encore en liste JSON)
 
 ### Pipeline
 
-- [ ] **E4.4** Attributs : définition → filtrage `fields` → conditions → résolution des valeurs. Une closure non
+- [x] **E4.4** Attributs : définition → filtrage `fields` → conditions → résolution des valeurs. Une closure non
       demandée n'est jamais exécutée 🔴
-- [ ] **E4.5** Étapes de rendu explicites (pattern Pipeline) : identification, attributs, relations, links, meta ;
+- [x] **E4.5** Étapes de rendu explicites (pattern Pipeline) : identification, attributs, relations, links, meta ;
       chacune testable seule
-- [ ] **E4.5b** Point d'extension : l'utilisateur peut ajouter une étape
+- [x] **E4.5b** Point d'extension : l'utilisateur peut ajouter une étape (`jsonapi.rendering.stages`, ou
+      `ResourceObjectRenderer::with()`)
 
 ### Performance
 
@@ -47,6 +50,6 @@ nouveau moteur corrige structurellement la plupart des écarts d'E1 et plusieurs
 
 ## Critères de sortie
 
-- [ ] `toArray()` appelé deux fois produit deux fois le même résultat
-- [ ] Aucun état statique mutable dans `Rendering/` et `Context/`
+- [x] `toArray()` appelé deux fois produit deux fois le même résultat
+- [x] Aucun état statique mutable dans `Rendering/` et `Context/`
 - [ ] Le benchmark ne régresse pas par rapport à la v1.9

@@ -9,7 +9,6 @@ use Ark4ne\JsonApi\Definition\AttributeDefinition;
 use Ark4ne\JsonApi\Definition\ValueType;
 use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Support\Config;
-use Ark4ne\JsonApi\Support\Fields;
 use Ark4ne\JsonApi\Support\Values;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
@@ -40,6 +39,14 @@ abstract class Value extends Describer
     public function nullable(bool $nullable = true): static
     {
         return $this->with('nullable', $nullable);
+    }
+
+    /**
+     * Whether the value is rendered only when its sparse fieldset requests it (`whenInFields()`).
+     */
+    public function isSparse(): bool
+    {
+        return $this->sparse;
     }
 
     public function isNullable(): bool
@@ -73,17 +80,14 @@ abstract class Value extends Describer
     }
 
     /**
-     * Display attribute only when it was specified in fields
+     * Display attribute only when it was specified in fields: the renderer decides, from the sparse fieldset of the
+     * type (`isSparse()`).
      *
      * @return static
      */
     public function whenInFields(): static
     {
-        return $this->when(static fn(
-            Request $request,
-            mixed $model,
-            string $attribute,
-        ): bool => Fields::has($request, $attribute))->with('sparse', true);
+        return $this->with('sparse', true);
     }
 
     /**
@@ -156,7 +160,7 @@ abstract class Value extends Describer
 
         return AttributeDefinition::of($name, $this->valueType())
             ->nullable($this->nullable ?? $configuration->nullable)
-            ->conditional($this->isConditional() || $this->appliesAutoWhenHas(false))
+            ->conditional($this->isConditional() || $this->sparse || $this->appliesAutoWhenHas(false))
             ->sparse($this->sparse)
             ->source($computed ? null : $this->attribute ?? $name)
             ->computed($computed);

@@ -33,7 +33,8 @@
 
 - [ ] **E6.4** `links()` / `meta()` partout ; suppression de `withLinks()` / `withMeta()` sur `Relationship` 🔴
 - [ ] **E6.4b** `toMeta()` (meta du document) renommé `toDocumentMeta()` ; `toMeta()` lève une exception explicite en
-      V2 pour éviter un changement de sens silencieux. `toResourceMeta()` inchangé (décision Q5) 🔴
+      V2 pour éviter un changement de sens silencieux. `toResourceMeta()` inchangé (décision Q5). Vaut aussi pour
+      `JsonApiCollection::toMeta()` 🔴
 
 ### Liens
 

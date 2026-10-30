@@ -19,7 +19,16 @@ abstract class FeatureTestCase extends TestCase
 
     protected function defineEnvironment($app): void
     {
-        $app['config']['jsonapi'] = include __DIR__ . '/../app/jsonapi.php';
+        // What a test sets beforehand (`#[DefineEnvironment]` runs first) wins over the configuration of the test app.
+        $repository = $app['config'];
+        $defaults = include __DIR__ . '/../app/jsonapi.php';
+
+        self::assertIsArray($defaults);
+
+        $overrides = $repository->get('jsonapi', []);
+        self::assertIsArray($overrides);
+
+        $repository->set('jsonapi', array_replace_recursive($defaults, $overrides));
     }
 
     protected function defineRoutes($router): void

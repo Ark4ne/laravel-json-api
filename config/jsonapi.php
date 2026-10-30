@@ -115,4 +115,18 @@ return [
         */
         'paths' => [],
     ],
+
+    'rendering' => [
+        /*
+        |--------------------------------------------------------------------------
+        | Stages
+        |--------------------------------------------------------------------------
+        |
+        | Classes implementing `Ark4ne\JsonApi\Rendering\Stage`, run in this
+        | order after the stages of the package on every resource object.
+        | Each one is built without argument.
+        |
+        */
+        'stages' => [],
+    ],
 ];
