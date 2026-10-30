@@ -69,6 +69,26 @@ class LinkageTest extends FeatureTestCase
         self::assertSame(0, $queries);
     }
 
+    public function test_a_resource_includes_its_own_paths_with_those_of_the_request(): void
+    {
+        [$response, $queries] = $this->render(
+            LinkagePostResource::make(Post::query()->firstOrFail())->include('comments'),
+            'include=user',
+        );
+
+        // The user and the comments of the post, then the linkage of the included resources: the posts of the user,
+        // the users of the comments.
+        self::assertSame(4, $queries);
+        self::assertEquals(['comment' => 5, 'user' => 1], array_count_values($this->includedTypes($response)));
+    }
+
+    public function test_a_collection_includes_its_own_paths(): void
+    {
+        [$response] = $this->render(LinkagePostResource::collection(Post::query()->get())->include('user'));
+
+        self::assertSame(['user' => 10], array_count_values($this->includedTypes($response)));
+    }
+
     #[DefineEnvironment('linkageWhenIncluded')]
     public function test_nothing_is_loaded_when_only_included_relationships_render_their_linkage(): void
     {

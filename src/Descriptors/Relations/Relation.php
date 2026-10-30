@@ -23,6 +23,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation as EloquentRelation;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\MissingValue;
 use Illuminate\Support\Arr;
 
@@ -88,6 +89,31 @@ abstract class Relation extends Describer implements DescribesRelationship
     }
 
     /**
+     * Renders attributes of the pivot of each related model (`BelongsToMany`) in the meta of its resource identifier:
+     * `->pivotMeta(['role', 'joined_at'])` gives `{"type": "user", "id": "1", "meta": {"role": "owner", …}}`. An
+     * attribute the pivot does not have is left out. Replaces `identifierMeta()`.
+     *
+     * @param list<string> $attributes
+     * @param string $accessor The relation the pivot is read from (`as()` of the `BelongsToMany`)
+     */
+    public function pivotMeta(array $attributes, string $accessor = 'pivot'): static
+    {
+        return $this->identifierMeta(static function (mixed $related) use ($attributes, $accessor): array {
+            $model = $related instanceof JsonResource ? $related->resource : $related;
+            $pivot = is_array($model) || is_object($model) ? Values::getAttribute($model, $accessor) : null;
+
+            $meta = [];
+            foreach ($attributes as $attribute) {
+                if ((is_array($pivot) || is_object($pivot)) && Values::hasAttribute($pivot, $attribute)) {
+                    $meta[$attribute] = Values::getAttribute($pivot, $attribute);
+                }
+            }
+
+            return $meta;
+        });
+    }
+
+    /**
      * The Eloquent relations loaded to render the relationship, in batch for the whole collection. Without it, the
      * relation the relationship is read from is loaded; a relationship read by a closure loads nothing.
      *
@@ -102,9 +128,10 @@ abstract class Relation extends Describer implements DescribesRelationship
     }
 
     /**
-     * Set filters for the relationship
+     * Renders only the related resources passing every rule of the filters.
      *
-     * @param Closure(Filters): Filters $filters Callback that receives (Filters $filters) and configures the filters
+     * @param Closure(Filters): Filters $filters Receives empty filters and returns them with their rules
+     *                                          (`fn(Filters $filters) => $filters->can('view')`): they are immutable
      * @return static
      */
     public function filters(Closure $filters): static

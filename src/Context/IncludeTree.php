@@ -72,6 +72,14 @@ final readonly class IncludeTree
     }
 
     /**
+     * The paths of both trees, those of this one first. Each keeps the depth it was parsed with.
+     */
+    public function merge(self $other): self
+    {
+        return self::parse(implode(',', [...$this->paths, ...$other->paths]));
+    }
+
+    /**
      * Whether the path (`posts.comments`) is included.
      */
     public function has(string $path): bool

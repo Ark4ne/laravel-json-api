@@ -96,4 +96,13 @@ final class IncludeTreeTest extends TestCase
         self::assertSame(['posts', 'posts.comments', 'user'], $tree->paths());
         self::assertSame([], $tree->children('posts.comments'));
     }
+
+    public function test_merging_gives_the_paths_of_both_trees_each_with_its_own_depth(): void
+    {
+        $merged = IncludeTree::parse('posts.comments', 1)->merge(IncludeTree::parse('comments.user,posts'));
+
+        self::assertSame(['posts', 'comments', 'comments.user'], $merged->paths());
+        self::assertSame(['posts', 'comments'], $merged->children());
+        self::assertSame([], $merged->children('posts'));
+    }
 }

@@ -32,6 +32,9 @@ class Relationship implements DescribesRelationship, RelationshipSource
 {
     use HasRelationLoad;
 
+    /** Filters run on a relation that is not loaded: it is read resource by resource. */
+    public const FILTER_ON_UNLOADED = 'filter-on-unloaded';
+
     protected string $relation;
 
     protected bool $asCollection = false;
@@ -172,7 +175,17 @@ class Relationship implements DescribesRelationship, RelationshipSource
     }
 
     /**
-     * Tells whether the relation is loaded, for `Linkage::Loaded`.
+     * Whether filters apply to the related resources.
+     *
+     * @internal Read by the resource, which then tells whether the relation is loaded (`loadedWhen()`).
+     */
+    public function filtered(): bool
+    {
+        return $this->filters !== null;
+    }
+
+    /**
+     * Tells whether the relation is loaded, for `Linkage::Loaded` and for the filters.
      *
      * @param Closure(): bool $loaded
      *
@@ -260,7 +273,18 @@ class Relationship implements DescribesRelationship, RelationshipSource
      */
     public function resolve(JsonApiContext $context, bool $included): ResolvedRelationship
     {
-        $value = $included || $this->rendersLinkage($context) ? \value($this->value) : new MissingValue();
+        $withData = $included || $this->rendersLinkage($context);
+
+        if ($withData && $this->filters !== null && $this->loaded !== null && !($this->loaded)()) {
+            $context->diagnostics->warning(
+                self::FILTER_ON_UNLOADED,
+                'Filters run on a relation that is not loaded: it is read resource by resource. Load it with '
+                . 'withLoad(), or let the relationship read it from the relation.',
+                $this->resource,
+            );
+        }
+
+        $value = $withData ? \value($this->value) : new MissingValue();
 
         if ($this->filters !== null && !Values::isMissing($value)) {
             $value = $this->filters->apply($context->request, $value);

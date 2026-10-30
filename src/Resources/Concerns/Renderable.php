@@ -99,9 +99,11 @@ trait Renderable
 
             $definition = $definitions[$name] ?? null;
 
-            // Only `Linkage::Loaded` reads whether the relation is loaded.
-            yield $name => $definition === null
-                || ($definition->linkage ?? $context->configuration->linkage) !== Linkage::Loaded
+            // Only `Linkage::Loaded` and the filters read whether the relation is loaded.
+            yield $name => $definition === null || (
+                ($definition->linkage ?? $context->configuration->linkage) !== Linkage::Loaded
+                && !$relationship->filtered()
+            )
                 ? $relationship
                 : $relationship->loadedWhen(static fn() => LoadedRelations::has($model, $definition));
         }

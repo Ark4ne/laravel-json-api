@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
 use Ark4ne\JsonApi\Compilation\Definitions;
+use Ark4ne\JsonApi\Context\IncludeTree;
 use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Rendering\Document;
 use Illuminate\Database\Eloquent\Model;
@@ -17,6 +18,24 @@ use Illuminate\Http\Request;
  */
 trait ToResponse
 {
+    /**
+     * @var list<string> Relationship paths included whatever the request (`include()`)
+     */
+    protected array $serverInclude = [];
+
+    /**
+     * Includes relationship paths whatever the request, in addition to its `include`: `UserResource::make($user)
+     * ->include('posts.comments')`. They are neither validated nor limited by `include.max-depth`.
+     *
+     * @return $this
+     */
+    public function include(string ...$paths): static
+    {
+        $this->serverInclude = [...$this->serverInclude, ...array_values($paths)];
+
+        return $this;
+    }
+
     /**
      * @param Request $request
      */
@@ -39,13 +58,17 @@ trait ToResponse
     abstract protected function toDocument(JsonApiContext $context): Document;
 
     /**
-     * The context of a rendering: the request, parsed, and the configuration set at boot.
+     * The context of a rendering: the request, parsed, the paths of `include()`, and the configuration set at boot.
      */
     protected function renderingContextOf(mixed $request): JsonApiContext
     {
-        return JsonApiContext::fromRequest(
+        $context = JsonApiContext::fromRequest(
             $request instanceof Request ? $request : new Request(),
             Definitions::configuration(),
         );
+
+        return $this->serverInclude === []
+            ? $context
+            : $context->withInclude(IncludeTree::parse(implode(',', $this->serverInclude)));
     }
 }

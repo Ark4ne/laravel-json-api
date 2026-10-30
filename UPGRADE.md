@@ -78,6 +78,8 @@ public static function collection($resource): UserCollection
 - `whenIncluded($request, $type, $value)` of the resources is renamed `whenInIncludes($request, $relationship,
   $value)`.
 - `RelationshipDefinition::$whenIncluded` is `$linkage` (`Configuration\Linkage|null`).
+- `Filters` is immutable: `->filters(fn(Filters $filters) => $filters->can('view'))` works as before, but a closure
+  calling `can()` / `when()` without returning their result loses the rules. Chain them and return the result.
 
 ### Static helpers
 

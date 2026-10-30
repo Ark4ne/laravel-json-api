@@ -13,6 +13,10 @@ use Illuminate\Http\Resources\PotentiallyMissing;
 use Illuminate\Support\Collection;
 
 /**
+ * The rules a related resource must pass to be rendered in a relationship, all of them (`->filters()`).
+ *
+ * Immutable: `can()` and `when()` return a copy with the rule added.
+ *
  * @template Resource
  */
 class Filters
@@ -31,8 +35,7 @@ class Filters
      */
     public function can(iterable|string $abilities, array $arguments = [], string $gateClass = Gate::class, ?string $guard = null): static
     {
-        $this->rules[] = new PolicyFilterRule($abilities, $arguments, $gateClass, $guard);
-        return $this;
+        return $this->with(new PolicyFilterRule($abilities, $arguments, $gateClass, $guard));
     }
 
     /**
@@ -43,8 +46,18 @@ class Filters
      */
     public function when(Closure $callback): static
     {
-        $this->rules[] = new CallbackFilterRule($callback);
-        return $this;
+        return $this->with(new CallbackFilterRule($callback));
+    }
+
+    /**
+     * @param FilterRule<Resource> $rule
+     */
+    protected function with(FilterRule $rule): static
+    {
+        $filters = clone $this;
+        $filters->rules[] = $rule;
+
+        return $filters;
     }
 
     /**

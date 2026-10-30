@@ -43,6 +43,21 @@ final readonly class JsonApiContext
     }
 
     /**
+     * The context including the paths of `$include` too (`include()` of a resource): the requested ones are kept.
+     */
+    public function withInclude(IncludeTree $include): self
+    {
+        return new self(
+            $this->request,
+            $this->configuration,
+            $this->include->merge($include),
+            $this->fields,
+            $this->diagnostics,
+            $this->path,
+        );
+    }
+
+    /**
      * The context of the resources reached through a relationship of the current ones.
      */
     public function withPath(string $relationship): self

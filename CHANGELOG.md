@@ -59,6 +59,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   exposes it as `linkage`.
   Two relationships loading the same relation path with different `withLoad()` constraints share the first one, with
   a `load-conflict` diagnostic: a relation is loaded once per model.
+- **Server-side include**: `UserResource::make($user)->include('posts.comments')` (and on a collection) includes paths
+  in addition to the requested ones, carried by the context (`JsonApiContext::withInclude()`,
+  `IncludeTree::merge()`). Replaces 1.x `withInclude()`.
+- `->pivotMeta(['role'], 'pivot')` on a relationship renders attributes of the pivot of each related model in the meta
+  of its resource identifier.
+- A `filter-on-unloaded` diagnostic when relationship filters run on a relation that is not loaded.
 
 ### Changed
 
@@ -125,6 +131,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   linkage and `included` list the same resources.
 - **Breaking:** a relationship with `whenLoaded()` is not loaded for its linkage, but is loaded when included (1.x left
   it out unless the application had loaded it).
+- **Breaking:** `Filters` is immutable: `can()` and `when()` return a copy. The closure given to `->filters()` must
+  return the filters it built (`fn(Filters $filters) => $filters->can('view')`).
 - **Breaking:** `RelationshipDefinition::$whenIncluded` is replaced by `$linkage` (`Linkage|null`, `null` for the
   configured one), which the compilation no longer fills from the configuration.
 

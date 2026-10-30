@@ -12,7 +12,9 @@ use Ark4ne\JsonApi\Descriptors\Relations\RelationOne;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Resources\Relationship;
 use Closure;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MissingValue;
 use Illuminate\Support\Facades\Gate;
@@ -21,8 +23,11 @@ use stdClass;
 use Test\app\Http\Resources\CommentResource;
 use Test\app\Http\Resources\UserCollection;
 use Test\app\Http\Resources\UserResource;
+use Test\app\Models\Post;
+use Test\app\Models\User;
 use Test\Support\Reflect;
 use Test\TestCase;
+use Test\Unit\Rendering\Fixtures\Contexts;
 
 class RelationTest extends TestCase
 {
@@ -326,6 +331,31 @@ class RelationTest extends TestCase
         self::assertTrue($full->hasMeta);
         self::assertTrue($full->hasIdentifierMeta);
         self::assertSame(Linkage::Always, $full->linkage);
+    }
+
+    public function test_pivot_meta_renders_the_attributes_of_the_pivot_of_each_related_model(): void
+    {
+        $post = (new Post())->setRelation('members', new Collection([
+            (new User())->forceFill(['id' => 1])
+                ->setRelation('membership', (new Pivot())->forceFill(['role' => 'owner', 'user_id' => 1])),
+            (new User())->forceFill(['id' => 2])->setRelation('membership', (new Pivot())->forceFill(['user_id' => 2])),
+        ]));
+
+        $relationship = (new RelationMany(UserResource::class, 'members'))
+            ->pivotMeta(['role'], 'membership')
+            ->resolveFor(new Request(), $post, 'members');
+
+        self::assertTrue($relationship->definition('members')->hasIdentifierMeta);
+        self::assertSame([['role' => 'owner'], []], $relationship->resolve(Contexts::of(), true)->identifierMeta);
+    }
+
+    public function test_pivot_meta_of_a_related_resource_without_pivot_is_empty(): void
+    {
+        $relationship = (new RelationMany(UserResource::class, 'members'))
+            ->pivotMeta(['role'])
+            ->resolveFor(new Request(), ['members' => [(object) ['id' => 1]]], 'members');
+
+        self::assertSame([[]], $relationship->resolve(Contexts::of(), true)->identifierMeta);
     }
 
     public function test_the_definition_records_conditions(): void

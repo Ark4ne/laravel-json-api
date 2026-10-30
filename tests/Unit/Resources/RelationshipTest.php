@@ -6,9 +6,11 @@ namespace Test\Unit\Resources;
 
 use Ark4ne\JsonApi\Configuration\Linkage;
 use Ark4ne\JsonApi\Definition\Cardinality;
+use Ark4ne\JsonApi\Filters\Filters;
 use Ark4ne\JsonApi\Rendering\RenderableResource;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Ark4ne\JsonApi\Resources\Relationship;
+use Ark4ne\JsonApi\Support\Diagnostic;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MissingValue;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -163,6 +165,22 @@ class RelationshipTest extends TestCase
 
         self::assertTrue($relationship->resolve(Contexts::of('', ['relationship' => ['linkage' => 'included']]), false)->hasData);
         self::assertFalse($relationship->linkage(Linkage::Included)->resolve(Contexts::of(), false)->hasData);
+    }
+
+    public function test_filters_on_a_relation_that_is_not_loaded_give_a_diagnostic(): void
+    {
+        $context = Contexts::of();
+        $relationship = (new Relationship(MyModelResource::class, static fn() => (object) ['id' => 1]))
+            ->withFilters((new Filters())->when(static fn() => true));
+
+        $relationship->loadedWhen(static fn() => true)->resolve($context, true);
+        self::assertCount(0, $context->diagnostics);
+
+        $relationship->loadedWhen(static fn() => false)->resolve($context, true);
+        self::assertSame(
+            [Relationship::FILTER_ON_UNLOADED],
+            array_map(static fn(Diagnostic $diagnostic) => $diagnostic->code, $context->diagnostics->all()),
+        );
     }
 }
 

@@ -386,6 +386,18 @@ protected function toRelationships(Request $request): array
 }
 ```
 
+For a `BelongsToMany`, `->pivotMeta(['position'])` does the same from the pivot (`->pivotMeta(['position'],
+'membership')` for a pivot renamed with `as('membership')`); an attribute the pivot does not have is left out.
+
+#### Relationship filters
+
+`->filters()` renders only the related resources passing every rule. The filters are immutable: return them.
+
+```php
+'posts' => $this->many(PostResource::class)
+    ->filters(fn(Filters $filters) => $filters->can('view')->when(fn($request, $post) => $post->is_public)),
+```
+
 
 ### toLinks
 _**@see** [{json:api}: resource-linkage](https://jsonapi.org/format/#document-resource-object-links)_
@@ -524,6 +536,16 @@ protected function toRelationships(Request $request): array
 ```
 
 `protected ?bool $autoWhenIncluded = true;` on a resource applies `whenIncluded()` to all its relationships.
+
+### Server-side include
+
+A resource or a collection includes relationship paths whatever the request, in addition to its `include`:
+
+```php
+return UserResource::make($user)->include('posts.comments');
+```
+
+These paths are neither validated by `Rules\Includes` nor limited by `include.max-depth`.
 
 
 ### Enum

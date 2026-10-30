@@ -46,15 +46,17 @@ aujourd'hui la relation non incluse est chargée ressource par ressource (`getRe
 
 - [x] **E5.4** `whenIncluded` n'a qu'un sens (« ne résoudre que si inclus ») et n'existe que sur les relations.
       L'actuel `ConditionallyLoadsAttributes::whenIncluded($request, $type, $value)` devient `whenInIncludes()` 🔴
-- [ ] **E5.5** `Filters` immuable ; diagnostic quand un filtre s'exécute sur une relation non chargée
+- [x] **E5.5** `Filters` immuable ; diagnostic quand un filtre s'exécute sur une relation non chargée :
+      `filter-on-unloaded` (les diagnostics de la requête ne sont pas encore exposés, voir E7/E8)
 
 ### Nouvelles capacités
 
-- [ ] **E5.6** Auto-include côté serveur : `UserResource::make($user)->include('posts.comments')`, porté par le
-      contexte (reprise de `withInclude()`)
+- [x] **E5.6** Auto-include côté serveur : `UserResource::make($user)->include('posts.comments')`, porté par le
+      contexte (reprise de `withInclude()`) : union avec l'`include` de la requête, ni validé ni limité par
+      `include.max-depth`
 - [ ] **E5.7** Relations polymorphiques (`morphTo`) : ressource liée résolue par `#[UseResource]` /
       `Model::toResource()` ou par une map explicite
-- [ ] **E5.8** Pivot BelongsToMany exposé en `meta` sur le resource identifier (avec E1.10)
+- [x] **E5.8** Pivot BelongsToMany exposé en `meta` sur le resource identifier (avec E1.10) : `->pivotMeta(['role'])`
 - [x] **E5.9** Support des ressources non Eloquent (tableaux, DTO) conservé et couvert par des tests : c'est un
       différenciant face au natif, qui ne gère que des modèles : `LinkageTest`, `LoadPlanTest`, `LoadedRelationsTest`
 

@@ -14,7 +14,7 @@ dépendance vers eux.
 ## Progression
 
 <!-- progress:start -->
-**Avancement global : `█████░░░░░` 58 % (93 / 158 livrables)**
+**Avancement global : `██████░░░░` 60 % (96 / 158 livrables)**
 
 | EPIC | Jalon | Statut | Avancement | Livrables |
 | --- | --- | --- | --- | --- |
@@ -23,7 +23,7 @@ dépendance vers eux.
 | [E2 — Corrections de bugs et nettoyage de la dette](E02-bugs-dette.md) | M2 | Terminé | `██████████` 100 % | 18 / 18 |
 | [E3 — Modèle de définition et évolution du FakeModel](E03-definition.md) | M1 | En cours | `████████░░` 89 % | 17 / 19 |
 | [E4 — Moteur de rendu](E04-rendu.md) | M2 | Terminé | `██████████` 100 % | 12 / 12 |
-| [E5 — Relations et chargement](E05-relations.md) | M3 | En cours | `██████░░░░` 60 % | 9 / 15 |
+| [E5 — Relations et chargement](E05-relations.md) | M3 | En cours | `████████░░` 80 % | 12 / 15 |
 | [E6 — API d'écriture des ressources (DX)](E06-dx.md) | M1, M3 | En cours | `░░░░░░░░░░` 6 % | 1 / 15 |
 | [E7 — Couche HTTP](E07-http.md) | M4 | À faire | `░░░░░░░░░░` 0 % | 0 / 10 |
 | [E8 — Positionnement face au JSON:API natif de Laravel](E08-natif-laravel.md) | M5 | En cours | `█░░░░░░░░░` 14 % | 1 / 7 |
