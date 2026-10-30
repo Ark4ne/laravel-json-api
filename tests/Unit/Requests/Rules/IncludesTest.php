@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace Test\Unit\Requests\Rules;
 
 use Ark4ne\JsonApi\Requests\Rules\Includes;
+use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Translation\PotentiallyTranslatedString;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Test\app\Http\Resources\UserCollection;
 use Test\app\Http\Resources\UserResource;
 use Test\TestCase;
+use Test\Unit\Resources\Fixtures\AlphaResource;
 
 class IncludesTest extends TestCase
 {
@@ -56,5 +60,39 @@ class IncludesTest extends TestCase
                 '"posts" doesn\'t have relationship "unknown".',
             ]],
         ];
+    }
+
+    public function test_the_includes_are_read_from_the_definitions(): void
+    {
+        self::assertSame([], self::errors(new Includes(AlphaResource::class), 'beta.gamma.alpha.gammas,gammas.lazy'));
+        self::assertSame([
+            'The selected :attribute is invalid.',
+            '"beta.gamma" doesn\'t have relationship "unknown".',
+        ], self::errors(new Includes(AlphaResource::class), 'beta.gamma.unknown'));
+    }
+
+    public function test_a_collection_validates_the_includes_of_the_resources_it_collects(): void
+    {
+        self::assertSame([], self::errors(new Includes(UserCollection::class), 'posts.user,comments'));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function errors(ValidationRule $rule, mixed $value): array
+    {
+        $errors = [];
+
+        $rule->validate(
+            'include',
+            $value,
+            function (string $message) use (&$errors): PotentiallyTranslatedString {
+                $errors[] = $message;
+
+                return new PotentiallyTranslatedString($message, app('translator'));
+            },
+        );
+
+        return $errors;
     }
 }

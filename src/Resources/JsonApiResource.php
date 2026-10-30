@@ -25,9 +25,9 @@ abstract class JsonApiResource extends JsonResource implements DefinitionSource,
     use Concerns\Attributes;
     use Concerns\ConditionallyLoadsAttributes;
     use Concerns\Relationships;
+    use Concerns\EagerLoads;
     use Concerns\Links;
     use Concerns\Meta;
-    use Concerns\Schema;
     use Concerns\Definable;
     use Concerns\ToResponse;
 

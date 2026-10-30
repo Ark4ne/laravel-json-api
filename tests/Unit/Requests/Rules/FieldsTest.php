@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace Test\Unit\Requests\Rules;
 
 use Ark4ne\JsonApi\Requests\Rules\Fields;
+use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Translation\PotentiallyTranslatedString;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Test\app\Http\Resources\UserCollection;
 use Test\app\Http\Resources\UserResource;
 use Test\TestCase;
+use Test\Unit\Resources\Fixtures\AlphaResource;
 
 class FieldsTest extends TestCase
 {
@@ -52,5 +56,49 @@ class FieldsTest extends TestCase
                 '"post" doesn\'t have fields "unknown".',
             ]],
         ];
+    }
+
+    public function test_relationship_names_are_valid_fields(): void
+    {
+        self::assertSame([], self::errors(new Fields(UserResource::class), ['user' => 'name,posts', 'post' => 'title,user']));
+    }
+
+    public function test_the_fields_are_read_from_the_definitions(): void
+    {
+        self::assertSame([], self::errors(new Fields(AlphaResource::class), [
+            'alpha' => 'title,size,size.width,beta,gammas',
+            'beta' => 'name,gamma',
+            'gamma' => 'label,alpha',
+        ]));
+        self::assertSame([
+            'The selected :attribute is invalid.',
+            '"gamma" doesn\'t have fields "name".',
+            '"unknown" doesn\'t exists.',
+        ], self::errors(new Fields(AlphaResource::class), ['gamma' => 'label,name', 'unknown' => 'id']));
+    }
+
+    public function test_a_collection_validates_the_fields_of_the_resources_it_collects(): void
+    {
+        self::assertSame([], self::errors(new Fields(UserCollection::class), ['user' => 'name', 'comment' => 'content']));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function errors(ValidationRule $rule, mixed $value): array
+    {
+        $errors = [];
+
+        $rule->validate(
+            'fields',
+            $value,
+            function (string $message) use (&$errors): PotentiallyTranslatedString {
+                $errors[] = $message;
+
+                return new PotentiallyTranslatedString($message, app('translator'));
+            },
+        );
+
+        return $errors;
     }
 }

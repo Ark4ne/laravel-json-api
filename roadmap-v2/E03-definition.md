@@ -30,7 +30,7 @@ comme `laravel-openapi-generator`, sans réflexion sur nos membres privés.
 
 ### Probe
 
-- [ ] **E3.1** Renommer `Support\FakeModel` en `Support\Probe` 🔴
+- [x] **E3.1** Renommer `Support\FakeModel` en `Support\Probe` 🔴
 - [x] **E3.1b** Le Probe **enregistre** les propriétés lues : une valeur eager (`'name' => $this->resource->name`) est
       reliée à son attribut source (auto-`whenHas`, typage par cast pour les outils externes)
 
@@ -62,19 +62,19 @@ comme `laravel-openapi-generator`, sans réflexion sur nos membres privés.
       `mergeWhen`, membre non descriptible (ressource liée invalide, membre qui lève), hook qui lève, nom réservé
       `id` / `type`. Exception seulement en mode strict. Les attributs dépendant de la requête (`if` en PHP) ne sont
       pas détectables de façon fiable : la compilation se fait en une passe et la règle est documentée (E3.8)
-- [ ] **E3.7** `php artisan jsonapi:check [--strict]` remplace `AssertJsonApiResource` 🔴
+- [x] **E3.7** `php artisan jsonapi:check [--strict]` remplace `AssertJsonApiResource` 🔴
 - [x] **E3.7b** Assertion PHPUnit pour les applications : `Testing\ResourceAssertions::assertValid(Resource::class, strict: …)`
 
 ### Documentation et opt-in
 
-- [ ] **E3.8** Documenter la règle : la définition est construite avec une `Request` neutre, donc toute condition
+- [x] **E3.8** Documenter la règle : la définition est construite avec une `Request` neutre, donc toute condition
       dépendant de la requête passe par `->when()` ou `applyWhen()`, jamais par un `if`
 - [x] **E3.9** Opt-in pour les cas complexes : surcharger `protected static function toDefinition(): ?ResourceDefinition`
       (et non `definition()`, qui garde le cache et les diagnostics)
 
 ## Critères de sortie
 
-- [ ] `Skeleton` et `Concerns\Schema` remplacés par `Definitions` ; les règles `Includes` / `Fields` lisent la
+- [x] `Skeleton` et `Concerns\Schema` remplacés par `Definitions` ; les règles `Includes` / `Fields` lisent la
       définition
 - [ ] Benchmark : rendu d'une ressource en FPM, avec et sans cache compilé (E4.7)
 - [ ] La définition contient tout ce que le générateur lit aujourd'hui par réflexion (liste établie en E9.1)

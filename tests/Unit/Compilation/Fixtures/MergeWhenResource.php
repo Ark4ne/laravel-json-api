@@ -29,8 +29,7 @@ final class MergeWhenResource extends JsonApiResource
     }
 
     /**
-     * The 1.x PHPDoc of the hook omits MergeValue, which applyWhen() and mergeWhen() return: fixed with the migration
-     * of the hooks to the definitions.
+     * Laravel types mergeWhen() as mixed.
      *
      * @return iterable<array-key, mixed>
      */

@@ -155,9 +155,9 @@ Patterns: **Null Object** (the probe), **Builder** (descriptors build definition
 - **Lazy values are required.** A value must be a descriptor (`$this->string()`) or a closure. An eager value
   (`'name' => $this->resource->name`) is still accepted: the probe records that `name` was read and links the
   attribute to it, with a diagnostic, but its type is unknown (`mixed`).
-- **No `if` on the request.** The definition is built with a neutral `Request`: every condition goes through
-  `->when()`, `->unless()` or `applyWhen()`. A resource whose attributes differ between two probe runs gets a
-  diagnostic.
+- **No `if` on the request.** The definition is built in a single pass with a neutral `Request`: every condition goes
+  through `->when()`, `->unless()` or `applyWhen()`. A member added by an `if` cannot be detected reliably, so the rule
+  is documented (README, section "Definition") rather than diagnosed.
 - **`mergeWhen` hides fields** from the definition: `applyWhen` is the documented way to group conditional fields.
 - **Reading a definition:** `PostResource::definition()` (or `PostCollection::definition()`, which reads the
   collected resource) returns `Definitions::for(PostResource::class)`. It replaces 1.x `schema()` and `Skeleton`.

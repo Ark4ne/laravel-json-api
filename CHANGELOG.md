@@ -35,3 +35,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `Ark4ne\JsonApi\Providers\LaravelJsonApiProvider`). Package discovery registers it.
 - **Breaking:** `config/jsonapi.php` is validated at boot: a value of the wrong type throws an
   `InvalidConfigurationException` naming the key.
+- The `Includes` and `Fields` validation rules and the eager-loads of the requested includes read the definitions.
+  `Fields` accepts the relationship names of a type; both rules accept a collection class.
+
+### Removed
+
+- **Breaking:** `JsonApiResource::schema()`, `JsonApiCollection::schema()` and `Resources\Skeleton`: read
+  `PostResource::definition()` instead.
+- **Breaking:** `Asserts\AssertJsonApiResource`: run `php artisan jsonapi:check` or
+  `Testing\ResourceAssertions::assertValid()`.
+- `Support\FakeModel`, internal, replaced by `Support\Probe`.

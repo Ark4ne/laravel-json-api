@@ -51,7 +51,7 @@ class UserFetchRequest extends FormRequest
 }
 ```
 
-`Rules\Includes` will validate the `include` to exactly match the UserResource schema (determined by the relationships).
+`Rules\Includes` will validate the `include` to exactly match the UserResource definition (determined by the relationships).
 
 
 ### Fields validation
@@ -71,7 +71,7 @@ class UserFetchRequest extends FormRequest
 }
 ```
 
-`Rules\Fields` will validate the `fields` to exactly match the UserResource schema (determined by the attributes and relationships).
+`Rules\Fields` will validate the `fields` to exactly match the UserResource definition (determined by the attributes and relationships).
 
 
 ### Customize validation message
@@ -138,6 +138,24 @@ class UserResource extends JsonApiResource
     }
 }
 ```
+
+### Definition
+
+The package reads what a resource declares (its type, attributes, relationships and eager-loads) once per class,
+without a model: it runs the hooks on a probe that stands for the model, with an empty request. This definition
+validates `include` and `fields`, plans the eager-loads, and is returned by `UserResource::definition()`.
+
+Hence a few rules:
+
+- **No `if` on the request in a hook.** The definition sees an empty request: a member added by an `if` is missing
+  from it, so it cannot be requested nor included. Write conditions with `->when()`, `->unless()` or
+  `$this->applyWhen()`.
+- **Prefer lazy values.** A described value (`$this->string()`) or a closure is typed and computed only when
+  requested; a value read eagerly (`'name' => $this->name`) has an unknown type.
+- **Prefer `applyWhen()` to `mergeWhen()`**, whose members are missing from the definition.
+
+`php artisan jsonapi:check` reports what breaks these rules (`--strict` fails on warnings too), and
+`php artisan jsonapi:cache` (run by `php artisan optimize`) compiles every definition for production.
 
 ### toType 
 _**@see** [{json:api} resource-type](https://jsonapi.org/format/#document-resource-object-identification)_
@@ -237,7 +255,7 @@ _**@see** [{json:api} resources-relationships](https://jsonapi.org/format/#docum
 Returns resource relationships.
 
 All relationships **must** be created with `ModelResource::relationship`. 
-This allows the generation of the schema representing the resource and thus the validation of request includes.
+This allows the [definition](#definition) of the resource and thus the validation of request includes.
 
 If your relation should have been a collection created via the `::collection(...)` method, you can simply use `->asCollection()`.
 

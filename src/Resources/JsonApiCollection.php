@@ -21,7 +21,6 @@ use ReflectionClass;
 class JsonApiCollection extends ResourceCollection implements Resourceable
 {
     use Concerns\Relationize;
-    use Concerns\SchemaCollection;
     use Concerns\ToResponse;
 
     /**

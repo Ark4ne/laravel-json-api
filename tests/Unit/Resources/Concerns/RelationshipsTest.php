@@ -7,15 +7,15 @@ namespace Test\Unit\Resources\Concerns;
 use Ark4ne\JsonApi\Resources\Concerns\Relationships;
 use Ark4ne\JsonApi\Resources\Relationship;
 use Ark4ne\JsonApi\Resources\Resourceable;
-use Ark4ne\JsonApi\Resources\Skeleton;
-use Ark4ne\JsonApi\Support\Arr;
 use Ark4ne\JsonApi\Support\Includes;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use PHPUnit\Framework\Attributes\DataProvider;
 use stdClass;
 use Test\Support\Reflect;
 use Test\Support\Stub;
 use Test\TestCase;
+use Test\Unit\Resources\Fixtures\AlphaResource;
 
 class RelationshipsTest extends TestCase
 {
@@ -264,36 +264,31 @@ class RelationshipsTest extends TestCase
         ], $actual);
     }
 
-    public function testRequestedRelationshipsLoadFromSchema(): void
+    /**
+     * @param array<string, mixed> $expected
+     */
+    #[DataProvider('requestedLoads')]
+    public function test_the_eager_loads_of_the_requested_includes_are_read_from_the_definitions(
+        string $include,
+        array $expected,
+    ): void {
+        $resource = new AlphaResource(null);
+
+        self::assertSame($expected, $resource->requestedRelationshipsLoad(new Request(['include' => $include])));
+    }
+
+    /**
+     * @return array<string, array{string, array<string, mixed>}>
+     */
+    public static function requestedLoads(): array
     {
-        $r1 = new Skeleton('r1', 'r1');
-        $r1->loads = [
-            '_2' => 'r2',
-            '_3' => 'r3',
+        return [
+            'nothing included' => ['', []],
+            'first level' => ['beta,gammas', ['b' => [], 'g' => []]],
+            'a load nested under the root of the relationship' => ['beta.gamma', ['b.g.a' => []]],
+            'through a cycle' => ['gammas.alpha.beta', ['g.a.b' => []]],
+            'a relationship without load' => ['gammas.lazy', ['g' => []]],
         ];
-
-        $r2 = new Skeleton('r2', 'r2');
-        $r2->loads = ['_3' => ['r3' => ['r1']]];
-
-        $r3 = new Skeleton('r3', 'r3');
-        $r3->loads = ['_1' => 'r1'];
-
-        $r1->relationships['_2'] = $r2;
-        $r2->relationships['_3'] = $r3;
-        $r3->relationships['_1'] = $r1;
-
-        $model = Stub::model(['id' => 1]);
-        $resource = new class ($model) extends JsonResource {
-            use Relationships;
-        };
-
-        $request = new Request([
-            'include' => '_2._3',
-        ]);
-
-        $actual = Reflect::invoke($resource, 'requestedRelationshipsLoadFromSchema', $request, $r1);
-
-        $this->assertEquals(['r2.r3.r1' => []], Arr::flatDot($actual));
     }
 
     private function getStub()

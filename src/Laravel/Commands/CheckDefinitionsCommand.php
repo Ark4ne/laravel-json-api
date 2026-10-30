@@ -14,8 +14,7 @@ use Ark4ne\JsonApi\Support\DiagnosticLevel;
 use Illuminate\Console\Command;
 
 /**
- * Compiles the definitions of the resources and prints their diagnostics, grouped by resource; replaces
- * `Asserts\AssertJsonApiResource`.
+ * Compiles the definitions of the resources and prints their diagnostics, grouped by resource.
  *
  * Fails when a definition cannot be compiled or has an error; with `--strict`, also on the first warning.
  */

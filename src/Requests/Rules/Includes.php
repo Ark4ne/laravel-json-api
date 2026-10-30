@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Requests\Rules;
 
+use Ark4ne\JsonApi\Compilation\Definitions;
+use Ark4ne\JsonApi\Definition\RelatedResource;
 use Ark4ne\JsonApi\Requests\Rules\Traits\UseTrans;
-use Ark4ne\JsonApi\Resources\Skeleton;
 use Ark4ne\JsonApi\Support\Includes as SupportIncludes;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 
 /**
- * @template T as \Ark4ne\JsonApi\Resources\JsonApiResource
+ * Validates an include path against the relationships declared by the definitions of the resources it goes through.
+ *
+ * @template T as \Ark4ne\JsonApi\Resources\JsonApiResource|\Ark4ne\JsonApi\Resources\JsonApiCollection
  */
 class Includes implements ValidationRule
 {
@@ -20,7 +23,7 @@ class Includes implements ValidationRule
     private const BASE = 'validation.custom.jsonapi.fields';
 
     /**
-     * @var array<int, array{":include": string, ":relation": string}>>
+     * @var array<int, array{":include": string, ":relation": string}>
      */
     protected array $failures = [];
 
@@ -42,9 +45,8 @@ class Includes implements ValidationRule
         }
 
         $desired = SupportIncludes::parse($value);
-        $schema = $this->resource::schema();
 
-        if (!$this->assert($schema, $desired)) {
+        if (!$this->assert($this->resource, $desired)) {
             foreach ($this->message() as $message) {
                 $fail($message);
             }
@@ -72,23 +74,27 @@ class Includes implements ValidationRule
     }
 
     /**
-     * @param Skeleton             $schema
      * @param array<string, mixed> $desired
      * @param string               $pretend
      *
      * @return bool
      */
-    private function assert(Skeleton $schema, array $desired, string $pretend = ''): bool
+    private function assert(string $class, array $desired, string $pretend = ''): bool
     {
+        $definition = Definitions::for(RelatedResource::resolve($class));
+
+        /** @var array<string, mixed> $sub every level of a parsed include is an array */
         foreach ($desired as $relation => $sub) {
-            if (!isset($schema->relationships[$relation])) {
+            $relationship = $definition->relationship($relation);
+
+            if ($relationship === null) {
                 $this->failures[] = [
-                    ':include' => $pretend ?: $schema->type,
+                    ':include' => $pretend ?: $definition->type,
                     ':relation' => $relation,
                 ];
             } else {
                 $this->assert(
-                    $schema->relationships[$relation],
+                    $relationship->related,
                     $sub,
                     $pretend ? "$pretend.$relation" : $relation,
                 );

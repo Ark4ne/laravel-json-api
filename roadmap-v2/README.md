@@ -14,14 +14,14 @@ dépendance vers eux.
 ## Progression
 
 <!-- progress:start -->
-**Avancement global : `██░░░░░░░░` 20 % (32 / 159 livrables)**
+**Avancement global : `██░░░░░░░░` 22 % (36 / 159 livrables)**
 
 | EPIC | Jalon | Statut | Avancement | Livrables |
 | --- | --- | --- | --- | --- |
 | [E0 — Socle, outillage et conventions](E00-socle.md) | M0 | En cours | `████████░░` 84 % | 16 / 19 |
 | [E1 — Conformité à la spec JSON:API 1.1](E01-conformite-spec.md) | M2 | À faire | `░░░░░░░░░░` 0 % | 0 / 16 |
 | [E2 — Corrections de bugs et nettoyage de la dette](E02-bugs-dette.md) | M2 | À faire | `░░░░░░░░░░` 0 % | 0 / 18 |
-| [E3 — Modèle de définition et évolution du FakeModel](E03-definition.md) | M1 | En cours | `██████░░░░` 68 % | 13 / 19 |
+| [E3 — Modèle de définition et évolution du FakeModel](E03-definition.md) | M1 | En cours | `████████░░` 89 % | 17 / 19 |
 | [E4 — Moteur de rendu](E04-rendu.md) | M2 | À faire | `░░░░░░░░░░` 0 % | 0 / 12 |
 | [E5 — Relations et chargement](E05-relations.md) | M3 | À faire | `░░░░░░░░░░` 0 % | 0 / 15 |
 | [E6 — API d'écriture des ressources (DX)](E06-dx.md) | M1, M3 | En cours | `░░░░░░░░░░` 6 % | 1 / 15 |

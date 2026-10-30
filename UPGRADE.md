@@ -31,6 +31,17 @@ application lists `Ark4ne\JsonApi\Providers\LaravelJsonApiProvider` in `bootstra
 `config/jsonapi.php` is validated at boot: a value of the wrong type throws an `InvalidConfigurationException` that
 names the key. Compare your published file with the package one for the new keys.
 
+### Schema and assertions
+
+`JsonApiResource::schema()`, `JsonApiCollection::schema()` and `Skeleton` are removed: `PostResource::definition()`
+returns the `ResourceDefinition` (type, attributes, relationships with their related class and eager-loads).
+
+`Asserts\AssertJsonApiResource` is removed: run `php artisan jsonapi:check` in the CI, or call
+`Testing\ResourceAssertions::assertValid(PostResource::class)` in a test.
+
+A condition written with an `if` on the request inside a hook is not seen by the definition, which is built with an
+empty request: write it with `->when()`, `->unless()` or `applyWhen()` (README, section "Definition").
+
 ### Deployment
 
 Add nothing if you already run `php artisan optimize`: it now compiles the resource definitions too
