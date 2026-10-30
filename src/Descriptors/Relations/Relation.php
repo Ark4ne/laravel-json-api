@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Ark4ne\JsonApi\Descriptors\Relations;
 
 use Ark4ne\JsonApi\Configuration\Configuration;
+use Ark4ne\JsonApi\Configuration\Linkage;
 use Ark4ne\JsonApi\Definition\Cardinality;
 use Ark4ne\JsonApi\Definition\DescribesRelationship;
 use Ark4ne\JsonApi\Definition\LoadDefinition;
@@ -36,7 +37,7 @@ abstract class Relation extends Describer implements DescribesRelationship
     protected ?Closure $links = null;
     protected ?Closure $meta = null;
     protected ?Closure $identifierMeta = null;
-    protected ?bool $whenIncluded = null;
+    protected ?Linkage $linkage = null;
     protected ?Filters $filters = null;
 
     /**
@@ -87,6 +88,12 @@ abstract class Relation extends Describer implements DescribesRelationship
     }
 
     /**
+     * The Eloquent relations loaded to render the relationship, in batch for the whole collection. Without it, the
+     * relation the relationship is read from is loaded; a relationship read by a closure loads nothing.
+     *
+     * `true` loads the relation it is read from, `false` nothing; a string or a list loads relation paths, and a closure
+     * under a path constrains it (`['comments' => fn($query) => …]`), for the linkage and the included resources alike.
+     *
      * @param bool|string|array<string, callable(Builder|EloquentRelation):mixed>|array<array-key, string|string[]|mixed> $load
      */
     public function withLoad(bool|string|array $load): static
@@ -129,17 +136,40 @@ abstract class Relation extends Describer implements DescribesRelationship
     }
 
     /**
-     * @param bool|null $whenIncluded
-     * @return static
+     * Renders the linkage only when the relationship is included: the relation is neither loaded nor read otherwise
+     * (`Linkage::Included`). `false` renders it always (`Linkage::Always`); without argument, a relationship set to
+     * always keeps it.
      */
     public function whenIncluded(?bool $whenIncluded = null): static
     {
-        return $this->with('whenIncluded', $whenIncluded ?? $this->whenIncluded ?? true);
+        return $this->linkage(match ($whenIncluded) {
+            true => Linkage::Included,
+            false => Linkage::Always,
+            null => $this->linkage === Linkage::Always ? Linkage::Always : Linkage::Included,
+        });
+    }
+
+    /**
+     * When the relationship renders its linkage while it is not included, instead of `relationship.linkage`.
+     */
+    public function linkage(Linkage $linkage): static
+    {
+        return $this->with('linkage', $linkage);
+    }
+
+    /**
+     * The linkage of the relationship when it does not set its own.
+     *
+     * @internal Applied by the resource (`$autoWhenIncluded`).
+     */
+    public function defaultLinkage(Linkage $linkage): static
+    {
+        return $this->linkage === null ? $this->linkage($linkage) : $this;
     }
 
     /**
      * Renders the relationship only when the relation is loaded: on a resource that is not an Eloquent model, when it
-     * has the attribute.
+     * has the attribute. The relation is not loaded for its linkage (`Linkage::Loaded`), but is when included.
      *
      * @param string|null $relation
      *
@@ -148,7 +178,9 @@ abstract class Relation extends Describer implements DescribesRelationship
      */
     public function whenLoaded(?string $relation = null): static
     {
-        return $this->when(function (Request $request, mixed $model, string $attribute) use ($relation): bool {
+        $loaded = $this->linkage === Linkage::Included ? $this : $this->linkage(Linkage::Loaded);
+
+        return $loaded->when(function (Request $request, mixed $model, string $attribute) use ($relation): bool {
             $relation ??= is_string($this->relation) ? $this->relation : $attribute;
 
             return $model instanceof Model
@@ -200,8 +232,8 @@ abstract class Relation extends Describer implements DescribesRelationship
 
         $relation = $this->value(fn() => $this->check($request, $model, $attribute) ? $value() : new MissingValue());
 
-        if ($this->whenIncluded !== null) {
-            $relation->whenIncluded($this->whenIncluded);
+        if ($this->linkage !== null) {
+            $relation->linkage($this->linkage);
         }
 
         if ($this->filters !== null) {
@@ -239,9 +271,12 @@ abstract class Relation extends Describer implements DescribesRelationship
         return ($this->cardinality() === Cardinality::Many
             ? RelationshipDefinition::many($name, $related)
             : RelationshipDefinition::one($name, $related))
-            ->load(LoadDefinition::fromDeclaration($this->load, $name))
+            ->load(LoadDefinition::fromDeclaration(
+                $this->load ?? !$computed,
+                is_string($this->relation) ? $this->relation : $name,
+            ))
             ->conditional($this->isConditional())
-            ->whenIncluded($this->whenIncluded)
+            ->linkage($this->linkage)
             ->hasLinks($this->links !== null)
             ->hasMeta($this->meta !== null)
             ->hasIdentifierMeta($this->identifierMeta !== null)
@@ -254,7 +289,7 @@ abstract class Relation extends Describer implements DescribesRelationship
      */
     public function loadConstraints(): array
     {
-        return LoadDefinition::constraintsOf($this->load);
+        return LoadDefinition::constraintsOf($this->load ?? false);
     }
 
     /**

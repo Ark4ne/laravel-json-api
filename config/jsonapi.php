@@ -88,16 +88,23 @@ return [
     'relationship' => [
         /*
         |--------------------------------------------------------------------------
-        | When Included
+        | Linkage
         |--------------------------------------------------------------------------
         |
-        | @see whenIncluded()
+        | When a relationship that is not included renders its resource
+        | linkage (`data`). An included relationship always renders it, and
+        | `links` / `meta` are rendered in every case.
         |
-        | false => relationship data will always be loaded and set to relation data
-        | true  => relationship data will not be loaded until relationship is set to include
+        | 'always'   => always: the relation is loaded in batch for the whole
+        |               collection when it is not loaded yet
+        | 'loaded'   => only when the relation is already loaded
+        | 'included' => never: the relation is not even read
+        |
+        | One relationship sets its own with `->whenIncluded()` ('included')
+        | or `->whenLoaded()` ('loaded').
         |
         */
-        'when-included' => false,
+        'linkage' => 'always',
     ],
 
     'fields' => [

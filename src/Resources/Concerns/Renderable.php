@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
+use Ark4ne\JsonApi\Compilation\Definitions;
+use Ark4ne\JsonApi\Configuration\Linkage;
 use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Descriptors\Relations\Relation;
+use Ark4ne\JsonApi\Loading\LoadedRelations;
 use Ark4ne\JsonApi\Rendering\RelationshipSource;
 use Ark4ne\JsonApi\Resources\Relationship;
 use Ark4ne\JsonApi\Support\Values;
@@ -16,12 +19,12 @@ use Illuminate\Http\Resources\PotentiallyMissing;
  * Implements `Rendering\RenderableResource` for `JsonApiResource`: bridges from the renderer to the user hooks, which
  * stay `protected` (docs/architecture.md §2 and §8).
  *
- * The context of the rendering is kept for the helpers the hooks call (`whenInFields()`, `whenIncluded()`).
+ * The context of the rendering is kept for the helpers the hooks call (`whenInFields()`, `whenInIncludes()`).
  */
 trait Renderable
 {
     /**
-     * @internal Read by `whenInFields()` and `whenIncluded()`.
+     * @internal Read by `whenInFields()` and `whenInIncludes()`.
      */
     protected ?JsonApiContext $renderingContext = null;
 
@@ -77,10 +80,9 @@ trait Renderable
     {
         $this->renderingContext = $context;
 
-        $relationships = $this->autoWhenIncluded(
-            Values::mergeValues($this->toRelationships($context->request)),
-            $context->configuration->whenIncluded,
-        );
+        $relationships = $this->autoWhenIncluded(Values::mergeValues($this->toRelationships($context->request)));
+        $definitions = Definitions::for(static::class)->relationships;
+        $model = $this->resource;
 
         foreach ($relationships as $key => $relationship) {
             if ($relationship instanceof PotentiallyMissing && $relationship->isMissing()) {
@@ -90,10 +92,18 @@ trait Renderable
             $name = (string) Describer::retrieveName($relationship, $key);
 
             if ($relationship instanceof Relation) {
-                yield $name => $relationship->resolveFor($context->request, $this->resource, $name, $context->configuration);
-            } elseif ($relationship instanceof Relationship) {
-                yield $name => $relationship;
+                $relationship = $relationship->resolveFor($context->request, $model, $name, $context->configuration);
+            } elseif (!$relationship instanceof Relationship) {
+                continue;
             }
+
+            $definition = $definitions[$name] ?? null;
+
+            // Only `Linkage::Loaded` reads whether the relation is loaded.
+            yield $name => $definition === null
+                || ($definition->linkage ?? $context->configuration->linkage) !== Linkage::Loaded
+                ? $relationship
+                : $relationship->loadedWhen(static fn() => LoadedRelations::has($model, $definition));
         }
     }
 

@@ -8,14 +8,13 @@ use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Definition\RelatedResource;
 use Ark4ne\JsonApi\Definition\ResourceDefinition;
+use Ark4ne\JsonApi\Loading\LoadPlanner;
 use Ark4ne\JsonApi\Rendering\Document;
 use Ark4ne\JsonApi\Rendering\DocumentBuilder;
 use Ark4ne\JsonApi\Rendering\IncludedRegistry;
 use Ark4ne\JsonApi\Rendering\RenderableResource;
 use Ark4ne\JsonApi\Rendering\ResourceObjectRenderer;
 use Ark4ne\JsonApi\Rendering\ValueResolver;
-use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Attributes\Collects;
 use Illuminate\Http\Resources\Json\ResourceCollection;
@@ -108,7 +107,7 @@ class JsonApiCollection extends ResourceCollection
     }
 
     /**
-     * The collected resources, their requested relationships eager-loaded once on the whole collection.
+     * The collected resources, the relations they render loaded once on the whole collection, by resource class.
      *
      * @return list<RenderableResource>
      */
@@ -121,16 +120,16 @@ class JsonApiCollection extends ResourceCollection
             }
         }
 
-        $first = $resources[0] ?? null;
-
-        if ($first instanceof JsonApiResource) {
-            $loads = $first->requestedRelationshipsLoad($context);
-            $models = array_map(static fn(RenderableResource $resource) => $resource->renderedModel(), $resources);
-            $eloquent = array_filter($models, static fn($model) => $model instanceof Model);
-
-            if ($loads !== [] && count($eloquent) === count($models)) {
-                (new Collection($eloquent))->loadMissing($loads);
+        $models = [];
+        foreach ($resources as $resource) {
+            if ($resource instanceof JsonApiResource) {
+                $models[$resource::class][] = $resource->renderedModel();
             }
+        }
+
+        $planner = new LoadPlanner();
+        foreach ($models as $class => $collected) {
+            $planner->plan($class, $context)->apply($collected);
         }
 
         return $resources;

@@ -63,6 +63,22 @@ public static function collection($resource): UserCollection
 
 `float()` is `protected`, like the other value helpers: call it from the resource only.
 
+### Relationships and loading
+
+- `relationship.when-included` is replaced by `relationship.linkage`: `'included'` for `true`; remove the key for
+  `false` (`'always'`, the default). A published configuration keeping the old key throws at boot.
+- A relationship read from a relation (`$this->one(UserResource::class)`) loads it, in batch, even when it is not
+  included. Add `->withLoad(false)` where an application loads it itself, or `->whenIncluded()` to render its `data`
+  only when included.
+- `->withLoad(true)` loads the relation the relationship is read from: `$this->one(PostResource::class, 'post')` under
+  the name `main-post` loads `post` (1.x: `main-post`).
+- A `withLoad(['comments' => fn($query) => …])` constraint now filters the linkage too: the identifiers listed in
+  `data` are those of `included`.
+- A relationship with `->whenLoaded()` is loaded when included. Add `->withLoad(false)` to keep the 1.x behaviour.
+- `whenIncluded($request, $type, $value)` of the resources is renamed `whenInIncludes($request, $relationship,
+  $value)`.
+- `RelationshipDefinition::$whenIncluded` is `$linkage` (`Configuration\Linkage|null`).
+
 ### Static helpers
 
 `Support\Includes`, `Support\Fields`, `Support\With` and `Support\Supported` are removed, with

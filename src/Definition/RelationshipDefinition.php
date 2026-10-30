@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Definition;
 
+use Ark4ne\JsonApi\Configuration\Linkage;
+
 /**
  * What a resource declares about one relationship.
  *
@@ -17,7 +19,8 @@ final readonly class RelationshipDefinition
     /**
      * @param class-string<DefinitionSource> $related Resource class of the related resources
      * @param bool $conditional Whether the relationship may be left out (`when()`, `can()`, `whenLoaded()`…)
-     * @param bool|null $whenIncluded Whether its data is resolved only when included; `null` for the configured default
+     * @param Linkage|null $linkage When it renders its linkage while not included (`whenIncluded()`, `whenLoaded()`);
+     *                             `null` for the configured one (`relationship.linkage`)
      * @param bool $hasLinks Whether it declares links (`links()`)
      * @param bool $hasMeta Whether it declares meta (`meta()`)
      * @param string|null $source Relation of the model it is read from, when known
@@ -30,7 +33,7 @@ final readonly class RelationshipDefinition
         public Cardinality $cardinality,
         public LoadDefinition $load,
         public bool $conditional = false,
-        public ?bool $whenIncluded = null,
+        public ?Linkage $linkage = null,
         public bool $hasLinks = false,
         public bool $hasMeta = false,
         public ?string $source = null,
@@ -69,9 +72,9 @@ final readonly class RelationshipDefinition
         return $this->copy(conditional: $conditional);
     }
 
-    public function whenIncluded(?bool $whenIncluded): self
+    public function linkage(?Linkage $linkage): self
     {
-        return $this->copy(whenIncluded: $whenIncluded);
+        return $this->copy(linkage: $linkage);
     }
 
     public function hasLinks(bool $hasLinks = true): self
@@ -108,7 +111,7 @@ final readonly class RelationshipDefinition
      *     cardinality: Cardinality,
      *     load: LoadDefinition,
      *     conditional: bool,
-     *     whenIncluded: bool|null,
+     *     linkage: Linkage|null,
      *     hasLinks: bool,
      *     hasMeta: bool,
      *     source: string|null,
@@ -125,7 +128,7 @@ final readonly class RelationshipDefinition
         ?string $name = null,
         ?LoadDefinition $load = null,
         ?bool $conditional = null,
-        bool|string|null $whenIncluded = '',
+        Linkage|false|null $linkage = false,
         ?bool $hasLinks = null,
         ?bool $hasMeta = null,
         string|false|null $source = false,
@@ -138,7 +141,7 @@ final readonly class RelationshipDefinition
             cardinality: $this->cardinality,
             load: $load ?? $this->load,
             conditional: $conditional ?? $this->conditional,
-            whenIncluded: is_string($whenIncluded) ? $this->whenIncluded : $whenIncluded,
+            linkage: $linkage === false ? $this->linkage : $linkage,
             hasLinks: $hasLinks ?? $this->hasLinks,
             hasMeta: $hasMeta ?? $this->hasMeta,
             source: $source === false ? $this->source : $source,

@@ -6,6 +6,7 @@ namespace Test\Unit\Configuration;
 
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Configuration\JsonApiObject;
+use Ark4ne\JsonApi\Configuration\Linkage;
 use Ark4ne\JsonApi\Configuration\SparseRelationships;
 use Ark4ne\JsonApi\Exceptions\InvalidConfigurationException;
 use DateTimeInterface;
@@ -31,7 +32,7 @@ final class ConfigurationTest extends TestCase
         self::assertNull($configuration->precision);
         self::assertFalse($configuration->strict);
         self::assertSame([], $configuration->whenHas);
-        self::assertFalse($configuration->whenIncluded);
+        self::assertSame(Linkage::Always, $configuration->linkage);
         self::assertSame(SparseRelationships::Filter, $configuration->sparseRelationships);
         self::assertSame([], $configuration->resourcePaths);
         self::assertSame([], $configuration->renderingStages);
@@ -54,7 +55,7 @@ final class ConfigurationTest extends TestCase
                 'strict' => true,
                 'when-has' => ['attributes'],
             ],
-            'relationship' => ['when-included' => true],
+            'relationship' => ['linkage' => 'loaded'],
             'fields' => ['relationships' => 'keep'],
             'definitions' => ['paths' => ['/app/Http/Resources']],
             'rendering' => ['stages' => [self::class]],
@@ -72,7 +73,7 @@ final class ConfigurationTest extends TestCase
         self::assertSame(2, $configuration->precision);
         self::assertTrue($configuration->strict);
         self::assertSame(['attributes'], $configuration->whenHas);
-        self::assertTrue($configuration->whenIncluded);
+        self::assertSame(Linkage::Loaded, $configuration->linkage);
         self::assertSame(SparseRelationships::Keep, $configuration->sparseRelationships);
         self::assertSame(['/app/Http/Resources'], $configuration->resourcePaths);
         self::assertSame([self::class], $configuration->renderingStages);
@@ -126,7 +127,8 @@ final class ConfigurationTest extends TestCase
         yield 'precision' => [['describer' => ['precision' => 'two']], 'describer.precision'];
         yield 'strict' => [['describer' => ['strict' => 1]], 'describer.strict'];
         yield 'when-has scope' => [['describer' => ['when-has' => ['unknown']]], 'describer.when-has'];
-        yield 'when-included' => [['relationship' => ['when-included' => 1]], 'relationship.when-included'];
+        yield 'linkage' => [['relationship' => ['linkage' => 'never']], 'relationship.linkage'];
+        yield 'when-included, replaced by linkage' => [['relationship' => ['when-included' => false]], 'relationship.when-included'];
         yield 'fields.relationships' => [['fields' => ['relationships' => 'drop']], 'fields.relationships'];
         yield 'definitions.paths' => [['definitions' => ['paths' => 'app']], 'definitions.paths'];
         yield 'rendering.stages not a list' => [['rendering' => ['stages' => 'Stage']], 'rendering.stages'];

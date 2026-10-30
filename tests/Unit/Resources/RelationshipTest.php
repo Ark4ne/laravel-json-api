@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Test\Unit\Resources;
 
+use Ark4ne\JsonApi\Configuration\Linkage;
 use Ark4ne\JsonApi\Definition\Cardinality;
 use Ark4ne\JsonApi\Rendering\RenderableResource;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Ark4ne\JsonApi\Resources\Relationship;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MissingValue;
+use PHPUnit\Framework\Attributes\DataProvider;
 use stdClass;
 use Test\TestCase;
 use Test\Unit\Rendering\Fixtures\Contexts;
@@ -121,6 +123,46 @@ class RelationshipTest extends TestCase
         self::assertFalse($relationship->resolve(Contexts::of(), false)->hasData);
         self::assertFalse($read);
         self::assertTrue($relationship->resolve(Contexts::of(), true)->hasData);
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    #[DataProvider('linkages')]
+    public function test_a_relationship_not_included_renders_its_linkage_as_configured(
+        array $config,
+        ?bool $loaded,
+        bool $hasData,
+    ): void {
+        $relationship = new Relationship(MyModelResource::class, static fn() => (object) ['id' => 1]);
+
+        if ($loaded !== null) {
+            $relationship->loadedWhen(static fn() => $loaded);
+        }
+
+        self::assertSame($hasData, $relationship->resolve(Contexts::of('', $config), false)->hasData);
+        self::assertTrue($relationship->resolve(Contexts::of('', $config), true)->hasData);
+    }
+
+    /**
+     * @return iterable<string, array{array<string, mixed>, bool|null, bool}>
+     */
+    public static function linkages(): iterable
+    {
+        yield 'always' => [[], false, true];
+        yield 'loaded, loaded' => [['relationship' => ['linkage' => 'loaded']], true, true];
+        yield 'loaded, not loaded' => [['relationship' => ['linkage' => 'loaded']], false, false];
+        yield 'loaded, unknown' => [['relationship' => ['linkage' => 'loaded']], null, true];
+        yield 'included' => [['relationship' => ['linkage' => 'included']], true, false];
+    }
+
+    public function test_the_linkage_of_a_relationship_wins_over_the_configured_one(): void
+    {
+        $relationship = (new Relationship(MyModelResource::class, static fn() => (object) ['id' => 1]))
+            ->whenIncluded(false);
+
+        self::assertTrue($relationship->resolve(Contexts::of('', ['relationship' => ['linkage' => 'included']]), false)->hasData);
+        self::assertFalse($relationship->linkage(Linkage::Included)->resolve(Contexts::of(), false)->hasData);
     }
 }
 

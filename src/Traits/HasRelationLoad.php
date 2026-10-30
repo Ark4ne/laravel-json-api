@@ -9,8 +9,12 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 
 trait HasRelationLoad
 {
-    /** @var bool|string|array<string, callable(Builder|Relation):mixed>|array<array-key, string|string[]|mixed> */
-    protected bool|string|array $load = false;
+    /**
+     * `null` when not declared.
+     *
+     * @var bool|string|array<string, callable(Builder|Relation):mixed>|array<array-key, string|string[]|mixed>|null
+     */
+    protected bool|string|array|null $load = null;
 
     /**
      * @param bool|string|array<string, callable(Builder|Relation):mixed>|array<array-key, string|string[]|mixed> $load
@@ -23,9 +27,9 @@ trait HasRelationLoad
     }
 
     /**
-     * @return bool|string|array<string, callable(Builder|Relation):mixed>|array<array-key, string|string[]|mixed>
+     * @return bool|string|array<string, callable(Builder|Relation):mixed>|array<array-key, string|string[]|mixed>|null
      */
-    public function load(): bool|string|array
+    public function load(): bool|string|array|null
     {
         return $this->load;
     }

@@ -43,7 +43,7 @@ class ConditionallyLoadsAttributesTest extends TestCase
 
             public function toAttributes(Request $request): iterable
             {
-                return ['test' => $this->whenIncluded($request, 'test', true)];
+                return ['test' => $this->whenInIncludes($request, 'test', true)];
             }
         };
 

@@ -14,8 +14,8 @@ interface RelationshipSource
     /**
      * Resolves the related resources, links and meta.
      *
-     * @param bool $included Whether the relationship is included: a relationship resolved only when included
-     *                       (`whenIncluded()`) leaves its data out otherwise
+     * @param bool $included Whether the relationship is included: otherwise, its linkage decides whether its data is
+     *                       resolved (`Configuration\Linkage`)
      */
     public function resolve(JsonApiContext $context, bool $included): ResolvedRelationship;
 }

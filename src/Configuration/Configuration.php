@@ -26,7 +26,7 @@ final readonly class Configuration
      * @param bool $strict A value that is not nullable and has no meaningful value for `null` throws instead of
      *                     rendering `null` (`describer.strict`)
      * @param list<string> $whenHas Scopes where `whenHas()` applies automatically (`describer.when-has`)
-     * @param bool $whenIncluded Relationships are resolved only when included (`relationship.when-included`)
+     * @param Linkage $linkage When a relationship that is not included renders its linkage (`relationship.linkage`)
      * @param SparseRelationships $sparseRelationships How `fields[type]` treats relationships (`fields.relationships`)
      * @param list<string> $resourcePaths Directories scanned for resources by the Artisan commands
      *                                    (`definitions.paths`); empty for the application's default
@@ -40,7 +40,7 @@ final readonly class Configuration
         public ?int $precision,
         public bool $strict,
         public array $whenHas,
-        public bool $whenIncluded,
+        public Linkage $linkage,
         public SparseRelationships $sparseRelationships,
         public array $resourcePaths,
         public array $renderingStages,
@@ -59,7 +59,7 @@ final readonly class Configuration
             precision: null,
             strict: false,
             whenHas: [],
-            whenIncluded: false,
+            linkage: Linkage::Always,
             sparseRelationships: SparseRelationships::Filter,
             resourcePaths: [],
             renderingStages: [],
@@ -85,7 +85,7 @@ final readonly class Configuration
             precision: self::precision($config, $defaults->precision),
             strict: self::bool($config, 'describer.strict', $defaults->strict),
             whenHas: self::whenHas($config, $defaults->whenHas),
-            whenIncluded: self::bool($config, 'relationship.when-included', $defaults->whenIncluded),
+            linkage: self::linkage($config, $defaults->linkage),
             sparseRelationships: self::sparseRelationships($config, $defaults->sparseRelationships),
             resourcePaths: self::paths($config, $defaults->resourcePaths),
             renderingStages: self::stages($config, $defaults->renderingStages),
@@ -187,6 +187,26 @@ final readonly class Configuration
 
         return (is_string($value) ? SparseRelationships::tryFrom($value) : null)
             ?? throw InvalidConfigurationException::forKey('fields.relationships', "'filter' or 'keep'");
+    }
+
+    /**
+     * `relationship.when-included` was replaced by `relationship.linkage`: kept, it would be ignored silently.
+     *
+     * @param array<array-key, mixed> $config
+     */
+    private static function linkage(array $config, Linkage $default): Linkage
+    {
+        if (self::read($config, 'relationship.when-included') !== null) {
+            throw InvalidConfigurationException::forKey(
+                'relationship.when-included',
+                "replaced by relationship.linkage ('included' for true)",
+            );
+        }
+
+        $value = self::read($config, 'relationship.linkage') ?? $default->value;
+
+        return (is_string($value) ? Linkage::tryFrom($value) : null)
+            ?? throw InvalidConfigurationException::forKey('relationship.linkage', "'always', 'loaded' or 'included'");
     }
 
     /**

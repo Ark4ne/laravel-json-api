@@ -6,14 +6,17 @@ namespace Test\Unit\Compilation;
 
 use Ark4ne\JsonApi\Compilation\DefinitionCompiler;
 use Ark4ne\JsonApi\Configuration\Configuration;
+use Ark4ne\JsonApi\Configuration\Linkage;
 use Ark4ne\JsonApi\Definition\AttributeDefinition;
 use Ark4ne\JsonApi\Definition\Cardinality;
 use Ark4ne\JsonApi\Definition\ResourceDefinition;
 use Ark4ne\JsonApi\Definition\ValueType;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
+use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Ark4ne\JsonApi\Support\Diagnostic;
 use Ark4ne\JsonApi\Support\DiagnosticLevel;
 use DateTimeInterface;
+use Illuminate\Http\Request;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 use Test\app\Enums\State;
@@ -255,8 +258,8 @@ final class DefinitionCompilerTest extends TestCase
         self::assertFalse($author->hasLinks);
         self::assertTrue($comments->hasLinks);
         self::assertTrue($comments->hasMeta);
-        self::assertTrue($comments->whenIncluded);
-        self::assertNull($author->whenIncluded);
+        self::assertSame(Linkage::Included, $comments->linkage);
+        self::assertNull($author->linkage);
         self::assertTrue($reviewer->conditional);
         self::assertTrue($reviewer->computed);
         self::assertSame('author', $author->source);
@@ -325,6 +328,52 @@ final class DefinitionCompilerTest extends TestCase
 
         self::assertSame('predefined', $definition->type);
         self::assertSame(['title'], array_keys($definition->attributes));
+    }
+
+    public function test_a_resource_rendering_every_linkage_only_when_included_says_so_in_its_definition(): void
+    {
+        $resource = new class (null) extends JsonApiResource {
+            protected ?bool $autoWhenIncluded = true;
+
+            /**
+             * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Relations\Relation<mixed>>
+             */
+            protected function toRelationships(Request $request): iterable
+            {
+                return [
+                    'author' => $this->one(UserResource::class),
+                    'reviewer' => $this->one(UserResource::class)->whenIncluded(false),
+                ];
+            }
+        };
+
+        $definition = $this->compile($resource::class);
+
+        self::assertSame(Linkage::Included, $definition->relationships['author']->linkage);
+        self::assertSame(Linkage::Always, $definition->relationships['reviewer']->linkage);
+    }
+
+    public function test_a_resource_rendering_every_linkage_always_says_so_for_the_relationships_without_their_own(): void
+    {
+        $resource = new class (null) extends JsonApiResource {
+            protected ?bool $autoWhenIncluded = false;
+
+            /**
+             * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Relations\Relation<mixed>>
+             */
+            protected function toRelationships(Request $request): iterable
+            {
+                return [
+                    'author' => $this->one(UserResource::class),
+                    'reviewer' => $this->one(UserResource::class)->whenIncluded(),
+                ];
+            }
+        };
+
+        $definition = $this->compile($resource::class);
+
+        self::assertSame(Linkage::Always, $definition->relationships['author']->linkage);
+        self::assertSame(Linkage::Included, $definition->relationships['reviewer']->linkage);
     }
 
     public function test_compiling_a_class_that_is_not_a_resource_throws(): void

@@ -97,7 +97,7 @@ final class Definitions
      * The constraint closures of the eager-loads of a resource (`withLoad(['comments' => fn($q) => …])`), by
      * relationship name then by relation path.
      *
-     * @internal Read by the renderer until the loading layer (roadmap E5) replaces it.
+     * @internal Read by the `LoadPlanner`.
      *
      * @param class-string<DefinitionSource> $class
      *

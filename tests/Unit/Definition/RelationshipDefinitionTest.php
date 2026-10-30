@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Test\Unit\Definition;
 
+use Ark4ne\JsonApi\Configuration\Linkage;
 use Ark4ne\JsonApi\Definition\Cardinality;
 use Ark4ne\JsonApi\Definition\LoadDefinition;
 use Ark4ne\JsonApi\Definition\RelationshipDefinition;
@@ -21,7 +22,7 @@ final class RelationshipDefinitionTest extends TestCase
         self::assertSame(Cardinality::One, $relationship->cardinality);
         self::assertTrue($relationship->load->isEmpty());
         self::assertFalse($relationship->conditional);
-        self::assertNull($relationship->whenIncluded);
+        self::assertNull($relationship->linkage);
         self::assertFalse($relationship->hasLinks);
         self::assertFalse($relationship->hasMeta);
         self::assertFalse($relationship->hasIdentifierMeta);
@@ -38,7 +39,7 @@ final class RelationshipDefinitionTest extends TestCase
             ->name('writer')
             ->load(LoadDefinition::of(['author']))
             ->conditional()
-            ->whenIncluded(true)
+            ->linkage(Linkage::Included)
             ->hasLinks()
             ->hasMeta()
             ->hasIdentifierMeta()
@@ -49,14 +50,15 @@ final class RelationshipDefinitionTest extends TestCase
         self::assertSame('writer', $changed->name);
         self::assertSame(['author'], $changed->load->paths);
         self::assertTrue($changed->conditional);
-        self::assertTrue($changed->whenIncluded);
+        self::assertSame(Linkage::Included, $changed->linkage);
         self::assertTrue($changed->hasLinks);
         self::assertTrue($changed->hasMeta);
         self::assertTrue($changed->hasIdentifierMeta);
         self::assertFalse($relationship->hasIdentifierMeta);
         self::assertSame('author', $changed->source);
         self::assertTrue($changed->computed);
-        self::assertNull($changed->whenIncluded(null)->whenIncluded);
+        self::assertNull($changed->linkage(null)->linkage);
+        self::assertSame(Linkage::Included, $changed->name('other')->linkage);
         self::assertNull($changed->source(null)->source);
     }
 }

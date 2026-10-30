@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
+use Ark4ne\JsonApi\Configuration\Linkage;
 use Ark4ne\JsonApi\Descriptors\Relations\Relation;
 use Ark4ne\JsonApi\Descriptors\Values\Value;
 use Ark4ne\JsonApi\Resources\Relationship;
@@ -53,8 +54,9 @@ trait PrepareData
     }
 
     /**
-     * Resolves the relationships only when included, as the resource says (`$autoWhenIncluded`), otherwise as the
-     * configuration says.
+     * Renders the linkage of every relationship only when included (`whenIncluded()`) when the resource says so
+     * (`$autoWhenIncluded = true`), always when it says not to (`false`, for the relationships that do not set theirs);
+     * `relationship.linkage` applies otherwise.
      *
      * @template TKey as array-key
      * @template TValue
@@ -62,17 +64,20 @@ trait PrepareData
      *
      * @return iterable<TKey, TValue>
      */
-    protected function autoWhenIncluded(iterable $data, bool $byConfiguration): iterable
+    protected function autoWhenIncluded(iterable $data): iterable
     {
-        if (!($this->autoWhenIncluded ?? $byConfiguration)) {
+        if ($this->autoWhenIncluded === null) {
             return $data;
         }
 
+        $whenIncluded = $this->autoWhenIncluded;
+
         return (new Collection($data))
-            ->map(static fn($relation) => $relation instanceof Relation || $relation instanceof Relationship
-                ? $relation->whenIncluded()
-                : $relation)
+            ->map(static fn($relation) => match (true) {
+                !$relation instanceof Relation && !$relation instanceof Relationship => $relation,
+                $whenIncluded => $relation->whenIncluded(),
+                default => $relation->defaultLinkage(Linkage::Always),
+            })
             ->all();
     }
-
 }

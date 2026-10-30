@@ -19,7 +19,7 @@ composer require ark4ne/laravel-json-api
 | `describer.precision`        | `int` \ `null`           | For describer notation, decimal precision for float value. `null` for disable rounding. |
 | `describer.strict`           | `bool`                   | A value that is not nullable and has no value for `null` (a date) throws instead of rendering `null`. `APP_DEBUG` by default. |
 | `describer.when-has`         | `bool` \ `string[]`      | For describer notation, Apply automatically whenHas condition on attributes.            |
-| `relationship.when-included` | `bool`                   | Allow to disabled by default the loading of relationship data.                          |
+| `relationship.linkage`       | `'always'` \ `'loaded'` \ `'included'` | When a relationship that is not included renders its `data`: always, only when already loaded, only when included. See [Linkage and loading](#linkage-and-loading). |
 | `fields.relationships`       | `'filter'` \ `'keep'`    | `fields[type]` restricts the relationships too (`filter`, JSON:API) or not (`keep`, 1.x). |
 | `include.max-depth`          | `int` \ `null`           | Deepest include path accepted; nothing deeper is loaded nor rendered. `null`: no limit.  |
 | `document.jsonapi`           | `array` \ `false`        | Top-level `jsonapi` member (`version`, `ext`, `profile`, `meta`); `false` to omit it.   |
@@ -269,7 +269,7 @@ This allows the [definition](#definition) of the resource and thus the validatio
 
 If your relation should have been a collection created via the `::collection(...)` method, you can simply use `->asCollection()`.
 
-If you want the relation data to be loaded only when it is present in the request include, you can use the `->whenIncluded()` method.
+If you want the relation data to be rendered only when it is present in the request include, you can use the `->whenIncluded()` method (see [Linkage and loading](#linkage-and-loading)).
 
 ```php
 protected function toRelationships(Request $request): array
@@ -479,6 +479,51 @@ UserResource::collection(User::all()); // => JsonApiCollection
 |---------|-------------------------------------------------------------------|
 | `one`   | For relationship with a single value: `HasOne`, `BelongsTo`, ...  |
 | `many`  | For relationship with many value: `HasMany`, `BelongsToMany`, ... |
+
+### Linkage and loading
+_**@see** [{json:api}: resource linkage](https://jsonapi.org/format/#document-resource-object-linkage)_
+
+A relationship that is not included still renders its resource linkage (`data`), as 1.x did. The relations a document
+renders are loaded **before** rendering, in batch on the whole collection: one query per relation and per include
+level, never one per resource.
+
+- A relationship read from a relation (`$this->one(UserResource::class)`, `$this->many(CommentResource::class,
+  'comments')`) loads it. `->withLoad(false)` disables it; `->withLoad('comments.user')` or
+  `->withLoad(['comments' => fn($query) => $query->latest()])` loads other paths, or constrains them. A constraint
+  applies to the linkage and to the included resources alike.
+- A relationship read by a closure (`PostResource::relationship(fn() => $this->resource->posts)`, `$this->one(…, fn()
+  => …)`) loads only what `withLoad()` declares.
+- An included relationship loads every path of its `withLoad()`; a relationship that is not included only those
+  reaching its related resources (`comments` of `['comments', 'comments.user']`).
+- A relation already loaded (`$post->load('comments')`) is not loaded again. Resources that are not Eloquent models
+  (arrays, objects) are read as they are.
+
+`relationship.linkage` says when a relationship that is not included renders its `data` (its `links` and `meta` are
+rendered in every case):
+
+| Value                | Not included, not loaded            | Not included, loaded | Included                 |
+|----------------------|-------------------------------------|----------------------|--------------------------|
+| `always` (default)   | `data`, loaded in batch             | `data`               | `data` and `included`    |
+| `loaded`             | no `data`                           | `data`               | `data` and `included`    |
+| `included`           | no `data`, the relation is not read | no `data`            | `data` and `included`    |
+
+One relationship sets its own:
+
+```php
+protected function toRelationships(Request $request): array
+{
+    return [
+        // `data` only when included
+        'posts' => $this->many(PostResource::class)->whenIncluded(),
+        // rendered only when loaded; loaded when included
+        'comments' => $this->many(CommentResource::class)->whenLoaded(),
+        // or explicitly (Ark4ne\JsonApi\Configuration\Linkage)
+        'author' => $this->one(UserResource::class)->linkage(Linkage::Always),
+    ];
+}
+```
+
+`protected ?bool $autoWhenIncluded = true;` on a resource applies `whenIncluded()` to all its relationships.
 
 
 ### Enum

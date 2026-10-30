@@ -170,13 +170,10 @@ final readonly class DefinitionCompiler
                 $diagnostics,
                 static fn() => $members->attributes($source->describeAttributes($request), 'attributes'),
             ),
-            'relationships' => array_map(
-                $this->relationshipDefaults(...),
-                $this->guard(
-                    'toRelationships',
-                    $diagnostics,
-                    static fn() => $members->relationships($source->describeRelationships($request)),
-                ),
+            'relationships' => $this->guard(
+                'toRelationships',
+                $diagnostics,
+                static fn() => $members->relationships($source->describeRelationships($request)),
             ),
             'links' => $this->guard(
                 'toLinks',
@@ -214,12 +211,4 @@ final readonly class DefinitionCompiler
             return [];
         }
     }
-
-    private function relationshipDefaults(RelationshipDefinition $relationship): RelationshipDefinition
-    {
-        return $relationship->whenIncluded === null && $this->configuration->whenIncluded
-            ? $relationship->whenIncluded(true)
-            : $relationship;
-    }
-
 }

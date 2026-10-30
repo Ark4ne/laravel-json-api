@@ -661,12 +661,6 @@ parameters:
 			path: src/Resources/Relationship.php
 
 		-
-			message: '#^Only booleans are allowed in &&, bool\|null given on the left side\.$#'
-			identifier: booleanAnd.leftNotBoolean
-			count: 1
-			path: src/Resources/Relationship.php
-
-		-
 			message: '#^Parameter \#2 \$data of method Ark4ne\\JsonApi\\Filters\\Filters\<mixed\>\:\:apply\(\) expects Illuminate\\Http\\Resources\\PotentiallyMissing\|iterable\<\(int\|string\), resource\>\|resource\|null, mixed given\.$#'
 			identifier: argument.type
 			count: 1
@@ -1479,54 +1473,6 @@ parameters:
 		-
 			message: '#^Method Test\\Unit\\Descriptors\\RelationTest\:\:testRelationMissing\(\) has parameter \$model with no type specified\.$#'
 			identifier: missingType.parameter
-			count: 1
-			path: tests/Unit/Descriptors/RelationTest.php
-
-		-
-			message: '#^Method Test\\Unit\\Descriptors\\RelationTest\:\:testWhenLoaded\(\) has parameter \$expectedAttr with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: tests/Unit/Descriptors/RelationTest.php
-
-		-
-			message: '#^Method Test\\Unit\\Descriptors\\RelationTest\:\:testWhenLoaded\(\) has parameter \$invokedAttr with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: tests/Unit/Descriptors/RelationTest.php
-
-		-
-			message: '#^Method Test\\Unit\\Descriptors\\RelationTest\:\:testWhenLoaded\(\) has parameter \$relation with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: tests/Unit/Descriptors/RelationTest.php
-
-		-
-			message: '#^Method Test\\Unit\\Descriptors\\RelationTest\:\:testWhenPivotLoaded\(\) has parameter \$expectedAttr with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: tests/Unit/Descriptors/RelationTest.php
-
-		-
-			message: '#^Method Test\\Unit\\Descriptors\\RelationTest\:\:testWhenPivotLoaded\(\) has parameter \$invokedAttr with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: tests/Unit/Descriptors/RelationTest.php
-
-		-
-			message: '#^Method Test\\Unit\\Descriptors\\RelationTest\:\:testWhenPivotLoaded\(\) has parameter \$relation with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: tests/Unit/Descriptors/RelationTest.php
-
-		-
-			message: '#^Parameter \#2 \$relation of class Ark4ne\\JsonApi\\Descriptors\\Relations\\RelationOne constructor expects Closure\|string\|null, mixed given\.$#'
-			identifier: argument.type
-			count: 2
-			path: tests/Unit/Descriptors/RelationTest.php
-
-		-
-			message: '#^Variable property access on Illuminate\\Database\\Eloquent\\Model@anonymous/tests/Unit/Descriptors/RelationTest\.php\:148\.$#'
-			identifier: property.dynamicName
 			count: 1
 			path: tests/Unit/Descriptors/RelationTest.php
 

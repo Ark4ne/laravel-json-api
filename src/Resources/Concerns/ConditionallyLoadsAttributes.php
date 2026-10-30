@@ -38,19 +38,20 @@ trait ConditionallyLoadsAttributes
     }
 
     /**
-     * Retrieve a relationship if it has been included.
+     * Retrieve a value if a relationship of the resource is included (`include`). Not to be confused with
+     * `whenIncluded()` of the relationships.
      *
      * @template K
      *
      * @param \Illuminate\Http\Request $request
-     * @param string $type
+     * @param string $relationship
      * @param K $value
      *
      * @return \Illuminate\Http\Resources\MissingValue|K
      */
-    protected function whenIncluded(Request $request, string $type, mixed $value)
+    protected function whenInIncludes(Request $request, string $relationship, mixed $value)
     {
-        return $this->when($this->renderingContext?->includes($type) ?? false, $value);
+        return $this->when($this->renderingContext?->includes($relationship) ?? false, $value);
     }
 
     /**

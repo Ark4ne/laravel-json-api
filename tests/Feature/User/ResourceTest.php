@@ -210,7 +210,7 @@ class ResourceTest extends FeatureTestCase
      */
     protected function resolveRelationshipsWhenIncluded($app): void
     {
-        $app['config']->set('jsonapi.relationship.when-included', true);
+        $app['config']->set('jsonapi.relationship.linkage', 'included');
     }
 
     private function dataSeed(): User

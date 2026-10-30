@@ -7,12 +7,12 @@ namespace Ark4ne\JsonApi\Resources;
 use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Definition\DefinitionSource;
 use Ark4ne\JsonApi\Descriptors;
+use Ark4ne\JsonApi\Loading\LoadPlanner;
 use Ark4ne\JsonApi\Rendering\Document;
 use Ark4ne\JsonApi\Rendering\DocumentBuilder;
 use Ark4ne\JsonApi\Rendering\IncludedRegistry;
 use Ark4ne\JsonApi\Rendering\RenderableResource;
 use Ark4ne\JsonApi\Rendering\ResourceObjectRenderer;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -29,7 +29,6 @@ abstract class JsonApiResource extends JsonResource implements DefinitionSource,
     use Concerns\Attributes;
     use Concerns\ConditionallyLoadsAttributes;
     use Concerns\Relationships;
-    use Concerns\EagerLoads;
     use Concerns\Links;
     use Concerns\Meta;
     use Concerns\Definable;
@@ -50,7 +49,7 @@ abstract class JsonApiResource extends JsonResource implements DefinitionSource,
     public function toArray(mixed $request): array
     {
         $context = $this->renderingContextOf($request);
-        $this->loadRequestedRelationships($context);
+        $this->loadRelations($context);
 
         $renderer = ResourceObjectRenderer::configured($context->configuration);
 
@@ -72,18 +71,17 @@ abstract class JsonApiResource extends JsonResource implements DefinitionSource,
 
     protected function toDocument(JsonApiContext $context): Document
     {
-        $this->loadRequestedRelationships($context);
+        $this->loadRelations($context);
 
         return (new DocumentBuilder(ResourceObjectRenderer::configured($context->configuration)))
             ->resource($this, $context);
     }
 
-    private function loadRequestedRelationships(JsonApiContext $context): void
+    /**
+     * Loads the relations the resource renders in `$context`, before rendering (docs/architecture.md §7).
+     */
+    private function loadRelations(JsonApiContext $context): void
     {
-        $loads = $this->requestedRelationshipsLoad($context);
-
-        if ($loads !== [] && $this->resource instanceof Model) {
-            $this->resource->loadMissing($loads);
-        }
+        (new LoadPlanner())->plan(static::class, $context)->apply([$this->resource]);
     }
 }

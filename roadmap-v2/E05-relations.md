@@ -20,26 +20,31 @@ aujourd'hui la relation non incluse est chargée ressource par ressource (`getRe
 
 ### Linkage
 
-- [ ] **E5.1** Option `relationship.linkage` : `always` (par défaut, comportement v1), `loaded` (seulement si la
+- [x] **E5.1** Option `relationship.linkage` : `always` (par défaut, comportement v1), `loaded` (seulement si la
       relation est déjà chargée), `included` (seulement si incluse). Remplace et généralise
-      `relationship.when-included`
-- [ ] **E5.1a** `BelongsTo` : l'id vient de la clé étrangère du modèle et le type de la définition de la ressource
-      liée. Aucune requête
-- [ ] **E5.1b** Autres relations (`HasMany`, `BelongsToMany`…) : un `loadMissing` groupé par relation et par niveau,
+      `relationship.when-included` : l'ancienne clé lève une `InvalidConfigurationException` ; par relation,
+      `whenIncluded()` = `included`, `whenLoaded()` = `loaded`, `->linkage(Linkage::…)`
+- [x] **E5.1a** `BelongsTo` : l'id vient de la clé étrangère du modèle et le type de la définition de la ressource
+      liée. Aucune requête — décision : pas de raccourci par clé étrangère (`toType()` / `toIdentifier()`,
+      `identifierMeta()`, filtres et liens ont besoin du modèle lié) ; un `BelongsTo` est chargé en groupe comme les
+      autres relations, `withLoad()` / `whenIncluded()` servent à réduire
+- [x] **E5.1b** Autres relations (`HasMany`, `BelongsToMany`…) : un `loadMissing` groupé par relation et par niveau,
       sur toute la collection, au lieu d'une requête par ressource
 - [ ] **E5.1b2** Option : ne charger que les clés (`select` de la clé primaire) quand la relation n'est pas incluse
-- [ ] **E5.1c** Ressources non Eloquent : la valeur est lue telle quelle, comme aujourd'hui
+- [x] **E5.1c** Ressources non Eloquent : la valeur est lue telle quelle, comme aujourd'hui
 
 ### Chargement
 
-- [ ] **E5.2** `withLoad()` implicite (`true`) quand le retriever est un nom de relation Eloquent ;
+- [x] **E5.2** `withLoad()` implicite (`true`) quand le retriever est un nom de relation Eloquent ;
       `withLoad(fn ($q) => …)` pour contraindre ; `withLoad(false)` pour désactiver 🔴
-- [ ] **E5.3** Plan d'eager-load calculé depuis la `ResourceDefinition` et l'include demandé, appliqué une fois sur la
-      collection racine puis niveau par niveau (`loadMissing` groupé par classe de modèle)
+- [x] **E5.3** Plan d'eager-load calculé depuis la `ResourceDefinition` et l'include demandé, appliqué une fois sur la
+      collection racine puis niveau par niveau (`loadMissing` groupé par classe de modèle) : `Loading\LoadPlanner` /
+      `LoadPlan`, qui suit aussi les `fields` ; la contrainte d'un `withLoad()` s'applique au linkage comme à
+      `included` (décision)
 
 ### Sémantique
 
-- [ ] **E5.4** `whenIncluded` n'a qu'un sens (« ne résoudre que si inclus ») et n'existe que sur les relations.
+- [x] **E5.4** `whenIncluded` n'a qu'un sens (« ne résoudre que si inclus ») et n'existe que sur les relations.
       L'actuel `ConditionallyLoadsAttributes::whenIncluded($request, $type, $value)` devient `whenInIncludes()` 🔴
 - [ ] **E5.5** `Filters` immuable ; diagnostic quand un filtre s'exécute sur une relation non chargée
 
@@ -50,10 +55,12 @@ aujourd'hui la relation non incluse est chargée ressource par ressource (`getRe
 - [ ] **E5.7** Relations polymorphiques (`morphTo`) : ressource liée résolue par `#[UseResource]` /
       `Model::toResource()` ou par une map explicite
 - [ ] **E5.8** Pivot BelongsToMany exposé en `meta` sur le resource identifier (avec E1.10)
-- [ ] **E5.9** Support des ressources non Eloquent (tableaux, DTO) conservé et couvert par des tests : c'est un
-      différenciant face au natif, qui ne gère que des modèles
+- [x] **E5.9** Support des ressources non Eloquent (tableaux, DTO) conservé et couvert par des tests : c'est un
+      différenciant face au natif, qui ne gère que des modèles : `LinkageTest`, `LoadPlanTest`, `LoadedRelationsTest`
 
 ## Critères de sortie
 
-- [ ] Tests à compteur de requêtes SQL : aucun N+1 sur les scénarios de linkage et d'include (E10.6)
-- [ ] Documents identiques à la v1.9 en mode `always` (hors corrections de conformité d'E1)
+- [x] Tests à compteur de requêtes SQL : aucun N+1 sur les scénarios de linkage et d'include (E10.6) :
+      `tests/Feature/Loading/LinkageTest.php` (60 → 2 requêtes pour 30 posts, 220 → 4 avec `include=comments.user`)
+- [ ] Documents identiques à la v1.9 en mode `always` (hors corrections de conformité d'E1) — écarts décidés : la
+      contrainte d'un `withLoad()` filtre aussi le linkage, une relation `whenLoaded()` incluse est chargée

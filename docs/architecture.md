@@ -78,7 +78,7 @@ Support ← Configuration ← Definition ← Descriptors ← Compilation ← Con
 | Descriptors | `src/Descriptors/` | Fluent immutable builders (`ValueString`, `RelationMany`…), their `Condition`s and the value type registry |
 | Compilation | `src/Compilation/` | `Definitions` (repository and memory cache), `DefinitionCompiler` (probe run), `CompiledDefinitions` (file cache) |
 | Context | `src/Context/` | `JsonApiContext`, `IncludeTree`, `SparseFieldsets` |
-| Loading | `src/Loading/` | `LoadPlanner`, `LoadPlan`, linkage without query (`BelongsTo` foreign keys) |
+| Loading | `src/Loading/` | `LoadPlanner`, `LoadPlan`, `LoadedRelations` |
 | Rendering | `src/Rendering/` | `DocumentBuilder`, `ResourceObjectRenderer`, `Stage`s, `IncludedRegistry`, `Document` |
 | Resources | `src/Resources/` | The user façade: `JsonApiResource`, `JsonApiCollection` and their concerns |
 | Http | `src/Http/` | Validation rules, `JsonApiFormRequest`, content negotiation middleware, `ErrorRenderer`s |
@@ -128,7 +128,7 @@ final readonly class AttributeDefinition
 | --- | --- |
 | `ResourceDefinition` | Resource class, `type`, attributes, relationships, declared links and meta, diagnostics of its compilation |
 | `AttributeDefinition` | Name, dotted path inside structs, `ValueType`, nullable, format, enum class, item type, children (structs), conditional, sparse (`whenInFields`: out unless requested) |
-| `RelationshipDefinition` | Name, related resource class, `Cardinality::One` / `Many`, `LoadDefinition`, `whenIncluded`, declared links and meta, conditional, source |
+| `RelationshipDefinition` | Name, related resource class, `Cardinality::One` / `Many`, `LoadDefinition`, `linkage`, declared links and meta, conditional, source |
 | `LoadDefinition` | Relation paths eager-loaded when the relationship is included, and those loaded with a constraint closure |
 | `ValueType` | The type of a value as the tools need it: `string`, `integer`, `number`, `boolean`, `date`, `enum`, `array`, `struct`, `mixed`, or a custom type of the registry |
 
@@ -211,16 +211,21 @@ It accepts a plain `Illuminate\Http\Request` or Laravel's native `JsonApiRequest
 
 | `relationship.linkage` | Not included, not loaded | Not included, loaded | Included |
 | --- | --- | --- | --- |
-| `always` (default) | Linkage, loaded in batch (or from the foreign key) | Linkage | Linkage + `included` |
+| `always` (default) | Linkage, loaded in batch | Linkage | Linkage + `included` |
 | `loaded` | `links` / `meta` only, or omitted | Linkage | Linkage + `included` |
 | `included` | `links` / `meta` only, or omitted | `links` / `meta` only, or omitted | Linkage + `included` |
 
-- The `LoadPlanner` reads the definitions and the `IncludeTree`, and builds a `LoadPlan`: which relation, on which
-  model class, at which depth, with which constraint.
+- The `LoadPlanner` reads the definitions, the `IncludeTree` and the sparse fieldsets, and builds a `LoadPlan`: the
+  relation paths to load on the models, with their constraint, and the plans of the related models by the relation
+  reaching them. A relationship that is not included loads the roots of its load for its linkage; an included one
+  loads every path, then plans its related resources in the context of its path.
+- A relationship read from a relation loads it unless `withLoad()` says otherwise; one read by a closure loads only
+  what `withLoad()` declares. A source that is an attribute rather than a relation is not loaded.
+- `whenIncluded()` is `Linkage::Included` and `whenLoaded()` `Linkage::Loaded` on one relationship; `null` takes the
+  configured one at rendering (the compilation does not fill it). `LoadedRelations` tells the renderer whether the
+  relation of a `Linkage::Loaded` relationship is loaded.
 - The plan is applied **once** on the root collection, then level by level, with `loadMissing()` grouped by model
   class: one query per relation and per level.
-- A `BelongsTo` relation renders its linkage from the foreign key and the related definition's `type`, without any
-  query.
 - Non-Eloquent resources (arrays, DTOs) are read as they are: loading does not apply.
 
 ## 8. Rendering

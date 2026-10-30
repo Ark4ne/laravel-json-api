@@ -7,7 +7,8 @@ namespace Ark4ne\JsonApi\Definition;
 use Closure;
 
 /**
- * The Eloquent relations a relationship eager-loads when it is included (`withLoad()`).
+ * The Eloquent relations loaded to render a relationship (`withLoad()`): its roots for the linkage, every path when it is
+ * included.
  *
  * Constraints are closures and stay out of the definition, which must remain serializable: only the paths they
  * constrain are recorded, and the renderer reads the closures from the resource at runtime.
@@ -49,7 +50,22 @@ final readonly class LoadDefinition
     }
 
     /**
-     * The load declared with `withLoad()` by the relationship `$name`: `true` loads the relationship itself, a string or a
+     * The paths no other path is the parent of (`comments` of `comments`, `comments.user`): those reaching the related
+     * resources.
+     *
+     * @return list<string>
+     */
+    public function roots(): array
+    {
+        return array_values(array_filter(
+            $this->paths,
+            fn(string $path) => array_filter($this->paths, static fn(string $other) => str_starts_with($path, "{$other}."))
+                === [],
+        ));
+    }
+
+    /**
+     * The load declared with `withLoad()` by a relationship read from `$relation`: `true` loads `$relation`, a string or a
      * list loads relation paths, and a closure under a path constrains it (`['comments' => fn($query) => …]`). Nested
      * arrays give dotted paths (`['comments' => ['user']]` loads `comments.user`).
      *
@@ -57,7 +73,7 @@ final readonly class LoadDefinition
      *
      * @internal
      */
-    public static function fromDeclaration(bool|string|array $load, string $name): self
+    public static function fromDeclaration(bool|string|array $load, string $relation): self
     {
         if ($load === false) {
             return self::none();
@@ -65,7 +81,7 @@ final readonly class LoadDefinition
 
         $paths = [];
         $constraints = [];
-        self::collect($load === true ? $name : $load, null, $paths, $constraints);
+        self::collect($load === true ? $relation : $load, null, $paths, $constraints);
 
         return self::of($paths, array_keys($constraints));
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Test\Unit\Descriptors;
 
+use Ark4ne\JsonApi\Configuration\Linkage;
 use Ark4ne\JsonApi\Definition\Cardinality;
 use Ark4ne\JsonApi\Descriptors\Relations\RelationMany;
 use Ark4ne\JsonApi\Descriptors\Relations\RelationMissing;
@@ -44,22 +45,22 @@ class RelationTest extends TestCase
 
         $relation = $stub->resolveFor(new Request(), $model, 'null');
         self::assertInstanceOf(Relationship::class, $relation);
-        self::assertNull(Reflect::get($relation, 'whenIncluded'));
+        self::assertNull(Reflect::get($relation, 'linkage'));
 
         $stub = $stub->whenIncluded();
         $relation = $stub->resolveFor(new Request(), $model, 'null');
         self::assertInstanceOf(Relationship::class, $relation);
-        self::assertTrue(Reflect::get($relation, 'whenIncluded'));
+        self::assertSame(Linkage::Included, Reflect::get($relation, 'linkage'));
 
         $stub = $stub->whenIncluded(false);
         $relation = $stub->resolveFor(new Request(), $model, 'null');
         self::assertInstanceOf(Relationship::class, $relation);
-        self::assertFalse(Reflect::get($relation, 'whenIncluded'));
+        self::assertSame(Linkage::Always, Reflect::get($relation, 'linkage'));
 
         $stub = $stub->whenIncluded(true);
         $relation = $stub->resolveFor(new Request(), $model, 'null');
         self::assertInstanceOf(Relationship::class, $relation);
-        self::assertTrue(Reflect::get($relation, 'whenIncluded'));
+        self::assertSame(Linkage::Included, Reflect::get($relation, 'linkage'));
     }
 
 
@@ -118,7 +119,7 @@ class RelationTest extends TestCase
      * @dataProvider dataWhenLoaded
      */
     #[DataProvider('dataWhenLoaded')]
-    public function testWhenLoaded($expectedAttr, $relation, $invokedAttr): void
+    public function testWhenLoaded(string $expectedAttr, string|Closure|null $relation, string $invokedAttr): void
     {
         $mockModel = $this->getMockBuilder(Model::class)->onlyMethods(['relationLoaded'])->getMock();
         $mockModel->expects(self::once())->method('relationLoaded')->with($expectedAttr)->willReturn(false);
@@ -143,11 +144,11 @@ class RelationTest extends TestCase
      * @dataProvider dataWhenPivotLoaded
      */
     #[DataProvider('dataWhenPivotLoaded')]
-    public function testWhenPivotLoaded($expectedAttr, $relation, $invokedAttr): void
+    public function testWhenPivotLoaded(string $expectedAttr, string|Closure|null $relation, string $invokedAttr): void
     {
         $model = new class extends Model {};
 
-        $model->$expectedAttr = new stdClass();
+        $model->setAttribute($expectedAttr, new stdClass());
         $stub = new RelationOne(UserResource::class, $relation);
         $stub = $stub->whenPivotLoaded(stdClass::class);
 
@@ -255,13 +256,39 @@ class RelationTest extends TestCase
         self::assertNull($computed->source);
     }
 
+    public function test_a_relationship_read_from_a_relation_loads_it_unless_told_otherwise(): void
+    {
+        self::assertSame(['author'], (new RelationOne(UserResource::class, null))->definition('author')->load->paths);
+        self::assertSame(['user'], (new RelationOne(UserResource::class, 'user'))->definition('author')->load->paths);
+        self::assertTrue((new RelationOne(UserResource::class, null))->withLoad(false)->definition('author')->load->isEmpty());
+    }
+
+    public function test_a_relationship_read_by_a_closure_loads_nothing_unless_told(): void
+    {
+        $relation = new RelationOne(UserResource::class, static fn() => null);
+
+        self::assertTrue($relation->definition('author')->load->isEmpty());
+        self::assertSame(['author'], $relation->withLoad(true)->definition('author')->load->paths);
+    }
+
+    public function test_when_loaded_renders_the_linkage_only_when_loaded_unless_only_when_included(): void
+    {
+        $relation = new RelationOne(UserResource::class, null);
+
+        self::assertSame(Linkage::Loaded, $relation->whenLoaded()->definition('author')->linkage);
+        self::assertSame(Linkage::Included, $relation->whenIncluded()->whenLoaded()->definition('author')->linkage);
+        self::assertSame(Linkage::Included, $relation->whenLoaded()->whenIncluded()->definition('author')->linkage);
+        self::assertSame(Linkage::Always, $relation->whenIncluded(false)->whenIncluded()->definition('author')->linkage);
+        self::assertSame(Linkage::Always, $relation->linkage(Linkage::Always)->definition('author')->linkage);
+    }
+
     /**
      * @return iterable<string, array{bool|string|array<array-key, mixed>, list<string>, list<string>}>
      */
     public static function loads(): iterable
     {
         yield 'none' => [false, [], []];
-        yield 'own relation' => [true, ['author'], []];
+        yield 'own relation' => [true, ['user'], []];
         yield 'path' => ['author.posts', ['author.posts'], []];
         yield 'list' => [['author', 'author.posts'], ['author', 'author.posts'], []];
         yield 'constrained' => [['author' => static fn($query) => $query, 'author.posts'], ['author', 'author.posts'], ['author']];
@@ -275,13 +302,13 @@ class RelationTest extends TestCase
     #[DataProvider('loads')]
     public function test_the_definition_records_the_eager_loads_without_closures(bool|string|array $load, array $paths, array $constrained): void
     {
-        $definition = (new RelationOne(UserResource::class, null))->withLoad($load)->definition('author');
+        $definition = (new RelationOne(UserResource::class, 'user'))->withLoad($load)->definition('author');
 
         self::assertSame($paths, $definition->load->paths);
         self::assertSame($constrained, $definition->load->constrained);
     }
 
-    public function test_the_definition_records_links_meta_and_when_included(): void
+    public function test_the_definition_records_links_meta_and_linkage(): void
     {
         $plain = (new RelationOne(UserResource::class, null))->definition('author');
         $full = (new RelationOne(UserResource::class, null))
@@ -294,11 +321,11 @@ class RelationTest extends TestCase
         self::assertFalse($plain->hasLinks);
         self::assertFalse($plain->hasMeta);
         self::assertFalse($plain->hasIdentifierMeta);
-        self::assertNull($plain->whenIncluded);
+        self::assertNull($plain->linkage);
         self::assertTrue($full->hasLinks);
         self::assertTrue($full->hasMeta);
         self::assertTrue($full->hasIdentifierMeta);
-        self::assertFalse($full->whenIncluded);
+        self::assertSame(Linkage::Always, $full->linkage);
     }
 
     public function test_the_definition_records_conditions(): void

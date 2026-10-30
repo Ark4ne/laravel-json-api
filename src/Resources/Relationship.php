@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Resources;
 
+use Ark4ne\JsonApi\Configuration\Linkage;
 use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Definition\Cardinality;
 use Ark4ne\JsonApi\Definition\DescribesRelationship;
@@ -35,7 +36,12 @@ class Relationship implements DescribesRelationship, RelationshipSource
 
     protected bool $asCollection = false;
 
-    protected ?bool $whenIncluded = null;
+    protected ?Linkage $linkage = null;
+
+    /**
+     * @var (Closure(): bool)|null Whether the relation is loaded, for `Linkage::Loaded`; `null` when unknown
+     */
+    protected ?Closure $loaded = null;
 
     protected ?Filters $filters = null;
 
@@ -124,18 +130,59 @@ class Relationship implements DescribesRelationship, RelationshipSource
     }
 
     /**
-     * Only load value if relation is included
+     * Renders the linkage only when the relationship is included: the value is not even read otherwise
+     * (`Linkage::Included`). `false` renders it always (`Linkage::Always`); without argument, a relationship set to
+     * always keeps it.
      *
-     * @param bool|null $whenIncluded
      * @return $this
      */
     public function whenIncluded(?bool $whenIncluded = null): static
     {
-        if ($whenIncluded === null) {
-            $this->whenIncluded ??= true;
-        } else {
-            $this->whenIncluded = $whenIncluded;
-        }
+        return $this->linkage(match ($whenIncluded) {
+            true => Linkage::Included,
+            false => Linkage::Always,
+            null => $this->linkage === Linkage::Always ? Linkage::Always : Linkage::Included,
+        });
+    }
+
+    /**
+     * When the relationship renders its linkage while it is not included, instead of `relationship.linkage`.
+     *
+     * @return $this
+     */
+    public function linkage(Linkage $linkage): static
+    {
+        $this->linkage = $linkage;
+
+        return $this;
+    }
+
+    /**
+     * The linkage of the relationship when it does not set its own.
+     *
+     * @return $this
+     *
+     * @internal Applied by the resource (`$autoWhenIncluded`).
+     */
+    public function defaultLinkage(Linkage $linkage): static
+    {
+        $this->linkage ??= $linkage;
+
+        return $this;
+    }
+
+    /**
+     * Tells whether the relation is loaded, for `Linkage::Loaded`.
+     *
+     * @param Closure(): bool $loaded
+     *
+     * @return $this
+     *
+     * @internal Set by the resource, which knows its model.
+     */
+    public function loadedWhen(Closure $loaded): static
+    {
+        $this->loaded = $loaded;
 
         return $this;
     }
@@ -163,8 +210,8 @@ class Relationship implements DescribesRelationship, RelationshipSource
         return ($this->asCollection
             ? RelationshipDefinition::many($name, $related)
             : RelationshipDefinition::one($name, $related))
-            ->load(LoadDefinition::fromDeclaration($this->load, $name))
-            ->whenIncluded($this->whenIncluded)
+            ->load(LoadDefinition::fromDeclaration($this->load ?? false, $name))
+            ->linkage($this->linkage)
             ->hasLinks($this->links !== null)
             ->hasMeta($this->meta !== null)
             ->hasIdentifierMeta($this->identifierMeta !== null)
@@ -176,7 +223,7 @@ class Relationship implements DescribesRelationship, RelationshipSource
      */
     public function loadConstraints(): array
     {
-        return LoadDefinition::constraintsOf($this->load);
+        return LoadDefinition::constraintsOf($this->load ?? false);
     }
 
     /**
@@ -204,15 +251,16 @@ class Relationship implements DescribesRelationship, RelationshipSource
     }
 
     /**
-     * The related resources of one resource: none when the relationship is resolved only when included and is not, or
-     * when its condition fails (`MissingValue`); links and meta are resolved in every case, with the related resource
-     * (or collection) as argument, the meta of the identifiers with each related resource, only when there is data.
+     * The related resources of one resource: none when its linkage is not rendered while it is not included (its
+     * linkage, otherwise `relationship.linkage`), or when its condition fails (`MissingValue`); links and meta are
+     * resolved in every case, with the related resource (or collection) as argument, the meta of the identifiers with
+     * each related resource, only when there is data.
      *
      * @internal Read by the renderer.
      */
     public function resolve(JsonApiContext $context, bool $included): ResolvedRelationship
     {
-        $value = $this->whenIncluded && !$included ? new MissingValue() : \value($this->value);
+        $value = $included || $this->rendersLinkage($context) ? \value($this->value) : new MissingValue();
 
         if ($this->filters !== null && !Values::isMissing($value)) {
             $value = $this->filters->apply($context->request, $value);
@@ -252,6 +300,15 @@ class Relationship implements DescribesRelationship, RelationshipSource
         return $resource->renderedModel() !== null
             ? ResolvedRelationship::toOne($resource, $links, $meta, $this->identifierMetaOf($resource))
             : ResolvedRelationship::toOne(null, $links, $meta);
+    }
+
+    private function rendersLinkage(JsonApiContext $context): bool
+    {
+        return match ($this->linkage ?? $context->configuration->linkage) {
+            Linkage::Always => true,
+            Linkage::Loaded => $this->loaded === null || ($this->loaded)(),
+            Linkage::Included => false,
+        };
     }
 
     /**

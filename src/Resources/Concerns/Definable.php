@@ -79,7 +79,7 @@ trait Definable
      */
     public function describeRelationships(Request $request): iterable
     {
-        return $this->toRelationships($request);
+        return $this->autoWhenIncluded($this->toRelationships($request));
     }
 
     /**

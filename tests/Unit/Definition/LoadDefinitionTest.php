@@ -9,6 +9,14 @@ use PHPUnit\Framework\TestCase;
 
 final class LoadDefinitionTest extends TestCase
 {
+    public function test_the_roots_are_the_paths_without_parent_among_the_paths(): void
+    {
+        $load = LoadDefinition::of(['comments.user', 'comments', 'post.author', 'commentsCount']);
+
+        self::assertSame(['comments', 'post.author', 'commentsCount'], $load->roots());
+        self::assertSame([], LoadDefinition::none()->roots());
+    }
+
     public function test_none_loads_nothing(): void
     {
         self::assertTrue(LoadDefinition::none()->isEmpty());

@@ -50,6 +50,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   link itself such as a pivot. The `meta()` of the relationship object is unchanged. `RelationshipDefinition` exposes
   `hasIdentifierMeta`.
 - `Exceptions\RenderingException`, thrown when a member that must be a JSON object would be rendered as a list.
+- **Loading** (`Loading\LoadPlanner`, `LoadPlan`): before rendering, the relations a document renders are loaded in
+  batch, computed from the definitions, the include and the sparse fieldsets: one `loadMissing()` per relation, per
+  model class and per include level, on the whole collection. The linkage of a relationship that is not included no
+  longer runs one query per resource.
+- **`relationship.linkage`**: `always` (default, 1.x), `loaded` or `included`, for when a relationship that is not
+  included renders its `data`. `->linkage(Linkage::Loaded)` sets it on one relationship; `RelationshipDefinition`
+  exposes it as `linkage`.
+  Two relationships loading the same relation path with different `withLoad()` constraints share the first one, with
+  a `load-conflict` diagnostic: a relation is loaded once per model.
 
 ### Changed
 
@@ -105,6 +114,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `whenInFields()` only marks a value: the renderer decides from the sparse fieldset. `Value::valueFor()` returns the
   value whatever the request.
 - Collections and other arrayables returned by a hook are rendered as plain arrays.
+- **Breaking:** `relationship.when-included` is replaced by `relationship.linkage` (`'included'` for `true`); the old key
+  throws an `InvalidConfigurationException`. `$autoWhenIncluded` on a resource is still read (`true`: `whenIncluded()`
+  on every relationship, `false`: `always` for those without their own linkage), and is now recorded in its
+  definition.
+- **Breaking:** a relationship read from a relation (`$this->one()`, `$this->many()` without closure) loads it without
+  `withLoad()`; `withLoad(false)` disables it. `withLoad(true)` loads the relation the relationship is read from
+  (`one(PostResource::class, 'post')` loads `post`), no longer one named after the relationship.
+- **Breaking:** a `withLoad()` constraint applies to the linkage too, not only when the relationship is included: the
+  linkage and `included` list the same resources.
+- **Breaking:** a relationship with `whenLoaded()` is not loaded for its linkage, but is loaded when included (1.x left
+  it out unless the application had loaded it).
+- **Breaking:** `RelationshipDefinition::$whenIncluded` is replaced by `$linkage` (`Linkage|null`, `null` for the
+  configured one), which the compilation no longer fills from the configuration.
 
 ### Removed
 
@@ -126,3 +148,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **Breaking:** `float()` is `protected`, like the other value helpers.
 - The `Includes` and `Fields` rules parse the request as the rendering does: spaces and empty segments are ignored,
   a fieldset that is not a string fails.
+- **Breaking:** `ConditionallyLoadsAttributes::whenIncluded($request, $type, $value)` is renamed
+  `whenInIncludes($request, $relationship, $value)`: `whenIncluded()` is only the one of the relationships.
+- `JsonApiResource::requestedRelationshipsLoad()` (internal), replaced by the `LoadPlanner`.

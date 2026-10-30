@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Test\Unit\Definition;
 
+use Ark4ne\JsonApi\Configuration\Linkage;
 use Ark4ne\JsonApi\Definition\AttributeDefinition;
 use Ark4ne\JsonApi\Definition\Cardinality;
 use Ark4ne\JsonApi\Definition\LoadDefinition;
@@ -35,7 +36,7 @@ final class ResourceDefinitionTest extends TestCase
                 RelationshipDefinition::one('author', UserResource::class)->load(LoadDefinition::of(['author'])),
                 RelationshipDefinition::many('comments', CommentResource::class)
                     ->load(LoadDefinition::of(['comments', 'comments.user'], ['comments']))
-                    ->whenIncluded(true)
+                    ->linkage(Linkage::Included)
                     ->hasLinks()
                     ->hasMeta(),
             )
