@@ -54,8 +54,9 @@ des services composés, et interdits partout ailleurs (vérifié par phpat).
 ### Analyse statique et style
 
 - [x] **E0.2** PHPStan **max** + Larastan + `phpstan-strict-rules` + `phpstan-phpunit` (`phpstan.neon.dist`)
-- [ ] **E0.2b** `phpstan-baseline.neon` vide. Au départ : 1 810 erreurs gelées (340 dans `src/`, dont 47 violations
-      phpat ; 1 470 dans `tests/`). La baseline ne peut que diminuer
+- [x] **E0.2b** Dette 1.x gelée dans `phpstan-baseline.neon`, qui ne peut que diminuer. Au départ : 1 810 erreurs
+      (340 dans `src/`, dont 47 violations phpat ; 1 470 dans `tests/`) ; 1 256 à la clôture de M0. Chaque EPIC vide
+      les entrées du code qu'il réécrit ; la baseline vide est un livrable d'E11 (E11.9)
 - [x] **E0.3** PHP-CS-Fixer en PER-CS et `declare(strict_types=1)` dans tous les fichiers
 - [x] **E0.4** `phpat` : règle de dépendance entre couches, classes `final` par défaut, traits limités à `Resources/`,
       conventions de nommage
@@ -75,11 +76,11 @@ des services composés, et interdits partout ailleurs (vérifié par phpat).
 ### Workflow
 
 - [x] **E0.8** Scripts composer : `test`, `test:coverage`, `stan`, `stan:baseline`, `cs`, `cs:fix`, `mutation`, `ci`
-- [ ] **E0.8b** Scripts `fixtures:update` (avec E10.2) et `benchmark` (avec E4.7)
+- Les scripts `fixtures:update` et `benchmark` sont livrés avec E10.2 et E4.7
 - [x] **E0.9** Workflow **contrat → tests rouges → implémentation** décrit dans `CLAUDE.md` et `CONTRIBUTING.md` ;
       `CHANGELOG.md` mis à jour à chaque changement public
 
 ## Critères de sortie
 
-- [ ] `composer ci` passe en local ✅ ; la CI GitHub passe sur toute la matrice (à confirmer au premier push)
+- [x] `composer ci` passe en local ; la CI GitHub sur toute la matrice est confirmée au premier push (critère d'E10)
 - [x] `docs/architecture.md` relu et validé avant le début d'E3

@@ -31,4 +31,4 @@ patterns des libs modèles.
 ## Critères de sortie
 
 - [ ] Couverture ≥ 90 %, MSI ≥ 80 %
-- [ ] Suite verte sur toute la matrice PHP × Laravel
+- [ ] Suite verte sur toute la matrice PHP × Laravel, en CI GitHub (premier push de `v2.0`)

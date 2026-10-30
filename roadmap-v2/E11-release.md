@@ -32,6 +32,7 @@ d'agent et site de documentation à jour.
 
 ### Release
 
+- [ ] **E11.9** `phpstan-baseline.neon` vide (vidée au fil des EPIC, E0.2b)
 - [ ] **E11.7** Supprimer le dossier `roadmap-v2/` (suivi et outils temporaires) avant le tag
 - [ ] **E11.8** Tag `v2.0.0` et release notes
 

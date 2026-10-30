@@ -14,11 +14,11 @@ dépendance vers eux.
 ## Progression
 
 <!-- progress:start -->
-**Avancement global : `██░░░░░░░░` 22 % (36 / 159 livrables)**
+**Avancement global : `██░░░░░░░░` 23 % (38 / 159 livrables)**
 
 | EPIC | Jalon | Statut | Avancement | Livrables |
 | --- | --- | --- | --- | --- |
-| [E0 — Socle, outillage et conventions](E00-socle.md) | M0 | En cours | `████████░░` 84 % | 16 / 19 |
+| [E0 — Socle, outillage et conventions](E00-socle.md) | M0 | Terminé | `██████████` 100 % | 18 / 18 |
 | [E1 — Conformité à la spec JSON:API 1.1](E01-conformite-spec.md) | M2 | À faire | `░░░░░░░░░░` 0 % | 0 / 16 |
 | [E2 — Corrections de bugs et nettoyage de la dette](E02-bugs-dette.md) | M2 | À faire | `░░░░░░░░░░` 0 % | 0 / 18 |
 | [E3 — Modèle de définition et évolution du FakeModel](E03-definition.md) | M1 | En cours | `████████░░` 89 % | 17 / 19 |
@@ -29,7 +29,7 @@ dépendance vers eux.
 | [E8 — Positionnement face au JSON:API natif de Laravel](E08-natif-laravel.md) | M5 | En cours | `█░░░░░░░░░` 14 % | 1 / 7 |
 | [E9 — Contrat public pour `laravel-openapi-generator`](E09-openapi-generator.md) | M5 | À faire | `░░░░░░░░░░` 0 % | 0 / 7 |
 | [E10 — Stratégie de tests et qualité](E10-tests.md) | M0 → M5 | En cours | `█░░░░░░░░░` 10 % | 1 / 10 |
-| [E11 — Documentation, migration et release](E11-release.md) | M5 | À faire | `░░░░░░░░░░` 0 % | 0 / 11 |
+| [E11 — Documentation, migration et release](E11-release.md) | M5 | À faire | `░░░░░░░░░░` 0 % | 0 / 12 |
 <!-- progress:end -->
 
 ## Mettre à jour la progression
@@ -101,3 +101,4 @@ La release 1.10 de dépréciation (E11.1) se prépare dès que les ruptures sont
 | 2026-10-30 | Dette 1.x gelée dans `phpstan-baseline.neon` (PHPStan max, phpat, disallowed calls) : la baseline ne peut que diminuer et doit être vide avant 2.0.0 (E0.2b) |
 | 2026-10-30 | Infection installé globalement (comme le générateur), `phpUnit.customPath` explicite ; MSI de départ 83,33 % : job bloquant sur `master`, informatif ailleurs (E0.6b) |
 | 2026-10-30 | `docs/architecture.md` validé : il sert de contrat pour la suite (M1 et au-delà) |
+| 2026-10-30 | M0 clos : la baseline (1 256 erreurs) est vidée par chaque EPIC sur le code qu'il réécrit, vide avant le tag (E11.9) ; `fixtures:update` et `benchmark` livrés avec E10.2 et E4.7 ; CI GitHub confirmée au premier push (E10) |
