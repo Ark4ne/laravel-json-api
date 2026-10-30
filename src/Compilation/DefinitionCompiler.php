@@ -122,6 +122,17 @@ final readonly class DefinitionCompiler
     }
 
     /**
+     * The type a resource declares without `toType()`: that of `#[JsonApiType]`, otherwise that of the naming
+     * convention.
+     *
+     * @param class-string<DefinitionSource> $class
+     */
+    public function declaredType(string $class): string
+    {
+        return $class::declaredType() ?? $this->configuration->typeNaming->type($class);
+    }
+
+    /**
      * @return class-string<DefinitionSource>
      *
      * @throws DefinitionException
@@ -158,7 +169,7 @@ final readonly class DefinitionCompiler
 
         try {
             $source = $class::newDefinitionSource($probe);
-            $type = $source->describeType($request);
+            $type = $source->describeType($request, $this->declaredType($class));
         } catch (Throwable $e) {
             throw DefinitionException::cannotCompile($class, $e);
         }

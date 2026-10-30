@@ -6,6 +6,7 @@ namespace Ark4ne\JsonApi\Resources\Concerns;
 
 use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Definition\ResourceDefinition;
+use Ark4ne\JsonApi\Resources\Attributes\JsonApiType;
 use Ark4ne\JsonApi\Support\Probe;
 use Illuminate\Http\Request;
 use ReflectionClass;
@@ -57,8 +58,21 @@ trait Definable
     /**
      * @internal
      */
-    public function describeType(Request $request): string
+    public static function declaredType(): ?string
     {
+        $attribute = (new ReflectionClass(static::class))->getAttributes(JsonApiType::class)[0] ?? null;
+
+        return $attribute?->newInstance()->type;
+    }
+
+    /**
+     * @internal
+     */
+    public function describeType(Request $request, string $declared): string
+    {
+        // Read by the default `toType()`: the compiler may have a configuration of its own.
+        $this->declaredType = $declared;
+
         return $this->toType($request);
     }
 

@@ -25,6 +25,9 @@ final class Definitions
     /** @var array<class-string<DefinitionSource>, array<string, array<string, Closure>>> */
     private static array $constraints = [];
 
+    /** @var array<class-string<DefinitionSource>, string> */
+    private static array $declaredTypes = [];
+
     private static ?Configuration $configuration = null;
 
     private static ?CompiledDefinitions $compiled = null;
@@ -109,6 +112,19 @@ final class Definitions
     }
 
     /**
+     * The type a resource declares without `toType()` (`#[JsonApiType]`, otherwise the naming convention): what its
+     * default `toType()` returns.
+     *
+     * @internal Read by `JsonApiResource::toType()`.
+     *
+     * @param class-string<DefinitionSource> $class
+     */
+    public static function declaredType(string $class): string
+    {
+        return self::$declaredTypes[$class] ??= self::compiler()->declaredType($class);
+    }
+
+    /**
      * Every definition in the cache, by class.
      *
      * @return array<class-string<DefinitionSource>, ResourceDefinition>
@@ -126,6 +142,7 @@ final class Definitions
     {
         self::$definitions = [];
         self::$constraints = [];
+        self::$declaredTypes = [];
         self::$compiledRead = false;
     }
 

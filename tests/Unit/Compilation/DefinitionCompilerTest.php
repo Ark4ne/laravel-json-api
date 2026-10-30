@@ -22,11 +22,15 @@ use stdClass;
 use Test\app\Enums\State;
 use Test\app\Http\Resources\CommentResource;
 use Test\app\Http\Resources\UserResource;
+use Test\Unit\Compilation\Fixtures\AttributeTypedResource;
+use Test\Unit\Compilation\Fixtures\BlogPostResource;
 use Test\Unit\Compilation\Fixtures\EagerResource;
 use Test\Unit\Compilation\Fixtures\FailingHookResource;
 use Test\Unit\Compilation\Fixtures\InvalidMemberResource;
 use Test\Unit\Compilation\Fixtures\MergeWhenResource;
+use Test\Unit\Compilation\Fixtures\OverriddenTypeResource;
 use Test\Unit\Compilation\Fixtures\PredefinedResource;
+use Test\Unit\Compilation\Fixtures\PrefixedTypeNaming;
 use Test\Unit\Compilation\Fixtures\ReservedNameResource;
 use Test\Unit\Compilation\Fixtures\StructResource;
 use Test\Unit\Compilation\Fixtures\TypedResource;
@@ -54,6 +58,29 @@ final class DefinitionCompilerTest extends TestCase
     private function codes(ResourceDefinition $definition): array
     {
         return array_map(static fn(Diagnostic $diagnostic): string => $diagnostic->code, $definition->diagnostics);
+    }
+
+    public function test_a_resource_without_type_gets_that_of_the_naming_convention(): void
+    {
+        self::assertSame('blog-post', $this->compile(BlogPostResource::class)->type);
+        self::assertSame(
+            'blog_posts',
+            $this->compile(BlogPostResource::class, Configuration::fromArray(['type' => ['naming' => 'snake-plural']]))->type,
+        );
+        self::assertSame(
+            'app.blogpostresource',
+            $this->compile(BlogPostResource::class, Configuration::fromArray(['type' => ['naming' => PrefixedTypeNaming::class]]))->type,
+        );
+    }
+
+    public function test_the_type_attribute_wins_over_the_naming_convention(): void
+    {
+        self::assertSame('articles', $this->compile(AttributeTypedResource::class)->type);
+    }
+
+    public function test_the_type_hook_wins_over_the_type_attribute(): void
+    {
+        self::assertSame('stories', $this->compile(OverriddenTypeResource::class)->type);
     }
 
     public function test_the_type_is_read_from_the_type_hook(): void

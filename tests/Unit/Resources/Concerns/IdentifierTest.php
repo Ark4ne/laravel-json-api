@@ -4,73 +4,62 @@ declare(strict_types=1);
 
 namespace Test\Unit\Resources\Concerns;
 
-use Ark4ne\JsonApi\Resources\Concerns\Identifier;
+use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Str;
-use stdClass;
 use Test\Support\Reflect;
+use Test\Support\Stub;
 use Test\TestCase;
 
 class IdentifierTest extends TestCase
 {
-    public function testToType(): void
+    public function test_the_default_type_is_the_declared_one(): void
     {
-        $stub = new class (collect()) extends JsonResource {
-            use Identifier;
-        };
+        $stub = new class (null) extends JsonApiResource {};
 
-        self::assertEquals('anonymous', Reflect::invoke($stub, 'toType', new Request()));
+        self::assertSame('anonymous', Reflect::invoke($stub, 'toType', new Request()));
+    }
 
-        $stub = new class (new JsonResource(null)) extends JsonResource {
-            use Identifier;
-
+    public function test_the_type_hook_gives_the_type(): void
+    {
+        $stub = new class (null) extends JsonApiResource {
             protected function toType(Request $request): string
             {
                 return 'my-type';
             }
         };
 
-        self::assertEquals(
-            "my-type",
-            Reflect::invoke($stub, 'toType', new Request()),
-        );
+        self::assertSame('my-type', Reflect::invoke($stub, 'toType', new Request()));
     }
 
-    public function testToIdentifier(): void
+    public function test_the_default_identifier_is_the_key_of_the_model(): void
+    {
+        $stub = new class (Stub::model(['id' => 7])) extends JsonApiResource {};
+
+        self::assertSame(7, Reflect::invoke($stub, 'toIdentifier', new Request()));
+    }
+
+    public function test_the_default_identifier_of_an_object_is_its_id(): void
     {
         $id = uniqid('id', true);
 
-        $object = new class ($id) extends stdClass {
-            public $foo = 'bar';
-            public $baz = 'tar';
+        $stub = new class ((object) ['id' => $id]) extends JsonApiResource {};
 
-            public function __construct(public $id) {}
+        self::assertSame($id, Reflect::invoke($stub, 'toIdentifier', new Request()));
+    }
 
-            public function toArray()
+    public function test_the_identifier_hook_gives_the_identifier(): void
+    {
+        $id = uniqid('id', true);
+
+        /** @extends JsonApiResource<object{id: string}> */
+        $stub = new class ((object) ['id' => $id]) extends JsonApiResource {
+            protected function toIdentifier(Request $request): string
             {
-                return (array) $this;
+                return Str::afterLast($this->resource->id, '.');
             }
         };
 
-        $stub = new class ($object) extends JsonResource {
-            use Identifier;
-        };
-
-        self::assertEquals($id, Reflect::invoke($stub, 'toIdentifier', new Request()));
-
-        $stub = new class ($object) extends JsonResource {
-            use Identifier;
-
-            protected function toIdentifier(Request $request): int|string
-            {
-                return Str::afterLast($this->resource->id, '-');
-            }
-        };
-
-        self::assertEquals(
-            Str::afterLast($id, '-'),
-            Reflect::invoke($stub, 'toIdentifier', new Request()),
-        );
+        self::assertSame(Str::afterLast($id, '.'), Reflect::invoke($stub, 'toIdentifier', new Request()));
     }
 }

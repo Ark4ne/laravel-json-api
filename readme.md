@@ -175,7 +175,24 @@ protected function toType(Request $request): string
 }
 ```
 
-Default returns model class in kebab case : `App\Models\MyPost` => `my-post`
+Without `toType()` (or calling `parent::toType()`), the type is that of the `#[JsonApiType]` attribute:
+
+```php
+use Ark4ne\JsonApi\Resources\Attributes\JsonApiType;
+
+#[JsonApiType('posts')]
+class PostResource extends JsonApiResource {}
+```
+
+Otherwise it follows the naming convention of `config/jsonapi.php` (`type.naming`), from the name of the resource class
+without its `Resource` suffix (`BlogPostResource`):
+
+| `type.naming` | Type |
+| --- | --- |
+| `kebab-singular` (default) | `blog-post` |
+| `kebab-plural` | `blog-posts` |
+| `snake-plural` | `blog_posts` |
+| a class implementing `Ark4ne\JsonApi\Configuration\TypeNaming` | its own |
 
 ### toIdentifier
 _**@see** [{json:api} resource-identifier](https://jsonapi.org/format/#document-resource-object-identification)_

@@ -33,6 +33,7 @@ final readonly class Configuration
      * @param list<class-string> $renderingStages Stages run after those of the package (`rendering.stages`)
      * @param JsonApiObject|null $jsonapi The `jsonapi` member of the documents, `null` for none (`document.jsonapi`)
      * @param positive-int|null $maxIncludeDepth Deepest include path accepted, `null` for no limit (`include.max-depth`)
+     * @param TypeNaming $typeNaming The type of a resource that declares none (`type.naming`)
      */
     private function __construct(
         public bool $nullable,
@@ -46,6 +47,7 @@ final readonly class Configuration
         public array $renderingStages,
         public ?JsonApiObject $jsonapi,
         public ?int $maxIncludeDepth,
+        public TypeNaming $typeNaming,
     ) {}
 
     /**
@@ -65,6 +67,7 @@ final readonly class Configuration
             renderingStages: [],
             jsonapi: new JsonApiObject(),
             maxIncludeDepth: null,
+            typeNaming: TypeConvention::KebabSingular,
         );
     }
 
@@ -91,6 +94,7 @@ final readonly class Configuration
             renderingStages: self::stages($config, $defaults->renderingStages),
             jsonapi: self::jsonapi($config),
             maxIncludeDepth: self::maxIncludeDepth($config),
+            typeNaming: self::typeNaming($config, $defaults->typeNaming),
         );
     }
 
@@ -295,6 +299,32 @@ final readonly class Configuration
 
         /** @var list<string> $value */
         return $value;
+    }
+
+    /**
+     * A convention of the package by its name, or the class of a convention of the application.
+     *
+     * @param array<array-key, mixed> $config
+     */
+    private static function typeNaming(array $config, TypeNaming $default): TypeNaming
+    {
+        $value = self::read($config, 'type.naming');
+
+        return match (true) {
+            $value === null => $default,
+            !is_string($value) => throw self::invalidTypeNaming(),
+            TypeConvention::tryFrom($value) !== null => TypeConvention::from($value),
+            is_subclass_of($value, TypeNaming::class) => new $value(),
+            default => throw self::invalidTypeNaming(),
+        };
+    }
+
+    private static function invalidTypeNaming(): InvalidConfigurationException
+    {
+        return InvalidConfigurationException::forKey(
+            'type.naming',
+            "'kebab-singular', 'kebab-plural', 'snake-plural' or a class implementing " . TypeNaming::class,
+        );
     }
 
     /**

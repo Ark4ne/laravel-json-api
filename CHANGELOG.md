@@ -72,6 +72,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `RenderingException`. The definition exposes the map (`morphs`, `isPolymorphic()`), the validation rules accept an
   include or a fieldset one of the related resources has (path by path), and the related models are loaded resource
   by resource.
+- **Declarative type**: `#[JsonApiType('posts')]` on a resource gives its type without overriding `toType()`, whose
+  default implementation returns it (an override can call `parent::toType()`).
+- **Type naming convention** `type.naming`: the type of a resource that declares none, from its class name without the
+  `Resource` suffix: `kebab-singular` (default, `blog-post`), `kebab-plural` (`blog-posts`), `snake-plural`
+  (`blog_posts`), or a class implementing `Configuration\TypeNaming`.
 
 ### Changed
 

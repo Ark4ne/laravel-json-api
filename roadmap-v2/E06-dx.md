@@ -24,10 +24,13 @@
 
 ### Type et identité
 
-- [ ] **E6.2** Type déclaratif sans surcharger `toType()` : `#[JsonApiType('posts')]` ou `protected static string
-      $type`. `toType()` reste possible pour un type dynamique
-- [ ] **E6.3** Convention de type par défaut configurable : `kebab-singular` (actuel, **par défaut**),
-      `kebab-plural`, `snake-plural` (natif Laravel) ou callback
+- [x] **E6.2** Type déclaratif sans surcharger `toType()` : `#[JsonApiType('posts')]` ou `protected static string
+      $type`. `toType()` reste possible pour un type dynamique — attribut seul (`Resources\Attributes\JsonApiType`),
+      calculé une fois par classe (`Definitions::declaredType()`, avec la convention) ; le `toType()` par défaut le
+      renvoie, une surcharge peut appeler `parent::toType()`
+- [x] **E6.3** Convention de type par défaut configurable : `kebab-singular` (actuel, **par défaut**),
+      `kebab-plural`, `snake-plural` (natif Laravel) ou callback — `type.naming` ; le callback est une classe
+      `Configuration\TypeNaming` (une closure casserait `config:cache`), les conventions sont l'enum `TypeConvention`
 
 ### Nommage
 

@@ -85,6 +85,26 @@ return [
         'when-has' => false,
     ],
 
+    'type' => [
+        /*
+        |--------------------------------------------------------------------------
+        | Naming
+        |--------------------------------------------------------------------------
+        |
+        | The type of a resource that declares none (`toType()` or
+        | `#[JsonApiType('posts')]`), from the name of its class without the
+        | `Resource` suffix (`BlogPostResource`).
+        |
+        | 'kebab-singular' => 'blog-post'
+        | 'kebab-plural'   => 'blog-posts'
+        | 'snake-plural'   => 'blog_posts' (as Laravel's JSON:API resources)
+        | A class implementing `Ark4ne\JsonApi\Configuration\TypeNaming`,
+        | built without argument.
+        |
+        */
+        'naming' => 'kebab-singular',
+    ],
+
     'relationship' => [
         /*
         |--------------------------------------------------------------------------

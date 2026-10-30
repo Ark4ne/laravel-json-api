@@ -12,6 +12,8 @@ use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Closure;
 use PHPUnit\Framework\TestCase;
 use stdClass;
+use Test\Unit\Compilation\Fixtures\AttributeTypedResource;
+use Test\Unit\Compilation\Fixtures\BlogPostResource;
 use Test\Unit\Compilation\Fixtures\EagerResource;
 use Test\Unit\Compilation\Fixtures\TypedResource;
 
@@ -149,5 +151,15 @@ final class DefinitionsTest extends TestCase
 
         self::assertInstanceOf(Closure::class, $constraints['comments']['comments'] ?? null);
         self::assertSame([], Definitions::loadConstraints(EagerResource::class));
+    }
+
+    public function test_the_declared_type_follows_the_configuration_set_at_boot(): void
+    {
+        self::assertSame('blog-post', Definitions::declaredType(BlogPostResource::class));
+        self::assertSame('articles', Definitions::declaredType(AttributeTypedResource::class));
+
+        Definitions::configure(Configuration::fromArray(['type' => ['naming' => 'kebab-plural']]));
+
+        self::assertSame('blog-posts', Definitions::declaredType(BlogPostResource::class));
     }
 }

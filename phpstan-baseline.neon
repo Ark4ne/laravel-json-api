@@ -1875,60 +1875,12 @@ parameters:
 		-
 			message: '#^Cannot access property \$id on mixed\.$#'
 			identifier: property.nonObject
-			count: 4
-			path: tests/Unit/Resources/Concerns/IdentifierTest.php
-
-		-
-			message: '#^Method Illuminate\\Http\\Resources\\Json\\JsonResource@anonymous/tests/Unit/Resources/Concerns/IdentifierTest\.php\:19\:\:toIdentifier\(\) should return int\|string but returns mixed\.$#'
-			identifier: return.type
-			count: 2
-			path: tests/Unit/Resources/Concerns/IdentifierTest.php
-
-		-
-			message: '#^Method Illuminate\\Http\\Resources\\Json\\JsonResource@anonymous/tests/Unit/Resources/Concerns/IdentifierTest\.php\:25\:\:toIdentifier\(\) should return int\|string but returns mixed\.$#'
-			identifier: return.type
-			count: 2
-			path: tests/Unit/Resources/Concerns/IdentifierTest.php
-
-		-
-			message: '#^Method Illuminate\\Http\\Resources\\Json\\JsonResource@anonymous/tests/Unit/Resources/Concerns/IdentifierTest\.php\:56\:\:toIdentifier\(\) should return int\|string but returns mixed\.$#'
-			identifier: return.type
-			count: 2
-			path: tests/Unit/Resources/Concerns/IdentifierTest.php
-
-		-
-			message: '#^Method Illuminate\\Http\\Resources\\Json\\JsonResource@anonymous/tests/Unit/Resources/Concerns/IdentifierTest\.php\:62\:\:toIdentifier\(\) never returns int so it can be removed from the return type\.$#'
-			identifier: return.unusedType
-			count: 1
-			path: tests/Unit/Resources/Concerns/IdentifierTest.php
-
-		-
-			message: '#^Method stdClass@anonymous/tests/Unit/Resources/Concerns/IdentifierTest\.php\:44\:\:__construct\(\) has parameter \$id with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: tests/Unit/Resources/Concerns/IdentifierTest.php
-
-		-
-			message: '#^Method stdClass@anonymous/tests/Unit/Resources/Concerns/IdentifierTest\.php\:44\:\:toArray\(\) has no return type specified\.$#'
-			identifier: missingType.return
 			count: 1
 			path: tests/Unit/Resources/Concerns/IdentifierTest.php
 
 		-
 			message: '#^Parameter \#1 \$subject of static method Illuminate\\Support\\Str\:\:afterLast\(\) expects string, mixed given\.$#'
 			identifier: argument.type
-			count: 1
-			path: tests/Unit/Resources/Concerns/IdentifierTest.php
-
-		-
-			message: '#^Property stdClass@anonymous/tests/Unit/Resources/Concerns/IdentifierTest\.php\:44\:\:\$baz has no type specified\.$#'
-			identifier: missingType.property
-			count: 1
-			path: tests/Unit/Resources/Concerns/IdentifierTest.php
-
-		-
-			message: '#^Property stdClass@anonymous/tests/Unit/Resources/Concerns/IdentifierTest\.php\:44\:\:\$foo has no type specified\.$#'
-			identifier: missingType.property
 			count: 1
 			path: tests/Unit/Resources/Concerns/IdentifierTest.php
 

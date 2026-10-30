@@ -288,7 +288,7 @@ façades (`$this->string()`, `$this->one()`, `$this->applyWhen()`) that delegate
 
 | Hook | Role |
 | --- | --- |
-| `toType()` or `#[JsonApiType('posts')]` | Resource type; default from the configured naming convention (`kebab-singular`) |
+| `toType()` or `#[JsonApiType('posts')]` | Resource type; the default `toType()` returns the declared one: `#[JsonApiType]`, otherwise the configured naming convention (`type.naming`, `kebab-singular`), computed once per class (`Definitions::declaredType()`) |
 | `toIdentifier()` (alias `toId()`) | Resource id; default from the model key |
 | `toAttributes()` | Attributes |
 | `toRelationships()` | Relationships |
@@ -321,7 +321,7 @@ the application handles them as it would in any Laravel API.
 | Condition | `Descriptors\Condition` | Descriptor method or `->when(new MyCondition)` | `WhenFeatureCondition` |
 | Rendering stage | `Rendering\Stage` | Configuration (`rendering.stages`) | `TimestampsMetaStage` |
 | Error renderer | `Http\Errors\ErrorRenderer` | Configuration or service provider | `DomainErrorRenderer` |
-| Type naming | `Configuration\TypeNaming` | Configuration | `KebabPluralTypeNaming` |
+| Type naming | `Configuration\TypeNaming` (conventions of the package: `TypeConvention`) | Configuration (`type.naming`) | `PrefixedTypeNaming` |
 
 Registries order their entries by priority, never by the order of a configuration array.
 

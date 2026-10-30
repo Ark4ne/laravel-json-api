@@ -8,10 +8,12 @@ use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Configuration\JsonApiObject;
 use Ark4ne\JsonApi\Configuration\Linkage;
 use Ark4ne\JsonApi\Configuration\SparseRelationships;
+use Ark4ne\JsonApi\Configuration\TypeConvention;
 use Ark4ne\JsonApi\Exceptions\InvalidConfigurationException;
 use DateTimeInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Test\Unit\Compilation\Fixtures\PrefixedTypeNaming;
 
 final class ConfigurationTest extends TestCase
 {
@@ -38,6 +40,7 @@ final class ConfigurationTest extends TestCase
         self::assertSame([], $configuration->renderingStages);
         self::assertEquals(new JsonApiObject('1.1'), $configuration->jsonapi);
         self::assertNull($configuration->maxIncludeDepth);
+        self::assertSame(TypeConvention::KebabSingular, $configuration->typeNaming);
     }
 
     public function test_an_empty_array_gives_the_defaults(): void
@@ -60,6 +63,7 @@ final class ConfigurationTest extends TestCase
             'definitions' => ['paths' => ['/app/Http/Resources']],
             'rendering' => ['stages' => [self::class]],
             'include' => ['max-depth' => 3],
+            'type' => ['naming' => 'snake-plural'],
             'document' => ['jsonapi' => [
                 'version' => '1.0',
                 'ext' => ['https://jsonapi.org/ext/atomic'],
@@ -78,10 +82,18 @@ final class ConfigurationTest extends TestCase
         self::assertSame(['/app/Http/Resources'], $configuration->resourcePaths);
         self::assertSame([self::class], $configuration->renderingStages);
         self::assertSame(3, $configuration->maxIncludeDepth);
+        self::assertSame(TypeConvention::SnakePlural, $configuration->typeNaming);
         self::assertEquals(
             new JsonApiObject('1.0', ['https://jsonapi.org/ext/atomic'], ['https://example.com/profile'], ['copyright' => 'ACME']),
             $configuration->jsonapi,
         );
+    }
+
+    public function test_the_type_naming_is_a_class_of_the_application(): void
+    {
+        $configuration = Configuration::fromArray(['type' => ['naming' => PrefixedTypeNaming::class]]);
+
+        self::assertInstanceOf(PrefixedTypeNaming::class, $configuration->typeNaming);
     }
 
     public function test_the_jsonapi_member_is_disabled_by_false(): void
@@ -139,6 +151,8 @@ final class ConfigurationTest extends TestCase
         yield 'document.jsonapi.ext' => [['document' => ['jsonapi' => ['ext' => 'atomic']]], 'document.jsonapi.ext'];
         yield 'document.jsonapi.profile' => [['document' => ['jsonapi' => ['profile' => [1]]]], 'document.jsonapi.profile'];
         yield 'document.jsonapi.meta' => [['document' => ['jsonapi' => ['meta' => ['a']]]], 'document.jsonapi.meta'];
+        yield 'type.naming unknown convention' => [['type' => ['naming' => 'camel']], 'type.naming'];
+        yield 'type.naming not a type naming' => [['type' => ['naming' => self::class]], 'type.naming'];
         yield 'rendering.stages unknown class' => [['rendering' => ['stages' => ['App\\Unknown']]], 'rendering.stages'];
     }
 

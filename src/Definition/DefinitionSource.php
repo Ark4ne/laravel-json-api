@@ -30,11 +30,20 @@ interface DefinitionSource
     public static function predefinedDefinition(): ?ResourceDefinition;
 
     /**
-     * The resource type (`toType()`).
+     * The type the resource declares without `toType()`: that of `#[JsonApiType]`, `null` for none.
      *
      * @internal
      */
-    public function describeType(Request $request): string;
+    public static function declaredType(): ?string;
+
+    /**
+     * The resource type (`toType()`, which gives `$declared` by default).
+     *
+     * @param string $declared The declared type, otherwise that of the naming convention
+     *
+     * @internal
+     */
+    public function describeType(Request $request, string $declared): string;
 
     /**
      * The raw attributes (`toAttributes()`): descriptors, closures, values, `MergeValue`s.
