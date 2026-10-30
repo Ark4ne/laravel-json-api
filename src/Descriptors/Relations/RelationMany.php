@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Descriptors\Relations;
 
+use Ark4ne\JsonApi\Definition\Cardinality;
 use Ark4ne\JsonApi\Resources\Relationship;
 use Closure;
 
@@ -19,5 +20,10 @@ class RelationMany extends Relation
         $relation->asCollection();
 
         return $relation;
+    }
+
+    protected function cardinality(): Cardinality
+    {
+        return Cardinality::Many;
     }
 }

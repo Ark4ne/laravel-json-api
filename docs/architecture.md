@@ -293,8 +293,8 @@ Registries order their entries by priority, never by the order of a configuratio
 
 ## 12. Diagnostics and errors
 
-- **Notification pattern:** `Diagnostics` collects warnings (eager attribute, request-dependent attributes,
-  `mergeWhen`, filter on an unloaded relation…) instead of stopping. `jsonapi:check` prints them; `--strict` fails on
+- **Notification pattern:** `Diagnostics` collects warnings and errors (eager attribute, `mergeWhen`, member that
+  cannot be described, reserved name, filter on an unloaded relation…) instead of stopping. `jsonapi:check` prints them; `--strict` fails on
   the first warning.
 - **Exceptions** only for programming and configuration errors. Every exception implements
   `Exceptions\JsonApiException`, extends the matching SPL exception and is built through named constructors

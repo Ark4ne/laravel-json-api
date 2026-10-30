@@ -5,6 +5,15 @@ declare(strict_types=1);
 namespace Ark4ne\JsonApi\Laravel;
 
 use Ark4ne\JsonApi\Compilation\CompiledDefinitions;
+use Ark4ne\JsonApi\Compilation\Definitions;
+use Ark4ne\JsonApi\Configuration\Configuration;
+use Ark4ne\JsonApi\Laravel\Commands\CacheDefinitionsCommand;
+use Ark4ne\JsonApi\Laravel\Commands\CheckDefinitionsCommand;
+use Ark4ne\JsonApi\Laravel\Commands\ClearDefinitionsCommand;
+use Ark4ne\JsonApi\Support\Config;
+use Ark4ne\JsonApi\Support\Fields;
+use Ark4ne\JsonApi\Support\Includes;
+use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -17,9 +26,61 @@ use Illuminate\Support\ServiceProvider;
  */
 final class JsonApiServiceProvider extends ServiceProvider
 {
-    public function register(): void {}
+    private const CONFIG = __DIR__ . '/../../config/jsonapi.php';
 
-    public function boot(): void {}
+    public function register(): void
+    {
+        $this->mergeConfigFrom(self::CONFIG, 'jsonapi');
+
+        $this->app->singleton(Configuration::class, static function (Application $app): Configuration {
+            /** @var array<array-key, mixed> $jsonapi */
+            $jsonapi = $app->make('config')->get('jsonapi', []);
+
+            return Configuration::fromArray($jsonapi);
+        });
+
+        $this->app->singleton(CompiledDefinitions::class, fn(): CompiledDefinitions => $this->compiledDefinitions());
+
+        $this->app->singleton(ResourceFinder::class, static function (Application $app): ResourceFinder {
+            /** @var Configuration $configuration */
+            $configuration = $app->make(Configuration::class);
+
+            return new ResourceFinder($configuration->resourcePaths !== [] ? $configuration->resourcePaths : [app_path()]);
+        });
+    }
+
+    public function boot(): void
+    {
+        /** @var Configuration $configuration */
+        $configuration = $this->app->make(Configuration::class);
+        /** @var CompiledDefinitions $compiled */
+        $compiled = $this->app->make(CompiledDefinitions::class);
+
+        Definitions::configure($configuration, $compiled);
+        // 1.x rendering still reads the configuration through its static facade.
+        Config::boot();
+
+        $this->publishes([self::CONFIG => $this->app->configPath('jsonapi.php')], 'config');
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                CacheDefinitionsCommand::class,
+                ClearDefinitionsCommand::class,
+                CheckDefinitionsCommand::class,
+            ]);
+            $this->optimizes(optimize: 'jsonapi:cache', clear: 'jsonapi:clear', key: 'jsonapi');
+        }
+
+        if (class_exists(\Laravel\Octane\Events\RequestReceived::class)) {
+            $this->app->make('events')->listen(
+                \Laravel\Octane\Events\RequestReceived::class,
+                static function (): void {
+                    Fields::flush();
+                    Includes::flush();
+                },
+            );
+        }
+    }
 
     /**
      * The file of compiled definitions of the application.

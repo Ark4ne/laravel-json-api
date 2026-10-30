@@ -6,7 +6,6 @@ namespace Ark4ne\JsonApi\Descriptors\Values;
 
 use Ark4ne\JsonApi\Definition\ValueType;
 use Ark4ne\JsonApi\Support\Config;
-use Closure;
 use Illuminate\Http\Request;
 
 /**
@@ -15,25 +14,20 @@ use Illuminate\Http\Request;
  */
 class ValueFloat extends Value
 {
-    protected ?int $precision;
-
-    public function __construct(string|Closure|null $attribute)
-    {
-        parent::__construct($attribute);
-
-        $this->precision = Config::$precision;
-    }
+    /** `null` until set: the configuration decides (`describer.precision`). */
+    protected ?int $precision = null;
 
     public function precision(int $precision): static
     {
-        $this->precision = $precision;
-        return $this;
+        return $this->with('precision', $precision);
     }
 
     public function value(mixed $of, Request $request): float
     {
-        if (isset($this->precision)) {
-            $precision = 10 ** $this->precision;
+        $precision = $this->precision ?? Config::$precision;
+
+        if ($precision !== null) {
+            $precision = 10 ** $precision;
 
             return floor((float) $of * $precision) / $precision;
         }

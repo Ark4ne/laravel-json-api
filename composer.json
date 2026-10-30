@@ -79,7 +79,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Ark4ne\\JsonApi\\Providers\\LaravelJsonApiProvider"
+                "Ark4ne\\JsonApi\\Laravel\\JsonApiServiceProvider"
             ]
         }
     },

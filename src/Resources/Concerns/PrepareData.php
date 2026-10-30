@@ -45,10 +45,10 @@ trait PrepareData
         $autoWhenHas = $this->autoWhenHas ?? null;
 
         if ($autoWhenHas || (Config::autoWhenHas($for) && $autoWhenHas !== false)) {
-            (new Collection($data))
-                ->each(fn($value, int|string $key) => $value instanceof Value
-                    ? $value->autoWhenHas()
-                    : $value);
+            // Descriptors are immutable: the modified ones replace the originals.
+            $data = (new Collection($data))
+                ->map(static fn($value) => $value instanceof Value ? $value->autoWhenHas() : $value)
+                ->all();
         }
 
         return $data;
@@ -66,10 +66,11 @@ trait PrepareData
         $autoWhenIncluded = $this->autoWhenIncluded ?? null;
 
         if ($autoWhenIncluded || (Config::$autoWhenIncluded && $autoWhenIncluded !== false)) {
-            (new Collection($data))
-                ->each(fn($relation, int|string $key) => $relation instanceof Relation || $relation instanceof Relationship
+            $data = (new Collection($data))
+                ->map(static fn($relation) => $relation instanceof Relation || $relation instanceof Relationship
                     ? $relation->whenIncluded()
-                    : $relation);
+                    : $relation)
+                ->all();
         }
 
         return $data;

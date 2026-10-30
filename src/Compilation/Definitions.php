@@ -29,18 +29,29 @@ final class Definitions
 
     private static ?CompiledDefinitions $compiled = null;
 
+    /** Whether the compiled file was read since the last flush. */
+    private static bool $compiledRead = false;
+
     /**
      * Sets the configuration used to compile and the compiled file (`bootstrap/cache/jsonapi.php`); called once at
      * boot. Nothing is compiled nor read here: the compiled file is read on the first `for()`. Flushes the cache.
      */
-    public static function configure(Configuration $configuration, ?CompiledDefinitions $compiled = null): void {}
+    public static function configure(Configuration $configuration, ?CompiledDefinitions $compiled = null): void
+    {
+        self::$configuration = $configuration;
+        self::$compiled = $compiled;
+        self::flush();
+    }
 
     /**
      * Fills the cache with definitions compiled beforehand.
      *
      * @param array<class-string<DefinitionSource>, ResourceDefinition> $definitions
      */
-    public static function preload(array $definitions): void {}
+    public static function preload(array $definitions): void
+    {
+        self::$definitions = [...self::$definitions, ...$definitions];
+    }
 
     /**
      * The definition of a resource class: read from the compiled file if any (once, on the first call), otherwise
@@ -52,7 +63,25 @@ final class Definitions
      */
     public static function for(string $class): ResourceDefinition
     {
-        return ResourceDefinition::of($class, '');
+        if (!self::$compiledRead) {
+            self::$compiledRead = true;
+            self::preload(self::$compiled?->read() ?? []);
+        }
+
+        return self::$definitions[$class] ??= self::compiler()->compile($class);
+    }
+
+    /**
+     * Compiles the definition of a resource class from its current code, with the configuration set at boot: neither
+     * the cache nor the compiled file is read or filled. For the tools that check resources.
+     *
+     * @param class-string<DefinitionSource> $class
+     *
+     * @throws DefinitionException when the class is not a resource or cannot be compiled
+     */
+    public static function compile(string $class): ResourceDefinition
+    {
+        return self::compiler()->compile($class);
     }
 
     /**
@@ -67,7 +96,7 @@ final class Definitions
      */
     public static function loadConstraints(string $class): array
     {
-        return [];
+        return self::$constraints[$class] ??= self::compiler()->loadConstraints($class);
     }
 
     /**
@@ -77,12 +106,22 @@ final class Definitions
      */
     public static function all(): array
     {
-        return [];
+        return self::$definitions;
     }
 
     /**
      * Empties the cache; the configuration and the compiled file are kept (the file is read again on the next
      * `for()`).
      */
-    public static function flush(): void {}
+    public static function flush(): void
+    {
+        self::$definitions = [];
+        self::$constraints = [];
+        self::$compiledRead = false;
+    }
+
+    private static function compiler(): DefinitionCompiler
+    {
+        return new DefinitionCompiler(self::$configuration ?? Configuration::defaults());
+    }
 }

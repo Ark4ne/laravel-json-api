@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Test;
 
-use Ark4ne\JsonApi\Providers\LaravelJsonApiProvider;
+use Ark4ne\JsonApi\Laravel\JsonApiServiceProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Orchestra\Testbench\TestCase as BaseTestCase;
 
@@ -15,7 +15,7 @@ class TestCase extends BaseTestCase
     protected function getPackageProviders($app): array
     {
         return [
-            LaravelJsonApiProvider::class,
+            JsonApiServiceProvider::class,
         ];
     }
 }

@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Descriptors\Values;
 
+use Ark4ne\JsonApi\Configuration\Configuration;
+use Ark4ne\JsonApi\Definition\AttributeDefinition;
 use Ark4ne\JsonApi\Definition\ValueType;
 use Ark4ne\JsonApi\Support\Config;
-use Closure;
 use DateTime;
 use DateTimeInterface;
 use Exception;
@@ -18,19 +19,21 @@ use Illuminate\Http\Request;
  */
 class ValueDate extends Value
 {
-    protected string $format;
-
-    public function __construct(string|Closure|null $attribute)
-    {
-        parent::__construct($attribute);
-
-        $this->format = Config::$date;
-    }
+    /** `null` until set: the configuration decides (`describer.date`). */
+    protected ?string $format = null;
 
     public function format(string $format): static
     {
-        $this->format = $format;
-        return $this;
+        return $this->with('format', $format);
+    }
+
+    public function definition(
+        string $name,
+        mixed $subject = null,
+        ?Configuration $configuration = null,
+    ): AttributeDefinition {
+        return parent::definition($name, $subject, $configuration)
+            ->format($this->format ?? ($configuration ?? Configuration::defaults())->dateFormat);
     }
 
     /**
@@ -39,16 +42,16 @@ class ValueDate extends Value
     public function value(mixed $of, Request $request): string
     {
         if ($of === null) {
-            return (new DateTime("@0"))->format($this->format);
+            return (new DateTime("@0"))->format($this->format ?? Config::$date);
         }
         if ($of instanceof DateTimeInterface) {
-            return $of->format($this->format);
+            return $of->format($this->format ?? Config::$date);
         }
         if (is_numeric($of)) {
-            return (new DateTime("@$of"))->format($this->format);
+            return (new DateTime("@$of"))->format($this->format ?? Config::$date);
         }
 
-        return (new DateTime($of))->format($this->format);
+        return (new DateTime($of))->format($this->format ?? Config::$date);
     }
 
     protected function valueType(): ValueType

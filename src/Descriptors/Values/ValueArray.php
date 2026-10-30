@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Descriptors\Values;
 
+use Ark4ne\JsonApi\Configuration\Configuration;
+use Ark4ne\JsonApi\Definition\AttributeDefinition;
 use Ark4ne\JsonApi\Definition\ValueType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -28,8 +30,18 @@ class ValueArray extends Value
      */
     public function of(string|Value $type): static
     {
-        $this->type = $type;
-        return $this;
+        return $this->with('type', $type);
+    }
+
+    public function definition(
+        string $name,
+        mixed $subject = null,
+        ?Configuration $configuration = null,
+    ): AttributeDefinition {
+        $type = is_string($this->type) ? new ($this->type)(null) : $this->type;
+
+        return parent::definition($name, $subject, $configuration)
+            ->items($type?->definition($name, $subject, $configuration));
     }
 
     /**

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Definition;
 
+use Closure;
+
 /**
  * The Eloquent relations a relationship eager-loads when it is included (`withLoad()`).
  *
@@ -47,6 +49,50 @@ final readonly class LoadDefinition
     }
 
     /**
+     * The load declared with `withLoad()` by the relationship `$name`: `true` loads the relationship itself, a string or a
+     * list loads relation paths, and a closure under a path constrains it (`['comments' => fn($query) => …]`). Nested
+     * arrays give dotted paths (`['comments' => ['user']]` loads `comments.user`).
+     *
+     * @param bool|string|array<array-key, mixed> $load
+     *
+     * @internal
+     */
+    public static function fromDeclaration(bool|string|array $load, string $name): self
+    {
+        if ($load === false) {
+            return self::none();
+        }
+
+        $paths = [];
+        $constraints = [];
+        self::collect($load === true ? $name : $load, null, $paths, $constraints);
+
+        return self::of($paths, array_keys($constraints));
+    }
+
+    /**
+     * The constraint closures of the load declared with `withLoad()`, by relation path: what the definition leaves out
+     * because closures are not serializable.
+     *
+     * @param bool|string|array<array-key, mixed> $load
+     *
+     * @return array<string, Closure>
+     *
+     * @internal
+     */
+    public static function constraintsOf(bool|string|array $load): array
+    {
+        $paths = [];
+        $constraints = [];
+
+        if (is_array($load)) {
+            self::collect($load, null, $paths, $constraints);
+        }
+
+        return $constraints;
+    }
+
+    /**
      * Rebuilds a definition exported with `var_export()` (compiled definitions).
      *
      * @param array{paths: list<string>, constrained: list<string>} $properties
@@ -54,5 +100,35 @@ final readonly class LoadDefinition
     public static function __set_state(array $properties): self
     {
         return new self($properties['paths'], $properties['constrained']);
+    }
+
+    /**
+     * @param string|array<array-key, mixed> $load
+     * @param list<string> $paths
+     * @param array<string, Closure> $constraints
+     */
+    private static function collect(string|array $load, ?string $prefix, array &$paths, array &$constraints): void
+    {
+        foreach ((array) $load as $key => $value) {
+            if (is_string($value)) {
+                $paths[] = $prefix === null ? $value : "{$prefix}.{$value}";
+
+                continue;
+            }
+
+            if (!is_string($key)) {
+                continue;
+            }
+
+            $path = $prefix === null ? $key : "{$prefix}.{$key}";
+
+            $paths[] = $path;
+
+            if (is_array($value)) {
+                self::collect($value, $path, $paths, $constraints);
+            } elseif ($value instanceof Closure) {
+                $constraints[$path] = $value;
+            }
+        }
     }
 }

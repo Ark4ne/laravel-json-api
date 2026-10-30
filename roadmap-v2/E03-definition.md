@@ -31,44 +31,46 @@ comme `laravel-openapi-generator`, sans réflexion sur nos membres privés.
 ### Probe
 
 - [ ] **E3.1** Renommer `Support\FakeModel` en `Support\Probe` 🔴
-- [ ] **E3.1b** Le Probe **enregistre** les propriétés lues : une valeur eager (`'name' => $this->resource->name`) est
+- [x] **E3.1b** Le Probe **enregistre** les propriétés lues : une valeur eager (`'name' => $this->resource->name`) est
       reliée à son attribut source (auto-`whenHas`, typage par cast pour les outils externes)
 
 ### Objets de définition (`src/Definition/`)
 
-- [ ] **E3.2a** `ResourceDefinition` (`final readonly`) : classe, type, attributs, relations, links, meta
-- [ ] **E3.2b** `AttributeDefinition` : nom, chemin (structs), `ValueType`, nullable, format, enum, type d'élément,
+- [x] **E3.2a** `ResourceDefinition` (`final readonly`) : classe, type, attributs, relations, links, meta
+- [x] **E3.2b** `AttributeDefinition` : nom, chemin (structs), `ValueType`, nullable, format, enum, type d'élément,
       enfants, conditionnel, `sparse` (exclu par défaut, ex-`whenInFields`)
-- [ ] **E3.2c** `RelationshipDefinition` : nom, ressource liée, `Cardinality::One|Many`, plan de chargement, links et
+- [x] **E3.2c** `RelationshipDefinition` : nom, ressource liée, `Cardinality::One|Many`, plan de chargement, links et
       meta déclarés, mode de linkage (E5.1)
-- [ ] **E3.2d** `ValueType` (enum ou petite hiérarchie) : contrat stable de typage, utilisé par le registre de types
+- [x] **E3.2d** `ValueType` (enum ou petite hiérarchie) : contrat stable de typage, utilisé par le registre de types
       (E6.6)
-- [ ] **E3.2e** Constructeurs nommés, `copy()`, aucun setter mutable (même conventions que les `Description` du
+- [x] **E3.2e** Constructeurs nommés, `copy()`, aucun setter mutable (même conventions que les `Description` du
       générateur)
-- [ ] **E3.3** Chaque descripteur expose `definition(string $name)`
+- [x] **E3.3** Chaque descripteur expose `definition(string $name)`
 
 ### Repository et cache
 
-- [ ] **E3.4** `Definitions::for(Resource::class): ResourceDefinition` avec un cache mémoire par process
-- [ ] **E3.4b** Cache compilé `bootstrap/cache/jsonapi.php` (`var_export`, servi par l'opcache). Les closures
+- [x] **E3.4** `Definitions::for(Resource::class): ResourceDefinition` avec un cache mémoire par process
+- [x] **E3.4b** Cache compilé `bootstrap/cache/jsonapi.php` (`var_export`, servi par l'opcache). Les closures
       (`withLoad` contraint, `struct`) ne sont pas sérialisées : la définition note leur présence et le moteur les
       résout depuis l'instance au runtime
-- [ ] **E3.5** Commandes `jsonapi:cache` / `jsonapi:clear`, branchées sur `php artisan optimize` via
+- [x] **E3.5** Commandes `jsonapi:cache` / `jsonapi:clear`, branchées sur `php artisan optimize` via
       `ServiceProvider::optimizes()`
 
 ### Diagnostics
 
-- [ ] **E3.6** `Diagnostics` (pattern Notification) collectés pendant la compilation : attribut eager non relié,
-      attributs différents selon la requête (`if` en PHP), ressource liée qui échoue, nom réservé `id` / `type`.
-      Exception seulement en mode strict
+- [x] **E3.6** `Diagnostics` (pattern Notification) collectés pendant la compilation : attribut eager non relié,
+      `mergeWhen`, membre non descriptible (ressource liée invalide, membre qui lève), hook qui lève, nom réservé
+      `id` / `type`. Exception seulement en mode strict. Les attributs dépendant de la requête (`if` en PHP) ne sont
+      pas détectables de façon fiable : la compilation se fait en une passe et la règle est documentée (E3.8)
 - [ ] **E3.7** `php artisan jsonapi:check [--strict]` remplace `AssertJsonApiResource` 🔴
-- [ ] **E3.7b** Assertion PHPUnit `assertJsonApiResourceIsValid()` pour les applications
+- [x] **E3.7b** Assertion PHPUnit pour les applications : `Testing\ResourceAssertions::assertValid(Resource::class, strict: …)`
 
 ### Documentation et opt-in
 
 - [ ] **E3.8** Documenter la règle : la définition est construite avec une `Request` neutre, donc toute condition
       dépendant de la requête passe par `->when()` ou `applyWhen()`, jamais par un `if`
-- [ ] **E3.9** Opt-in : surcharger `public static function definition(): ResourceDefinition` pour les cas complexes
+- [x] **E3.9** Opt-in pour les cas complexes : surcharger `protected static function toDefinition(): ?ResourceDefinition`
+      (et non `definition()`, qui garde le cache et les diagnostics)
 
 ## Critères de sortie
 

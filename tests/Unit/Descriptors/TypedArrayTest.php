@@ -24,7 +24,7 @@ class TypedArrayTest extends TestCase
     public function testArrayOfStrings(): void
     {
         $array = new ValueArray('tags');
-        $array->of(new ValueString(null));
+        $array = $array->of(new ValueString(null));
 
         $input = ['php', 'laravel', 'json-api', true, 1.0];
         $result = $array->value($input, $this->request);
@@ -37,7 +37,7 @@ class TypedArrayTest extends TestCase
     public function testArrayOfIntegers(): void
     {
         $array = new ValueArray('scores');
-        $array->of(new ValueInteger(null));
+        $array = $array->of(new ValueInteger(null));
 
         $input = [1.5, '2', 3, '4.9'];
         $result = $array->value($input, $this->request);
@@ -50,7 +50,7 @@ class TypedArrayTest extends TestCase
     public function testArrayOfEnums(): void
     {
         $array = new ValueArray('statuses');
-        $array->of(new ValueEnum(null));
+        $array = $array->of(new ValueEnum(null));
 
         $input = [
             Status::ACTIVE,
@@ -67,10 +67,10 @@ class TypedArrayTest extends TestCase
     public function testNestedArrays(): void
     {
         $innerArray = new ValueArray(null);
-        $innerArray->of(new ValueInteger(null));
+        $innerArray = $innerArray->of(new ValueInteger(null));
 
         $outerArray = new ValueArray('matrix');
-        $outerArray->of($innerArray);
+        $outerArray = $outerArray->of($innerArray);
 
         $input = [
             ['1', 2, 3],
@@ -91,7 +91,7 @@ class TypedArrayTest extends TestCase
     public function testEmptyArray(): void
     {
         $array = new ValueArray('tags');
-        $array->of(new ValueString(null));
+        $array = $array->of(new ValueString(null));
 
         $result = $array->value([], $this->request);
 

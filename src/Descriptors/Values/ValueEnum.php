@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Descriptors\Values;
 
+use Ark4ne\JsonApi\Configuration\Configuration;
+use Ark4ne\JsonApi\Definition\AttributeDefinition;
 use Ark4ne\JsonApi\Definition\ValueType;
 use BackedEnum;
 use Illuminate\Http\Request;
@@ -11,7 +13,7 @@ use UnitEnum;
 
 /**
  * @template T
- * @template U extends UnitEnum|BackedEnum
+ * @template U of UnitEnum
  * @extends Value<T>
  */
 class ValueEnum extends Value
@@ -29,8 +31,15 @@ class ValueEnum extends Value
      */
     public function of(string $type): static
     {
-        $this->type = $type;
-        return $this;
+        return $this->with('type', $type);
+    }
+
+    public function definition(
+        string $name,
+        mixed $subject = null,
+        ?Configuration $configuration = null,
+    ): AttributeDefinition {
+        return parent::definition($name, $subject, $configuration)->enum($this->type);
     }
 
     protected function value(mixed $of, Request $request): mixed

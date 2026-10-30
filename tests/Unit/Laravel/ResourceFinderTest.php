@@ -27,6 +27,14 @@ final class ResourceFinderTest extends TestCase
         );
     }
 
+    public function test_a_class_that_cannot_be_loaded_is_skipped(): void
+    {
+        self::assertNotContains(
+            'Test\Unit\Laravel\Fixtures\BrokenResource',
+            (new ResourceFinder([__DIR__ . '/Fixtures']))->find(),
+        );
+    }
+
     public function test_a_resource_reached_through_two_paths_is_found_once(): void
     {
         self::assertSame(

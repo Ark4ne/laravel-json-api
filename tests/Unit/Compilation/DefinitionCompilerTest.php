@@ -21,11 +21,13 @@ use Test\app\Http\Resources\CommentResource;
 use Test\app\Http\Resources\UserResource;
 use Test\Unit\Compilation\Fixtures\EagerResource;
 use Test\Unit\Compilation\Fixtures\FailingHookResource;
+use Test\Unit\Compilation\Fixtures\InvalidMemberResource;
 use Test\Unit\Compilation\Fixtures\MergeWhenResource;
 use Test\Unit\Compilation\Fixtures\PredefinedResource;
-use Test\Unit\Compilation\Fixtures\RequestDependentResource;
 use Test\Unit\Compilation\Fixtures\ReservedNameResource;
+use Test\Unit\Compilation\Fixtures\StructResource;
 use Test\Unit\Compilation\Fixtures\TypedResource;
+use Test\Unit\Compilation\Fixtures\UnnamedMembersResource;
 
 final class DefinitionCompilerTest extends TestCase
 {
@@ -173,7 +175,52 @@ final class DefinitionCompilerTest extends TestCase
         $definition = $this->compile(MergeWhenResource::class);
 
         self::assertSame(['title'], array_keys($definition->attributes));
-        self::assertContains(DefinitionCompiler::MERGE_WHEN, $this->codes($definition));
+        self::assertSame([], $definition->relationships);
+        self::assertSame(
+            [DefinitionCompiler::MERGE_WHEN, DefinitionCompiler::MERGE_WHEN],
+            $this->codes($definition),
+        );
+    }
+
+    public function test_members_without_key_are_named_after_what_they_read(): void
+    {
+        $definition = $this->compile(UnnamedMembersResource::class);
+
+        self::assertSame(['title'], array_keys($definition->attributes));
+        self::assertSame(['author'], array_keys($definition->relationships));
+        self::assertSame([], $definition->diagnostics);
+    }
+
+    public function test_the_hooks_run_once(): void
+    {
+        StructResource::$reads = 0;
+
+        $this->compile(StructResource::class);
+
+        self::assertSame(2, StructResource::$reads);
+    }
+
+    public function test_the_diagnostics_of_struct_members_are_kept(): void
+    {
+        $definition = $this->compile(StructResource::class);
+
+        self::assertSame([DefinitionCompiler::EAGER_ATTRIBUTE], $this->codes($definition));
+        self::assertSame('city', $definition->diagnostics[0]->subject);
+    }
+
+    public function test_an_invalid_member_is_left_out_with_an_error_naming_it(): void
+    {
+        $definition = $this->compile(InvalidMemberResource::class);
+        $errors = array_values(array_filter(
+            $definition->diagnostics,
+            static fn(Diagnostic $diagnostic): bool => $diagnostic->code === DefinitionCompiler::INVALID_MEMBER,
+        ));
+
+        self::assertSame(['title', 'content'], array_keys($definition->attributes));
+        self::assertSame(['author'], array_keys($definition->relationships));
+        self::assertSame(['broken', 'other'], array_map(static fn(Diagnostic $d): ?string => $d->subject, $errors));
+        self::assertSame(DiagnosticLevel::Error, $errors[0]->level);
+        self::assertStringContainsString('Needs a real model.', $errors[0]->message);
     }
 
     public function test_relationships_record_the_related_resource_and_the_cardinality(): void
@@ -247,15 +294,6 @@ final class DefinitionCompilerTest extends TestCase
         self::assertSame(DefinitionCompiler::EAGER_ATTRIBUTE, $diagnostics[0]->code);
         self::assertSame(DiagnosticLevel::Warning, $diagnostics[0]->level);
         self::assertSame('title', $diagnostics[0]->subject);
-    }
-
-    public function test_members_differing_between_two_runs_are_conditional_with_a_diagnostic(): void
-    {
-        $definition = $this->compile(RequestDependentResource::class);
-
-        self::assertFalse($this->attribute($definition, 'title')->conditional);
-        self::assertTrue($this->attribute($definition, 'admin-only')->conditional);
-        self::assertContains(DefinitionCompiler::REQUEST_DEPENDENT, $this->codes($definition));
     }
 
     public function test_a_member_named_id_or_type_gives_an_error(): void

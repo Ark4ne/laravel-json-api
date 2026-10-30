@@ -11,11 +11,12 @@
 
 ### Descripteurs
 
-- [ ] **E6.1** Descripteurs **immuables** : chaque méthode fluente (`->nullable()`, `->when()`, `->format()`…)
+- [x] **E6.1** Descripteurs **immuables** : chaque méthode fluente (`->nullable()`, `->when()`, `->format()`…)
       retourne un clone. La syntaxe ne change pas pour l'utilisateur et les mutations cachées disparaissent 🔴
 - [ ] **E6.6** Registre de types de valeurs (Strategy + Registry) : `Value` reste extensible et un utilisateur
       enregistre `money()` ou `uuid()` via `JsonApi::valueType('money', MoneyValue::class)`. Chaque type fournit son
-      `ValueType` pour la définition
+      `ValueType` pour la définition. Corriger au passage `array()->of(ValueStruct::class)` : un type d'élément donné
+      par sa classe est instancié avec `new $type(null)`, ce que `ValueStruct` refuse (closure requise)
 - [ ] **E6.7** Nouveaux types : `uuid()`, `ulid()`, `decimal()` (string), `json()`, `time()`, `dateOnly()`, chacun avec
       un format exploitable par la définition
 - [ ] **E6.9** `applyWhen` documenté comme **la** manière de grouper des conditions ; `mergeWhen` produit un

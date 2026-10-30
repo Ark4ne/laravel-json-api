@@ -28,13 +28,11 @@ abstract class Describer
      */
     public function when(bool|Closure $condition): static
     {
-        $this->rules[] = static fn(
+        return $this->withRule(static fn(
             Request $request,
             mixed   $model,
             string  $attribute,
-        ): bool => value($condition, $request, $model, $attribute);
-
-        return $this;
+        ): bool => $condition instanceof Closure ? $condition($request, $model, $attribute) : $condition);
     }
 
     /**
@@ -46,13 +44,11 @@ abstract class Describer
      */
     public function unless(bool|Closure $condition): static
     {
-        $this->rules[] = static fn(
+        return $this->withRule(static fn(
             Request $request,
             mixed   $model,
             string  $attribute,
-        ): bool => !value($condition, $request, $model, $attribute);
-
-        return $this;
+        ): bool => !($condition instanceof Closure ? $condition($request, $model, $attribute) : $condition));
     }
 
     /**
@@ -117,6 +113,34 @@ abstract class Describer
         }
 
         return true;
+    }
+
+    /**
+     * Whether a condition applies: the field may be left out of the rendering.
+     */
+    public function isConditional(): bool
+    {
+        return $this->rules !== [];
+    }
+
+    /**
+     * A copy of this descriptor with one more property set: descriptors are immutable (docs/architecture.md §5).
+     */
+    protected function with(string $property, mixed $value): static
+    {
+        $clone = clone $this;
+        // The single place where a descriptor is modified, always on a fresh clone.
+        $clone->{$property} = $value; // @phpstan-ignore property.dynamicName
+
+        return $clone;
+    }
+
+    /**
+     * @param Closure(Request, T, string): bool $rule
+     */
+    private function withRule(Closure $rule): static
+    {
+        return $this->with('rules', [...$this->rules, $rule]);
     }
 
     private function retrieveValue(mixed $model, string $attribute): mixed

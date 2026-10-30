@@ -145,7 +145,7 @@ class ValueTest extends TestCase
         /** @var \Ark4ne\JsonApi\Descriptors\Values\Value $v */
         $v = new $class('attr');
         $this->assertTrue($v->isNullable());
-        $v->nullable(false);
+        $v = $v->nullable(false);
         $this->assertFalse($v->isNullable());
         $this->assertEquals($excepted, $v->valueFor(new Request(), $model, 'attr'));
     }
@@ -244,11 +244,11 @@ class ValueTest extends TestCase
         $request = new Request();
         $v = new ValueFloat(null);
         $this->assertEquals(123.12, Reflect::invoke($v, 'value', '123.12', $request));
-        $v->precision(2);
+        $v = $v->precision(2);
         $this->assertEquals(123.12, Reflect::invoke($v, 'value', '123.12', $request));
-        $v->precision(1);
+        $v = $v->precision(1);
         $this->assertEquals(123.1, Reflect::invoke($v, 'value', '123.12', $request));
-        $v->precision(0);
+        $v = $v->precision(0);
         $this->assertEquals(123, Reflect::invoke($v, 'value', '123.12', $request));
     }
 
@@ -257,9 +257,9 @@ class ValueTest extends TestCase
         $request = new Request();
         $v = new ValueDate(null);
         $this->assertEquals('2022-01-01T00:00:00+00:00', Reflect::invoke($v, 'value', '2022-01-01 00:00:00', $request));
-        $v->format('Y-m-d H:i:s');
+        $v = $v->format('Y-m-d H:i:s');
         $this->assertEquals('2022-01-01 00:00:00', Reflect::invoke($v, 'value', '2022-01-01 00:00:00', $request));
-        $v->format('U');
+        $v = $v->format('U');
         $this->assertEquals('1640995200', Reflect::invoke($v, 'value', '2022-01-01 00:00:00', $request));
     }
 

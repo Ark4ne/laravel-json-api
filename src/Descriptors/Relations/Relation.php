@@ -4,26 +4,29 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Descriptors\Relations;
 
-use Ark4ne\JsonApi\Definition\DefinitionSource;
+use Ark4ne\JsonApi\Definition\Cardinality;
+use Ark4ne\JsonApi\Definition\DescribesRelationship;
+use Ark4ne\JsonApi\Definition\LoadDefinition;
+use Ark4ne\JsonApi\Definition\RelatedResource;
 use Ark4ne\JsonApi\Definition\RelationshipDefinition;
 use Ark4ne\JsonApi\Descriptors\Describer;
-use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Filters\Filters;
 use Ark4ne\JsonApi\Resources\Relationship;
 use Ark4ne\JsonApi\Traits\HasRelationLoad;
 use Closure;
 use Illuminate\Contracts\Auth\Access\Gate;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Relation as EloquentRelation;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MissingValue;
 use Illuminate\Support\Arr;
-use ReflectionClass;
 
 /**
  * @template T
  * @extends Describer<T>
  */
-abstract class Relation extends Describer
+abstract class Relation extends Describer implements DescribesRelationship
 {
     use HasRelationLoad;
 
@@ -59,14 +62,20 @@ abstract class Relation extends Describer
 
     public function links(Closure $links): static
     {
-        $this->links = $links;
-        return $this;
+        return $this->with('links', $links);
     }
 
     public function meta(Closure $meta): static
     {
-        $this->meta = $meta;
-        return $this;
+        return $this->with('meta', $meta);
+    }
+
+    /**
+     * @param bool|string|array<string, callable(Builder|EloquentRelation):mixed>|array<array-key, string|string[]|mixed> $load
+     */
+    public function withLoad(bool|string|array $load): static
+    {
+        return $this->with('load', $load);
     }
 
     /**
@@ -77,8 +86,7 @@ abstract class Relation extends Describer
      */
     public function filters(Closure $filters): static
     {
-        $this->filters = $filters(new Filters());
-        return $this;
+        return $this->with('filters', $filters(new Filters()));
     }
 
     /**
@@ -107,13 +115,7 @@ abstract class Relation extends Describer
      */
     public function whenIncluded(?bool $whenIncluded = null): static
     {
-        if ($whenIncluded === null) {
-            $this->whenIncluded ??= true;
-        } else {
-            $this->whenIncluded = $whenIncluded;
-        }
-
-        return $this;
+        return $this->with('whenIncluded', $whenIncluded ?? $this->whenIncluded ?? true);
     }
 
     /**
@@ -198,31 +200,35 @@ abstract class Relation extends Describer
      */
     public function definition(string $name): RelationshipDefinition
     {
-        return RelationshipDefinition::one($name, $this->relatedResource());
+        $related = RelatedResource::resolve($this->related);
+        $computed = $this->relation instanceof Closure;
+
+        return ($this->cardinality() === Cardinality::Many
+            ? RelationshipDefinition::many($name, $related)
+            : RelationshipDefinition::one($name, $related))
+            ->load(LoadDefinition::fromDeclaration($this->load, $name))
+            ->conditional($this->isConditional())
+            ->whenIncluded($this->whenIncluded)
+            ->hasLinks($this->links !== null)
+            ->hasMeta($this->meta !== null)
+            ->source($computed ? null : $this->relation ?? $name)
+            ->computed($computed);
     }
 
     /**
-     * The resource class of the related resources: the related class itself, or the class a related collection
-     * collects (`$collects`).
-     *
-     * @return class-string<DefinitionSource>
-     *
-     * @throws DefinitionException when neither is a resource
+     * @return array<string, Closure>
      */
-    protected function relatedResource(): string
+    public function loadConstraints(): array
     {
-        $related = $this->related;
+        return LoadDefinition::constraintsOf($this->load);
+    }
 
-        if (!is_subclass_of($related, DefinitionSource::class)) {
-            $collects = (new ReflectionClass($related))->getDefaultProperties()['collects'] ?? null;
-            $related = is_string($collects) ? $collects : $related;
-        }
-
-        if (!is_subclass_of($related, DefinitionSource::class)) {
-            throw DefinitionException::notADefinitionSource($related);
-        }
-
-        return $related;
+    /**
+     * One related resource unless a subclass knows better.
+     */
+    protected function cardinality(): Cardinality
+    {
+        return Cardinality::One;
     }
 
     abstract protected function value(Closure $value): Relationship;

@@ -16,6 +16,7 @@ use Ark4ne\JsonApi\Descriptors\Values\{Value,
     ValueStruct};
 use Closure;
 use DateTimeInterface;
+use UnitEnum;
 
 /**
  * @template T
@@ -95,7 +96,7 @@ trait Values
     /**
      * @param null|string|Closure(T):mixed $attribute
      *
-     * @return ValueEnum<T, mixed>
+     * @return ValueEnum<T, UnitEnum>
      */
     protected function enum(string|Closure|null $attribute = null): ValueEnum
     {

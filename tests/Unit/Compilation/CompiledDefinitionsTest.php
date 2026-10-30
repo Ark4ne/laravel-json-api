@@ -8,6 +8,7 @@ use Ark4ne\JsonApi\Compilation\CompiledDefinitions;
 use Ark4ne\JsonApi\Compilation\DefinitionCompiler;
 use Ark4ne\JsonApi\Configuration\Configuration;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 use Test\Unit\Compilation\Fixtures\EagerResource;
 use Test\Unit\Compilation\Fixtures\TypedResource;
 
@@ -62,6 +63,33 @@ final class CompiledDefinitionsTest extends TestCase
         $this->file->write([]);
 
         self::assertSame(['jsonapi.php'], array_values(array_diff((array) scandir(dirname($this->file->path)), ['.', '..'])));
+    }
+
+    public function test_writing_where_the_directory_cannot_be_created_throws(): void
+    {
+        touch($this->directory);
+        $file = new CompiledDefinitions($this->directory . '/cache/jsonapi.php');
+
+        try {
+            $this->expectException(RuntimeException::class);
+            $file->write([]);
+        } finally {
+            unlink($this->directory);
+        }
+    }
+
+    public function test_a_failed_rename_throws_and_leaves_no_temporary_file(): void
+    {
+        mkdir($this->file->path, 0o755, true);
+
+        try {
+            $this->file->write([]);
+            self::fail('The write should have failed.');
+        } catch (RuntimeException) {
+            self::assertSame(['jsonapi.php'], array_values(array_diff((array) scandir(dirname($this->file->path)), ['.', '..'])));
+        } finally {
+            rmdir($this->file->path);
+        }
     }
 
     public function test_delete_removes_the_file(): void

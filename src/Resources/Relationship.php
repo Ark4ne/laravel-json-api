@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Resources;
 
+use Ark4ne\JsonApi\Definition\DescribesRelationship;
+use Ark4ne\JsonApi\Definition\LoadDefinition;
+use Ark4ne\JsonApi\Definition\RelatedResource;
+use Ark4ne\JsonApi\Definition\RelationshipDefinition;
 use Ark4ne\JsonApi\Filters\Filters;
 use Ark4ne\JsonApi\Support\Values;
 use Ark4ne\JsonApi\Traits\HasRelationLoad;
@@ -18,7 +22,7 @@ use function value;
 /**
  * @template T as JsonApiResource|JsonApiCollection
  */
-class Relationship implements Resourceable
+class Relationship implements DescribesRelationship, Resourceable
 {
     use HasRelationLoad;
 
@@ -126,6 +130,31 @@ class Relationship implements Resourceable
         $this->filters = $filters;
 
         return $this;
+    }
+
+    /**
+     * What this relationship declares under a name, for the compiled definition (docs/architecture.md §3).
+     */
+    public function definition(string $name): RelationshipDefinition
+    {
+        $related = RelatedResource::resolve($this->resource);
+
+        return ($this->asCollection
+            ? RelationshipDefinition::many($name, $related)
+            : RelationshipDefinition::one($name, $related))
+            ->load(LoadDefinition::fromDeclaration($this->load, $name))
+            ->whenIncluded($this->whenIncluded)
+            ->hasLinks($this->links !== null)
+            ->hasMeta($this->meta !== null)
+            ->computed();
+    }
+
+    /**
+     * @return array<string, Closure>
+     */
+    public function loadConstraints(): array
+    {
+        return LoadDefinition::constraintsOf($this->load);
     }
 
     /**

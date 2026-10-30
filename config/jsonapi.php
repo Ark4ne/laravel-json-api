@@ -102,4 +102,17 @@ return [
         */
         'relationships' => 'filter',
     ],
+
+    'definitions' => [
+        /*
+        |--------------------------------------------------------------------------
+        | Paths
+        |--------------------------------------------------------------------------
+        |
+        | Directories scanned for resources by `jsonapi:cache` and
+        | `jsonapi:check`. Empty for the whole `app` directory.
+        |
+        */
+        'paths' => [],
+    ],
 ];

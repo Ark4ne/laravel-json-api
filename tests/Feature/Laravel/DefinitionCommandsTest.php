@@ -6,8 +6,11 @@ namespace Test\Feature\Laravel;
 
 use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Laravel\JsonApiServiceProvider;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Testing\PendingCommand;
+use Orchestra\Testbench\Attributes\DefineEnvironment;
 use Orchestra\Testbench\TestCase;
 use Test\Unit\Compilation\Fixtures\EagerResource;
 use Test\Unit\Compilation\Fixtures\FailingHookResource;
@@ -24,7 +27,18 @@ final class DefinitionCommandsTest extends TestCase
 
     protected function defineEnvironment($app): void
     {
-        $app['config']->set('jsonapi.definitions.paths', [__DIR__ . '/../../Unit/Laravel/Fixtures']);
+        // Testbench applies #[DefineEnvironment] first: the paths it sets are kept.
+        if ($app['config']->get('jsonapi.definitions.paths', []) === []) {
+            $app['config']->set('jsonapi.definitions.paths', [__DIR__ . '/../../Unit/Laravel/Fixtures']);
+        }
+    }
+
+    /**
+     * @param \Illuminate\Foundation\Application $app
+     */
+    protected function usesCompilationFixtures($app): void
+    {
+        $app['config']->set('jsonapi.definitions.paths', [__DIR__ . '/../../Unit/Compilation/Fixtures']);
     }
 
     protected function tearDown(): void
@@ -71,10 +85,9 @@ final class DefinitionCommandsTest extends TestCase
         self::assertContains('jsonapi:clear', ServiceProvider::$optimizeClearCommands);
     }
 
+    #[DefineEnvironment('usesCompilationFixtures')]
     public function test_cache_fails_on_a_resource_with_an_error(): void
     {
-        $this->app?->make('config')->set('jsonapi.definitions.paths', [__DIR__ . '/../../Unit/Compilation/Fixtures']);
-
         $this->command('jsonapi:cache')
             ->expectsOutputToContain(FailingHookResource::class)
             ->assertFailed();
@@ -113,10 +126,14 @@ final class DefinitionCommandsTest extends TestCase
 
     public function test_check_prints_the_diagnostics_and_fails_on_an_error(): void
     {
-        $this->command('jsonapi:check', ['resources' => [FailingHookResource::class]])
-            ->expectsOutputToContain('hook-failure')
-            ->expectsOutputToContain('Needs a real model.')
-            ->assertFailed();
+        // expectsOutputToContain() matches one expectation per line written: the output is read whole instead.
+        $status = Artisan::call('jsonapi:check', ['resources' => [FailingHookResource::class]]);
+
+        $output = Artisan::output();
+
+        self::assertSame(Command::FAILURE, $status);
+        self::assertStringContainsString('hook-failure', $output);
+        self::assertStringContainsString('Needs a real model.', $output);
     }
 
     public function test_check_tolerates_a_warning_unless_strict(): void

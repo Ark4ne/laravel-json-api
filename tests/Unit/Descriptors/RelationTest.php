@@ -45,17 +45,17 @@ class RelationTest extends TestCase
         $this->assertInstanceOf(Relationship::class, $relation);
         $this->assertNull(Reflect::get($relation, 'whenIncluded'));
 
-        $stub->whenIncluded();
+        $stub = $stub->whenIncluded();
         $relation = $stub->resolveFor(new Request(), $model, 'null');
         $this->assertInstanceOf(Relationship::class, $relation);
         $this->assertTrue(Reflect::get($relation, 'whenIncluded'));
 
-        $stub->whenIncluded(false);
+        $stub = $stub->whenIncluded(false);
         $relation = $stub->resolveFor(new Request(), $model, 'null');
         $this->assertInstanceOf(Relationship::class, $relation);
         $this->assertFalse(Reflect::get($relation, 'whenIncluded'));
 
-        $stub->whenIncluded(true);
+        $stub = $stub->whenIncluded(true);
         $relation = $stub->resolveFor(new Request(), $model, 'null');
         $this->assertInstanceOf(Relationship::class, $relation);
         $this->assertTrue(Reflect::get($relation, 'whenIncluded'));
@@ -75,7 +75,7 @@ class RelationTest extends TestCase
         $this->assertInstanceOf(Relationship::class, $relation);
         $this->assertEmpty(Reflect::get($relation, 'meta'));
 
-        $stub->meta(fn() => ['test']);
+        $stub = $stub->meta(fn() => ['test']);
         $relation = $stub->resolveFor(new Request(), $model, 'null');
 
         $this->assertInstanceOf(Relationship::class, $relation);
@@ -96,7 +96,7 @@ class RelationTest extends TestCase
         $this->assertInstanceOf(Relationship::class, $relation);
         $this->assertEmpty(Reflect::get($relation, 'links'));
 
-        $stub->links(fn() => ['test']);
+        $stub = $stub->links(fn() => ['test']);
         $relation = $stub->resolveFor(new Request(), $model, 'null');
 
         $this->assertInstanceOf(Relationship::class, $relation);
@@ -123,7 +123,7 @@ class RelationTest extends TestCase
         $mockModel->expects(self::once())->method('relationLoaded')->with($expectedAttr)->willReturn(false);
 
         $stub = new RelationOne(UserResource::class, $relation);
-        $stub->whenLoaded();
+        $stub = $stub->whenLoaded();
 
         $check = Reflect::invoke($stub, 'check', new Request(), $mockModel, $invokedAttr);
         $this->assertFalse($check);
@@ -148,7 +148,7 @@ class RelationTest extends TestCase
 
         $model->$expectedAttr = new stdClass();
         $stub = new RelationOne(UserResource::class, $relation);
-        $stub->whenPivotLoaded(stdClass::class);
+        $stub = $stub->whenPivotLoaded(stdClass::class);
 
         $check = Reflect::invoke($stub, 'check', new Request(), $model, $invokedAttr);
         $this->assertTrue($check);

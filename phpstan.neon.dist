@@ -19,6 +19,8 @@ parameters:
     excludePaths:
         - tests/app/migrations.php
         - tests/app/routes.php
+        # Extends a class that is not installed, on purpose (ResourceFinderTest).
+        - tests/Unit/Laravel/Fixtures/BrokenResource.php
 
     # Facades, global helpers and the container belong to src/Laravel/ (docs/architecture.md §2).
     disallowedNamespaces:

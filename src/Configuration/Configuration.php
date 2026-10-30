@@ -64,7 +64,17 @@ final readonly class Configuration
      */
     public static function fromArray(array $config): self
     {
-        return self::defaults();
+        $defaults = self::defaults();
+
+        return new self(
+            nullable: self::bool($config, 'describer.nullable', $defaults->nullable),
+            dateFormat: self::string($config, 'describer.date', $defaults->dateFormat),
+            precision: self::precision($config, $defaults->precision),
+            whenHas: self::whenHas($config, $defaults->whenHas),
+            whenIncluded: self::bool($config, 'relationship.when-included', $defaults->whenIncluded),
+            sparseRelationships: self::sparseRelationships($config, $defaults->sparseRelationships),
+            resourcePaths: self::paths($config, $defaults->resourcePaths),
+        );
     }
 
     /**
@@ -73,5 +83,110 @@ final readonly class Configuration
     public function autoWhenHas(string $scope): bool
     {
         return in_array($scope, $this->whenHas, true);
+    }
+
+    /**
+     * @param array<array-key, mixed> $config
+     */
+    private static function read(array $config, string $key): mixed
+    {
+        foreach (explode('.', $key) as $segment) {
+            if (!is_array($config) || !array_key_exists($segment, $config)) {
+                return null;
+            }
+            $config = $config[$segment];
+        }
+
+        return $config;
+    }
+
+    /**
+     * @param array<array-key, mixed> $config
+     */
+    private static function bool(array $config, string $key, bool $default): bool
+    {
+        $value = self::read($config, $key) ?? $default;
+
+        return is_bool($value) ? $value : throw InvalidConfigurationException::forKey($key, 'a boolean');
+    }
+
+    /**
+     * @param array<array-key, mixed> $config
+     */
+    private static function string(array $config, string $key, string $default): string
+    {
+        $value = self::read($config, $key) ?? $default;
+
+        return is_string($value) ? $value : throw InvalidConfigurationException::forKey($key, 'a string');
+    }
+
+    /**
+     * @param array<array-key, mixed> $config
+     */
+    private static function precision(array $config, ?int $default): ?int
+    {
+        $value = self::read($config, 'describer.precision') ?? $default;
+
+        return $value === null || is_int($value)
+            ? $value
+            : throw InvalidConfigurationException::forKey('describer.precision', 'an integer or null');
+    }
+
+    /**
+     * @param array<array-key, mixed> $config
+     * @param list<string> $default
+     *
+     * @return list<string>
+     */
+    private static function whenHas(array $config, array $default): array
+    {
+        $value = self::read($config, 'describer.when-has') ?? $default;
+
+        if (is_bool($value)) {
+            return $value ? self::WHEN_HAS_SCOPES : [];
+        }
+
+        if (
+            !is_array($value)
+            || array_filter($value, is_string(...)) !== $value
+            || array_diff($value, self::WHEN_HAS_SCOPES) !== []
+        ) {
+            throw InvalidConfigurationException::forKey(
+                'describer.when-has',
+                'a boolean or a list of ' . implode(', ', self::WHEN_HAS_SCOPES),
+            );
+        }
+
+        /** @var list<string> */
+        return array_values(array_unique($value));
+    }
+
+    /**
+     * @param array<array-key, mixed> $config
+     */
+    private static function sparseRelationships(array $config, SparseRelationships $default): SparseRelationships
+    {
+        $value = self::read($config, 'fields.relationships') ?? $default->value;
+
+        return (is_string($value) ? SparseRelationships::tryFrom($value) : null)
+            ?? throw InvalidConfigurationException::forKey('fields.relationships', "'filter' or 'keep'");
+    }
+
+    /**
+     * @param array<array-key, mixed> $config
+     * @param list<string> $default
+     *
+     * @return list<string>
+     */
+    private static function paths(array $config, array $default): array
+    {
+        $value = self::read($config, 'definitions.paths') ?? $default;
+
+        if (!is_array($value) || !array_is_list($value) || array_filter($value, is_string(...)) !== $value) {
+            throw InvalidConfigurationException::forKey('definitions.paths', 'a list of directories');
+        }
+
+        /** @var list<string> $value */
+        return $value;
     }
 }

@@ -6,6 +6,7 @@ namespace Test\Unit\Testing;
 
 use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Configuration\Configuration;
+use Ark4ne\JsonApi\Definition\ResourceDefinition;
 use Ark4ne\JsonApi\Testing\ResourceAssertions;
 use PHPUnit\Framework\AssertionFailedError;
 use PHPUnit\Framework\TestCase;
@@ -31,6 +32,15 @@ final class ResourceAssertionsTest extends TestCase
     {
         $this->expectException(AssertionFailedError::class);
         $this->expectExceptionMessage('hook-failure');
+
+        ResourceAssertions::assertValid(FailingHookResource::class);
+    }
+
+    public function test_the_current_code_is_asserted_rather_than_a_cached_definition(): void
+    {
+        Definitions::preload([FailingHookResource::class => ResourceDefinition::of(FailingHookResource::class, 'stale')]);
+
+        $this->expectException(AssertionFailedError::class);
 
         ResourceAssertions::assertValid(FailingHookResource::class);
     }

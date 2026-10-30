@@ -100,10 +100,10 @@ class ConditionallyLoadsAttributesTest extends TestCase
             'present.5' => $p5 = (new Relationship(UserResource::class, fn() => null)),
         ]);
         $this->assertInstanceOf(MergeValue::class, $actual);
-        $this->assertEquals($p1, $actual->data['present.1']);
-        $this->assertEquals($p2, $actual->data['present.2']);
-        $this->assertEquals($p3, $actual->data['present.3']);
-        $this->assertEquals($p4, $actual->data['present.4']);
+        $this->assertConditionalCopyOf($p1, $actual->data['present.1']);
+        $this->assertConditionalCopyOf($p2, $actual->data['present.2']);
+        $this->assertConditionalCopyOf($p3, $actual->data['present.3']);
+        $this->assertConditionalCopyOf($p4, $actual->data['present.4']);
         $this->assertInstanceOf(RelationRaw::class, $actual->data['present.5']);
         $this->assertInstanceOf(Relationship::class, $actual->data['present.5']->retriever()());
 
@@ -115,10 +115,10 @@ class ConditionallyLoadsAttributesTest extends TestCase
             'missing.5' => (new Relationship(UserResource::class, fn() => null)),
         ]);
         $this->assertInstanceOf(MergeValue::class, $actual);
-        $this->assertEquals($p1, $actual->data['missing.1']);
-        $this->assertEquals($p2, $actual->data['missing.2']);
-        $this->assertEquals($p3, $actual->data['missing.3']);
-        $this->assertEquals($p4, $actual->data['missing.4']);
+        $this->assertConditionalCopyOf($p1, $actual->data['missing.1']);
+        $this->assertConditionalCopyOf($p2, $actual->data['missing.2']);
+        $this->assertConditionalCopyOf($p3, $actual->data['missing.3']);
+        $this->assertConditionalCopyOf($p4, $actual->data['missing.4']);
         $this->assertInstanceOf(RelationRaw::class, $actual->data['missing.5']);
         $this->assertInstanceOf(Relationship::class, $actual->data['missing.5']->retriever()());
     }
@@ -153,5 +153,19 @@ class ConditionallyLoadsAttributesTest extends TestCase
 
         $this->assertEquals(new MissingValue(), Reflect::invoke($resource, 'unless', true, 'a'));
         $this->assertEquals('a', Reflect::invoke($resource, 'unless', false, 'a'));
+    }
+
+    /**
+     * @param \Ark4ne\JsonApi\Descriptors\Describer<mixed> $original
+     *
+     * Descriptors are immutable: applyWhen() gives conditional copies and leaves the originals untouched.
+     */
+    private function assertConditionalCopyOf(\Ark4ne\JsonApi\Descriptors\Describer $original, mixed $actual): void
+    {
+        self::assertInstanceOf($original::class, $actual);
+        self::assertNotSame($original, $actual);
+        self::assertSame($original->retriever(), $actual->retriever());
+        self::assertTrue($actual->isConditional());
+        self::assertFalse($original->isConditional());
     }
 }

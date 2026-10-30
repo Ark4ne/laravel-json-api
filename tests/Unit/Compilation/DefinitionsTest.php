@@ -12,7 +12,7 @@ use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Closure;
 use PHPUnit\Framework\TestCase;
 use stdClass;
-use Test\Unit\Compilation\Fixtures\RequestDependentResource;
+use Test\Unit\Compilation\Fixtures\EagerResource;
 use Test\Unit\Compilation\Fixtures\TypedResource;
 
 final class DefinitionsTest extends TestCase
@@ -122,11 +122,23 @@ final class DefinitionsTest extends TestCase
         self::assertSame('typed', Definitions::for(TypedResource::class)->type);
     }
 
+    public function test_compile_ignores_the_cache_and_uses_the_configuration(): void
+    {
+        Definitions::configure(Configuration::fromArray(['describer' => ['nullable' => false]]));
+        Definitions::preload([TypedResource::class => ResourceDefinition::of(TypedResource::class, 'preloaded')]);
+
+        $definition = Definitions::compile(TypedResource::class);
+
+        self::assertSame('typed', $definition->type);
+        self::assertFalse($definition->attribute('title')?->nullable);
+        self::assertSame('preloaded', Definitions::for(TypedResource::class)->type);
+    }
+
     public function test_load_constraints_are_kept_by_class(): void
     {
         $constraints = Definitions::loadConstraints(TypedResource::class);
 
         self::assertInstanceOf(Closure::class, $constraints['comments']['comments'] ?? null);
-        self::assertSame([], Definitions::loadConstraints(RequestDependentResource::class));
+        self::assertSame([], Definitions::loadConstraints(EagerResource::class));
     }
 }
