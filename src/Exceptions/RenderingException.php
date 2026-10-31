@@ -37,6 +37,14 @@ final class RenderingException extends LogicException implements JsonApiExceptio
     }
 
     /**
+     * A `json()` value is a string that does not decode.
+     */
+    public static function invalidJson(string $attribute, string $error): self
+    {
+        return new self("[{$attribute}] is not valid JSON: {$error}.");
+    }
+
+    /**
      * A related model of a polymorphic relationship has a class its map does not know.
      *
      * @param list<string> $known The model classes of the map

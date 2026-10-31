@@ -8,12 +8,18 @@ use Ark4ne\JsonApi\Descriptors\Values\{Value,
     ValueArray,
     ValueBool,
     ValueDate,
+    ValueDateOnly,
+    ValueDecimal,
     ValueEnum,
     ValueFloat,
     ValueInteger,
+    ValueJson,
     ValueMixed,
     ValueString,
-    ValueStruct};
+    ValueStruct,
+    ValueTime,
+    ValueUlid,
+    ValueUuid};
 use Closure;
 use DateTimeInterface;
 use UnitEnum;
@@ -71,6 +77,74 @@ trait Values
     protected function date(string|Closure|null $attribute = null): ValueDate
     {
         return new ValueDate($attribute);
+    }
+
+    /**
+     * A calendar date, `Y-m-d` unless `format()` says otherwise.
+     *
+     * @param null|string|Closure(T):(DateTimeInterface|string|int|null) $attribute
+     *
+     * @return ValueDateOnly<T>
+     */
+    protected function dateOnly(string|Closure|null $attribute = null): ValueDateOnly
+    {
+        return new ValueDateOnly($attribute);
+    }
+
+    /**
+     * A time of day, `H:i:s` unless `format()` says otherwise.
+     *
+     * @param null|string|Closure(T):(DateTimeInterface|string|int|null) $attribute
+     *
+     * @return ValueTime<T>
+     */
+    protected function time(string|Closure|null $attribute = null): ValueTime
+    {
+        return new ValueTime($attribute);
+    }
+
+    /**
+     * An exact decimal number rendered as a string, `scale()` decimals.
+     *
+     * @param null|string|Closure(T):(string|int|float|null) $attribute
+     *
+     * @return ValueDecimal<T>
+     */
+    protected function decimal(string|Closure|null $attribute = null): ValueDecimal
+    {
+        return new ValueDecimal($attribute);
+    }
+
+    /**
+     * @param null|string|Closure(T):mixed $attribute
+     *
+     * @return ValueUuid<T>
+     */
+    protected function uuid(string|Closure|null $attribute = null): ValueUuid
+    {
+        return new ValueUuid($attribute);
+    }
+
+    /**
+     * @param null|string|Closure(T):mixed $attribute
+     *
+     * @return ValueUlid<T>
+     */
+    protected function ulid(string|Closure|null $attribute = null): ValueUlid
+    {
+        return new ValueUlid($attribute);
+    }
+
+    /**
+     * A JSON document held as a string, rendered decoded.
+     *
+     * @param null|string|Closure(T):mixed $attribute
+     *
+     * @return ValueJson<T>
+     */
+    protected function json(string|Closure|null $attribute = null): ValueJson
+    {
+        return new ValueJson($attribute);
     }
 
     /**

@@ -26,6 +26,13 @@ final class ValueTypesTest extends TestCase
         self::assertInstanceOf(ValueInteger::class, ValueTypes::make(Configuration::defaults(), 'integer'));
     }
 
+    public function test_every_type_of_the_package_is_made_by_its_name(): void
+    {
+        foreach (ValueTypes::BUILT_IN as $name => $class) {
+            self::assertInstanceOf($class, ValueTypes::make(Configuration::defaults(), $name));
+        }
+    }
+
     public function test_a_registered_type_is_made_by_its_name_for_an_attribute(): void
     {
         $value = ValueTypes::make($this->configuration(), 'money', 'price');

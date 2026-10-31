@@ -176,6 +176,7 @@ abstract class Value extends Describer
         $computed = $this->attribute instanceof Closure;
 
         return AttributeDefinition::of($name, $this->valueType())
+            ->format($this->valueFormat($configuration))
             ->nullable($this->nullable ?? $configuration->nullable)
             ->conditional($this->isConditional() || $this->sparse || $this->appliesAutoWhenHas(false))
             ->sparse($this->sparse)
@@ -189,6 +190,15 @@ abstract class Value extends Describer
     protected function valueType(): ValueType
     {
         return ValueType::Mixed;
+    }
+
+    /**
+     * The format of the values this descriptor renders, refining its type for the tools reading the definition: the
+     * PHP date format of a date, `uuid`, `decimal`…; `null` for none.
+     */
+    protected function valueFormat(Configuration $configuration): ?string
+    {
+        return null;
     }
 
     /**

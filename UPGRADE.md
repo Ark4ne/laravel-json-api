@@ -143,6 +143,11 @@ Clients reading the documents must expect:
   are merged key by key, the first resource setting a key keeping it, instead of gathered into lists. To set document
   meta for the whole collection, override `toDocumentMeta()` on the collection class: it wins over those of the resources.
 
+### New value helpers
+
+`$this->uuid()`, `ulid()`, `decimal()`, `json()`, `time()` and `dateOnly()` are value descriptors now. A resource that
+called a model method of one of these names through `$this` must call it on the model: `$this->resource->uuid()`.
+
 ### Renamed methods
 
 - `toMeta()` (document meta) is renamed `toDocumentMeta()`, on resources and collections: a class still declaring

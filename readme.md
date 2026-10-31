@@ -498,6 +498,12 @@ UserResource::collection(User::all()); // => JsonApiCollection
 | `float`   | Cast to float, rounded to `->precision(2)`, or `->truncate()`d  |
 | `string`  | Cast to string                                                  |
 | `date`    | Cast to date, allow to use custom format; `null` stays `null`   |
+| `dateOnly`| Date without time, `Y-m-d` unless `->format()`                 |
+| `time`    | Time of day, `H:i:s` unless `->format()`                        |
+| `decimal` | Exact decimal as a string (`"12.50"`), `->scale(2)`; no float   |
+| `uuid`    | UUID object or string, as a string                              |
+| `ulid`    | ULID object or string, as a string                              |
+| `json`    | JSON string, rendered decoded                                   |
 | `array`   | Cast to array, supports typed arrays with `->of()`              |
 | `arrayOf` | Helper method for typed arrays (alternative to `array()->of()`) |
 | `mixed`   | Don't cast, return as is                                        |
@@ -506,8 +512,9 @@ UserResource::collection(User::all()); // => JsonApiCollection
 
 #### Value types of the application
 
-A value type of your own extends `Ark4ne\JsonApi\Descriptors\Values\Value`: it casts the raw value and declares its
-`ValueType` (and a format, if any) for the definition.
+Each value type gives the definition its `ValueType` and a format (`uuid`, `decimal`, the PHP format of a date…), read
+by the tools that document the resources. A value type of your own extends `Ark4ne\JsonApi\Descriptors\Values\Value`:
+it casts the raw value and declares its `valueType()` (and `valueFormat()`, if any).
 
 ```php
 final class MoneyValue extends Value
@@ -520,6 +527,11 @@ final class MoneyValue extends Value
     protected function valueType(): ValueType
     {
         return ValueType::String;
+    }
+
+    protected function valueFormat(Configuration $configuration): ?string
+    {
+        return 'money';
     }
 }
 ```

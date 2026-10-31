@@ -72,6 +72,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `RenderingException`. The definition exposes the map (`morphs`, `isPolymorphic()`), the validation rules accept an
   include or a fieldset one of the related resources has (path by path), and the related models are loaded resource
   by resource.
+- **New value types**: `dateOnly()` (`Y-m-d`), `time()` (`H:i:s`), `decimal()` (an exact decimal rendered as a
+  string, `->scale(2)` rounding half away from zero, no float on the way), `uuid()`, `ulid()` and `json()` (a JSON
+  string rendered decoded; an invalid one throws a `RenderingException`). Each gives the definition a format
+  (`Y-m-d`, `H:i:s`, `decimal`, `uuid`, `ulid`, `json`), and is named as the items of an array (`->of('uuid')`).
+- `Value::valueFormat()`: the format a value type gives its definition, next to `valueType()`.
 - **Value types of the application**: a `Value` subclass registered under a name (`describer.types`, or
   `JsonApi::valueType('money', MoneyValue::class)`) is written `$this->money()` in a resource and named as the items
   of an array (`->of('money')`, as the types of the package: `->of('integer')`). `Descriptors\ValueTypes` is the
@@ -161,6 +166,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   declaring `toMeta()` throws a `DefinitionException` rather than losing its meta silently.
 - **Breaking:** `Relationship::withLinks()`, `withMeta()` and `withIdentifierMeta()` are renamed `links()`, `meta()`
   and `identifierMeta()`, as on the relationship descriptors.
+
+- **Breaking:** `$this->uuid()`, `ulid()`, `decimal()`, `json()`, `time()` and `dateOnly()` in a resource return a
+  value descriptor instead of calling the method of that name on the model: call it on `$this->resource`.
 
 ### Removed
 

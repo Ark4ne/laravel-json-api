@@ -376,7 +376,8 @@ Registries order their entries by priority, never by the order of a configuratio
 
 ### Add a value type
 
-1. Create `src/Descriptors/Values/<Type>Value.php` extending `Value`, declare its `ValueType` and its cast.
+1. Create `src/Descriptors/Values/Value<Type>.php` (`final`) extending `Value`, declare its cast, its `valueType()`
+   and its `valueFormat()`.
 2. Add it to `Descriptors\ValueTypes::BUILT_IN` (unless it needs more than an attribute, as a struct) and add the
    helper to the `Values` concern. An application does the same with `describer.types` / `JsonApi::valueType()`, its
    helper being `JsonApiResource::__call()`.

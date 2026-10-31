@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Test\app\Values;
 
 use Ark4ne\JsonApi\Configuration\Configuration;
-use Ark4ne\JsonApi\Definition\AttributeDefinition;
 use Ark4ne\JsonApi\Definition\ValueType;
 use Ark4ne\JsonApi\Descriptors\Values\Value;
 use Illuminate\Http\Request;
@@ -23,16 +22,13 @@ final class MoneyValue extends Value
         return number_format(is_numeric($of) ? (int) $of / 100 : 0, 2, '.', '');
     }
 
-    public function definition(
-        string $name,
-        mixed $subject = null,
-        ?Configuration $configuration = null,
-    ): AttributeDefinition {
-        return parent::definition($name, $subject, $configuration)->format('money');
-    }
-
     protected function valueType(): ValueType
     {
         return ValueType::String;
+    }
+
+    protected function valueFormat(Configuration $configuration): string
+    {
+        return 'money';
     }
 }

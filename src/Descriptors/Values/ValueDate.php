@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Ark4ne\JsonApi\Descriptors\Values;
 
 use Ark4ne\JsonApi\Configuration\Configuration;
-use Ark4ne\JsonApi\Definition\AttributeDefinition;
 use Ark4ne\JsonApi\Definition\ValueType;
 use DateTime;
 use DateTimeInterface;
@@ -26,14 +25,6 @@ class ValueDate extends Value
         return $this->with('format', $format);
     }
 
-    public function definition(
-        string $name,
-        mixed $subject = null,
-        ?Configuration $configuration = null,
-    ): AttributeDefinition {
-        return parent::definition($name, $subject, $configuration)
-            ->format($this->format ?? ($configuration ?? Configuration::defaults())->dateFormat);
-    }
 
     /**
      * `null` stays `null`, even when not nullable: no date stands for it.
@@ -45,14 +36,29 @@ class ValueDate extends Value
         if ($of === null) {
             return null;
         }
+        $format = $this->valueFormat($configuration);
+
         if ($of instanceof DateTimeInterface) {
-            return $of->format($this->format ?? $configuration->dateFormat);
+            return $of->format($format);
         }
         if (is_numeric($of)) {
-            return (new DateTime("@$of"))->format($this->format ?? $configuration->dateFormat);
+            return (new DateTime("@$of"))->format($format);
         }
 
-        return (new DateTime($of))->format($this->format ?? $configuration->dateFormat);
+        return (new DateTime($of))->format($format);
+    }
+
+    protected function valueFormat(Configuration $configuration): string
+    {
+        return $this->format ?? $this->defaultFormat($configuration);
+    }
+
+    /**
+     * The format when none is set with `format()`: the configured one (`describer.date`).
+     */
+    protected function defaultFormat(Configuration $configuration): string
+    {
+        return $configuration->dateFormat;
     }
 
     protected function valueType(): ValueType

@@ -9,11 +9,17 @@ use Ark4ne\JsonApi\Descriptors\Values\Value;
 use Ark4ne\JsonApi\Descriptors\Values\ValueArray;
 use Ark4ne\JsonApi\Descriptors\Values\ValueBool;
 use Ark4ne\JsonApi\Descriptors\Values\ValueDate;
+use Ark4ne\JsonApi\Descriptors\Values\ValueDateOnly;
+use Ark4ne\JsonApi\Descriptors\Values\ValueDecimal;
 use Ark4ne\JsonApi\Descriptors\Values\ValueEnum;
 use Ark4ne\JsonApi\Descriptors\Values\ValueFloat;
 use Ark4ne\JsonApi\Descriptors\Values\ValueInteger;
+use Ark4ne\JsonApi\Descriptors\Values\ValueJson;
 use Ark4ne\JsonApi\Descriptors\Values\ValueMixed;
 use Ark4ne\JsonApi\Descriptors\Values\ValueString;
+use Ark4ne\JsonApi\Descriptors\Values\ValueTime;
+use Ark4ne\JsonApi\Descriptors\Values\ValueUlid;
+use Ark4ne\JsonApi\Descriptors\Values\ValueUuid;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Exceptions\InvalidConfigurationException;
 use Closure;
@@ -35,6 +41,12 @@ final class ValueTypes
         'float' => ValueFloat::class,
         'string' => ValueString::class,
         'date' => ValueDate::class,
+        'dateOnly' => ValueDateOnly::class,
+        'time' => ValueTime::class,
+        'decimal' => ValueDecimal::class,
+        'uuid' => ValueUuid::class,
+        'ulid' => ValueUlid::class,
+        'json' => ValueJson::class,
         'array' => ValueArray::class,
         'mixed' => ValueMixed::class,
         'enum' => ValueEnum::class,

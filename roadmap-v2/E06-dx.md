@@ -21,8 +21,10 @@
       `Laravel\JsonApi::valueType()` réapplique la configuration, `$this->money()` par `JsonApiResource::__call()` ;
       `->of('money')` / `->of('integer')` par nom ; `->of(ValueStruct::class)` lève une `DefinitionException` dès la
       déclaration
-- [ ] **E6.7** Nouveaux types : `uuid()`, `ulid()`, `decimal()` (string), `json()`, `time()`, `dateOnly()`, chacun avec
-      un format exploitable par la définition
+- [x] **E6.7** Nouveaux types : `uuid()`, `ulid()`, `decimal()` (string), `json()`, `time()`, `dateOnly()`, chacun avec
+      un format exploitable par la définition — formats `uuid`, `ulid`, `decimal`, `json` ; `dateOnly()` / `time()`
+      sont des dates de format `Y-m-d` / `H:i:s` (le format d'une date reste son format PHP) ; hook `valueFormat()` ;
+      `decimal()` arrondit sur les chiffres, sans float
 - [ ] **E6.9** `applyWhen` documenté comme **la** manière de grouper des conditions ; `mergeWhen` produit un
       diagnostic, car il masque les champs de la définition
 
