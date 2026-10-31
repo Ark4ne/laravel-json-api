@@ -22,7 +22,7 @@ use Test\app\Models\User;
 final class Article extends Model
 {
     /** @var list<string> */
-    protected $fillable = ['title', 'state', 'body'];
+    protected $fillable = ['title', 'state', 'body', 'type', 'author_id', 'subject_type', 'subject_id'];
 
     /** @var list<string> */
     protected $hidden = ['secret'];
@@ -35,12 +35,14 @@ final class Article extends Model
         'price' => 'decimal:2',
         'published' => 'boolean',
         'published_on' => 'date',
+        'archived_on' => 'date:d/m/Y',
         'reviewed_at' => 'datetime:Y-m-d H:i',
         'tags' => 'array',
         'options' => 'encrypted:array',
         'secret' => 'string',
         'password' => 'hashed',
         'extra' => 'object',
+        'expires' => 'timestamp',
     ];
 
     /** @return BelongsTo<User, $this> */

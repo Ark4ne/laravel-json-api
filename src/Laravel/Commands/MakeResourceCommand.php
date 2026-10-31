@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Laravel\Commands;
 
+use Ark4ne\JsonApi\Descriptors\Relations\GuessedResource;
 use Ark4ne\JsonApi\Resources\Attributes\JsonApiModel;
 use Illuminate\Console\GeneratorCommand;
 use Illuminate\Database\Eloquent\Model;
@@ -17,15 +18,18 @@ use ReflectionClass;
 use ReflectionMethod;
 use ReflectionNamedType;
 use Symfony\Component\Console\Input\InputOption;
+use Throwable;
 use UnitEnum;
 
 /**
  * Generates a resource in `app/Http/Resources`, described from its Eloquent model when there is one.
  *
- * - The model: `--model`, otherwise the convention of the guessed relationships (`App\Http\Resources\PostResource` →
- *   `App\Models\Post`); `#[JsonApiModel]` is written when the convention does not find it.
- * - The attributes: the casts (typed descriptor), then the fillable attributes without cast (`mixed()`), then the
- *   timestamps; neither the key nor the hidden attributes.
+ * - The model: `--model` (it must exist), otherwise the convention of the guessed relationships
+ *   (`App\Http\Resources\PostResource` → `App\Models\Post`); `#[JsonApiModel]` is written when the convention does
+ *   not find it.
+ * - The attributes: the casts (typed descriptor, with the format of a date and the scale of a decimal), then the
+ *   fillable attributes without cast (`mixed()`), then the timestamps; neither the key, `id`, `type`, the hidden
+ *   attributes nor the foreign keys of the `BelongsTo` relations, rendered as relationships.
  * - The relationships: the public methods of the model typed with a relation, declared without resource class
  *   (`$this->one()`); a `MorphTo` is written as a comment, its resources being unknown.
  *
@@ -33,8 +37,14 @@ use UnitEnum;
  */
 final class MakeResourceCommand extends GeneratorCommand
 {
-    /** A `MorphTo` is written as a comment: its resources are unknown. */
-    private const MORPH_TO = '$this->morph([/* Model::class => Resource::class */])';
+    /** Names a resource object reserves, never written as attributes (`DefinitionCompiler`). */
+    private const RESERVED_NAMES = ['id', 'type'];
+
+    /** @var class-string|null The model of the resource being generated, resolved by `handle()` */
+    private ?string $model = null;
+
+    /** The model built, when it is an Eloquent one */
+    private ?Model $instance = null;
 
     /** @var string */
     protected $name = 'make:jsonapi-resource';
@@ -72,32 +82,66 @@ final class MakeResourceCommand extends GeneratorCommand
     }
 
     /**
+     * Resolves the model before writing anything: an explicit `--model` must exist and be built without argument.
+     */
+    public function handle(): ?bool
+    {
+        /** @var string|null $option */
+        $option = $this->option('model');
+        $model = $option !== null
+            ? $this->explicitModel($option)
+            : GuessedResource::conventionalModel($this->qualifyClass($this->getNameInput()));
+
+        if ($option !== null && $model === null) {
+            $this->fail("The model [{$option}] does not exist.");
+        }
+
+        if ($model !== null && is_subclass_of($model, Model::class)) {
+            try {
+                $this->instance = (new ReflectionClass($model))->newInstance();
+            } catch (Throwable $e) {
+                $this->fail("The model [{$model}] cannot be built without argument: {$e->getMessage()}");
+            }
+        }
+
+        $this->model = $model;
+
+        return parent::handle();
+    }
+
+    /**
      * @param string $name
      */
     protected function buildClass($name): string
     {
-        $model = $this->model($name);
-        $instance = $model !== null && is_subclass_of($model, Model::class) ? new $model() : null;
-
         $imports = [];
         $attribute = '';
-        if ($model !== null) {
-            $imports[] = $model;
-            if ($model !== $this->conventionalModel($name)) {
+        $reference = 'mixed';
+
+        if ($this->model !== null) {
+            // A short name already used in the file is written fully qualified (`class Post` of `App\Models\Post`).
+            $taken = [class_basename($name), 'JsonApiResource', 'Request', 'JsonApiModel'];
+            $clash = in_array(class_basename($this->model), $taken, true);
+            $reference = $clash ? "\\{$this->model}" : class_basename($this->model);
+            if (!$clash) {
+                $imports[] = $this->model;
+            }
+            if ($this->model !== GuessedResource::conventionalModel($name)) {
                 $imports[] = JsonApiModel::class;
-                $attribute = '#[JsonApiModel(' . class_basename($model) . "::class)]\n";
+                $attribute = "#[JsonApiModel({$reference}::class)]\n";
             }
         }
 
-        $relationships = $instance !== null ? $this->relationships($instance) : [];
+        [$relationships, $foreignKeys] = $this->instance !== null ? $this->relationships($this->instance) : [[], []];
+        $attributes = $this->instance !== null ? $this->attributes($this->instance, $foreignKeys) : [];
 
         return str_replace(
             ['{{ imports }}', '{{ model }}', '{{ attribute }}', '{{ attributes }}', '{{ relationships }}'],
             [
                 implode('', array_map(static fn(string $import): string => "use {$import};\n", $imports)),
-                $model !== null ? class_basename($model) : 'mixed',
+                $reference,
                 $attribute,
-                $this->members($instance !== null ? $this->attributes($instance) : []),
+                $this->members($attributes),
                 $relationships !== [] ? <<<PHP
 
                     protected function toRelationships(Request \$request): iterable
@@ -112,20 +156,12 @@ final class MakeResourceCommand extends GeneratorCommand
     }
 
     /**
-     * The model of the resource: `--model`, otherwise the conventional one when it exists.
+     * The class given by `--model`, as is or qualified in the models of the application; `null` when none exists.
      *
      * @return class-string|null
      */
-    private function model(string $resource): ?string
+    private function explicitModel(string $option): ?string
     {
-        /** @var string|null $option */
-        $option = $this->option('model');
-        if ($option === null) {
-            $model = $this->conventionalModel($resource);
-
-            return $model !== null && class_exists($model) ? $model : null;
-        }
-
         $model = ltrim(str_replace('/', '\\', $option), '\\');
         $model = class_exists($model) ? $model : $this->qualifyModel($model);
 
@@ -133,26 +169,13 @@ final class MakeResourceCommand extends GeneratorCommand
     }
 
     /**
-     * `X\Http\Resources\PostResource` → `X\Models\Post`, as for the relationships declared without resource class.
-     */
-    private function conventionalModel(string $resource): ?string
-    {
-        $segments = explode('\\Http\\Resources\\', $resource, 2);
-        if (count($segments) !== 2) {
-            return null;
-        }
-
-        $name = preg_replace('/Resource$/', '', $segments[1]);
-
-        return $name === '' || $name === null ? null : "{$segments[0]}\\Models\\{$name}";
-    }
-
-    /**
+     * @param list<string> $foreignKeys The keys of the `BelongsTo` relations, rendered as relationships
+     *
      * @return array<string, string> Descriptors by attribute
      */
-    private function attributes(Model $model): array
+    private function attributes(Model $model, array $foreignKeys): array
     {
-        $excluded = [$model->getKeyName(), ...$model->getHidden()];
+        $excluded = [$model->getKeyName(), ...self::RESERVED_NAMES, ...$model->getHidden(), ...$foreignKeys];
         $attributes = [];
 
         foreach ($model->getCasts() as $attribute => $cast) {
@@ -178,7 +201,7 @@ final class MakeResourceCommand extends GeneratorCommand
     }
 
     /**
-     * The descriptor of a cast; `null` for a hashed attribute, never rendered.
+     * The descriptor of a cast, with its format or scale; `null` for a hashed attribute, never rendered.
      */
     private function descriptor(string $cast): ?string
     {
@@ -186,38 +209,45 @@ final class MakeResourceCommand extends GeneratorCommand
             return '$this->enum()';
         }
 
-        $type = strtolower(explode(':', $cast, 2)[0]);
-        if ($type === 'encrypted' && str_contains($cast, ':')) {
-            $type = strtolower(explode(':', $cast, 2)[1]);
+        $parts = explode(':', $cast, 2);
+        $type = strtolower($parts[0]);
+        $argument = $parts[1] ?? null;
+        if ($type === 'encrypted' && $argument !== null) {
+            [$type, $argument] = [strtolower($argument), null];
         }
+        $format = $argument !== null ? '->format(' . var_export($argument, true) . ')' : '';
 
         return match ($type) {
             'hashed' => null,
-            'int', 'integer' => '$this->integer()',
+            // The `timestamp` cast gives the Unix timestamp.
+            'int', 'integer', 'timestamp' => '$this->integer()',
             'real', 'float', 'double' => '$this->float()',
-            'decimal' => '$this->decimal()',
+            'decimal' => '$this->decimal()' . ($argument !== null && ctype_digit($argument) ? "->scale({$argument})" : ''),
             'string', 'encrypted' => '$this->string()',
             'bool', 'boolean' => '$this->bool()',
-            'date', 'immutable_date' => '$this->date()',
-            'datetime', 'immutable_datetime', 'custom_datetime', 'immutable_custom_datetime', 'timestamp'
-                => '$this->datetime()',
+            'date', 'immutable_date' => '$this->date()' . $format,
+            'datetime', 'immutable_datetime', 'custom_datetime', 'immutable_custom_datetime' => '$this->datetime()' . $format,
             'array', 'json', 'collection' => '$this->array()',
             default => '$this->mixed()',
         };
     }
 
     /**
-     * @return array<string, string> Descriptors by relationship
+     * The relations of the model, by the public methods typed with one, and the foreign keys of its `BelongsTo`.
+     *
+     * @return array{array<string, string|null>, list<string>} Descriptors by relationship, `null` for a `MorphTo`
      */
     private function relationships(Model $model): array
     {
         $relationships = [];
+        $foreignKeys = [];
 
         foreach ((new ReflectionClass($model))->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
             $type = $method->getReturnType();
             if (
                 $method->isStatic()
                 || $method->getNumberOfRequiredParameters() > 0
+                || str_starts_with($method->getDeclaringClass()->getName(), 'Illuminate\\')
                 || !$type instanceof ReflectionNamedType
                 || !is_a($type->getName(), Relation::class, true)
             ) {
@@ -233,15 +263,41 @@ final class MakeResourceCommand extends GeneratorCommand
                 is_a($relation, MorphOne::class, true) => '$this->one()',
                 default => '$this->many()',
             };
+
+            if (is_a($relation, BelongsTo::class, true)) {
+                array_push($foreignKeys, ...$this->foreignKeys($model, $method->getName()));
+            }
         }
 
-        return array_map(static fn(?string $descriptor): string => $descriptor ?? self::MORPH_TO, $relationships);
+        return [$relationships, $foreignKeys];
     }
 
     /**
-     * The members of a returned array, one per line.
+     * The foreign key of a `BelongsTo`, and the type column of a `MorphTo`: building the relation runs no query.
      *
-     * @param array<string, string> $members
+     * @return list<string>
+     */
+    private function foreignKeys(Model $model, string $method): array
+    {
+        $callable = [$model, $method];
+
+        try {
+            $relation = is_callable($callable) ? $callable() : null;
+        } catch (Throwable) {
+            return [];
+        }
+
+        return match (true) {
+            $relation instanceof MorphTo => [$relation->getForeignKeyName(), $relation->getMorphType()],
+            $relation instanceof BelongsTo => [$relation->getForeignKeyName()],
+            default => [],
+        };
+    }
+
+    /**
+     * The members of a returned array, one per line; a `MorphTo` (`null`) as a comment, its resources being unknown.
+     *
+     * @param array<string, string|null> $members
      */
     private function members(array $members): string
     {
@@ -250,8 +306,8 @@ final class MakeResourceCommand extends GeneratorCommand
         }
 
         $lines = array_map(
-            static fn(string $name, string $descriptor): string => $descriptor === self::MORPH_TO
-                ? "            // '{$name}' => {$descriptor},\n"
+            static fn(string $name, ?string $descriptor): string => $descriptor === null
+                ? "            // '{$name}' => \$this->morph([/* Model::class => Resource::class */]),\n"
                 : "            '{$name}' => {$descriptor},\n",
             array_keys($members),
             $members,

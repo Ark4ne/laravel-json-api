@@ -34,9 +34,10 @@ names the key. Compare your published file with the package one for the new keys
 ### Values
 
 - **`$this->date()` renders a date without time** (`2026-10-31`, `Y-m-d`); a date and time is `$this->datetime()`,
-  in the format of `describer.datetime` (ex-`describer.date`, ATOM by default). Nothing fails: replace `->date(` by
-  `->datetime(` wherever the time is rendered, and rename `describer.date` to `describer.datetime` in a published
-  `config/jsonapi.php` (the old key is ignored). `Values\ValueDate` is the date without time; the 1.x class is
+  in the format of `describer.datetime` (ex-`describer.date`, ATOM by default). Replace `->date(` by `->datetime(`
+  wherever the time is rendered: a resource left with `date()` loses the time without error. A published
+  `config/jsonapi.php` still setting `describer.date` throws an `InvalidConfigurationException` at boot: rename it
+  `describer.datetime`. `Values\ValueDate` is the date without time; the 1.x class is
   `Values\ValueDateTime`.
 - A float with a precision is rounded instead of floored: `$this->float()->precision(2)` renders `1.24` for `1.239`
   (1.x: `1.23`), `1.15` for `1.15` (1.x: `1.14`). Add `->truncate()` to truncate.

@@ -123,16 +123,34 @@ final class GuessedResource
             return $model;
         }
 
-        // The reverse of `Model::guessResourceName()`, for the resource then its parents.
+        // For the resource then its parents.
         foreach ([$resource, ...array_values(class_parents($resource))] as $class) {
-            $segments = explode('\\Http\\Resources\\', $class, 2);
+            $model = self::conventionalModel($class);
 
-            foreach (count($segments) === 2 ? array_unique([preg_replace('/Resource$/', '', $segments[1]), $segments[1]]) : [] as $name) {
-                $model = "{$segments[0]}\\Models\\{$name}";
+            if ($model !== null) {
+                return $model;
+            }
+        }
 
-                if (class_exists($model)) {
-                    return $model;
-                }
+        return null;
+    }
+
+    /**
+     * The model of a resource class by convention, the reverse of `Model::guessResourceName()`:
+     * `App\Http\Resources\PostResource` → `App\Models\Post`, otherwise `App\Models\PostResource`; `null` when none
+     * exists. The resource class itself need not exist (`make:jsonapi-resource`).
+     *
+     * @return class-string|null
+     */
+    public static function conventionalModel(string $resource): ?string
+    {
+        $segments = explode('\\Http\\Resources\\', $resource, 2);
+
+        foreach (count($segments) === 2 ? array_unique([preg_replace('/Resource$/', '', $segments[1]), $segments[1]]) : [] as $name) {
+            $model = "{$segments[0]}\\Models\\{$name}";
+
+            if (class_exists($model)) {
+                return $model;
             }
         }
 

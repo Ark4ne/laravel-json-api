@@ -148,11 +148,12 @@ class UserResource extends JsonApiResource
 ### Generate a resource
 
 `php artisan make:jsonapi-resource PostResource` writes `app/Http/Resources/PostResource.php` from the model
-(`--model=Post`, otherwise `App\Models\Post` found by the convention; `--force` overwrites):
+(`--model=Post`, which must exist, otherwise `App\Models\Post` found by the convention; `--force` overwrites):
 
-- the attributes from the casts (`'published_at' => 'datetime'` gives `$this->datetime()`, an enum gives `$this->enum()`),
-  then the fillable attributes without cast (`$this->mixed()`) and the timestamps; neither the key nor the hidden
-  attributes;
+- the attributes from the casts (`'published_at' => 'datetime:Y-m-d H:i'` gives
+  `$this->datetime()->format('Y-m-d H:i')`, `'decimal:2'` gives `$this->decimal()->scale(2)`, an enum gives
+  `$this->enum()`), then the fillable attributes without cast (`$this->mixed()`) and the timestamps; neither the key,
+  `id`, `type`, the hidden attributes nor the foreign keys of the `BelongsTo` relations;
 - the relationships from the public methods typed with a relation, declared without resource class
   (`'user' => $this->one()`); a `MorphTo` is left as a comment, to complete with its resources.
 

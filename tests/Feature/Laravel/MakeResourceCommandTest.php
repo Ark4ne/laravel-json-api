@@ -7,6 +7,7 @@ namespace Test\Feature\Laravel;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Artisan;
 use Test\Feature\FeatureTestCase;
+use Test\Feature\Laravel\Fixtures\Make\AbstractModel;
 use Test\Feature\Laravel\Fixtures\Make\Article;
 use Test\Support\Reflect;
 
@@ -101,6 +102,31 @@ final class MakeResourceCommandTest extends FeatureTestCase
         } finally {
             @unlink("{$base}/stubs/jsonapi-resource.stub");
         }
+    }
+
+    public function test_a_model_named_as_the_resource_is_written_fully_qualified(): void
+    {
+        require_once __DIR__ . '/Fixtures/Make/App/Models/Note.php';
+
+        self::assertSame(0, Artisan::call('make:jsonapi-resource', ['name' => 'Note']));
+
+        $generated = $this->generated('Note');
+        self::assertStringNotContainsString('use App\\Models\\Note;', $generated);
+        self::assertStringContainsString('@extends JsonApiResource<\\App\\Models\\Note>', $generated);
+    }
+
+    public function test_a_model_that_does_not_exist_fails(): void
+    {
+        self::assertSame(1, Artisan::call('make:jsonapi-resource', ['name' => 'ArticleResource', '--model' => 'Psot']));
+        self::assertStringContainsString('The model [Psot] does not exist.', Artisan::output());
+        self::assertFileDoesNotExist("{$this->base}/app/Http/Resources/ArticleResource.php");
+    }
+
+    public function test_a_model_that_cannot_be_built_fails(): void
+    {
+        self::assertSame(1, Artisan::call('make:jsonapi-resource', ['name' => 'ArticleResource', '--model' => AbstractModel::class]));
+        self::assertStringContainsString('cannot be built without argument', Artisan::output());
+        self::assertFileDoesNotExist("{$this->base}/app/Http/Resources/ArticleResource.php");
     }
 
     private function generated(string $name): string

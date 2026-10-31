@@ -16,4 +16,12 @@ final class InvalidConfigurationException extends InvalidArgumentException imple
     {
         return new self("The configuration key [jsonapi.{$key}] must be {$expected}.");
     }
+
+    /**
+     * A key of 1.x renamed in 2.0, still set: its value would be ignored.
+     */
+    public static function renamed(string $key, string $now): self
+    {
+        return new self("The configuration key [jsonapi.{$key}] is renamed [jsonapi.{$now}].");
+    }
 }

@@ -201,4 +201,12 @@ final class ConfigurationTest extends TestCase
 
         Configuration::fromArray([])->prependRenderingStages('App\\Unknown');
     }
+
+    public function test_the_date_format_key_of_1x_must_be_renamed(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessage('[jsonapi.describer.date] is renamed [jsonapi.describer.datetime]');
+
+        Configuration::fromArray(['describer' => ['date' => DateTimeInterface::ATOM]]);
+    }
 }

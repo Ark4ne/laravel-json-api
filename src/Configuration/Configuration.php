@@ -81,11 +81,16 @@ final readonly class Configuration
      *
      * @param array<array-key, mixed> $config
      *
-     * @throws InvalidConfigurationException when a key has a value of the wrong type
+     * @throws InvalidConfigurationException when a key has a value of the wrong type, or is a renamed key of 1.x
      */
     public static function fromArray(array $config): self
     {
         $defaults = self::defaults();
+
+        // `describer.date` formatted the dates of `date()`, which renders `Y-m-d` now: the format is `datetime()`'s.
+        if (is_array($config['describer'] ?? null) && array_key_exists('date', $config['describer'])) {
+            throw InvalidConfigurationException::renamed('describer.date', 'describer.datetime');
+        }
 
         return new self(
             nullable: self::bool($config, 'describer.nullable', $defaults->nullable),

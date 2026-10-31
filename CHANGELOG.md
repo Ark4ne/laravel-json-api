@@ -26,8 +26,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **`php artisan jsonapi:check [resources…] [--strict]`** prints the diagnostics of the resources and fails on an error
   (on a warning too with `--strict`).
 - **`php artisan make:jsonapi-resource PostResource [--model=Post] [--force]`** generates a resource from its Eloquent
-  model: attributes from the casts, the fillable attributes and the timestamps, relationships from the methods typed
-  with a relation. `vendor:publish --tag=jsonapi-stubs` publishes its stub.
+  model: attributes from the casts (with the format of a date and the scale of a decimal), the fillable attributes and
+  the timestamps, relationships from the methods typed with a relation. `vendor:publish --tag=jsonapi-stubs` publishes
+  its stub.
 - **`Testing\ResourceAssertions::assertValid(PostResource::class, strict: false)`** for the test suites of applications.
 - **`Context\JsonApiContext`**, bound once per request: the parsed `include` (`IncludeTree`) and `fields`
   (`SparseFieldsets`), the configuration and the diagnostics of the request. `include` and `fields` are read from the
@@ -126,7 +127,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Every source file declares `strict_types=1`.
 - **Breaking:** `$this->date()` renders a date without time (`Y-m-d`, `Values\ValueDate`); a date and time is
   `$this->datetime()` (`Values\ValueDateTime`, the former `ValueDate`), whose default format is `describer.datetime`
-  (ex-`describer.date`). A date value that is neither a date, a timestamp nor a string throws a `RenderingException`.
+  (ex-`describer.date`, which throws an `InvalidConfigurationException` when still set). A date value that is neither a date, a timestamp nor a string throws a `RenderingException`.
 - **Breaking:** a float with a precision is rounded (`1.239` gives `1.24`, `-1.111` gives `-1.11`) instead of floored
   (`1.15` gave `1.14`). `->truncate()` truncates towards zero.
 - **Breaking:** `enum()->of(State::class)` casts a raw value through the enum (`tryFrom()` for a backed enum, the
