@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Test\Unit\Rendering;
 
-use Ark4ne\JsonApi\Descriptors\Values\ValueDate;
+use Ark4ne\JsonApi\Descriptors\Values\ValueDateTime;
 use Ark4ne\JsonApi\Descriptors\Values\ValueFloat;
 use Ark4ne\JsonApi\Descriptors\Values\ValueInteger;
 use Ark4ne\JsonApi\Descriptors\Values\ValueString;
@@ -37,11 +37,11 @@ final class ValueResolverTest extends TestCase
     public function test_the_values_read_their_defaults_from_the_configuration_of_the_context(): void
     {
         $model = ['price' => 1.239, 'at' => new DateTimeImmutable('2024-05-01 10:00:00+00:00'), 'note' => null];
-        $members = ['price' => new ValueFloat('price'), 'at' => new ValueDate('at'), 'note' => new ValueString('note')];
+        $members = ['price' => new ValueFloat('price'), 'at' => new ValueDateTime('at'), 'note' => new ValueString('note')];
 
         $resolved = (new ValueResolver())->resolve($members, $model, Contexts::of(config: ['describer' => [
             'precision' => 1,
-            'date' => 'Y-m-d',
+            'datetime' => 'Y-m-d',
             'nullable' => false,
         ]]));
 

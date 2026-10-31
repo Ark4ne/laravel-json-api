@@ -1,0 +1,17 @@
+<?php
+
+namespace {{ namespace }};
+
+use Ark4ne\JsonApi\Resources\JsonApiResource;
+use Illuminate\Http\Request;
+{{ imports }}
+/**
+ * @extends JsonApiResource<{{ model }}>
+ */
+{{ attribute }}class {{ class }} extends JsonApiResource
+{
+    public function toAttributes(Request $request): iterable
+    {
+        return [{{ attributes }}];
+    }
+{{ relationships }}}

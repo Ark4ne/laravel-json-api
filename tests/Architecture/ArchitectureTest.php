@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Test\Architecture;
 
 use Ark4ne\JsonApi\Descriptors\Values\Value;
+use Ark4ne\JsonApi\Descriptors\Values\ValueDateTime;
 use Ark4ne\JsonApi\Resources\JsonApiCollection;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use PHPat\Selector\Classname;
@@ -47,6 +48,7 @@ final class ArchitectureTest
         JsonApiResource::class,
         JsonApiCollection::class,
         Value::class,
+        ValueDateTime::class,
     ];
 
     /**

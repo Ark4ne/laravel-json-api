@@ -289,18 +289,6 @@ parameters:
 			path: src/Descriptors/Values/ValueBool.php
 
 		-
-			message: '#^Ark4ne\\JsonApi\\Descriptors\\Values\\ValueDate should be final$#'
-			identifier: phpat.testClassesAreFinal
-			count: 1
-			path: src/Descriptors/Values/ValueDate.php
-
-		-
-			message: '#^Parameter \#1 \$datetime of class DateTime constructor expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Descriptors/Values/ValueDate.php
-
-		-
 			message: '#^Ark4ne\\JsonApi\\Descriptors\\Values\\ValueEnum should be final$#'
 			identifier: phpat.testClassesAreFinal
 			count: 1
@@ -1222,18 +1210,6 @@ parameters:
 			message: '#^Call to an undefined method object\:\:retriever\(\)\.$#'
 			identifier: method.notFound
 			count: 2
-			path: tests/Unit/Descriptors/DescriptorsTraitTest.php
-
-		-
-			message: '#^Class AnonymousClass851b8559e292424950e4653170da7104 uses generic trait Ark4ne\\JsonApi\\Descriptors\\Relations but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Unit/Descriptors/DescriptorsTraitTest.php
-
-		-
-			message: '#^Class AnonymousClass851b8559e292424950e4653170da7104 uses generic trait Ark4ne\\JsonApi\\Descriptors\\Values but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
 			path: tests/Unit/Descriptors/DescriptorsTraitTest.php
 
 		-

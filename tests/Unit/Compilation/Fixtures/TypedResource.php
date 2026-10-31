@@ -77,7 +77,7 @@ final class TypedResource extends JsonApiResource
     protected function toResourceMeta(Request $request): iterable
     {
         return [
-            'created-at' => $this->date(),
+            'created-at' => $this->datetime(),
         ];
     }
 }

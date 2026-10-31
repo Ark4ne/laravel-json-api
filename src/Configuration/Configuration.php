@@ -21,7 +21,7 @@ final readonly class Configuration
 
     /**
      * @param bool $nullable Values are nullable unless a descriptor says otherwise (`describer.nullable`)
-     * @param string $dateFormat Default format of date values (`describer.date`)
+     * @param string $datetimeFormat Default format of datetime values (`describer.datetime`)
      * @param int|null $precision Default precision of float values, `null` for none (`describer.precision`)
      * @param bool $strict A value that is not nullable and has no meaningful value for `null` throws instead of
      *                     rendering `null` (`describer.strict`)
@@ -40,7 +40,7 @@ final readonly class Configuration
      */
     private function __construct(
         public bool $nullable,
-        public string $dateFormat,
+        public string $datetimeFormat,
         public ?int $precision,
         public bool $strict,
         public array $whenHas,
@@ -61,7 +61,7 @@ final readonly class Configuration
     {
         return new self(
             nullable: true,
-            dateFormat: DateTimeInterface::ATOM,
+            datetimeFormat: DateTimeInterface::ATOM,
             precision: null,
             strict: false,
             whenHas: [],
@@ -89,7 +89,7 @@ final readonly class Configuration
 
         return new self(
             nullable: self::bool($config, 'describer.nullable', $defaults->nullable),
-            dateFormat: self::string($config, 'describer.date', $defaults->dateFormat),
+            datetimeFormat: self::string($config, 'describer.datetime', $defaults->datetimeFormat),
             precision: self::precision($config, $defaults->precision),
             strict: self::bool($config, 'describer.strict', $defaults->strict),
             whenHas: self::whenHas($config, $defaults->whenHas),
@@ -113,7 +113,7 @@ final readonly class Configuration
     {
         return new self(
             nullable: $this->nullable,
-            dateFormat: $this->dateFormat,
+            datetimeFormat: $this->datetimeFormat,
             precision: $this->precision,
             strict: $this->strict,
             whenHas: $this->whenHas,
@@ -140,7 +140,7 @@ final readonly class Configuration
 
         return new self(
             nullable: $this->nullable,
-            dateFormat: $this->dateFormat,
+            datetimeFormat: $this->datetimeFormat,
             precision: $this->precision,
             strict: $this->strict,
             whenHas: $this->whenHas,

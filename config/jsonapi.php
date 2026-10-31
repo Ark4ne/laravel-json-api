@@ -24,13 +24,13 @@ return [
 
         /*
         |--------------------------------------------------------------------------
-        | Date format
+        | Datetime format
         |--------------------------------------------------------------------------
         |
-        | Default date format.
+        | Default format of $this->datetime(); $this->date() renders Y-m-d.
         |
         */
-        'date' => DateTimeInterface::ATOM,
+        'datetime' => DateTimeInterface::ATOM,
 
         /*
         |--------------------------------------------------------------------------

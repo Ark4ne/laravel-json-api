@@ -25,6 +25,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   for in `definitions.paths` (the `app` directory by default).
 - **`php artisan jsonapi:check [resources…] [--strict]`** prints the diagnostics of the resources and fails on an error
   (on a warning too with `--strict`).
+- **`php artisan make:jsonapi-resource PostResource [--model=Post] [--force]`** generates a resource from its Eloquent
+  model: attributes from the casts, the fillable attributes and the timestamps, relationships from the methods typed
+  with a relation. `vendor:publish --tag=jsonapi-stubs` publishes its stub.
 - **`Testing\ResourceAssertions::assertValid(PostResource::class, strict: false)`** for the test suites of applications.
 - **`Context\JsonApiContext`**, bound once per request: the parsed `include` (`IncludeTree`) and `fields`
   (`SparseFieldsets`), the configuration and the diagnostics of the request. `include` and `fields` are read from the
@@ -79,10 +82,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `RenderingException`. The definition exposes the map (`morphs`, `isPolymorphic()`), the validation rules accept an
   include or a fieldset one of the related resources has (path by path), and the related models are loaded resource
   by resource.
-- **New value types**: `dateOnly()` (`Y-m-d`), `time()` (`H:i:s`), `decimal()` (an exact decimal rendered as a
+- **New value types**: `datetime()` (the former `date()`), `time()` (`H:i:s`), `decimal()` (an exact decimal rendered as a
   string, `->scale(2)` rounding half away from zero, no float on the way), `uuid()`, `ulid()` and `json()` (a JSON
   string rendered decoded; an invalid one throws a `RenderingException`). Each gives the definition a format
-  (`Y-m-d`, `H:i:s`, `decimal`, `uuid`, `ulid`, `json`), and is named as the items of an array (`->of('uuid')`).
+  (the PHP format of a date, `decimal`, `uuid`, `ulid`, `json`), and is named as the items of an array (`->of('uuid')`).
 - `Value::valueFormat()`: the format a value type gives its definition, next to `valueType()`.
 - **Value types of the application**: a `Value` subclass registered under a name (`describer.types`, or
   `JsonApi::valueType('money', MoneyValue::class)`) is written `$this->money()` in a resource and named as the items
@@ -121,6 +124,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **Breaking:** requires PHP `^8.3` and Laravel `^12.46` or `^13.0`. PHP 8.1 and 8.2, Laravel 10 and 11 are no longer
   supported.
 - Every source file declares `strict_types=1`.
+- **Breaking:** `$this->date()` renders a date without time (`Y-m-d`, `Values\ValueDate`); a date and time is
+  `$this->datetime()` (`Values\ValueDateTime`, the former `ValueDate`), whose default format is `describer.datetime`
+  (ex-`describer.date`). A date value that is neither a date, a timestamp nor a string throws a `RenderingException`.
 - **Breaking:** a float with a precision is rounded (`1.239` gives `1.24`, `-1.111` gives `-1.11`) instead of floored
   (`1.15` gave `1.14`). `->truncate()` truncates towards zero.
 - **Breaking:** `enum()->of(State::class)` casts a raw value through the enum (`tryFrom()` for a backed enum, the
@@ -192,7 +198,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **Breaking:** `Relationship::withLinks()`, `withMeta()` and `withIdentifierMeta()` are renamed `links()`, `meta()`
   and `identifierMeta()`, as on the relationship descriptors.
 
-- **Breaking:** `$this->uuid()`, `ulid()`, `decimal()`, `json()`, `time()` and `dateOnly()` in a resource return a
+- **Breaking:** `$this->uuid()`, `ulid()`, `decimal()`, `json()`, `time()` and `datetime()` in a resource return a
   value descriptor instead of calling the method of that name on the model: call it on `$this->resource`.
 
 ### Removed

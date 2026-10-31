@@ -76,8 +76,14 @@
       `Relationships<T>`, `Links<T>`, `Meta<T>`), `when()` typé, `Filters<mixed>` ; `T` invariant (le descripteur lit
       le modèle) : `Relation<mixed>` dans une annotation devient `Relation<User>` (UPGRADE) ; `tests/Types`
       (`assertType`) ; baseline −156 lignes
-- [ ] **E6.11** `php artisan make:jsonapi-resource` : génère une ressource depuis le modèle (attributs depuis
+- [x] **E6.11** `php artisan make:jsonapi-resource` : génère une ressource depuis le modèle (attributs depuis
       `$casts`, relations depuis les méthodes typées)
+      > `Laravel\Commands\MakeResourceCommand` (`GeneratorCommand`) : modèle par `--model` ou par la convention
+      > d'E6.8, `#[JsonApiModel]` écrit hors convention ; attributs depuis les casts, puis `$fillable` (`mixed()`) et
+      > les timestamps, sans clé ni attributs cachés ; relations `one()` / `many()` sans classe (devinées par E6.8),
+      > `MorphTo` en commentaire. Stub surchargeable (`stubs/jsonapi-resource.stub`, tag `jsonapi-stubs`).
+      > Renommage demandé au passage : `date()` = date seule (`Y-m-d`, `ValueDate`), `datetime()` = date et heure
+      > (`ValueDateTime`, l'ex-`ValueDate`, format `describer.datetime`) ; `dateOnly()` supprimé (jamais publié).
 
 ## Critères de sortie
 

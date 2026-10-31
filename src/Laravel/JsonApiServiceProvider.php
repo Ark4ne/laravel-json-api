@@ -12,6 +12,7 @@ use Ark4ne\JsonApi\Descriptors\ValueTypes;
 use Ark4ne\JsonApi\Laravel\Commands\CacheDefinitionsCommand;
 use Ark4ne\JsonApi\Laravel\Commands\CheckDefinitionsCommand;
 use Ark4ne\JsonApi\Laravel\Commands\ClearDefinitionsCommand;
+use Ark4ne\JsonApi\Laravel\Commands\MakeResourceCommand;
 use Ark4ne\JsonApi\Laravel\Rendering\RouteLinksStage;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Request;
@@ -26,11 +27,14 @@ use WeakMap;
  *   boot.
  * - Adds `RouteLinksStage` before the stages of `rendering.stages`: the links of `#[JsonApiRoutes]`.
  * - Binds one `JsonApiContext` per request object, built from it on first use.
- * - Registers `jsonapi:cache`, `jsonapi:clear` and `jsonapi:check`; `php artisan optimize` caches the definitions.
+ * - Registers `jsonapi:cache`, `jsonapi:clear`, `jsonapi:check` and `make:jsonapi-resource`; `php artisan optimize`
+ *   caches the definitions. `vendor:publish --tag=jsonapi-stubs` publishes the stub of `make:jsonapi-resource`.
  */
 final class JsonApiServiceProvider extends ServiceProvider
 {
     private const CONFIG = __DIR__ . '/../../config/jsonapi.php';
+
+    private const STUB = __DIR__ . '/../../stubs/jsonapi-resource.stub';
 
     public function register(): void
     {
@@ -84,12 +88,14 @@ final class JsonApiServiceProvider extends ServiceProvider
         Definitions::configure($configuration, $compiled);
 
         $this->publishes([self::CONFIG => $this->app->configPath('jsonapi.php')], 'config');
+        $this->publishes([self::STUB => $this->app->basePath('stubs/jsonapi-resource.stub')], 'jsonapi-stubs');
 
         if ($this->app->runningInConsole()) {
             $this->commands([
                 CacheDefinitionsCommand::class,
                 ClearDefinitionsCommand::class,
                 CheckDefinitionsCommand::class,
+                MakeResourceCommand::class,
             ]);
             $this->optimizes(optimize: 'jsonapi:cache', clear: 'jsonapi:clear', key: 'jsonapi');
         }

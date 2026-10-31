@@ -30,8 +30,8 @@ class PostResource extends JsonApiResource
     protected function toResourceMeta(Request $request): ?iterable
     {
         return [
-            $this->date('created_at')->format(DateTimeInterface::ATOM),
-            $this->date('updated_at')->format(DateTimeInterface::ATOM),
+            $this->datetime('created_at')->format(DateTimeInterface::ATOM),
+            $this->datetime('updated_at')->format(DateTimeInterface::ATOM),
         ];
     }
 

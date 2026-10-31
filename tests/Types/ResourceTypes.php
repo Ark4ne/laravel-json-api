@@ -27,6 +27,7 @@ final class ResourceTypes extends JsonApiResource
         assertType('Ark4ne\JsonApi\Descriptors\Values\ValueString<Test\app\Models\Post>', $this->string());
         assertType('Ark4ne\JsonApi\Descriptors\Values\ValueInteger<Test\app\Models\Post>', $this->integer('id'));
         assertType('Ark4ne\JsonApi\Descriptors\Values\ValueDate<Test\app\Models\Post>', $this->date('created_at'));
+        assertType('Ark4ne\JsonApi\Descriptors\Values\ValueDateTime<Test\app\Models\Post>', $this->datetime('created_at'));
 
         return [
             'struct' => $this->struct(static function ($post): array {

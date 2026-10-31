@@ -37,6 +37,14 @@ final class RenderingException extends LogicException implements JsonApiExceptio
     }
 
     /**
+     * A date value is neither a date, a timestamp nor a string.
+     */
+    public static function notADate(mixed $value): self
+    {
+        return new self('[' . get_debug_type($value) . '] is not a date: give a DateTimeInterface, a timestamp or a string.');
+    }
+
+    /**
      * A `json()` value is a string that does not decode.
      */
     public static function invalidJson(string $attribute, string $error): self

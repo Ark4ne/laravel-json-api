@@ -31,7 +31,7 @@ final class ConfigurationTest extends TestCase
         $configuration = Configuration::defaults();
 
         self::assertTrue($configuration->nullable);
-        self::assertSame(DateTimeInterface::ATOM, $configuration->dateFormat);
+        self::assertSame(DateTimeInterface::ATOM, $configuration->datetimeFormat);
         self::assertNull($configuration->precision);
         self::assertFalse($configuration->strict);
         self::assertSame([], $configuration->whenHas);
@@ -55,7 +55,7 @@ final class ConfigurationTest extends TestCase
         $configuration = Configuration::fromArray([
             'describer' => [
                 'nullable' => false,
-                'date' => 'Y-m-d',
+                'datetime' => 'Y-m-d',
                 'precision' => 2,
                 'strict' => true,
                 'when-has' => ['attributes'],
@@ -76,7 +76,7 @@ final class ConfigurationTest extends TestCase
         ]);
 
         self::assertFalse($configuration->nullable);
-        self::assertSame('Y-m-d', $configuration->dateFormat);
+        self::assertSame('Y-m-d', $configuration->datetimeFormat);
         self::assertSame(2, $configuration->precision);
         self::assertTrue($configuration->strict);
         self::assertSame(['attributes'], $configuration->whenHas);
@@ -150,7 +150,7 @@ final class ConfigurationTest extends TestCase
     public static function invalid(): iterable
     {
         yield 'nullable' => [['describer' => ['nullable' => 'yes']], 'describer.nullable'];
-        yield 'date' => [['describer' => ['date' => 1]], 'describer.date'];
+        yield 'datetime' => [['describer' => ['datetime' => 1]], 'describer.datetime'];
         yield 'precision' => [['describer' => ['precision' => 'two']], 'describer.precision'];
         yield 'strict' => [['describer' => ['strict' => 1]], 'describer.strict'];
         yield 'when-has scope' => [['describer' => ['when-has' => ['unknown']]], 'describer.when-has'];

@@ -11,6 +11,7 @@ use Ark4ne\JsonApi\Descriptors\Values;
 use Ark4ne\JsonApi\Descriptors\Values\ValueArray;
 use Ark4ne\JsonApi\Descriptors\Values\ValueBool;
 use Ark4ne\JsonApi\Descriptors\Values\ValueDate;
+use Ark4ne\JsonApi\Descriptors\Values\ValueDateTime;
 use Ark4ne\JsonApi\Descriptors\Values\ValueEnum;
 use Ark4ne\JsonApi\Descriptors\Values\ValueFloat;
 use Ark4ne\JsonApi\Descriptors\Values\ValueInteger;
@@ -35,6 +36,7 @@ class DescriptorsTraitTest extends TestCase
             'float' => [ValueFloat::class, 'float'],
             'string' => [ValueString::class, 'string'],
             'date' => [ValueDate::class, 'date'],
+            'datetime' => [ValueDateTime::class, 'datetime'],
             'array' => [ValueArray::class, 'array'],
             'enum' => [ValueEnum::class, 'enum'],
             'mixed' => [ValueMixed::class, 'mixed'],
@@ -50,8 +52,8 @@ class DescriptorsTraitTest extends TestCase
     public function testDescriptorTrait($expected, $method, ...$args): void
     {
         $mock = new class extends stdClass {
-            use Values;
-            use Relations;
+            /** @use Values<mixed> */ use Values;
+            /** @use Relations<mixed> */ use Relations;
         };
         /** @var \Ark4ne\JsonApi\Descriptors\Describer $descriptor */
         $descriptor = Reflect::invoke($mock, $method, ...$args);

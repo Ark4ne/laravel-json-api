@@ -15,7 +15,7 @@ composer require ark4ne/laravel-json-api
 | Path                         | Type                     | Description                                                                             |
 |------------------------------|--------------------------|-----------------------------------------------------------------------------------------|
 | `describer.nullable`         | `bool`                   | For describer notation, defined if a value is nullable by default.                      |
-| `describer.date`             | `string` datetime format | For describer notation, defined default date time format.                               |
+| `describer.datetime`         | `string` datetime format | Default format of `$this->datetime()`.                                                  |
 | `describer.precision`        | `int` \ `null`           | For describer notation, decimal precision for float value. `null` for disable rounding. |
 | `describer.strict`           | `bool`                   | A value that is not nullable and has no value for `null` (a date) throws instead of rendering `null`. `APP_DEBUG` by default. |
 | `describer.when-has`         | `bool` \ `string[]`      | For describer notation, Apply automatically whenHas condition on attributes.            |
@@ -144,6 +144,19 @@ class UserResource extends JsonApiResource
     }
 }
 ```
+
+### Generate a resource
+
+`php artisan make:jsonapi-resource PostResource` writes `app/Http/Resources/PostResource.php` from the model
+(`--model=Post`, otherwise `App\Models\Post` found by the convention; `--force` overwrites):
+
+- the attributes from the casts (`'published_at' => 'datetime'` gives `$this->datetime()`, an enum gives `$this->enum()`),
+  then the fillable attributes without cast (`$this->mixed()`) and the timestamps; neither the key nor the hidden
+  attributes;
+- the relationships from the public methods typed with a relation, declared without resource class
+  (`'user' => $this->one()`); a `MorphTo` is left as a comment, to complete with its resources.
+
+`php artisan vendor:publish --tag=jsonapi-stubs` publishes the stub to `stubs/jsonapi-resource.stub`.
 
 ### Static analysis
 
@@ -592,8 +605,8 @@ UserResource::collection(User::all()); // => JsonApiCollection
 | `integer` | Cast to integer                                                 |
 | `float`   | Cast to float, rounded to `->precision(2)`, or `->truncate()`d  |
 | `string`  | Cast to string                                                  |
-| `date`    | Cast to date, allow to use custom format; `null` stays `null`   |
-| `dateOnly`| Date without time, `Y-m-d` unless `->format()`                 |
+| `date`    | Date without time, `Y-m-d` unless `->format()`; `null` stays `null` |
+| `datetime`| Date and time, `describer.datetime` unless `->format()`         |
 | `time`    | Time of day, `H:i:s` unless `->format()`                        |
 | `decimal` | Exact decimal as a string (`"12.50"`), `->scale(2)`; no float   |
 | `uuid`    | UUID object or string, as a string                              |

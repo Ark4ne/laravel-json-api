@@ -33,6 +33,11 @@ names the key. Compare your published file with the package one for the new keys
 
 ### Values
 
+- **`$this->date()` renders a date without time** (`2026-10-31`, `Y-m-d`); a date and time is `$this->datetime()`,
+  in the format of `describer.datetime` (ex-`describer.date`, ATOM by default). Nothing fails: replace `->date(` by
+  `->datetime(` wherever the time is rendered, and rename `describer.date` to `describer.datetime` in a published
+  `config/jsonapi.php` (the old key is ignored). `Values\ValueDate` is the date without time; the 1.x class is
+  `Values\ValueDateTime`.
 - A float with a precision is rounded instead of floored: `$this->float()->precision(2)` renders `1.24` for `1.239`
   (1.x: `1.23`), `1.15` for `1.15` (1.x: `1.14`). Add `->truncate()` to truncate.
 - A date declared `nullable(false)` renders `null` for `null` (1.x: `1970-01-01T00:00:00+00:00`). With
@@ -47,7 +52,7 @@ names the key. Compare your published file with the package one for the new keys
   protected function value(mixed $of, Request $request, Configuration $configuration): mixed
   ```
 
-  `Support\Config` is removed: read the defaults (`$configuration->nullable`, `dateFormat`, `precision`) from it.
+  `Support\Config` is removed: read the defaults (`$configuration->nullable`, `datetimeFormat`, `precision`) from it.
 
 ### Collections
 
@@ -162,7 +167,7 @@ Clients reading the documents must expect:
 
 ### New value helpers
 
-`$this->uuid()`, `ulid()`, `decimal()`, `json()`, `time()` and `dateOnly()` are value descriptors now. A resource that
+`$this->uuid()`, `ulid()`, `decimal()`, `json()`, `time()` and `datetime()` are value descriptors now. A resource that
 called a model method of one of these names through `$this` must call it on the model: `$this->resource->uuid()`.
 
 ### Renamed methods

@@ -56,8 +56,8 @@ class UserResource extends JsonApiResource
     protected function toResourceMeta(Request $request): ?iterable
     {
         return [
-            'created_at' => $this->date()->format(DateTimeInterface::ATOM),
-            'updated_at' => $this->date()->format(DateTimeInterface::ATOM),
+            'created_at' => $this->datetime()->format(DateTimeInterface::ATOM),
+            'updated_at' => $this->datetime()->format(DateTimeInterface::ATOM),
         ];
     }
 

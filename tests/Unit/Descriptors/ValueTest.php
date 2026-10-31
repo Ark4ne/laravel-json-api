@@ -9,7 +9,7 @@ use Ark4ne\JsonApi\Definition\ValueType;
 use Ark4ne\JsonApi\Descriptors\Values\Value;
 use Ark4ne\JsonApi\Descriptors\Values\ValueArray;
 use Ark4ne\JsonApi\Descriptors\Values\ValueBool;
-use Ark4ne\JsonApi\Descriptors\Values\ValueDate;
+use Ark4ne\JsonApi\Descriptors\Values\ValueDateTime;
 use Ark4ne\JsonApi\Descriptors\Values\ValueEnum;
 use Ark4ne\JsonApi\Descriptors\Values\ValueFloat;
 use Ark4ne\JsonApi\Descriptors\Values\ValueInteger;
@@ -71,11 +71,11 @@ class ValueTest extends TestCase
             'mixed.4' => [ValueMixed::class, 'abc', 'abc', null],
             'mixed.5' => [ValueMixed::class, [], [], null],
             'mixed.6' => [ValueMixed::class, collect(), collect(), null],
-            'date.0' => [ValueDate::class, '2022-01-01', '2022-01-01T00:00:00+00:00', null],
-            'date.1' => [ValueDate::class, '2022-01-01 00:00:00', '2022-01-01T00:00:00+00:00', null],
-            'date.2' => [ValueDate::class, 1640995200, '2022-01-01T00:00:00+00:00', null],
-            'date.3' => [ValueDate::class, new DateTime("@1640995200"), '2022-01-01T00:00:00+00:00', null],
-            'date.4' => [ValueDate::class, new Carbon("@1640995200"), '2022-01-01T00:00:00+00:00', null],
+            'date.0' => [ValueDateTime::class, '2022-01-01', '2022-01-01T00:00:00+00:00', null],
+            'date.1' => [ValueDateTime::class, '2022-01-01 00:00:00', '2022-01-01T00:00:00+00:00', null],
+            'date.2' => [ValueDateTime::class, 1640995200, '2022-01-01T00:00:00+00:00', null],
+            'date.3' => [ValueDateTime::class, new DateTime("@1640995200"), '2022-01-01T00:00:00+00:00', null],
+            'date.4' => [ValueDateTime::class, new Carbon("@1640995200"), '2022-01-01T00:00:00+00:00', null],
             'enum.0' => [ValueEnum::class, TestUnitEnum::A, 'A', null],
             'enum.1' => [ValueEnum::class, TestBackendEnum::A, 'aaa', null],
         ];
@@ -260,7 +260,7 @@ class ValueTest extends TestCase
 
     public function test_a_null_date_that_is_not_nullable_throws_when_strict(): void
     {
-        $date = (new ValueDate('published_at'))->nullable(false);
+        $date = (new ValueDateTime('published_at'))->nullable(false);
 
         self::assertNull($date->valueFor(new Request(), ['published_at' => null], 'published_at'));
 
@@ -283,12 +283,12 @@ class ValueTest extends TestCase
 
         self::assertNull($blankAsNull->valueFor(new Request(), ['note' => ''], 'note', $strict));
         self::assertNull($blankAsNull->nullable(false)->valueFor(new Request(), ['note' => ''], 'note', $strict));
-        self::assertNull((new ValueDate('at'))->valueFor(new Request(), ['at' => null], 'at', $strict));
+        self::assertNull((new ValueDateTime('at'))->valueFor(new Request(), ['at' => null], 'at', $strict));
     }
 
     public function test_the_members_of_a_struct_use_the_configuration_given(): void
     {
-        $struct = new ValueStruct(static fn() => ['at' => new ValueDate('at'), 'price' => new ValueFloat('price')]);
+        $struct = new ValueStruct(static fn() => ['at' => new ValueDateTime('at'), 'price' => new ValueFloat('price')]);
 
         self::assertSame(
             ['at' => '2024-05-01', 'price' => 1.24],
@@ -296,7 +296,7 @@ class ValueTest extends TestCase
                 new Request(),
                 ['at' => new DateTimeImmutable('2024-05-01 10:00:00'), 'price' => 1.239],
                 'struct',
-                Configuration::fromArray(['describer' => ['date' => 'Y-m-d', 'precision' => 2]]),
+                Configuration::fromArray(['describer' => ['datetime' => 'Y-m-d', 'precision' => 2]]),
             ),
         );
     }
@@ -317,7 +317,7 @@ class ValueTest extends TestCase
     public function testValueDateFormat(): void
     {
         $request = new Request();
-        $v = new ValueDate(null);
+        $v = new ValueDateTime(null);
         self::assertEquals('2022-01-01T00:00:00+00:00', Reflect::invoke($v, 'value', '2022-01-01 00:00:00', $request, Configuration::defaults()));
         $v = $v->format('Y-m-d H:i:s');
         self::assertEquals('2022-01-01 00:00:00', Reflect::invoke($v, 'value', '2022-01-01 00:00:00', $request, Configuration::defaults()));
@@ -350,7 +350,7 @@ class ValueTest extends TestCase
         yield 'integer' => [new ValueInteger(null), ValueType::Integer];
         yield 'float' => [new ValueFloat(null), ValueType::Number];
         yield 'string' => [new ValueString(null), ValueType::String];
-        yield 'date' => [new ValueDate(null), ValueType::Date];
+        yield 'date' => [new ValueDateTime(null), ValueType::Date];
         yield 'enum' => [new ValueEnum(null), ValueType::Enum];
         yield 'array' => [new ValueArray(null), ValueType::Array];
         yield 'mixed' => [new ValueMixed(null), ValueType::Mixed];
@@ -392,7 +392,7 @@ class ValueTest extends TestCase
 
     public function test_the_definition_records_the_format_of_a_date(): void
     {
-        self::assertSame('Y-m-d', (new ValueDate(null))->format('Y-m-d')->definition('field')->format);
+        self::assertSame('Y-m-d', (new ValueDateTime(null))->format('Y-m-d')->definition('field')->format);
     }
 
     public function test_the_definition_records_the_class_of_an_enum(): void
@@ -468,7 +468,7 @@ class ValueTest extends TestCase
 
     public function test_type_specific_modifiers_return_a_new_descriptor(): void
     {
-        $date = new ValueDate(null);
+        $date = new ValueDateTime(null);
         self::assertNotSame($date, $date->format('Y'));
 
         $float = new ValueFloat(null);

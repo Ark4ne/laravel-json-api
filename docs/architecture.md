@@ -350,7 +350,7 @@ Registries order their entries by priority, never by the order of a configuratio
 
 | Topic | Rule |
 | --- | --- |
-| Classes | `final` by default. Extensible base classes, listed in the architecture test: `JsonApiResource`, `JsonApiCollection`, `Descriptors\Values\Value` |
+| Classes | `final` by default. Extensible base classes, listed in the architecture test: `JsonApiResource`, `JsonApiCollection`, `Descriptors\Values\Value`, `Descriptors\Values\ValueDateTime` (base of `ValueDate` and `ValueTime`) |
 | Traits | Only in `src/Resources/` |
 | Global state | No singleton, no mutable static property; the only static state is `Compilation\Definitions` (pure cache, configuration set once at boot) |
 | Facades and helpers | Only in `src/Laravel/` |

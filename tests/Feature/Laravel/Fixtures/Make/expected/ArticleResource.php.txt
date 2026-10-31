@@ -1,0 +1,46 @@
+<?php
+
+namespace App\Http\Resources;
+
+use Ark4ne\JsonApi\Resources\Attributes\JsonApiModel;
+use Ark4ne\JsonApi\Resources\JsonApiResource;
+use Illuminate\Http\Request;
+use Test\Feature\Laravel\Fixtures\Make\Article;
+
+/**
+ * @extends JsonApiResource<Article>
+ */
+#[JsonApiModel(Article::class)]
+class ArticleResource extends JsonApiResource
+{
+    public function toAttributes(Request $request): iterable
+    {
+        return [
+            'state' => $this->enum(),
+            'views' => $this->integer(),
+            'rating' => $this->float(),
+            'price' => $this->decimal(),
+            'published' => $this->bool(),
+            'published_on' => $this->date(),
+            'reviewed_at' => $this->datetime(),
+            'tags' => $this->array(),
+            'options' => $this->array(),
+            'extra' => $this->mixed(),
+            'title' => $this->mixed(),
+            'body' => $this->mixed(),
+            'created_at' => $this->datetime(),
+            'updated_at' => $this->datetime(),
+        ];
+    }
+
+    protected function toRelationships(Request $request): iterable
+    {
+        return [
+            'author' => $this->one(),
+            'cover' => $this->one(),
+            'comments' => $this->many(),
+            'readers' => $this->many(),
+            // 'subject' => $this->morph([/* Model::class => Resource::class */]),
+        ];
+    }
+}

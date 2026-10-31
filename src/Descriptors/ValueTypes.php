@@ -9,7 +9,7 @@ use Ark4ne\JsonApi\Descriptors\Values\Value;
 use Ark4ne\JsonApi\Descriptors\Values\ValueArray;
 use Ark4ne\JsonApi\Descriptors\Values\ValueBool;
 use Ark4ne\JsonApi\Descriptors\Values\ValueDate;
-use Ark4ne\JsonApi\Descriptors\Values\ValueDateOnly;
+use Ark4ne\JsonApi\Descriptors\Values\ValueDateTime;
 use Ark4ne\JsonApi\Descriptors\Values\ValueDecimal;
 use Ark4ne\JsonApi\Descriptors\Values\ValueEnum;
 use Ark4ne\JsonApi\Descriptors\Values\ValueFloat;
@@ -41,7 +41,7 @@ final class ValueTypes
         'float' => ValueFloat::class,
         'string' => ValueString::class,
         'date' => ValueDate::class,
-        'dateOnly' => ValueDateOnly::class,
+        'datetime' => ValueDateTime::class,
         'time' => ValueTime::class,
         'decimal' => ValueDecimal::class,
         'uuid' => ValueUuid::class,

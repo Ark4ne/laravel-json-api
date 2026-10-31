@@ -8,7 +8,7 @@ use Ark4ne\JsonApi\Descriptors\Values\{Value,
     ValueArray,
     ValueBool,
     ValueDate,
-    ValueDateOnly,
+    ValueDateTime,
     ValueDecimal,
     ValueEnum,
     ValueFloat,
@@ -74,6 +74,8 @@ trait Values
     }
 
     /**
+     * A calendar date, `Y-m-d` unless `format()` says otherwise.
+     *
      * @param null|string|Closure(T):(DateTimeInterface|string|int|null) $attribute
      *
      * @return ValueDate<T>
@@ -85,16 +87,16 @@ trait Values
     }
 
     /**
-     * A calendar date, `Y-m-d` unless `format()` says otherwise.
+     * A date and time, in the configured format (`describer.datetime`) unless `format()` says otherwise.
      *
      * @param null|string|Closure(T):(DateTimeInterface|string|int|null) $attribute
      *
-     * @return ValueDateOnly<T>
+     * @return ValueDateTime<T>
      */
-    protected function dateOnly(string|Closure|null $attribute = null): ValueDateOnly
+    protected function datetime(string|Closure|null $attribute = null): ValueDateTime
     {
-        /** @var ValueDateOnly<T> */
-        return new ValueDateOnly($attribute);
+        /** @var ValueDateTime<T> */
+        return new ValueDateTime($attribute);
     }
 
     /**
