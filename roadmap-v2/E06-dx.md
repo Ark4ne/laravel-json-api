@@ -63,8 +63,11 @@
 
 ### Relations
 
-- [ ] **E6.8** `$this->one('author')` / `$this->many('comments')` sans classe : ressource liée résolue par
-      `#[UseResource]` du modèle ou `Model::toResource()` (Laravel 12 et 13), avec repli sur la classe explicite
+- [x] **E6.8** `$this->one('author')` / `$this->many('comments')` sans classe : ressource liée résolue par
+      `#[UseResource]` du modèle ou `Model::toResource()` (Laravel 12 et 13), avec repli sur la classe explicite —
+      `Descriptors\Relations\GuessedResource` : modèle de la ressource (`#[JsonApiModel]` ou convention inverse),
+      `getRelated()` de la relation, puis `#[UseResource]` / `guessResourceName()` ; résolu une fois à la compilation,
+      réutilisé au rendu ; réservé aux ressources Eloquent (tableau, DTO : classe explicite)
 
 ### Outillage
 

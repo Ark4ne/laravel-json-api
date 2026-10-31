@@ -15,25 +15,34 @@ use Closure;
 trait Relations
 {
     /**
-     * @param class-string<\Ark4ne\JsonApi\Resources\JsonApiResource|\Ark4ne\JsonApi\Resources\JsonApiCollection> $for
-     * @param null|string|Closure(T):mixed                                                                        $relation
+     * A to-one relationship. Without resource class, the resource is guessed from the Eloquent model of the resource,
+     * as `Model::toResource()` does (`GuessedResource`): `$this->one()` reads the relation named like the member,
+     * `$this->one('author')` the relation `author`. A resource whose model is not an Eloquent model passes the class.
+     *
+     * @param class-string<\Ark4ne\JsonApi\Resources\JsonApiResource|\Ark4ne\JsonApi\Resources\JsonApiCollection>|string|null $for
+     *        The resource class; a name without namespace is the relation (`'author'`)
+     * @param null|string|Closure(T):mixed $relation
      *
      * @return \Ark4ne\JsonApi\Descriptors\Relations\RelationOne<T>
      */
-    protected function one(string $for, string|Closure|null $relation = null): RelationOne
+    protected function one(?string $for = null, string|Closure|null $relation = null): RelationOne
     {
-        return new RelationOne($for, $relation);
+        return new RelationOne(...self::declared($for, $relation));
     }
 
     /**
-     * @param class-string<\Ark4ne\JsonApi\Resources\JsonApiResource|\Ark4ne\JsonApi\Resources\JsonApiCollection> $for
-     * @param null|string|Closure(T):mixed                                                                        $relation
+     * A to-many relationship. Without resource class, the resource is guessed like that of `one()`:
+     * `$this->many()`, `$this->many('comments')`.
+     *
+     * @param class-string<\Ark4ne\JsonApi\Resources\JsonApiResource|\Ark4ne\JsonApi\Resources\JsonApiCollection>|string|null $for
+     *        The resource class; a name without namespace is the relation (`'comments'`)
+     * @param null|string|Closure(T):mixed $relation
      *
      * @return \Ark4ne\JsonApi\Descriptors\Relations\RelationMany<T>
      */
-    protected function many(string $for, string|Closure|null $relation = null): RelationMany
+    protected function many(?string $for = null, string|Closure|null $relation = null): RelationMany
     {
-        return new RelationMany($for, $relation);
+        return new RelationMany(...self::declared($for, $relation));
     }
 
     /**
@@ -66,6 +75,22 @@ trait Relations
     protected function morphMany(array $morphs, string|Closure|null $relation = null): RelationMany
     {
         return (new RelationMany(self::firstMorph($morphs), $relation))->morphs($morphs);
+    }
+
+    /**
+     * The resource class, the relation and the resource declaring them: a name without namespace is the relation, its
+     * resource guessed (`'author'`, never a class: a resource class has a namespace).
+     *
+     * @return array{0: class-string<\Ark4ne\JsonApi\Resources\JsonApiResource<mixed>|\Ark4ne\JsonApi\Resources\JsonApiCollection<\Ark4ne\JsonApi\Resources\JsonApiResource<mixed>>>|null, 1: string|Closure|null, 2: class-string}
+     */
+    private static function declared(?string $for, string|Closure|null $relation): array
+    {
+        if ($for !== null && $relation === null && !str_contains($for, '\\')) {
+            return [null, $for, static::class];
+        }
+
+        /** @var class-string<\Ark4ne\JsonApi\Resources\JsonApiResource<mixed>|\Ark4ne\JsonApi\Resources\JsonApiCollection<\Ark4ne\JsonApi\Resources\JsonApiResource<mixed>>>|null $for Checked when compiled (`RelatedResource`) */
+        return [$for, $relation, static::class];
     }
 
     /**

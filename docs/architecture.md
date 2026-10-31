@@ -128,7 +128,7 @@ final readonly class AttributeDefinition
 | --- | --- |
 | `ResourceDefinition` | Resource class, `type`, attributes, relationships, declared links and meta, the routes of its links (`routes`, `RouteNames` of `#[JsonApiRoutes]`), diagnostics of its compilation |
 | `AttributeDefinition` | Name, dotted path inside structs, `ValueType`, nullable, format, enum class, item type, children (structs), conditional, sparse (`whenInFields`: out unless requested) |
-| `RelationshipDefinition` | Name, related resource classes (`related`: one, or those of `morphs`, the resource class of each model class of a polymorphic relationship), `Cardinality::One` / `Many`, `LoadDefinition`, `linkage`, declared links (and the names of those declared by name, `namedLinks`) and meta, conditional, source |
+| `RelationshipDefinition` | Name, related resource classes (`related`: one, given or guessed from the model when compiled (`$this->one('user')`, `GuessedResource`), or those of `morphs`, the resource class of each model class of a polymorphic relationship), `Cardinality::One` / `Many`, `LoadDefinition`, `linkage`, declared links (and the names of those declared by name, `namedLinks`) and meta, conditional, source |
 | `LoadDefinition` | Relation paths eager-loaded when the relationship is included, and those loaded with a constraint closure |
 | `ValueType` | The type of a value as the tools need it: `string`, `integer`, `number`, `boolean`, `date`, `enum`, `array`, `struct`, `mixed`, or a custom type of the registry |
 

@@ -354,6 +354,35 @@ protected function toRelationships(Request $request): array
 }
 ```
 
+#### Without resource class
+
+On a resource rendering an Eloquent model, the resource class may be left out: it is guessed from the model, as
+Laravel's `Model::toResource()` does.
+
+```php
+#[JsonApiModel(Post::class)] // optional when the convention applies: App\Http\Resources\PostResource → App\Models\Post
+class PostResource extends JsonApiResource
+{
+    protected function toRelationships(Request $request): array
+    {
+        return [
+            'user' => $this->one(),              // the relation `user`
+            'author' => $this->one('user'),      // the relation `user`, under the name `author`
+            'comments' => $this->many(),         // the relation `comments`
+        ];
+    }
+}
+```
+
+A subclass of the resource keeps its model. The related model is given by the relation (`Post::user()->getRelated()`:
+a public method of the model, returning a relation when typed; the methods of Eloquent, `save()`…, are never called),
+its resource by `#[UseResource]` on the related model (a JSON:API resource), otherwise by the convention
+(`App\Models\User` → `App\Http\Resources\UserResource`). It is guessed once, when the definition is compiled: a
+relationship that cannot be guessed (a resource rendering an array or an object that is not an Eloquent model, a
+`morphTo`, a model without resource) is an error of the definition (`php artisan jsonapi:check`) and throws a
+`DefinitionException` when rendered. Pass the resource class there, as before. A first argument without namespace is
+a relation name.
+
 #### Relation links and meta
 _**@see** [{json:api}: relation-linkage](https://jsonapi.org/format/#document-resource-object-related-resource-links)_  
 _**@see** [{json:api}: relation-meta](https://jsonapi.org/format/#document-resource-object-relationships)_
@@ -591,6 +620,8 @@ the resources (`string`, `toArray`…) is refused.
 |---------|-------------------------------------------------------------------|
 | `one`   | For relationship with a single value: `HasOne`, `BelongsTo`, ...  |
 | `many`  | For relationship with many value: `HasMany`, `BelongsToMany`, ... |
+
+Both take the resource class, or no class on an Eloquent resource ([without resource class](#without-resource-class)).
 
 ### Polymorphic relationships
 

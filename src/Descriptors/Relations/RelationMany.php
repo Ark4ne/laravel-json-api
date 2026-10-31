@@ -7,6 +7,7 @@ namespace Ark4ne\JsonApi\Descriptors\Relations;
 use Ark4ne\JsonApi\Definition\Cardinality;
 use Ark4ne\JsonApi\Resources\Relationship;
 use Closure;
+use LogicException;
 
 /**
  * @template T
@@ -16,7 +17,7 @@ class RelationMany extends Relation
 {
     protected function value(Closure $value): Relationship
     {
-        $relation = new Relationship($this->related, $value, $this->links, $this->meta, $this->identifierMeta);
+        $relation = new Relationship($this->related ?? throw new LogicException('The related resource is resolved by resolveRelated() first.'), $value, $this->links, $this->meta, $this->identifierMeta);
         $relation->asCollection();
 
         return $relation;

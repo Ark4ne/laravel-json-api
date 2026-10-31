@@ -52,6 +52,18 @@ final class DefinitionException extends LogicException implements JsonApiExcepti
     }
 
     /**
+     * A relationship declared without resource class (`$this->one('author')`) cannot be guessed from the model.
+     *
+     * @param string $reason Why the resource cannot be guessed
+     */
+    public static function unresolvedRelated(string $class, string $relationship, string $reason): self
+    {
+        return new self(
+            "{$class}::{$relationship}: the related resource cannot be guessed ({$reason}): pass the resource class.",
+        );
+    }
+
+    /**
      * `links()` of a relationship was given no link.
      */
     public static function emptyLinks(): self

@@ -8,6 +8,7 @@ use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Definition\ResourceDefinition;
 use Ark4ne\JsonApi\Definition\RouteNames;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
+use Ark4ne\JsonApi\Resources\Attributes\JsonApiModel;
 use Ark4ne\JsonApi\Resources\Attributes\JsonApiRoutes;
 use Ark4ne\JsonApi\Resources\Attributes\JsonApiType;
 use Ark4ne\JsonApi\Support\Probe;
@@ -81,6 +82,23 @@ trait Definable
         $attribute = (new ReflectionClass(static::class))->getAttributes(JsonApiRoutes::class)[0] ?? null;
 
         return $attribute?->newInstance()->routeNames();
+    }
+
+    /**
+     * @internal
+     */
+    public static function declaredModel(): ?string
+    {
+        // Attributes are not inherited: a subclass keeps the model of its parent.
+        for ($class = new ReflectionClass(static::class); $class !== false; $class = $class->getParentClass()) {
+            $attribute = $class->getAttributes(JsonApiModel::class)[0] ?? null;
+
+            if ($attribute !== null) {
+                return $attribute->newInstance()->model;
+            }
+        }
+
+        return null;
     }
 
     /**

@@ -38,7 +38,6 @@ final class InvalidMemberResource extends JsonApiResource
     {
         return [
             'author' => $this->one(UserResource::class),
-            // @phpstan-ignore argument.type
             'other' => $this->one(stdClass::class),
         ];
     }

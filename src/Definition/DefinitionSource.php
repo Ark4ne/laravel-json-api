@@ -44,6 +44,15 @@ interface DefinitionSource
     public static function declaredRoutes(): ?RouteNames;
 
     /**
+     * The model the resource declares (`#[JsonApiModel]`), `null` for none.
+     *
+     * @return class-string|null
+     *
+     * @internal
+     */
+    public static function declaredModel(): ?string;
+
+    /**
      * The resource type (`toType()`, which gives `$declared` by default).
      *
      * @param string $declared The declared type, otherwise that of the naming convention

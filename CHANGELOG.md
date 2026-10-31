@@ -89,6 +89,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   of an array (`->of('money')`, as the types of the package: `->of('integer')`). `Descriptors\ValueTypes` is the
   registry; a name taken by a resource method or a class that is not a `Value` throws an
   `InvalidConfigurationException` at boot.
+- **Relationships without resource class**: `$this->one()`, `$this->one('user')`, `$this->many()` on a resource
+  rendering an Eloquent model guess the related resource as `Model::toResource()` does: the model of the resource
+  (`#[JsonApiModel(Post::class)]`, otherwise `App\Http\Resources\PostResource` → `App\Models\Post`), the related model of
+  its relation, then its `#[UseResource]` or its resource by convention. Guessed once, when compiled; a relationship
+  that cannot be guessed is an error of the definition. `Relation::related()` is `null` for them until resolved.
 - **Links by route**: `#[JsonApiRoutes(self: 'posts.show')]` on a resource generates `links.self` of its resource
   objects, and `links.self` / `links.related` of their relationships from the routes `posts.relationships.{relationship}`
   and `posts.{relationship}` when they exist (`relationship:` and `related:` to name others, `false` for none), also for

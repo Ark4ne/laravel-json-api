@@ -49,20 +49,56 @@ abstract class Relation extends Describer implements DescribesRelationship
     protected array $morphs = [];
 
     /**
-     * @param class-string<\Ark4ne\JsonApi\Resources\JsonApiResource|\Ark4ne\JsonApi\Resources\JsonApiCollection> $related
+     * @param class-string<\Ark4ne\JsonApi\Resources\JsonApiResource|\Ark4ne\JsonApi\Resources\JsonApiCollection>|null $related
+     *        `null` to guess it from the model of `$resource` (`GuessedResource`)
      * @param string|Closure|null $relation
+     * @param class-string|null $resource The resource declaring the relationship
      */
     public function __construct(
-        protected string              $related,
+        protected ?string             $related,
         protected string|Closure|null $relation,
+        protected ?string             $resource = null,
     ) {}
 
     /**
-     * @return class-string<\Ark4ne\JsonApi\Resources\JsonApiResource|\Ark4ne\JsonApi\Resources\JsonApiCollection>
+     * The resource class given, `null` when guessed from the model (`$this->one('author')`).
+     *
+     * @return class-string<\Ark4ne\JsonApi\Resources\JsonApiResource|\Ark4ne\JsonApi\Resources\JsonApiCollection>|null
      */
-    public function related(): string
+    public function related(): ?string
     {
         return $this->related;
+    }
+
+    /**
+     * This relationship with its resource class for the member `$name`: the one given, otherwise `$related` (already
+     * resolved by the definition), otherwise guessed from the model of the resource.
+     *
+     * @param class-string|null $related
+     *
+     * @throws DefinitionException when the resource cannot be guessed
+     *
+     * @internal
+     */
+    public function resolveRelated(string $name, ?string $related = null): static
+    {
+        if ($this->related !== null) {
+            return $this;
+        }
+
+        return $this->with('related', $related ?? $this->guessed($name));
+    }
+
+    /**
+     * The resource guessed from the model of the resource, for the member `$name`.
+     *
+     * @return class-string
+     *
+     * @throws DefinitionException when the resource cannot be guessed
+     */
+    private function guessed(string $name): string
+    {
+        return GuessedResource::of($this->resource, is_string($this->relation) ? $this->relation : $name);
     }
 
     /**
@@ -294,7 +330,7 @@ abstract class Relation extends Describer implements DescribesRelationship
             };
         }
 
-        $relation = $this->value(fn() => $this->check($request, $model, $attribute) ? $value() : new MissingValue());
+        $relation = $this->resolveRelated($attribute)->value(fn() => $this->check($request, $model, $attribute) ? $value() : new MissingValue());
 
         if ($this->linkage !== null) {
             $relation->linkage($this->linkage);
@@ -333,7 +369,7 @@ abstract class Relation extends Describer implements DescribesRelationship
      */
     public function definition(string $name): RelationshipDefinition
     {
-        $related = RelatedResource::resolve($this->related);
+        $related = RelatedResource::resolve($this->related ?? $this->guessed($name));
         $computed = $this->relation instanceof Closure;
 
         return ($this->cardinality() === Cardinality::Many

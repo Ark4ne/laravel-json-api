@@ -90,14 +90,16 @@ trait Renderable
             }
 
             $name = (string) Describer::retrieveName($relationship, $key);
+            $definition = $definitions[$name] ?? null;
 
             if ($relationship instanceof Relation) {
-                $relationship = $relationship->resolveFor($context->request, $model, $name, $context->configuration);
+                // A resource guessed from the model is that of the definition: guessed once, when compiled.
+                $relationship = $relationship
+                    ->resolveRelated($name, $definition?->related[0] ?? null)
+                    ->resolveFor($context->request, $model, $name, $context->configuration);
             } elseif (!$relationship instanceof Relationship) {
                 continue;
             }
-
-            $definition = $definitions[$name] ?? null;
 
             // Only `Linkage::Loaded` and the filters read whether the relation is loaded.
             yield $name => $definition === null || (

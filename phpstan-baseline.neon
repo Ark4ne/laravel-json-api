@@ -547,30 +547,6 @@ parameters:
 			path: src/Resources/JsonApiResource.php
 
 		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource\:\:many\(\) has parameter \$for with generic class Ark4ne\\JsonApi\\Resources\\JsonApiCollection but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Resources/JsonApiResource.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource\:\:many\(\) has parameter \$for with generic class Ark4ne\\JsonApi\\Resources\\JsonApiResource but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Resources/JsonApiResource.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource\:\:one\(\) has parameter \$for with generic class Ark4ne\\JsonApi\\Resources\\JsonApiCollection but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Resources/JsonApiResource.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource\:\:one\(\) has parameter \$for with generic class Ark4ne\\JsonApi\\Resources\\JsonApiResource but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Resources/JsonApiResource.php
-
-		-
 			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource\:\:toAttributes\(\) should return iterable\<\(int\|string\), mixed\> but returns mixed\.$#'
 			identifier: return.type
 			count: 1
@@ -1375,30 +1351,6 @@ parameters:
 			path: tests/Unit/Descriptors/DescriptorsTraitTest.php
 
 		-
-			message: '#^Method stdClass@anonymous/tests/Unit/Descriptors/DescriptorsTraitTest\.php\:52\:\:many\(\) has parameter \$for with generic class Ark4ne\\JsonApi\\Resources\\JsonApiCollection but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Unit/Descriptors/DescriptorsTraitTest.php
-
-		-
-			message: '#^Method stdClass@anonymous/tests/Unit/Descriptors/DescriptorsTraitTest\.php\:52\:\:many\(\) has parameter \$for with generic class Ark4ne\\JsonApi\\Resources\\JsonApiResource but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Unit/Descriptors/DescriptorsTraitTest.php
-
-		-
-			message: '#^Method stdClass@anonymous/tests/Unit/Descriptors/DescriptorsTraitTest\.php\:52\:\:one\(\) has parameter \$for with generic class Ark4ne\\JsonApi\\Resources\\JsonApiCollection but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Unit/Descriptors/DescriptorsTraitTest.php
-
-		-
-			message: '#^Method stdClass@anonymous/tests/Unit/Descriptors/DescriptorsTraitTest\.php\:52\:\:one\(\) has parameter \$for with generic class Ark4ne\\JsonApi\\Resources\\JsonApiResource but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Unit/Descriptors/DescriptorsTraitTest.php
-
-		-
 			message: '#^PHPDoc tag @var for variable \$descriptor contains generic class Ark4ne\\JsonApi\\Descriptors\\Describer but does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
@@ -1840,12 +1792,6 @@ parameters:
 			message: '#^Method Test\\Unit\\Resources\\Concerns\\ConditionallyLoadsAttributesTest\:\:testWhenInclude\(\) has parameter \$query with no type specified\.$#'
 			identifier: missingType.parameter
 			count: 1
-			path: tests/Unit/Resources/Concerns/ConditionallyLoadsAttributesTest.php
-
-		-
-			message: '#^Parameter \#1 \$related of class Ark4ne\\JsonApi\\Descriptors\\Relations\\RelationOne constructor expects class\-string\<Ark4ne\\JsonApi\\Resources\\JsonApiCollection\|Ark4ne\\JsonApi\\Resources\\JsonApiResource\>, string given\.$#'
-			identifier: argument.type
-			count: 4
 			path: tests/Unit/Resources/Concerns/ConditionallyLoadsAttributesTest.php
 
 		-

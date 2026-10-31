@@ -97,8 +97,8 @@ class ConditionallyLoadsAttributesTest extends TestCase
         $actual = Reflect::invoke($stub, 'applyWhen', true, [
             'present.1' => $p1 = (new ValueMixed(fn() => 'abc')),
             'present.2' => $p2 = (new ValueMixed(fn() => 123)),
-            'present.3' => $p3 = (new RelationOne('present', fn() => 'abc')),
-            'present.4' => $p4 = (new RelationOne('present', fn() => 123)),
+            'present.3' => $p3 = (new RelationOne(UserResource::class, fn() => 'abc')),
+            'present.4' => $p4 = (new RelationOne(UserResource::class, fn() => 123)),
             'present.5' => $p5 = (new Relationship(UserResource::class, fn() => null)),
         ]);
         self::assertInstanceOf(MergeValue::class, $actual);
@@ -112,8 +112,8 @@ class ConditionallyLoadsAttributesTest extends TestCase
         $actual = Reflect::invoke($stub, 'applyWhen', false, [
             'missing.1' => $p1 = (new ValueMixed(fn() => 'abc')),
             'missing.2' => $p2 = (new ValueMixed(fn() => 123)),
-            'missing.3' => $p3 = (new RelationOne('present', fn() => 'abc')),
-            'missing.4' => $p4 = (new RelationOne('present', fn() => 123)),
+            'missing.3' => $p3 = (new RelationOne(UserResource::class, fn() => 'abc')),
+            'missing.4' => $p4 = (new RelationOne(UserResource::class, fn() => 123)),
             'missing.5' => (new Relationship(UserResource::class, fn() => null)),
         ]);
         self::assertInstanceOf(MergeValue::class, $actual);
