@@ -126,7 +126,7 @@ final readonly class AttributeDefinition
 
 | Object | Content |
 | --- | --- |
-| `ResourceDefinition` | Resource class, `type`, attributes, relationships, declared links and meta, diagnostics of its compilation |
+| `ResourceDefinition` | Resource class, `type`, attributes, relationships, declared links and meta, the routes of its links (`routes`, `RouteNames` of `#[JsonApiRoutes]`), diagnostics of its compilation |
 | `AttributeDefinition` | Name, dotted path inside structs, `ValueType`, nullable, format, enum class, item type, children (structs), conditional, sparse (`whenInFields`: out unless requested) |
 | `RelationshipDefinition` | Name, related resource classes (`related`: one, or those of `morphs`, the resource class of each model class of a polymorphic relationship), `Cardinality::One` / `Many`, `LoadDefinition`, `linkage`, declared links (and the names of those declared by name, `namedLinks`) and meta, conditional, source |
 | `LoadDefinition` | Relation paths eager-loaded when the relationship is included, and those loaded with a constraint closure |
@@ -296,7 +296,7 @@ façades (`$this->string()`, `$this->one()`, `$this->applyWhen()`) that delegate
 | `toIdentifier()` (alias `toId()`) | Resource id; default from the model key |
 | `toAttributes()` | Attributes |
 | `toRelationships()` | Relationships |
-| `toLinks()` | Resource links |
+| `toLinks()` | Resource links; `#[JsonApiRoutes(self: 'posts.show')]` generates `self` and the relationship links from the routes (`Laravel\Rendering\RouteLinksStage`, which needs the router) |
 | `toResourceMeta()` | Resource meta |
 | `toDocumentMeta()` | Top-level meta; `toMeta()` throws in 2.x to avoid a silent change of meaning |
 

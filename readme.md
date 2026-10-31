@@ -443,6 +443,31 @@ protected function toLinks(Request $request): ?array
 }
 ```
 
+#### Links by route
+
+`#[JsonApiRoutes]` generates the links from the routes of the application, each route receiving the resource id:
+
+```php
+use Ark4ne\JsonApi\Resources\Attributes\JsonApiRoutes;
+
+#[JsonApiRoutes(self: 'posts.show')]
+class PostResource extends JsonApiResource
+```
+
+- `links.self` of the resource object: the `self` route, which must exist (`php artisan jsonapi:check` fails
+  otherwise).
+- `links.self` and `links.related` of each relationship: the routes `posts.relationships.{relationship}` and
+  `posts.{relationship}` (derived from the prefix of `self`), when they exist: `posts.relationships.author`,
+  `posts.author`. Name them with `relationship:` and `related:`, or `false` for none.
+- The links declared by the resource (`toLinks()`, `->links()`) win, even `null`.
+
+The resource id is the only parameter given to the routes: give the others with `URL::defaults()`. A relationship
+route without `{relationship}` in its name (`relationship: 'posts.relationships'`, one route
+`posts/{post}/relationships/{relationship}`) also receives the relationship name as its `relationship` parameter.
+A relationship left out for having neither data, links nor meta (`relationship.linkage`) still gets its links; one
+left out by `fields` or by its condition gets none. The routes are part of the definition
+(`ResourceDefinition::$routes`).
+
 ### toResourceMeta
 _**@see** [{json:api}: resource-meta](https://jsonapi.org/format/#document-resource-objects)_  
 _**@see** [{json:api}: document-meta](https://jsonapi.org/format/#document-meta)_

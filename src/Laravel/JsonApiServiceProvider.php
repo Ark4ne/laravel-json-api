@@ -12,6 +12,7 @@ use Ark4ne\JsonApi\Descriptors\ValueTypes;
 use Ark4ne\JsonApi\Laravel\Commands\CacheDefinitionsCommand;
 use Ark4ne\JsonApi\Laravel\Commands\CheckDefinitionsCommand;
 use Ark4ne\JsonApi\Laravel\Commands\ClearDefinitionsCommand;
+use Ark4ne\JsonApi\Laravel\Rendering\RouteLinksStage;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Request;
 use Illuminate\Support\ServiceProvider;
@@ -23,6 +24,7 @@ use WeakMap;
  * - Publishes and merges `config/jsonapi.php`, builds the `Configuration` and gives it to `Definitions`.
  * - Gives `bootstrap/cache/jsonapi.php` to `Definitions`, which reads it on first use: nothing is compiled nor read at
  *   boot.
+ * - Adds `RouteLinksStage` before the stages of `rendering.stages`: the links of `#[JsonApiRoutes]`.
  * - Binds one `JsonApiContext` per request object, built from it on first use.
  * - Registers `jsonapi:cache`, `jsonapi:clear` and `jsonapi:check`; `php artisan optimize` caches the definitions.
  */
@@ -42,7 +44,10 @@ final class JsonApiServiceProvider extends ServiceProvider
 
             // `mergeConfigFrom()` merges the top-level keys only: a file published before a nested key existed
             // (`describer.strict`) takes the default of the package for it.
-            return Configuration::fromArray(array_replace_recursive($package, $jsonapi));
+            $configuration = Configuration::fromArray(array_replace_recursive($package, $jsonapi));
+
+            // The links of `#[JsonApiRoutes]` need the routes of the application.
+            return $configuration->prependRenderingStages(RouteLinksStage::class);
         });
 
         $this->app->singleton(CompiledDefinitions::class, fn(): CompiledDefinitions => $this->compiledDefinitions());

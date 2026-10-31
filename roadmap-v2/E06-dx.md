@@ -55,8 +55,11 @@
 - [x] **E6.5** `->links(self: …, related: …)` sur les relations — sur `Relation` et `Relationship` ; liens nommés
       (chaîne ou closure recevant la ressource liée) prioritaires sur ceux de la closure, `null` omis ; noms dans
       `RelationshipDefinition::$namedLinks` ; `tests/app` réécrit avec cette syntaxe
-- [ ] **E6.5b** `#[JsonApiRoutes(self: 'posts.show')]` : `links.self` des ressources et des relations générés par
-      convention de route
+- [x] **E6.5b** `#[JsonApiRoutes(self: 'posts.show')]` : `links.self` des ressources et des relations générés par
+      convention de route — `relationship` / `related` dérivés du préfixe de `self` (`posts.relationships.{relationship}`,
+      `posts.{relationship}`), rendus si la route existe, y compris pour une relation omise par `relationship.linkage` ; `self` doit exister ; les liens déclarés gagnent ; routes
+      dans `ResourceDefinition::$routes` ; rendu par `Laravel\Rendering\RouteLinksStage`, ajouté par le provider
+      (`Configuration::prependRenderingStages()`) ; `jsonapi:check` signale une route `self` absente
 
 ### Relations
 

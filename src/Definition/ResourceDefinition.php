@@ -21,6 +21,7 @@ final readonly class ResourceDefinition
      * @param array<string, AttributeDefinition> $links Links of the resource object (`toLinks()`)
      * @param array<string, AttributeDefinition> $meta Meta of the resource object (`toResourceMeta()`)
      * @param list<Diagnostic> $diagnostics Findings of the compilation
+     * @param RouteNames|null $routes The routes its links are generated with (`#[JsonApiRoutes]`)
      */
     private function __construct(
         public string $class,
@@ -30,6 +31,7 @@ final readonly class ResourceDefinition
         public array $links = [],
         public array $meta = [],
         public array $diagnostics = [],
+        public ?RouteNames $routes = null,
     ) {}
 
     /**
@@ -85,6 +87,14 @@ final readonly class ResourceDefinition
         return $this->copy(diagnostics: array_values($diagnostics));
     }
 
+    /**
+     * Replaces the routes its links are generated with.
+     */
+    public function routes(?RouteNames $routes): self
+    {
+        return $this->copy(routes: $routes ?? false);
+    }
+
     public function attribute(string $name): ?AttributeDefinition
     {
         return $this->attributes[$name] ?? null;
@@ -128,6 +138,7 @@ final readonly class ResourceDefinition
      *     links: array<string, AttributeDefinition>,
      *     meta: array<string, AttributeDefinition>,
      *     diagnostics: list<Diagnostic>,
+     *     routes?: RouteNames|null,
      * } $properties
      */
     public static function __set_state(array $properties): self
@@ -156,6 +167,7 @@ final readonly class ResourceDefinition
      * @param array<string, AttributeDefinition>|null $links
      * @param array<string, AttributeDefinition>|null $meta
      * @param list<Diagnostic>|null $diagnostics
+     * @param RouteNames|false|null $routes `null` to keep the current ones, `false` for none
      */
     private function copy(
         ?array $attributes = null,
@@ -163,6 +175,7 @@ final readonly class ResourceDefinition
         ?array $links = null,
         ?array $meta = null,
         ?array $diagnostics = null,
+        RouteNames|false|null $routes = null,
     ): self {
         return new self(
             class: $this->class,
@@ -172,6 +185,7 @@ final readonly class ResourceDefinition
             links: $links ?? $this->links,
             meta: $meta ?? $this->meta,
             diagnostics: $diagnostics ?? $this->diagnostics,
+            routes: $routes === false ? null : $routes ?? $this->routes,
         );
     }
 }

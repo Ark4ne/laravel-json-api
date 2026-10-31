@@ -6,7 +6,9 @@ namespace Ark4ne\JsonApi\Resources\Concerns;
 
 use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Definition\ResourceDefinition;
+use Ark4ne\JsonApi\Definition\RouteNames;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
+use Ark4ne\JsonApi\Resources\Attributes\JsonApiRoutes;
 use Ark4ne\JsonApi\Resources\Attributes\JsonApiType;
 use Ark4ne\JsonApi\Support\Probe;
 use Illuminate\Http\Request;
@@ -69,6 +71,16 @@ trait Definable
         $attribute = (new ReflectionClass(static::class))->getAttributes(JsonApiType::class)[0] ?? null;
 
         return $attribute?->newInstance()->type;
+    }
+
+    /**
+     * @internal
+     */
+    public static function declaredRoutes(): ?RouteNames
+    {
+        $attribute = (new ReflectionClass(static::class))->getAttributes(JsonApiRoutes::class)[0] ?? null;
+
+        return $attribute?->newInstance()->routeNames();
     }
 
     /**

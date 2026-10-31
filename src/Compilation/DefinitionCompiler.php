@@ -67,7 +67,8 @@ final readonly class DefinitionCompiler
 
         $predefined = $class::predefinedDefinition();
         if ($predefined !== null) {
-            return $predefined;
+            // The routes of `#[JsonApiRoutes]` are kept unless the definition written by hand has its own.
+            return $predefined->routes === null ? $predefined->routes($class::declaredRoutes()) : $predefined;
         }
 
         $run = $this->run($class);
@@ -77,7 +78,8 @@ final readonly class DefinitionCompiler
             ->attributes(...$run['attributes'])
             ->relationships(...$run['relationships'])
             ->links(...$run['links'])
-            ->meta(...$run['meta']);
+            ->meta(...$run['meta'])
+            ->routes($class::declaredRoutes());
 
         foreach ([...array_keys($definition->attributes), ...array_keys($definition->relationships)] as $name) {
             if (in_array($name, self::RESERVED_NAMES, true)) {

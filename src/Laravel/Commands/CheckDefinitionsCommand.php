@@ -12,14 +12,19 @@ use Ark4ne\JsonApi\Laravel\ResourceFinder;
 use Ark4ne\JsonApi\Support\Diagnostic;
 use Ark4ne\JsonApi\Support\DiagnosticLevel;
 use Illuminate\Console\Command;
+use Illuminate\Routing\Router;
 
 /**
  * Compiles the definitions of the resources and prints their diagnostics, grouped by resource.
  *
- * Fails when a definition cannot be compiled or has an error; with `--strict`, also on the first warning.
+ * Fails when a definition cannot be compiled or has an error, or when the `self` route of `#[JsonApiRoutes]` does not
+ * exist; with `--strict`, also on the first warning.
  */
 final class CheckDefinitionsCommand extends Command
 {
+    /** The `self` route of `#[JsonApiRoutes]` does not exist: rendering the resource throws. */
+    public const MISSING_ROUTE = 'missing-route';
+
     /** @var string */
     protected $signature = 'jsonapi:check
         {resources?* : Resource classes to check (default: every resource found in definitions.paths)}
@@ -28,7 +33,7 @@ final class CheckDefinitionsCommand extends Command
     /** @var string */
     protected $description = 'Check the JSON:API resource definitions and print their diagnostics';
 
-    public function handle(Configuration $configuration, ResourceFinder $finder): int
+    public function handle(Configuration $configuration, ResourceFinder $finder, Router $router): int
     {
         /** @var list<string> $requested */
         $requested = $this->argument('resources');
@@ -43,7 +48,18 @@ final class CheckDefinitionsCommand extends Command
                     throw DefinitionException::notADefinitionSource($class);
                 }
 
-                $diagnostics = $compiler->compile($class)->diagnostics;
+                $definition = $compiler->compile($class);
+                $diagnostics = $definition->diagnostics;
+                $self = $definition->routes?->self;
+                if ($self !== null && !$router->has($self)) {
+                    // Every rendering of the resource would throw.
+                    $diagnostics[] = new Diagnostic(
+                        DiagnosticLevel::Error,
+                        self::MISSING_ROUTE,
+                        "The route [{$self}] of #[JsonApiRoutes] does not exist.",
+                        'self',
+                    );
+                }
             } catch (DefinitionException $e) {
                 $this->components->twoColumnDetail($class, '<fg=red;options=bold>ERROR</>');
                 $this->line("  ⇂ {$e->getMessage()}");

@@ -37,6 +37,13 @@ interface DefinitionSource
     public static function declaredType(): ?string;
 
     /**
+     * The routes the resource declares its links with (`#[JsonApiRoutes]`), `null` for none.
+     *
+     * @internal
+     */
+    public static function declaredRoutes(): ?RouteNames;
+
+    /**
      * The resource type (`toType()`, which gives `$declared` by default).
      *
      * @param string $declared The declared type, otherwise that of the naming convention

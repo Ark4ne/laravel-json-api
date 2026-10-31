@@ -30,7 +30,8 @@ final readonly class Configuration
      * @param SparseRelationships $sparseRelationships How `fields[type]` treats relationships (`fields.relationships`)
      * @param list<string> $resourcePaths Directories scanned for resources by the Artisan commands
      *                                    (`definitions.paths`); empty for the application's default
-     * @param list<class-string> $renderingStages Stages run after those of the package (`rendering.stages`)
+     * @param list<class-string> $renderingStages Stages run after those of the package (`rendering.stages`), with
+     *                                            those the service provider puts first
      * @param JsonApiObject|null $jsonapi The `jsonapi` member of the documents, `null` for none (`document.jsonapi`)
      * @param positive-int|null $maxIncludeDepth Deepest include path accepted, `null` for no limit (`include.max-depth`)
      * @param TypeNaming $typeNaming The type of a resource that declares none (`type.naming`)
@@ -124,6 +125,33 @@ final readonly class Configuration
             maxIncludeDepth: $this->maxIncludeDepth,
             typeNaming: $this->typeNaming,
             valueTypes: self::valueTypes(['describer' => ['types' => [...$this->valueTypes, $name => $class]]]),
+        );
+    }
+
+    /**
+     * This configuration with the given rendering stages run before its own: a stage it already has keeps its place.
+     * The service provider puts the stages of the Laravel layer before those of `rendering.stages` with it.
+     *
+     * @throws InvalidConfigurationException when a class does not exist
+     */
+    public function prependRenderingStages(string ...$stages): self
+    {
+        $stages = array_values(array_diff($stages, $this->renderingStages));
+
+        return new self(
+            nullable: $this->nullable,
+            dateFormat: $this->dateFormat,
+            precision: $this->precision,
+            strict: $this->strict,
+            whenHas: $this->whenHas,
+            linkage: $this->linkage,
+            sparseRelationships: $this->sparseRelationships,
+            resourcePaths: $this->resourcePaths,
+            renderingStages: self::stages(['rendering' => ['stages' => [...$stages, ...$this->renderingStages]]], []),
+            jsonapi: $this->jsonapi,
+            maxIncludeDepth: $this->maxIncludeDepth,
+            typeNaming: $this->typeNaming,
+            valueTypes: $this->valueTypes,
         );
     }
 

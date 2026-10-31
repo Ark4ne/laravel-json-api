@@ -89,6 +89,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   of an array (`->of('money')`, as the types of the package: `->of('integer')`). `Descriptors\ValueTypes` is the
   registry; a name taken by a resource method or a class that is not a `Value` throws an
   `InvalidConfigurationException` at boot.
+- **Links by route**: `#[JsonApiRoutes(self: 'posts.show')]` on a resource generates `links.self` of its resource
+  objects, and `links.self` / `links.related` of their relationships from the routes `posts.relationships.{relationship}`
+  and `posts.{relationship}` when they exist (`relationship:` and `related:` to name others, `false` for none), also for
+  a relationship left out by `relationship.linkage`. The links declared by the resource win, even `null`. The routes
+  are recorded in `ResourceDefinition::$routes` (`RouteNames`), also for a definition written by hand; `jsonapi:check`
+  fails when the `self` route does not exist (`missing-route`). The service provider puts
+  `Laravel\Rendering\RouteLinksStage` before the stages of `rendering.stages` (`Configuration::prependRenderingStages()`).
 - **Declarative type**: `#[JsonApiType('posts')]` on a resource gives its type without overriding `toType()`, whose
   default implementation returns it (an override can call `parent::toType()`).
 - **Type naming convention** `type.naming`: the type of a resource that declares none, from its class name without the

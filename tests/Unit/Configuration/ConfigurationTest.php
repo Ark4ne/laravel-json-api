@@ -185,4 +185,20 @@ final class ConfigurationTest extends TestCase
 
         Configuration::fromArray($config);
     }
+
+    public function test_prepended_rendering_stages_run_before_the_configured_ones_and_are_not_repeated(): void
+    {
+        $configuration = Configuration::fromArray(['rendering' => ['stages' => [self::class]]])
+            ->prependRenderingStages(TestCase::class, self::class);
+
+        self::assertSame([TestCase::class, self::class], $configuration->renderingStages);
+    }
+
+    public function test_a_prepended_rendering_stage_that_does_not_exist_throws(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessage('rendering.stages');
+
+        Configuration::fromArray([])->prependRenderingStages('App\\Unknown');
+    }
 }
