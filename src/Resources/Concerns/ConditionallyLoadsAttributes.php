@@ -5,14 +5,18 @@ declare(strict_types=1);
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
 use Ark4ne\JsonApi\Descriptors\Describer;
+use Ark4ne\JsonApi\Descriptors\MergeWhenValue;
 use Ark4ne\JsonApi\Descriptors\Relations\RelationRaw;
 use Ark4ne\JsonApi\Descriptors\Values\ValueMixed;
+use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Resources\Relationship;
 use Ark4ne\JsonApi\Support\Values;
 use Closure;
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MergeValue;
 use Illuminate\Http\Resources\MissingValue;
+use JsonSerializable;
 
 trait ConditionallyLoadsAttributes
 {
@@ -55,6 +59,70 @@ trait ConditionallyLoadsAttributes
     }
 
     /**
+     * @override JsonResource::merge
+     * Unconditional: the members are kept in the definition (Laravel's `merge()` goes through `mergeWhen()`).
+     *
+     * @param mixed $value
+     *
+     * @return \Illuminate\Http\Resources\MergeValue
+     */
+    protected function merge($value)
+    {
+        return new MergeValue(self::mergeable(value($value)));
+    }
+
+    /**
+     * @override JsonResource::mergeWhen
+     * Merged members are hidden from the definition whatever the condition, with a `merge-when` diagnostic: group
+     * conditional members with `applyWhen()`, which keeps them in the definition. `mergeUnless()` relies on it.
+     *
+     * @param bool $condition
+     * @param mixed $value
+     * @param mixed $default
+     *
+     * @return \Illuminate\Http\Resources\MergeValue|mixed
+     */
+    protected function mergeWhen($condition, $value, $default = new MissingValue())
+    {
+        if ($condition) {
+            return new MergeWhenValue(self::mergeable(value($value)));
+        }
+
+        return new MergeWhenValue(func_num_args() === 3 ? self::mergeable(value($default)) : []);
+    }
+
+    /**
+     * The members to merge, as Laravel merges them: `null` merges nothing.
+     *
+     * @return array<array-key, mixed>
+     *
+     * @throws DefinitionException when the members are a scalar or an object that cannot be merged
+     */
+    private static function mergeable(mixed $members): array
+    {
+        if ($members === null) {
+            return [];
+        }
+
+        if ($members instanceof Arrayable) {
+            return $members->toArray();
+        }
+
+        if (is_iterable($members)) {
+            return is_array($members) ? $members : iterator_to_array($members);
+        }
+
+        if ($members instanceof JsonSerializable && is_array($serialized = $members->jsonSerialize())) {
+            return $serialized;
+        }
+
+        throw DefinitionException::notMergeable(get_debug_type($members));
+    }
+
+    /**
+     * Groups conditional members: they are kept in the definition, marked conditional. The way to group conditions,
+     * rather than `mergeWhen()`, whose members are missing from the definition.
+     *
      * @param bool|Closure():boolean $condition
      * @param iterable<array-key, mixed> $data
      *

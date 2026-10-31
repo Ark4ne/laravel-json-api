@@ -158,7 +158,9 @@ Hence a few rules:
   `$this->applyWhen()`.
 - **Prefer lazy values.** A described value (`$this->string()`) or a closure is typed and computed only when
   requested; a value read eagerly (`'name' => $this->name`) has an unknown type.
-- **Prefer `applyWhen()` to `mergeWhen()`**, whose members are missing from the definition.
+- **Group conditional members with `applyWhen()`.** The members of `mergeWhen()` and `mergeUnless()` are missing
+  from the definition whatever the condition, with a `merge-when` warning: they are rendered, but cannot be requested
+  by `fields` nor included, and their relations are not eager-loaded.
 
 `php artisan jsonapi:check` reports what breaks these rules (`--strict` fails on warnings too), and
 `php artisan jsonapi:cache` (run by `php artisan optimize`) compiles every definition for production.
@@ -242,9 +244,8 @@ public function toAttributes(Request $request): array
         'hash64' => fn() => base64_encode("{$this->id}-{$this->email}"),
         // Conditional attribute
         'secret' => $this->when($request->user()->isAdmin(), 'secret-value'),       
-        // Merging Conditional Attributes
-        // use applyWhen insteadof mergeWhen for keep fields
-        // useful for fields request rules validation
+        // Merging Conditional Attributes: applyWhen keeps them in the definition,
+        // mergeWhen hides them (fields validation, eager-loads) with a diagnostic
         $this->applyWhen($request->user()->isAdmin(), [
             'first-secret' => 123,
             'second-secret' => 456.789,

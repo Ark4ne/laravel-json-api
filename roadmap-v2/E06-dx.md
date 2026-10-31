@@ -25,8 +25,10 @@
       un format exploitable par la définition — formats `uuid`, `ulid`, `decimal`, `json` ; `dateOnly()` / `time()`
       sont des dates de format `Y-m-d` / `H:i:s` (le format d'une date reste son format PHP) ; hook `valueFormat()` ;
       `decimal()` arrondit sur les chiffres, sans float
-- [ ] **E6.9** `applyWhen` documenté comme **la** manière de grouper des conditions ; `mergeWhen` produit un
-      diagnostic, car il masque les champs de la définition
+- [x] **E6.9** `applyWhen` documenté comme **la** manière de grouper des conditions ; `mergeWhen` produit un
+      diagnostic, car il masque les champs de la définition — `mergeWhen()` surchargé : ses membres sont masqués et
+      diagnostiqués quelle que soit la condition évaluée par la sonde (`Descriptors\MergeWhenValue`), plus seulement
+      quand elle échoue ; `merge()` surchargé (inconditionnel, gardé) ; un `when()` sans nom donne `unnamed-member`
 
 ### Type et identité
 

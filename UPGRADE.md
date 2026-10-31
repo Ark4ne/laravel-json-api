@@ -100,6 +100,20 @@ returns the `ResourceDefinition` (type, attributes, relationships with their rel
 A condition written with an `if` on the request inside a hook is not seen by the definition, which is built with an
 empty request: write it with `->when()`, `->unless()` or `applyWhen()` (README, section "Definition").
 
+The members of `mergeWhen()` and `mergeUnless()` are missing from the definition whatever the condition, with a
+`merge-when` warning: they are still rendered, but `fields` and `include` cannot request them and their relations are
+not eager-loaded. Group conditional members with `applyWhen()`:
+
+```php
+// 1.x
+$this->mergeWhen($this->is_admin, ['secret' => $this->secret]),
+// 2.0
+$this->applyWhen(fn() => $this->is_admin, ['secret' => $this->string()]),
+```
+
+`merge()`, `mergeWhen()` and `mergeUnless()` throw a `DefinitionException` when given a scalar or an object that is
+neither iterable, `Arrayable` nor `JsonSerializable`; `null` merges nothing.
+
 ### `include` and `fields` come from the query string
 
 1.x read `include` and `fields` from all the input, body included. 2.0 reads them from the query string only, where

@@ -158,7 +158,9 @@ Patterns: **Null Object** (the probe), **Builder** (descriptors build definition
 - **No `if` on the request.** The definition is built in a single pass with a neutral `Request`: every condition goes
   through `->when()`, `->unless()` or `applyWhen()`. A member added by an `if` cannot be detected reliably, so the rule
   is documented (README, section "Definition") rather than diagnosed.
-- **`mergeWhen` hides fields** from the definition: `applyWhen` is the documented way to group conditional fields.
+- **`mergeWhen` hides fields** from the definition whatever its condition (`Descriptors\MergeWhenValue` when it holds,
+  a `MissingValue` without name when it fails), with a `merge-when` diagnostic: `applyWhen` is the documented way to
+  group conditional fields.
 - **Reading a definition:** `PostResource::definition()` (or `PostCollection::definition()`, which reads the
   collected resource) returns `Definitions::for(PostResource::class)`. It replaces 1.x `schema()` and `Skeleton`.
 - **Opt-in escape hatch.** A resource may override `protected static function toDefinition(): ?ResourceDefinition` and

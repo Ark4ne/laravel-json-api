@@ -23,8 +23,9 @@ use Throwable;
  * - Descriptors give their own definition (`Value::definition()`, `Relation::definition()`).
  * - A closure gives a `mixed`, computed value; an eager value gives a `mixed` value whose source is the probe path it
  *   was read from, with an `eager-attribute` diagnostic.
- * - `MergeValue`s are merged; the members of `applyWhen()` are conditional; `mergeWhen()` hides its members, with a
- *   `merge-when` diagnostic.
+ * - `MergeValue`s are merged; the members of `applyWhen()` are conditional; `mergeWhen()` hides its members whatever
+ *   its condition, with a `merge-when` diagnostic; a member without name left out on the probe is hidden, with an
+ *   `unnamed-member` diagnostic.
  * - Defaults (nullable, date format) are resolved from the configuration.
  * - The hooks run once, with a neutral request: a member declared under an `if` on the request or the model is seen
  *   only when the probe takes that branch. Conditions belong to `when()` and `applyWhen()` (docs/architecture.md §4).
@@ -36,6 +37,9 @@ final readonly class DefinitionCompiler
 
     /** `mergeWhen()` hides its members from the definition: `applyWhen()` keeps them. */
     public const MERGE_WHEN = Members::MERGE_WHEN;
+
+    /** A member without name is left out on the probe: the definition cannot name it. */
+    public const UNNAMED_MEMBER = Members::UNNAMED_MEMBER;
 
     /** An attribute or a relationship is named `id` or `type`, reserved by the specification. */
     public const RESERVED_NAME = 'reserved-name';

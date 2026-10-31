@@ -15,8 +15,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   members, relationships with their cardinality and eager-loads, links, meta. It is the public, immutable and
   serializable model read by the validation rules and by external tools. `toDefinition()` lets a resource write it by
   hand.
-- **Diagnostics** collected at compilation: eager attribute, `mergeWhen()`, member named `id` or `type`, member that
-  cannot be described, hook failing without a model.
+- **Diagnostics** collected at compilation: eager attribute, `mergeWhen()`, member without name left out on the probe
+  (`unnamed-member`), member named `id` or `type`, member that cannot be described, hook failing without a model. The members of `mergeWhen()` / `mergeUnless()` are missing from
+  the definition whatever the condition, with a `merge-when` warning: `applyWhen()` is the way to group conditional
+  members, kept in the definition and marked conditional; `merge()` keeps its members. `merge()` / `mergeWhen()` given
+  a scalar or an object that is neither iterable, `Arrayable` nor `JsonSerializable` throws a `DefinitionException`.
 - **`php artisan jsonapi:cache`** compiles every definition into `bootstrap/cache/jsonapi.php`, read on first use;
   **`jsonapi:clear`** removes it. Both run with `php artisan optimize` and `optimize:clear`. The resources are looked
   for in `definitions.paths` (the `app` directory by default).

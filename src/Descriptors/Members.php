@@ -25,8 +25,10 @@ use Throwable;
  * - A descriptor gives its own definition.
  * - A closure gives a `mixed`, computed value.
  * - A value read on the probe gives a `mixed` value whose source is the path read, with an `eager-attribute` warning.
- * - The members of a `MergeValue` (`applyWhen()`) are merged; a `MissingValue` without name (`mergeWhen()`) hides its
- *   members, with a `merge-when` warning.
+ * - The members of a `MergeValue` (`applyWhen()`, `merge()`) are merged; `mergeWhen()` hides its members whatever its
+ *   condition (`MergeWhenValue`), with a `merge-when` warning.
+ * - A member without name left out on the probe (`MissingValue`, from an unnamed `when()`) is missing from the
+ *   definition, with an `unnamed-member` warning.
  * - A member that cannot be described is left out, with an `invalid-member` error naming it: the others are kept.
  *
  * @internal
@@ -38,6 +40,9 @@ final readonly class Members
 
     /** `mergeWhen()` hides its members from the definition: `applyWhen()` keeps them. */
     public const MERGE_WHEN = 'merge-when';
+
+    /** A member without name is left out on the probe: the definition cannot name it. */
+    public const UNNAMED_MEMBER = 'unnamed-member';
 
     /** A member cannot be described (it throws on the probe, or relates to a class that is not a resource). */
     public const INVALID_MEMBER = 'invalid-member';
@@ -63,16 +68,22 @@ final readonly class Members
         $definitions = [];
 
         foreach ($members as $key => $member) {
-            if (is_int($key) && $member instanceof MergeValue) {
-                /** @var iterable<array-key, mixed> $merged */
-                $merged = $member->data;
-                array_push($definitions, ...$this->attributes($merged, $scope));
+            if (is_int($key) && $member instanceof MergeWhenValue) {
+                $this->mergeWhen();
 
                 continue;
             }
 
             if (is_int($key) && $member instanceof MissingValue) {
-                $this->mergeWhen();
+                $this->unnamed();
+
+                continue;
+            }
+
+            if (is_int($key) && $member instanceof MergeValue) {
+                /** @var iterable<array-key, mixed> $merged */
+                $merged = $member->data;
+                array_push($definitions, ...$this->attributes($merged, $scope));
 
                 continue;
             }
@@ -126,12 +137,14 @@ final readonly class Members
         $relations = [];
 
         foreach ($members as $key => $member) {
-            if (is_int($key) && $member instanceof MergeValue) {
+            if (is_int($key) && $member instanceof MergeWhenValue) {
+                $this->mergeWhen();
+            } elseif (is_int($key) && $member instanceof MissingValue) {
+                $this->unnamed();
+            } elseif (is_int($key) && $member instanceof MergeValue) {
                 /** @var iterable<array-key, mixed> $merged */
                 $merged = $member->data;
                 array_push($relations, ...$this->relations($merged));
-            } elseif (is_int($key) && $member instanceof MissingValue) {
-                $this->mergeWhen();
             } elseif ($member instanceof DescribesRelationship) {
                 $relations[] = [(string) Describer::retrieveName($member, $key), $member];
             }
@@ -156,6 +169,15 @@ final readonly class Members
         $this->diagnostics->warning(
             self::MERGE_WHEN,
             'Members merged with mergeWhen() are missing from the definition: use applyWhen() instead.',
+        );
+    }
+
+    private function unnamed(): void
+    {
+        $this->diagnostics->warning(
+            self::UNNAMED_MEMBER,
+            'A member without name is left out on the probe (when() whose condition fails) and is missing from the '
+            . "definition: give it a name ('name' => \$this->when(…)) or use ->when() on a descriptor.",
         );
     }
 

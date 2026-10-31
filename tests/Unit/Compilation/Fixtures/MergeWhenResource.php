@@ -6,6 +6,7 @@ namespace Test\Unit\Compilation\Fixtures;
 
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Http\Request;
+use Test\app\Http\Resources\CommentResource;
 use Test\app\Http\Resources\UserResource;
 
 /**
@@ -25,6 +26,16 @@ final class MergeWhenResource extends JsonApiResource
             $this->mergeWhen(false, [
                 'hidden' => $this->string(),
             ]),
+            $this->mergeWhen(true, [
+                'shown' => $this->string(),
+            ]),
+            $this->mergeUnless(false, [
+                'unless' => $this->string(),
+            ]),
+            $this->merge([
+                'merged' => $this->string(),
+            ]),
+            $this->when(false, $this->string('unnamed')),
         ];
     }
 
@@ -38,6 +49,9 @@ final class MergeWhenResource extends JsonApiResource
         return [
             $this->mergeWhen(false, [
                 'author' => $this->one(UserResource::class),
+            ]),
+            $this->mergeWhen(true, [
+                'comments' => $this->many(CommentResource::class),
             ]),
         ];
     }

@@ -60,6 +60,15 @@ final class DefinitionException extends LogicException implements JsonApiExcepti
     }
 
     /**
+     * `merge()` or `mergeWhen()` was given members that are neither an array, an iterable, `Arrayable` nor
+     * `JsonSerializable`.
+     */
+    public static function notMergeable(string $type): self
+    {
+        return new self("merge() and mergeWhen() merge an array, an iterable, an Arrayable or a JsonSerializable, [{$type}] given.");
+    }
+
+    /**
      * Running the hooks of the resource on a probe threw.
      */
     public static function cannotCompile(string $class, Throwable $previous): self

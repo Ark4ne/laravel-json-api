@@ -200,14 +200,21 @@ final class DefinitionCompilerTest extends TestCase
         self::assertTrue($grouped->conditional);
     }
 
-    public function test_the_members_of_merge_when_are_hidden_with_a_diagnostic(): void
+    public function test_the_members_of_merge_when_are_hidden_with_a_diagnostic_whatever_the_condition(): void
     {
         $definition = $this->compile(MergeWhenResource::class);
 
-        self::assertSame(['title'], array_keys($definition->attributes));
+        self::assertSame(['title', 'merged'], array_keys($definition->attributes));
         self::assertSame([], $definition->relationships);
         self::assertSame(
-            [DefinitionCompiler::MERGE_WHEN, DefinitionCompiler::MERGE_WHEN],
+            [
+                DefinitionCompiler::MERGE_WHEN,
+                DefinitionCompiler::MERGE_WHEN,
+                DefinitionCompiler::MERGE_WHEN,
+                DefinitionCompiler::UNNAMED_MEMBER,
+                DefinitionCompiler::MERGE_WHEN,
+                DefinitionCompiler::MERGE_WHEN,
+            ],
             $this->codes($definition),
         );
     }
