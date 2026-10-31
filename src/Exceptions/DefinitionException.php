@@ -52,6 +52,14 @@ final class DefinitionException extends LogicException implements JsonApiExcepti
     }
 
     /**
+     * `links()` of a relationship was given no link.
+     */
+    public static function emptyLinks(): self
+    {
+        return new self('links() needs a closure, a self link or a related link.');
+    }
+
+    /**
      * A polymorphic relationship was given no resource to render its related models with.
      */
     public static function emptyMorphMap(): self

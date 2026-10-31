@@ -52,7 +52,9 @@
 
 ### Liens
 
-- [ ] **E6.5** `->links(self: …, related: …)` sur les relations
+- [x] **E6.5** `->links(self: …, related: …)` sur les relations — sur `Relation` et `Relationship` ; liens nommés
+      (chaîne ou closure recevant la ressource liée) prioritaires sur ceux de la closure, `null` omis ; noms dans
+      `RelationshipDefinition::$namedLinks` ; `tests/app` réécrit avec cette syntaxe
 - [ ] **E6.5b** `#[JsonApiRoutes(self: 'posts.show')]` : `links.self` des ressources et des relations générés par
       convention de route
 

@@ -343,10 +343,10 @@ protected function toRelationships(Request $request): array
                            ->whenLoaded(),
         // with relationship (allow to include links and meta on relation)
         'posts' => $this->many(PostResource::class)
-                ->links(fn() => [
-                    'self' => "https://api.example.com/posts/{$this->resource->id}/relationships/posts",
-                    'related' => "https://api.example.com/posts/{$this->resource->id}/posts",
-                ])
+                ->links(
+                    self: fn() => "https://api.example.com/users/{$this->resource->id}/relationships/posts",
+                    related: fn() => "https://api.example.com/users/{$this->resource->id}/posts",
+                )
                 ->meta(fn() => [
                     'total' => $this->integer(fn() => $this->resource->posts()->count()),
                 ]),
@@ -375,6 +375,18 @@ protected function toRelationships(Request $request): array
         ->asCollection(),
     ];
 }
+```
+
+The `self` and `related` links can be declared by name: a string, or a closure receiving the related resource (or
+collection). They win over the links of a closure given as first argument, and a link resolving to `null` is left
+out. Unlike the links of a closure, the definition knows their names (`RelationshipDefinition::$namedLinks`), so tools
+documenting the API can tell which links a relationship may render.
+
+```php
+'author' => $this->one(UserResource::class)->links(
+    self: fn() => route('posts.relationships.author', $this->resource),
+    related: fn() => route('posts.author', $this->resource),
+),
 ```
 
 #### Resource identifier meta

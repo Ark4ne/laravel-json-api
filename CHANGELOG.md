@@ -65,6 +65,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **Server-side include**: `UserResource::make($user)->include('posts.comments')` (and on a collection) includes paths
   in addition to the requested ones, carried by the context (`JsonApiContext::withInclude()`,
   `IncludeTree::merge()`). Replaces 1.x `withInclude()`.
+- **Named relationship links**: `->links(self: …, related: …)` on a relationship, each link a string or a closure
+  receiving the related resource; they win over the links of a closure, which stays the first argument. The
+  definition records their names (`RelationshipDefinition::$namedLinks`). `links()` without any link throws a
+  `DefinitionException`.
 - `->pivotMeta(['role'], 'pivot')` on a relationship renders attributes of the pivot of each related model in the meta
   of its resource identifier.
 - A `filter-on-unloaded` diagnostic when relationship filters run on a relation that is not loaded.

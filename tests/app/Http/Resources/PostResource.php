@@ -38,13 +38,13 @@ class PostResource extends JsonApiResource
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'user' => $this->one(UserResource::class)->links(fn() => [
-                'self' => "https://api.example.com/posts/{$this->resource->id}/relationships/user",
-            ])->withLoad(true),
-            'comments' => $this->many(CommentResource::class)->links(fn() => [
-                'self' => "https://api.example.com/posts/{$this->resource->id}/relationships/comments",
-                'related' => "https://api.example.com/posts/{$this->resource->id}/comments",
-            ])->meta(fn() => [
+            'user' => $this->one(UserResource::class)->links(
+                self: fn() => "https://api.example.com/posts/{$this->resource->id}/relationships/user",
+            )->withLoad(true),
+            'comments' => $this->many(CommentResource::class)->links(
+                self: fn() => "https://api.example.com/posts/{$this->resource->id}/relationships/comments",
+                related: fn() => "https://api.example.com/posts/{$this->resource->id}/comments",
+            )->meta(fn() => [
                 'total' => $this->resource->relationLoaded('comments')
                     ? $this->resource->comments->count()
                     : $this->resource->comments()->getQuery()->count(),

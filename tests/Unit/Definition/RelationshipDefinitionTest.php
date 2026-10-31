@@ -66,6 +66,28 @@ final class RelationshipDefinitionTest extends TestCase
         self::assertNull($changed->source(null)->source);
     }
 
+    public function test_naming_links_declares_links(): void
+    {
+        $relationship = RelationshipDefinition::one('author', UserResource::class);
+
+        $named = $relationship->namedLinks('self', 'related');
+
+        self::assertSame([], $relationship->namedLinks);
+        self::assertSame(['self', 'related'], $named->namedLinks);
+        self::assertTrue($named->hasLinks);
+        self::assertFalse($relationship->namedLinks()->hasLinks);
+        self::assertTrue($relationship->hasLinks()->namedLinks()->hasLinks);
+        self::assertSame([], $named->hasLinks(false)->namedLinks);
+        self::assertSame(['self', 'related'], $named->hasLinks()->namedLinks);
+    }
+
+    public function test_the_named_links_survive_var_export(): void
+    {
+        $relationship = RelationshipDefinition::one('author', UserResource::class)->namedLinks('self');
+
+        self::assertEquals($relationship, eval('return ' . var_export($relationship, true) . ';'));
+    }
+
     public function test_a_polymorphic_relationship_relates_the_resources_of_its_map(): void
     {
         $relationship = RelationshipDefinition::one('commentable', PostResource::class);

@@ -82,6 +82,9 @@ public static function collection($resource): UserCollection
   that is not polymorphic). Run `php artisan jsonapi:cache` again after upgrading.
 - `Filters` is immutable: `->filters(fn(Filters $filters) => $filters->can('view'))` works as before, but a closure
   calling `can()` / `when()` without returning their result loses the rules. Chain them and return the result.
+- `Relationship::links()` is `links(?Closure $links = null, string|Closure|null $self = null, string|Closure|null
+  $related = null)`: a subclass overriding `links(Closure $links)` must take the new signature. `links()` without any
+  link throws.
 
 ### Static helpers
 

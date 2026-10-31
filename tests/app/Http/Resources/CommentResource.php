@@ -43,10 +43,10 @@ class CommentResource extends JsonApiResource
                 ])
                 ->whenIncluded()->withLoad(true)),
             'post' => PostResource::relationship(fn() => $this->resource->post)
-                ->links(fn() => [
-                    'self' => "https://api.example.com/comment/{$this->resource->id}/relationships/post",
-                    'related' => "https://api.example.com/comment/{$this->resource->id}/post",
-                ])
+                ->links(
+                    self: fn() => "https://api.example.com/comment/{$this->resource->id}/relationships/post",
+                    related: fn() => "https://api.example.com/comment/{$this->resource->id}/post",
+                )
                 ->whenIncluded()
                 ->withLoad(true),
         ];

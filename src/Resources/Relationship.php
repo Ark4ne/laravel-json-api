@@ -12,6 +12,7 @@ use Ark4ne\JsonApi\Definition\DescribesRelationship;
 use Ark4ne\JsonApi\Definition\LoadDefinition;
 use Ark4ne\JsonApi\Definition\RelatedResource;
 use Ark4ne\JsonApi\Definition\RelationshipDefinition;
+use Ark4ne\JsonApi\Descriptors\Relations\Links;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Exceptions\RenderingException;
 use Ark4ne\JsonApi\Filters\Filters;
@@ -24,7 +25,6 @@ use Ark4ne\JsonApi\Traits\HasRelationLoad;
 use Closure;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Http\Resources\MissingValue;
-use Traversable;
 
 use function value;
 
@@ -56,6 +56,9 @@ class Relationship implements DescribesRelationship, RelationshipSource
 
     protected ?Filters $filters = null;
 
+    /** @var list<string> The links declared by name (`links(self: …)`) */
+    protected array $linkNames = [];
+
     /**
      * @param class-string<T> $resource
      * @param Closure $value
@@ -86,15 +89,20 @@ class Relationship implements DescribesRelationship, RelationshipSource
     }
 
     /**
-     * Links of the relationship object, the closure receiving the related resource (or collection)
+     * Links of the relationship object: those of a closure receiving the related resource (or collection), and the
+     * `self` and `related` links declared by name, which win (see `Relation::links()`).
      *
-     * @param Closure $links
+     * @param Closure|null $links Receives the related resource, returns the links by name
+     * @param string|Closure|null $self Receives the related resource, returns the link
+     * @param string|Closure|null $related Receives the related resource, returns the link
      *
      * @return $this
+     *
+     * @throws DefinitionException when no link is given
      */
-    public function links(Closure $links): self
+    public function links(?Closure $links = null, string|Closure|null $self = null, string|Closure|null $related = null): self
     {
-        $this->links = $links;
+        [$this->links, $this->linkNames] = Links::declare($links, $self, $related);
 
         return $this;
     }
@@ -255,6 +263,7 @@ class Relationship implements DescribesRelationship, RelationshipSource
             ->load(LoadDefinition::fromDeclaration($this->load ?? false, $name))
             ->linkage($this->linkage)
             ->hasLinks($this->links !== null)
+            ->namedLinks(...$this->linkNames)
             ->hasMeta($this->meta !== null)
             ->hasIdentifierMeta($this->identifierMeta !== null)
             ->computed();
@@ -335,8 +344,8 @@ class Relationship implements DescribesRelationship, RelationshipSource
             default => new $this->resource($value),
         };
 
-        $links = self::members(\value($this->links, $resource));
-        $meta = self::members(\value($this->meta, $resource));
+        $links = Links::members(\value($this->links, $resource));
+        $meta = Links::members(\value($this->meta, $resource));
         $cardinality = $many ? Cardinality::Many : Cardinality::One;
 
         if (Values::isMissing($value)) {
@@ -399,18 +408,6 @@ class Relationship implements DescribesRelationship, RelationshipSource
      */
     private function identifierMetaOf(RenderableResource $related): array
     {
-        return $this->identifierMeta === null ? [] : self::members(($this->identifierMeta)($related));
-    }
-
-    /**
-     * @return array<array-key, mixed>
-     */
-    private static function members(mixed $members): array
-    {
-        return match (true) {
-            is_array($members) => $members,
-            $members instanceof Traversable => iterator_to_array($members),
-            default => [],
-        };
+        return $this->identifierMeta === null ? [] : Links::members(($this->identifierMeta)($related));
     }
 }

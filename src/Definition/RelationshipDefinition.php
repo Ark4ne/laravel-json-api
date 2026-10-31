@@ -30,6 +30,9 @@ final readonly class RelationshipDefinition
      * @param bool $hasIdentifierMeta Whether it declares meta on its resource identifiers (`identifierMeta()`)
      * @param array<class-string, class-string<DefinitionSource>> $morphs The resource class rendering each model class
      *                                                                   of a polymorphic relationship; empty otherwise
+     * @param list<string> $namedLinks The links declared by name (`links(self: …, related: …)`): the names a document
+     *                                 may render, rendered unless their closure gives `null`; those of a closure are
+     *                                 unknown
      */
     private function __construct(
         public string $name,
@@ -44,6 +47,7 @@ final readonly class RelationshipDefinition
         public bool $computed = false,
         public bool $hasIdentifierMeta = false,
         public array $morphs = [],
+        public array $namedLinks = [],
     ) {}
 
     /**
@@ -98,9 +102,20 @@ final readonly class RelationshipDefinition
         return $this->copy(linkage: $linkage);
     }
 
+    /**
+     * Declaring no links forgets the links declared by name.
+     */
     public function hasLinks(bool $hasLinks = true): self
     {
-        return $this->copy(hasLinks: $hasLinks);
+        return $this->copy(hasLinks: $hasLinks, namedLinks: $hasLinks ? null : []);
+    }
+
+    /**
+     * The links declared by name; declaring one declares links.
+     */
+    public function namedLinks(string ...$names): self
+    {
+        return $this->copy(hasLinks: $this->hasLinks || $names !== [], namedLinks: array_values($names));
     }
 
     public function hasMeta(bool $hasMeta = true): self
@@ -139,6 +154,7 @@ final readonly class RelationshipDefinition
      *     computed: bool,
      *     hasIdentifierMeta?: bool,
      *     morphs?: array<class-string, class-string<DefinitionSource>>,
+     *     namedLinks?: list<string>,
      * } $properties
      */
     public static function __set_state(array $properties): self
@@ -149,6 +165,7 @@ final readonly class RelationshipDefinition
     /**
      * @param non-empty-list<class-string<DefinitionSource>>|null $related
      * @param array<class-string, class-string<DefinitionSource>>|null $morphs
+     * @param list<string>|null $namedLinks
      */
     private function copy(
         ?string $name = null,
@@ -162,6 +179,7 @@ final readonly class RelationshipDefinition
         ?bool $computed = null,
         ?bool $hasIdentifierMeta = null,
         ?array $morphs = null,
+        ?array $namedLinks = null,
     ): self {
         return new self(
             name: $name ?? $this->name,
@@ -176,6 +194,7 @@ final readonly class RelationshipDefinition
             computed: $computed ?? $this->computed,
             hasIdentifierMeta: $hasIdentifierMeta ?? $this->hasIdentifierMeta,
             morphs: $morphs ?? $this->morphs,
+            namedLinks: $namedLinks ?? $this->namedLinks,
         );
     }
 }

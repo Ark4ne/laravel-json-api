@@ -36,6 +36,8 @@ abstract class Relation extends Describer implements DescribesRelationship
     use HasRelationLoad;
 
     protected ?Closure $links = null;
+    /** @var list<string> The links declared by name (`links(self: …)`) */
+    protected array $linkNames = [];
     protected ?Closure $meta = null;
     protected ?Closure $identifierMeta = null;
     protected ?Linkage $linkage = null;
@@ -84,9 +86,26 @@ abstract class Relation extends Describer implements DescribesRelationship
         return $this->with('morphs', $morphs !== [] ? $morphs : throw DefinitionException::emptyMorphMap());
     }
 
-    public function links(Closure $links): static
+    /**
+     * Links of the relationship object: those of a closure receiving the related resource (or collection), and the
+     * `self` and `related` links declared by name, which win. A named link is a string or a closure receiving the
+     * related resource; a `null` link is left out. Declared again, they replace the previous ones.
+     *
+     * `->links(self: fn() => route('posts.relationships.author', $this->resource), related: fn() => …)`
+     *
+     * @see https://jsonapi.org/format/#document-resource-object-relationships
+     *
+     * @param Closure|null $links Receives the related resource, returns the links by name
+     * @param string|Closure|null $self Receives the related resource, returns the link
+     * @param string|Closure|null $related Receives the related resource, returns the link
+     *
+     * @throws DefinitionException when no link is given
+     */
+    public function links(?Closure $links = null, string|Closure|null $self = null, string|Closure|null $related = null): static
     {
-        return $this->with('links', $links);
+        [$links, $names] = Links::declare($links, $self, $related);
+
+        return $this->with('links', $links)->with('linkNames', $names);
     }
 
     public function meta(Closure $meta): static
@@ -327,6 +346,7 @@ abstract class Relation extends Describer implements DescribesRelationship
             ->conditional($this->isConditional())
             ->linkage($this->linkage)
             ->hasLinks($this->links !== null)
+            ->namedLinks(...$this->linkNames)
             ->hasMeta($this->meta !== null)
             ->hasIdentifierMeta($this->identifierMeta !== null)
             ->source($computed ? null : $this->relation ?? $name)
