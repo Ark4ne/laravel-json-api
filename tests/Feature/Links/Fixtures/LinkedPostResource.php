@@ -20,7 +20,7 @@ final class LinkedPostResource extends JsonApiResource
     }
 
     /**
-     * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Relations\Relation<mixed>|\Ark4ne\JsonApi\Resources\Relationship<CommentResource>>
+     * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Relations\Relation<\Test\app\Models\Post>|\Ark4ne\JsonApi\Resources\Relationship<CommentResource>>
      */
     protected function toRelationships(Request $request): iterable
     {

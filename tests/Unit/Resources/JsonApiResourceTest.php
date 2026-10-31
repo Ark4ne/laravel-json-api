@@ -124,7 +124,7 @@ class JsonApiResourceTest extends TestCase
             public function toLinks(Request $request): iterable
             {
                 $data = [
-                    'int' => 123,
+                    'int' => '123',
                     'str' => 'abc',
                 ];
 
@@ -168,13 +168,13 @@ class JsonApiResourceTest extends TestCase
                 ],
             ],
             'links' => [
-                'int' => 123,
+                'int' => '123',
                 'str' => 'abc',
                 'data' => [
-                    'int' => 123,
+                    'int' => '123',
                     'str' => 'abc',
                     'data' => [
-                        'int' => 123,
+                        'int' => '123',
                         'str' => 'abc',
                     ],
                 ],

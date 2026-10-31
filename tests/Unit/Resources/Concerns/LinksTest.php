@@ -30,13 +30,13 @@ class LinksTest extends TestCase
         };
 
         $stub = new class ($object) extends JsonResource {
-            use Links;
+            /** @use Links<mixed> */ use Links;
         };
 
         self::assertEquals(null, Reflect::invoke($stub, 'toLinks', new Request()));
 
         $stub = new class ($object) extends JsonResource {
-            use Links;
+            /** @use Links<mixed> */ use Links;
 
             protected function toLinks(Request $request): ?iterable
             {

@@ -28,7 +28,7 @@ final class UnnamedMembersResource extends JsonApiResource
     }
 
     /**
-     * @return iterable<array-key, \Ark4ne\JsonApi\Descriptors\Relations\Relation<mixed>>
+     * @return iterable<array-key, \Ark4ne\JsonApi\Descriptors\Relations\Relation<\Test\app\Models\Post>>
      */
     protected function toRelationships(Request $request): iterable
     {

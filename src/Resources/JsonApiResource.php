@@ -20,19 +20,24 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @template T
+ * @template T The model of the resource: `JsonApiResource<User>`
  * @property T $resource
  */
 abstract class JsonApiResource extends JsonResource implements DefinitionSource, RenderableResource
 {
+    /** @use Descriptors\Relations<T> */
     use Descriptors\Relations;
+    /** @use Descriptors\Values<T> */
     use Descriptors\Values;
     use Concerns\Relationize;
     use Concerns\Identifier;
     use Concerns\Attributes;
     use Concerns\ConditionallyLoadsAttributes;
+    /** @use Concerns\Relationships<T> */
     use Concerns\Relationships;
+    /** @use Concerns\Links<T> */
     use Concerns\Links;
+    /** @use Concerns\Meta<T> */
     use Concerns\Meta;
     use Concerns\Definable;
     use Concerns\Renderable;

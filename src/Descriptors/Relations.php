@@ -27,6 +27,7 @@ trait Relations
      */
     protected function one(?string $for = null, string|Closure|null $relation = null): RelationOne
     {
+        /** @var \Ark4ne\JsonApi\Descriptors\Relations\RelationOne<T> */
         return new RelationOne(...self::declared($for, $relation));
     }
 
@@ -42,6 +43,7 @@ trait Relations
      */
     protected function many(?string $for = null, string|Closure|null $relation = null): RelationMany
     {
+        /** @var \Ark4ne\JsonApi\Descriptors\Relations\RelationMany<T> */
         return new RelationMany(...self::declared($for, $relation));
     }
 
@@ -60,6 +62,7 @@ trait Relations
      */
     protected function morph(array $morphs, string|Closure|null $relation = null): RelationOne
     {
+        /** @var \Ark4ne\JsonApi\Descriptors\Relations\RelationOne<T> */
         return (new RelationOne(self::firstMorph($morphs), $relation))->morphs($morphs);
     }
 
@@ -74,6 +77,7 @@ trait Relations
      */
     protected function morphMany(array $morphs, string|Closure|null $relation = null): RelationMany
     {
+        /** @var \Ark4ne\JsonApi\Descriptors\Relations\RelationMany<T> */
         return (new RelationMany(self::firstMorph($morphs), $relation))->morphs($morphs);
     }
 

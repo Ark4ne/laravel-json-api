@@ -49,7 +49,7 @@ final class TypedResource extends JsonApiResource
     }
 
     /**
-     * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Relations\Relation<mixed>>
+     * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Relations\Relation<\Test\app\Models\Post>>
      */
     protected function toRelationships(Request $request): iterable
     {
@@ -65,7 +65,7 @@ final class TypedResource extends JsonApiResource
     }
 
     /**
-     * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Values\Value<mixed>>
+     * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Values\Value<\Test\app\Models\Post>>
      */
     protected function toLinks(Request $request): iterable
     {

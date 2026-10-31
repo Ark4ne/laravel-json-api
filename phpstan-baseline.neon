@@ -97,12 +97,6 @@ parameters:
 			path: src/Descriptors/Relations/Relation.php
 
 		-
-			message: '#^Method Ark4ne\\JsonApi\\Descriptors\\Relations\\Relation\:\:filters\(\) has parameter \$filters with generic class Ark4ne\\JsonApi\\Filters\\Filters but does not specify its types\: Resource$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Descriptors/Relations/Relation.php
-
-		-
 			message: '#^Method Ark4ne\\JsonApi\\Descriptors\\Relations\\Relation\:\:related\(\) return type with generic class Ark4ne\\JsonApi\\Resources\\JsonApiCollection does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
@@ -122,12 +116,6 @@ parameters:
 
 		-
 			message: '#^Method Ark4ne\\JsonApi\\Descriptors\\Relations\\Relation\:\:value\(\) return type with generic class Ark4ne\\JsonApi\\Resources\\Relationship does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Descriptors/Relations/Relation.php
-
-		-
-			message: '#^Property Ark4ne\\JsonApi\\Descriptors\\Relations\\Relation\:\:\$filters with generic class Ark4ne\\JsonApi\\Filters\\Filters does not specify its types\: Resource$#'
 			identifier: missingType.generics
 			count: 1
 			path: src/Descriptors/Relations/Relation.php
@@ -535,18 +523,6 @@ parameters:
 			path: src/Resources/JsonApiResource.php
 
 		-
-			message: '#^Class Ark4ne\\JsonApi\\Resources\\JsonApiResource uses generic trait Ark4ne\\JsonApi\\Descriptors\\Relations but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Resources/JsonApiResource.php
-
-		-
-			message: '#^Class Ark4ne\\JsonApi\\Resources\\JsonApiResource uses generic trait Ark4ne\\JsonApi\\Descriptors\\Values but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Resources/JsonApiResource.php
-
-		-
 			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource\:\:toAttributes\(\) should return iterable\<\(int\|string\), mixed\> but returns mixed\.$#'
 			identifier: return.type
 			count: 1
@@ -556,24 +532,6 @@ parameters:
 			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource\:\:toIdentifier\(\) should return int\|string but returns mixed\.$#'
 			identifier: return.type
 			count: 2
-			path: src/Resources/JsonApiResource.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource\:\:toLinks\(\) return type with generic class Ark4ne\\JsonApi\\Descriptors\\Values\\Value does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Resources/JsonApiResource.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Descriptors\\Relations\\Relation does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Resources/JsonApiResource.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Resources\\Relationship does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
 			path: src/Resources/JsonApiResource.php
 
 		-
@@ -619,20 +577,8 @@ parameters:
 			path: src/Resources/Relationship.php
 
 		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\Relationship\:\:withFilters\(\) has parameter \$filters with generic class Ark4ne\\JsonApi\\Filters\\Filters but does not specify its types\: Resource$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Resources/Relationship.php
-
-		-
 			message: '#^Parameter \#2 \$data of method Ark4ne\\JsonApi\\Filters\\Filters\<mixed\>\:\:apply\(\) expects Illuminate\\Http\\Resources\\PotentiallyMissing\|iterable\<\(int\|string\), resource\>\|resource\|null, mixed given\.$#'
 			identifier: argument.type
-			count: 1
-			path: src/Resources/Relationship.php
-
-		-
-			message: '#^Property Ark4ne\\JsonApi\\Resources\\Relationship\:\:\$filters with generic class Ark4ne\\JsonApi\\Filters\\Filters does not specify its types\: Resource$#'
-			identifier: missingType.generics
 			count: 1
 			path: src/Resources/Relationship.php
 
@@ -1052,42 +998,6 @@ parameters:
 
 		-
 			message: '#^Class Test\\Feature\\PostResource extends generic class Ark4ne\\JsonApi\\Resources\\JsonApiResource but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Feature/RelationshipFiltersTest.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Feature/RelationshipFiltersTest\.php\:37\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Descriptors\\Relations\\Relation does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Feature/RelationshipFiltersTest.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Feature/RelationshipFiltersTest\.php\:37\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Resources\\Relationship does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Feature/RelationshipFiltersTest.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Feature/RelationshipFiltersTest\.php\:69\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Descriptors\\Relations\\Relation does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Feature/RelationshipFiltersTest.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Feature/RelationshipFiltersTest\.php\:69\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Resources\\Relationship does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Feature/RelationshipFiltersTest.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Feature/RelationshipFiltersTest\.php\:92\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Descriptors\\Relations\\Relation does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Feature/RelationshipFiltersTest.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Feature/RelationshipFiltersTest\.php\:92\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Resources\\Relationship does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
 			path: tests/Feature/RelationshipFiltersTest.php
@@ -1825,12 +1735,6 @@ parameters:
 			path: tests/Unit/Resources/Concerns/LinksTest.php
 
 		-
-			message: '#^Method Illuminate\\Http\\Resources\\Json\\JsonResource@anonymous/tests/Unit/Resources/Concerns/LinksTest\.php\:32\:\:toLinks\(\) return type with generic class Ark4ne\\JsonApi\\Descriptors\\Values\\Value does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Unit/Resources/Concerns/LinksTest.php
-
-		-
 			message: '#^Method Illuminate\\Http\\Resources\\Json\\JsonResource@anonymous/tests/Unit/Resources/Concerns/LinksTest\.php\:38\:\:toLinks\(\) never returns null so it can be removed from the return type\.$#'
 			identifier: return.unusedType
 			count: 1
@@ -1887,18 +1791,6 @@ parameters:
 		-
 			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:43\:\:toResourceMeta\(\) never returns null so it can be removed from the return type\.$#'
 			identifier: return.unusedType
-			count: 1
-			path: tests/Unit/Resources/JsonApiResourceTest.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:99\:\:toLinks\(\) return type with generic class Ark4ne\\JsonApi\\Descriptors\\Values\\Value does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Unit/Resources/JsonApiResourceTest.php
-
-		-
-			message: '#^Method Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/JsonApiResourceTest\.php\:99\:\:toLinks\(\) should return iterable\<\(int\|string\), Ark4ne\\JsonApi\\Descriptors\\Values\\Value\|string\> but returns Illuminate\\Support\\Collection\<string, array\<string, Illuminate\\Support\\Collection\<string, int\|string\>\|int\|string\>\|int\|string\>\.$#'
-			identifier: return.type
 			count: 1
 			path: tests/Unit/Resources/JsonApiResourceTest.php
 
@@ -2311,24 +2203,6 @@ parameters:
 			path: tests/app/Http/Controllers/UserController.php
 
 		-
-			message: '#^Method Test\\app\\Http\\Resources\\CommentResource\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Descriptors\\Relations\\Relation does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/app/Http/Resources/CommentResource.php
-
-		-
-			message: '#^Method Test\\app\\Http\\Resources\\CommentResource\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Resources\\Relationship does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/app/Http/Resources/CommentResource.php
-
-		-
-			message: '#^Method Test\\app\\Http\\Resources\\CommentResource\:\:toRelationships\(\) should return iterable\<\(int\|string\), Ark4ne\\JsonApi\\Descriptors\\Relations\\Relation\|Ark4ne\\JsonApi\\Resources\\Relationship\|Illuminate\\Http\\Resources\\MergeValue\|Illuminate\\Http\\Resources\\PotentiallyMissing\> but returns array\<string, mixed\>\.$#'
-			identifier: return.type
-			count: 1
-			path: tests/app/Http/Resources/CommentResource.php
-
-		-
 			message: '#^Cannot call method count\(\) on array\<Test\\app\\Models\\Comment\>\|\(Illuminate\\Support\\Collection&iterable\<Test\\app\\Models\\Comment\>\)\.$#'
 			identifier: method.nonObject
 			count: 1
@@ -2337,18 +2211,6 @@ parameters:
 		-
 			message: '#^Dynamic call to static method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:count\(\)\.$#'
 			identifier: staticMethod.dynamicCall
-			count: 1
-			path: tests/app/Http/Resources/PostResource.php
-
-		-
-			message: '#^Method Test\\app\\Http\\Resources\\PostResource\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Descriptors\\Relations\\Relation does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/app/Http/Resources/PostResource.php
-
-		-
-			message: '#^Method Test\\app\\Http\\Resources\\PostResource\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Resources\\Relationship does not specify its types\: T$#'
-			identifier: missingType.generics
 			count: 1
 			path: tests/app/Http/Resources/PostResource.php
 
@@ -2365,25 +2227,7 @@ parameters:
 			path: tests/app/Http/Resources/UserResource.php
 
 		-
-			message: '#^Method Test\\app\\Http\\Resources\\UserResource\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Descriptors\\Relations\\Relation does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/app/Http/Resources/UserResource.php
-
-		-
-			message: '#^Method Test\\app\\Http\\Resources\\UserResource\:\:toRelationships\(\) return type with generic class Ark4ne\\JsonApi\\Resources\\Relationship does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/app/Http/Resources/UserResource.php
-
-		-
 			message: '#^Parameter \#1 \$attribute of class Ark4ne\\JsonApi\\Descriptors\\Values\\ValueMixed constructor expects Closure\|string\|null, callable\(\)\: mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/app/Http/Resources/UserResource.php
-
-		-
-			message: '#^Parameter \#1 \$attribute of method Ark4ne\\JsonApi\\Resources\\JsonApiResource\<Test\\app\\Models\\User\>\:\:struct\(\) expects Closure\(mixed\)\: iterable\<string, mixed\>, Closure\(\)\: array\{0\: Ark4ne\\JsonApi\\Descriptors\\Values\\ValueString\<mixed\>, email\: string, casted\: Ark4ne\\JsonApi\\Descriptors\\Values\\ValueString\<mixed\>, 1\: Illuminate\\Http\\Resources\\MergeValue, closure\: Closure\(\)\: ''closure'', missing\: Ark4ne\\JsonApi\\Descriptors\\Values\\ValueMixed\<mixed\>, sub\-struct\: Ark4ne\\JsonApi\\Descriptors\\Values\\ValueStruct\<mixed\>, third\-struct\: Ark4ne\\JsonApi\\Descriptors\\Values\\ValueStruct\<mixed\>\} given\.$#'
 			identifier: argument.type
 			count: 1
 			path: tests/app/Http/Resources/UserResource.php

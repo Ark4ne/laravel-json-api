@@ -7,6 +7,8 @@ namespace Ark4ne\JsonApi\Resources\Concerns;
 use Illuminate\Http\Request;
 
 /**
+ * @template T The model of the resource
+ *
  * @phpstan-require-extends \Ark4ne\JsonApi\Resources\JsonApiResource
  */
 trait Meta
@@ -19,7 +21,7 @@ trait Meta
      *
      * @param \Illuminate\Http\Request $request
      *
-     * @return iterable<string, mixed>|iterable<array-key, \Ark4ne\JsonApi\Descriptors\Values\Value>|null
+     * @return iterable<string, mixed>|iterable<array-key, \Ark4ne\JsonApi\Descriptors\Values\Value<T>>|null
      *
      * ```
      * return [
@@ -41,7 +43,7 @@ trait Meta
      *
      * @param \Illuminate\Http\Request $request
      *
-     * @return iterable<string, mixed>|iterable<array-key, \Ark4ne\JsonApi\Descriptors\Values\Value>|null
+     * @return iterable<string, mixed>|iterable<array-key, \Ark4ne\JsonApi\Descriptors\Values\Value<T>>|null
      */
     protected function toDocumentMeta(Request $request): ?iterable
     {

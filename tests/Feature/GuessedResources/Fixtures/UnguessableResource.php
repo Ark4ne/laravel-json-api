@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 final class UnguessableResource extends JsonApiResource
 {
     /**
-     * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Relations\Relation<mixed>>
+     * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Relations\Relation<array<string, mixed>>>
      */
     protected function toRelationships(Request $request): iterable
     {

@@ -36,6 +36,7 @@ trait Values
      */
     protected function bool(string|Closure|null $attribute = null): ValueBool
     {
+        /** @var ValueBool<T> */
         return new ValueBool($attribute);
     }
 
@@ -46,6 +47,7 @@ trait Values
      */
     protected function integer(string|Closure|null $attribute = null): ValueInteger
     {
+        /** @var ValueInteger<T> */
         return new ValueInteger($attribute);
     }
 
@@ -56,6 +58,7 @@ trait Values
      */
     protected function float(string|Closure|null $attribute = null): ValueFloat
     {
+        /** @var ValueFloat<T> */
         return new ValueFloat($attribute);
     }
 
@@ -66,6 +69,7 @@ trait Values
      */
     protected function string(string|Closure|null $attribute = null): ValueString
     {
+        /** @var ValueString<T> */
         return new ValueString($attribute);
     }
 
@@ -76,6 +80,7 @@ trait Values
      */
     protected function date(string|Closure|null $attribute = null): ValueDate
     {
+        /** @var ValueDate<T> */
         return new ValueDate($attribute);
     }
 
@@ -88,6 +93,7 @@ trait Values
      */
     protected function dateOnly(string|Closure|null $attribute = null): ValueDateOnly
     {
+        /** @var ValueDateOnly<T> */
         return new ValueDateOnly($attribute);
     }
 
@@ -100,6 +106,7 @@ trait Values
      */
     protected function time(string|Closure|null $attribute = null): ValueTime
     {
+        /** @var ValueTime<T> */
         return new ValueTime($attribute);
     }
 
@@ -112,6 +119,7 @@ trait Values
      */
     protected function decimal(string|Closure|null $attribute = null): ValueDecimal
     {
+        /** @var ValueDecimal<T> */
         return new ValueDecimal($attribute);
     }
 
@@ -122,6 +130,7 @@ trait Values
      */
     protected function uuid(string|Closure|null $attribute = null): ValueUuid
     {
+        /** @var ValueUuid<T> */
         return new ValueUuid($attribute);
     }
 
@@ -132,6 +141,7 @@ trait Values
      */
     protected function ulid(string|Closure|null $attribute = null): ValueUlid
     {
+        /** @var ValueUlid<T> */
         return new ValueUlid($attribute);
     }
 
@@ -144,6 +154,7 @@ trait Values
      */
     protected function json(string|Closure|null $attribute = null): ValueJson
     {
+        /** @var ValueJson<T> */
         return new ValueJson($attribute);
     }
 
@@ -154,6 +165,7 @@ trait Values
      */
     protected function array(string|Closure|null $attribute = null): ValueArray
     {
+        /** @var ValueArray<T, mixed> */
         return new ValueArray($attribute);
     }
 
@@ -164,6 +176,7 @@ trait Values
      */
     protected function mixed(string|Closure|null $attribute = null): ValueMixed
     {
+        /** @var ValueMixed<T> */
         return new ValueMixed($attribute);
     }
 
@@ -174,16 +187,18 @@ trait Values
      */
     protected function enum(string|Closure|null $attribute = null): ValueEnum
     {
+        /** @var ValueEnum<T, UnitEnum> */
         return new ValueEnum($attribute);
     }
 
     /**
-     * @param Closure(T):iterable<string, mixed|Closure|Value> $attribute
+     * @param Closure(T):iterable<array-key, mixed> $attribute Members by name, or descriptors named by their attribute
      *
      * @return ValueStruct<T>
      */
     protected function struct(Closure $attribute): ValueStruct
     {
+        /** @var ValueStruct<T> */
         return new ValueStruct($attribute);
     }
 
@@ -194,6 +209,7 @@ trait Values
      */
     protected function arrayOf(Value $type, string|Closure|null $attribute = null): ValueArray
     {
+        /** @var ValueArray<T, mixed> */
         return (new ValueArray($attribute))->of($type);
     }
 }

@@ -39,7 +39,7 @@ final class PostResource extends JsonApiResource
     }
 
     /**
-     * @return iterable<string, RelationOne<mixed>|RelationMany<mixed>>
+     * @return iterable<string, RelationOne<\Benchmark\Models\Post>|RelationMany<\Benchmark\Models\Post>>
      */
     protected function toRelationships(Request $request): iterable
     {

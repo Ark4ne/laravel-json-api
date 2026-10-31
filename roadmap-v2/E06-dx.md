@@ -71,8 +71,11 @@
 
 ### Outillage
 
-- [ ] **E6.10** Génériques PHPDoc complets (`JsonApiResource<User>`, `Value<User>`, `Closure(User): mixed`) pour
-      l'autocomplétion et PHPStan dans les applications
+- [x] **E6.10** Génériques PHPDoc complets (`JsonApiResource<User>`, `Value<User>`, `Closure(User): mixed`) pour
+      l'autocomplétion et PHPStan dans les applications — `T` relié aux traits (`@use Values<T>`, `Relations<T>`,
+      `Relationships<T>`, `Links<T>`, `Meta<T>`), `when()` typé, `Filters<mixed>` ; `T` invariant (le descripteur lit
+      le modèle) : `Relation<mixed>` dans une annotation devient `Relation<User>` (UPGRADE) ; `tests/Types`
+      (`assertType`) ; baseline −156 lignes
 - [ ] **E6.11** `php artisan make:jsonapi-resource` : génère une ressource depuis le modèle (attributs depuis
       `$casts`, relations depuis les méthodes typées)
 

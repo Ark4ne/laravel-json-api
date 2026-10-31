@@ -7,6 +7,9 @@ namespace Ark4ne\JsonApi\Resources\Concerns;
 use Ark4ne\JsonApi\Resources\Relationship;
 use Illuminate\Http\Request;
 
+/**
+ * @template T The model of the resource
+ */
 trait Relationships
 {
     use PrepareData;
@@ -16,7 +19,7 @@ trait Relationships
      *
      * @param \Illuminate\Http\Request $request
      *
-     * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Relations\Relation|Relationship|\Illuminate\Http\Resources\PotentiallyMissing>|iterable<array-key, \Ark4ne\JsonApi\Descriptors\Relations\Relation|\Illuminate\Http\Resources\MergeValue|\Illuminate\Http\Resources\MissingValue>
+     * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Relations\Relation<T>|Relationship<*>|\Illuminate\Http\Resources\PotentiallyMissing>|iterable<array-key, \Ark4ne\JsonApi\Descriptors\Relations\Relation<T>|\Illuminate\Http\Resources\MergeValue|\Illuminate\Http\Resources\MissingValue>
      *
      * ```
      * return [

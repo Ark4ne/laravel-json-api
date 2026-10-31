@@ -6,6 +6,9 @@ namespace Ark4ne\JsonApi\Resources\Concerns;
 
 use Illuminate\Http\Request;
 
+/**
+ * @template T The model of the resource
+ */
 trait Links
 {
     use PrepareData;
@@ -15,7 +18,8 @@ trait Links
      *
      * @param \Illuminate\Http\Request $request
      *
-     * @return iterable<string, string>|iterable<array-key, \Ark4ne\JsonApi\Descriptors\Values\Value>|null
+     * @return iterable<string, string|array<string, mixed>|null>|iterable<array-key, \Ark4ne\JsonApi\Descriptors\Values\Value<T>>|null
+     *         Links by name: a URL, a link object or `null`; or descriptors
      *
      * ```
      * return [

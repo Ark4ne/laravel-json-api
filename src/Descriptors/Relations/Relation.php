@@ -41,6 +41,7 @@ abstract class Relation extends Describer implements DescribesRelationship
     protected ?Closure $meta = null;
     protected ?Closure $identifierMeta = null;
     protected ?Linkage $linkage = null;
+    /** @var Filters<mixed>|null */
     protected ?Filters $filters = null;
 
     /**
@@ -203,8 +204,9 @@ abstract class Relation extends Describer implements DescribesRelationship
     /**
      * Renders only the related resources passing every rule of the filters.
      *
-     * @param Closure(Filters): Filters $filters Receives empty filters and returns them with their rules
-     *                                          (`fn(Filters $filters) => $filters->can('view')`): they are immutable
+     * @param Closure(Filters<mixed>): Filters<mixed> $filters Receives empty filters and returns them with their
+     *                                                        rules (`fn(Filters $filters) => $filters->can('view')`):
+     *                                                        they are immutable
      * @return static
      */
     public function filters(Closure $filters): static

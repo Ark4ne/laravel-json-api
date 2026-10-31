@@ -26,7 +26,7 @@ final class FailingHookResource extends JsonApiResource
     }
 
     /**
-     * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Relations\Relation<mixed>>
+     * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Relations\Relation<\Test\app\Models\Post>>
      */
     protected function toRelationships(Request $request): iterable
     {

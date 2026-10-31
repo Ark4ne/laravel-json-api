@@ -21,6 +21,26 @@ use JsonSerializable;
 trait ConditionallyLoadsAttributes
 {
     /**
+     * @override JsonResource::when
+     * Typed: the value, or a `MissingValue` (or `$default`) when the condition fails.
+     *
+     * @template V
+     * @template D
+     *
+     * @param bool $condition
+     * @param V|Closure():V $value
+     * @param D|Closure():D $default
+     *
+     * @return V|D|\Illuminate\Http\Resources\MissingValue
+     */
+    protected function when($condition, $value, $default = new MissingValue())
+    {
+        return func_num_args() < 3
+            ? parent::when($condition, $value)
+            : parent::when($condition, $value, $default);
+    }
+
+    /**
      * Retrieve a relationship if it has been present in fields.
      *
      * @template K

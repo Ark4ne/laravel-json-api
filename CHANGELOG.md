@@ -89,6 +89,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   of an array (`->of('money')`, as the types of the package: `->of('integer')`). `Descriptors\ValueTypes` is the
   registry; a name taken by a resource method or a class that is not a `Value` throws an
   `InvalidConfigurationException` at boot.
+- **Generics for static analysis**: with `@extends JsonApiResource<User>`, `$this->resource` is a `User`, the
+  descriptors are `ValueString<User>`, `RelationOne<User>`…, their closures (`$this->string(fn($user) => …)`,
+  `->when(fn($request, $user) => …)`, `struct()`) receive a `User`, and `when()` returns `MissingValue|` the type of
+  its value. The hooks (`toRelationships()`, `toLinks()`, `toResourceMeta()`…) declare `Relation<T>` / `Value<T>`;
+  `toLinks()` accepts link objects; `relationship()` gives a `Relationship<static>`, `collection()` a
+  `JsonApiCollection<static>`; `filters()` receives `Filters<mixed>`. Checked by PHPStan on `tests/Types`.
 - **Relationships without resource class**: `$this->one()`, `$this->one('user')`, `$this->many()` on a resource
   rendering an Eloquent model guess the related resource as `Model::toResource()` does: the model of the resource
   (`#[JsonApiModel(Post::class)]`, otherwise `App\Http\Resources\PostResource` → `App\Models\Post`), the related model of

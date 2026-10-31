@@ -173,6 +173,13 @@ called a model method of one of these names through `$this` must call it on the 
 - On `Relationship` (`PostResource::relationship(...)`), `withLinks()`, `withMeta()` and `withIdentifierMeta()` are
   renamed `links()`, `meta()` and `identifierMeta()`, as on the relationship descriptors.
 
+### Static analysis
+
+`JsonApiResource<User>` now types the descriptors: `$this->string()` is a `ValueString<User>`, `$this->one(…)` a
+`RelationOne<User>`. A hook annotated with `Relation<mixed>` or `Value<mixed>` (`@return iterable<string,
+Relation<mixed>>`) fails PHPStan: name the model (`Relation<User>`), or remove the `@return`, inherited from the
+parent. Nothing changes at runtime.
+
 ### Deployment
 
 Add nothing if you already run `php artisan optimize`: it now compiles the resource definitions too

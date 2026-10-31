@@ -145,6 +145,34 @@ class UserResource extends JsonApiResource
 }
 ```
 
+### Static analysis
+
+Declare the model of the resource with `@extends JsonApiResource<User>`: PHPStan and the IDEs then know it everywhere
+the resource gives it.
+
+```php
+/**
+ * @extends JsonApiResource<User>
+ */
+class UserResource extends JsonApiResource
+{
+    public function toAttributes(Request $request): iterable
+    {
+        return [
+            // $this->resource is a User; the descriptor is a ValueString<User>
+            'name' => $this->string(),
+            // the closures of the descriptors receive the User
+            'email' => $this->string(fn(User $user) => $user->email)->when(fn($request, User $user) => $user->isAdmin()),
+            // MissingValue|bool
+            'admin' => $this->when($request->user()?->is($this->resource) ?? false, fn() => $this->resource->isAdmin()),
+        ];
+    }
+}
+```
+
+The hooks need no `@return`: they inherit that of the parent (`Relation<User>`, `Value<User>`). An annotation of your
+own names the model: `@return iterable<string, Relation<User>>`, not `Relation<mixed>`.
+
 ### Definition
 
 The package reads what a resource declares (its type, attributes, relationships and eager-loads) once per class,

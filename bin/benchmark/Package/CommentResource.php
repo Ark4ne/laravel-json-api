@@ -26,7 +26,7 @@ final class CommentResource extends JsonApiResource
     }
 
     /**
-     * @return iterable<string, RelationOne<mixed>>
+     * @return iterable<string, RelationOne<\Benchmark\Models\Comment>>
      */
     protected function toRelationships(Request $request): iterable
     {

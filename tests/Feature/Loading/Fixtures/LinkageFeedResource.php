@@ -23,7 +23,7 @@ final class LinkageFeedResource extends JsonApiResource
     }
 
     /**
-     * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Relations\Relation<mixed>>
+     * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Relations\Relation<object{id: int, items: mixed}>>
      */
     protected function toRelationships(Request $request): iterable
     {

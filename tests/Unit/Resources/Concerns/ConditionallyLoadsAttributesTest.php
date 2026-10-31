@@ -164,4 +164,16 @@ class ConditionallyLoadsAttributesTest extends TestCase
         self::assertTrue($actual->isConditional());
         self::assertFalse($original->isConditional());
     }
+
+    public function test_when_resolves_the_value_or_the_default_like_laravel(): void
+    {
+        $resource = new class ([]) extends JsonApiResource {};
+
+        self::assertSame('a', Reflect::invoke($resource, 'when', true, 'a'));
+        self::assertSame('a', Reflect::invoke($resource, 'when', true, static fn() => 'a'));
+        self::assertEquals(new MissingValue(), Reflect::invoke($resource, 'when', false, 'a'));
+        self::assertSame('b', Reflect::invoke($resource, 'when', false, 'a', 'b'));
+        self::assertSame('b', Reflect::invoke($resource, 'when', false, 'a', static fn() => 'b'));
+        self::assertNull(Reflect::invoke($resource, 'when', false, 'a', null));
+    }
 }

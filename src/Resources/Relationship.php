@@ -54,6 +54,7 @@ class Relationship implements DescribesRelationship, RelationshipSource
      */
     protected ?Closure $loaded = null;
 
+    /** @var Filters<mixed>|null */
     protected ?Filters $filters = null;
 
     /** @var list<string> The links declared by name (`links(self: …)`) */
@@ -239,7 +240,7 @@ class Relationship implements DescribesRelationship, RelationshipSource
     /**
      * Set filters for the relationship
      *
-     * @param Filters $filters
+     * @param Filters<mixed> $filters
      * @return $this
      */
     public function withFilters(Filters $filters): static

@@ -363,7 +363,8 @@ Registries order their entries by priority, never by the order of a configuratio
 ## 15. Tests
 
 - **Suites:** `tests/Unit` (one test class per class), `tests/Feature` (Orchestra Testbench scenarios on the
-  application of `tests/app`), `tests/Architecture` (phpat), `tests/Benchmark`.
+  application of `tests/app`), `tests/Architecture` (phpat), `tests/Benchmark`, `tests/Types` (the generics an
+  application reads, asserted with PHPStan's `assertType()`, analysed by `composer stan` and never run).
 - **Every rendered document is validated** against the JSON:API 1.1 JSON Schema before any comparison: jsonapi.org only
   publishes a 1.0 schema, so `tests/Support/jsonapi-1.1.schema.json` copies it and adds the 1.1 members.
 - **Expected documents** are JSON files (`tests/Feature/<Scenario>/expected/*.json`), rewritten by
