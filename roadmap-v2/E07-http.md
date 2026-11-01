@@ -39,9 +39,19 @@ envoyé, ce que l'application applique si elle le souhaite.
 
 ### Erreurs
 
-- [ ] **E7.4** `ErrorRenderer` par famille d'exceptions (Chain of Responsibility, sur le modèle des
+- [x] **E7.4** `ErrorRenderer` par famille d'exceptions (Chain of Responsibility, sur le modèle des
       `ExceptionMappers` du générateur) : `ValidationException` (`source.pointer` / `source.parameter`),
       `AuthorizationException`, `ModelNotFoundException`, `HttpException`, `Throwable`
+      > `Http\Errors\` : `ErrorRenderer` (`supports` / `render`, constante `PRIORITY`), registre `ErrorRenderers`
+      > (tri stable par priorité décroissante, ajoute le membre `jsonapi` configuré), `ErrorDocument` / `ErrorObject`.
+      > Renderers : validation (pointer si membre du corps, parameter si la query a la racine de la clé, RFC 6901),
+      > authentification `401` (ajoutée), autorisation (statut de `denyWithStatus` / `denyAsNotFound`), modèle introuvable
+      > (`404` sans la classe du modèle), `HttpException` (statut, en-têtes), `Throwable` (`500`, détail en debug
+      > seulement ; `HttpResponseException` laissée à Laravel). Les exceptions préparées par le handler de Laravel
+      > (`HttpException` dont la précédente est l'exception d'origine) sont reconnues. Chaque document testé est validé
+      > contre le JSON Schema. Revue : statut de la `ValidationException` conservé, sa réponse propre laissée à Laravel,
+      > `source.parameter` pour une requête sans corps, clés entières ; `denyAsNotFound()` sans message par défaut ;
+      > en-têtes de l'`HttpException` préparée conservés (`PreparedException`) ; UTF-8 invalide substitué.
 - [ ] **E7.4b** Branchement en une ligne dans `bootstrap/app.php` :
       `->withExceptions(fn ($e) => JsonApi::renderErrors($e))`
 - [ ] **E7.4c** Renderers extensibles et remplaçables par l'application

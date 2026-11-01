@@ -127,6 +127,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `relationships()` / `relationship()` (the linkage) / `hasRelationship()` (`true` for a cleared to-one relationship),
   `ids()` (the ids of a linkage, as strings) and `meta()`. A member without rule is missing from it, and so is a
   relationship cleared (`null` or `[]`) unless its linkage (`data.relationships.tags.data`) has a rule of its own.
+- **Error documents** (`Http\Errors\`): `ErrorRenderers` asks its `ErrorRenderer`s by decreasing `PRIORITY` and
+  renders the exception with the first that supports it, as an `ErrorDocument` (status, headers, `errors`, `meta`, the
+  configured `jsonapi` member) served as `application/vnd.api+json`. The renderers of the package:
+  `ValidationErrorRenderer` (its status, `422` by default, one error per message, `source.parameter` for a query
+  parameter or a request without body, `source.pointer` for a member of the body; an exception with a response of its
+  own is left to Laravel), `AuthenticationErrorRenderer` (`401`), `AuthorizationErrorRenderer` (`403` or the status
+  given by `denyWithStatus()` / `denyAsNotFound()`, without the default message then), `ModelNotFoundErrorRenderer`
+  (`404`, without the class of the model), `HttpErrorRenderer` (status and headers of the `HttpException`) and
+  `ThrowableErrorRenderer` (`500`, message and location in debug only). A message that is not UTF-8 is substituted. The exceptions Laravel prepares
+  (`ModelNotFoundException` and `AuthorizationException` made `HttpException`s) are recognized.
 
 ### Changed
 
