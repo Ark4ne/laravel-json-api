@@ -10,17 +10,21 @@ use Ark4ne\JsonApi\Definition\ValueType;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Resources\JsonApiCollection;
 use Ark4ne\JsonApi\Support\Probe;
-use PHPUnit\Framework\TestCase;
 use Test\app\Http\Resources\PostResource;
 use Test\app\Http\Resources\UserCollection;
 use Test\app\Http\Resources\UserResource;
 use Test\Support\Reflect;
+use Test\TestCase;
 use Test\Unit\Compilation\Fixtures\PredefinedResource;
 
+/**
+ * On the application of `tests/app`: the guessed relationships (`$this->one()`) build their Eloquent relation.
+ */
 final class DefinableTest extends TestCase
 {
     protected function setUp(): void
     {
+        parent::setUp();
         Definitions::configure(Configuration::defaults());
     }
 

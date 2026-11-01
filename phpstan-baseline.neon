@@ -2203,12 +2203,6 @@ parameters:
 			path: tests/app/Http/Resources/UserResource.php
 
 		-
-			message: '#^Parameter \#1 \$attribute of class Ark4ne\\JsonApi\\Descriptors\\Values\\ValueMixed constructor expects Closure\|string\|null, callable\(\)\: mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/app/Http/Resources/UserResource.php
-
-		-
 			message: '#^Class Test\\app\\Models\\Comment uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
 			identifier: missingType.generics
 			count: 1

@@ -4,28 +4,20 @@ declare(strict_types=1);
 
 namespace Test\app\Http\Resources;
 
-use Ark4ne\JsonApi\Resources\Concerns\ConditionallyLoadsAttributes;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
-use DateTimeInterface;
 use Illuminate\Http\Request;
+use Test\app\Models\User;
 
 /**
- * @extends JsonApiResource<\Test\app\Models\User>
+ * @extends JsonApiResource<User>
  */
 class UserResource extends JsonApiResource
 {
-    use ConditionallyLoadsAttributes;
-
-    protected function toType(Request $request): string
-    {
-        return 'user';
-    }
-
     public function toAttributes(Request $request): iterable
     {
         return [
-            'name' => $this->resource->name,
-            'email' => $this->resource->email,
+            'name' => $this->string(),
+            'email' => $this->string(),
             'only-with-fields' => $this->string(fn() => 'huge-data-set')->whenInFields(),
             $this->applyWhen(fn() => true, [
                 'with-apply-conditional-raw' => 'huge-data-set',
@@ -56,26 +48,25 @@ class UserResource extends JsonApiResource
     protected function toResourceMeta(Request $request): ?iterable
     {
         return [
-            'created_at' => $this->datetime()->format(DateTimeInterface::ATOM),
-            'updated_at' => $this->datetime()->format(DateTimeInterface::ATOM),
+            'created_at' => $this->datetime(),
+            'updated_at' => $this->datetime(),
         ];
     }
 
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'main-post' => $this->one(PostResource::class, fn() => $this->resource->post)
-                ->withLoad('post'),
-            'posts' => PostResource::relationship(fn() => $this->resource->posts, fn() => [
-                'self' => "https://api.example.com/user/{$this->resource->id}/relationships/posts",
-                'related' => "https://api.example.com/user/{$this->resource->id}/posts",
-            ], fn() => [
-                'total' => $this->resource->posts()->getQuery()->count(),
-            ])
-                ->asCollection()
+            'main-post' => $this->one('post')->withLoad('post'),
+            'posts' => $this->many()
+                ->links(
+                    self: fn() => "https://api.example.com/user/{$this->resource->id}/relationships/posts",
+                    related: fn() => "https://api.example.com/user/{$this->resource->id}/posts",
+                )
+                ->meta(fn() => [
+                    'total' => $this->resource->posts()->getQuery()->count(),
+                ])
                 ->withLoad(true),
-
-            'comments' => $this->many(CommentResource::class)
+            'comments' => $this->many()
                 ->whenLoaded()
                 ->links(
                     self: fn() => "https://api.example.com/user/{$this->resource->id}/relationships/comments",
