@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Test\Unit\Requests\Rules;
+namespace Test\Unit\Http\Rules;
 
 use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Configuration\Configuration;
-use Ark4ne\JsonApi\Requests\Rules\Includes;
+use Ark4ne\JsonApi\Http\Rules\Includes;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Translation\PotentiallyTranslatedString;
@@ -19,7 +19,7 @@ use Test\Unit\Resources\Fixtures\AlphaResource;
 class IncludesTest extends TestCase
 {
     /**
-     * @dataProvider validationDataProvider
+     * @param list<string> $expected
      */
     #[DataProvider('validationDataProvider')]
     public function testPasses(mixed $values, array $expected): void
@@ -27,7 +27,10 @@ class IncludesTest extends TestCase
         self::assertEquals($expected, self::errors(new Includes(UserResource::class), $values));
     }
 
-    public static function validationDataProvider()
+    /**
+     * @return list<array{mixed, list<string>}>
+     */
+    public static function validationDataProvider(): array
     {
         return [
             // not expected type

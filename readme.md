@@ -37,12 +37,47 @@ This package allows the reading and dynamic inclusion of resources that will be 
 Resource attributes will also be filtered according to the "fields" parameter.  
 **@see** _[{json:api} fetching-fields](https://jsonapi.org/format/#fetching-sparse-fieldsets)_  
 
-You can also very simply validate your requests for a given resource via the rules `Rules\Includes` and `Rules\Fields`.
-
-### Include validation
+You can validate these parameters against the definition of a resource by extending `JsonApiFormRequest`:
 
 ```php
-use \Ark4ne\JsonApi\Requests\Rules\Includes;
+use \Ark4ne\JsonApi\Http\JsonApiFormRequest;
+
+class UserFetchRequest extends JsonApiFormRequest
+{
+    protected string $resource = UserResource::class;
+}
+```
+
+`include` must match the relationships of `UserResource` (and of the resources it relates to), `fields` their
+attributes and relationships. Both are read from the query string only, and may be empty (`?include=`).
+The `rules()` of the request are added to them; a rule of yours keyed `include` or `fields` replaces the
+preconfigured one (it stays `nullable`), a nested key (`fields.*`) is added to it:
+
+```php
+use \Ark4ne\JsonApi\Http\JsonApiFormRequest;
+use \Ark4ne\JsonApi\Http\Rules\Includes;
+
+class PostStoreRequest extends JsonApiFormRequest
+{
+    protected string $resource = PostResource::class;
+
+    public function rules(): array
+    {
+        return [
+            'data.attributes.title' => ['required', 'string'],
+            'include' => [new Includes(PostResource::class, maxDepth: 2)],
+        ];
+    }
+}
+```
+
+### Include and fields rules
+
+In any other form request, use the rules `Rules\Includes` and `Rules\Fields` directly:
+
+```php
+use \Ark4ne\JsonApi\Http\Rules\Fields;
+use \Ark4ne\JsonApi\Http\Rules\Includes;
 use \Illuminate\Foundation\Http\FormRequest;
 
 class UserFetchRequest extends FormRequest
@@ -50,34 +85,16 @@ class UserFetchRequest extends FormRequest
     public function rules()
     {
         return [
-            'include' => [new Includes(UserResource::class)],
-        ]
+            'include' => ['nullable', new Includes(UserResource::class)],
+            'fields' => ['nullable', new Fields(UserResource::class)],
+        ];
     }
 }
 ```
 
-`Rules\Includes` will validate the `include` to exactly match the UserResource definition (determined by the relationships).
-
-
-### Fields validation
-
-```php
-use \Ark4ne\JsonApi\Requests\Rules\Fields;
-use \Illuminate\Foundation\Http\FormRequest;
-
-class UserFetchRequest extends FormRequest
-{
-    public function rules()
-    {
-        return [
-            'fields' => [new Fields(UserResource::class)],
-        ]
-    }
-}
-```
-
-`Rules\Fields` will validate the `fields` to exactly match the UserResource definition (determined by the attributes and relationships).
-
+`Rules\Includes` validates the `include` against the relationships of the definition of `UserResource`, up to the
+maximum include depth (`include.max-depth`, or its second argument). `Rules\Fields` validates the `fields` against
+the attributes and relationships of the types reachable from it.
 
 ### Customize validation message
 The messages are translations of the package: `php artisan vendor:publish --tag=jsonapi-lang` copies them to

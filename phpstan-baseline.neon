@@ -1477,30 +1477,6 @@ parameters:
 			path: tests/Unit/Descriptors/ValueTest.php
 
 		-
-			message: '#^Method Test\\Unit\\Requests\\Rules\\FieldsTest\:\:testPasses\(\) has parameter \$expected with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: tests/Unit/Requests/Rules/FieldsTest.php
-
-		-
-			message: '#^Method Test\\Unit\\Requests\\Rules\\FieldsTest\:\:validationDataProvider\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: tests/Unit/Requests/Rules/FieldsTest.php
-
-		-
-			message: '#^Method Test\\Unit\\Requests\\Rules\\IncludesTest\:\:testPasses\(\) has parameter \$expected with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: tests/Unit/Requests/Rules/IncludesTest.php
-
-		-
-			message: '#^Method Test\\Unit\\Requests\\Rules\\IncludesTest\:\:validationDataProvider\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: tests/Unit/Requests/Rules/IncludesTest.php
-
-		-
 			message: '#^Access to an undefined property Ark4ne\\JsonApi\\Resources\\JsonApiResource@anonymous/tests/Unit/Resources/Concerns/AttributesTest\.php\:79\:\:\$baz\.$#'
 			identifier: property.notFound
 			count: 3

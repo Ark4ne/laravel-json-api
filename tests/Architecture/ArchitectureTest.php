@@ -6,6 +6,7 @@ namespace Test\Architecture;
 
 use Ark4ne\JsonApi\Descriptors\Values\Value;
 use Ark4ne\JsonApi\Descriptors\Values\ValueDateTime;
+use Ark4ne\JsonApi\Http\JsonApiFormRequest;
 use Ark4ne\JsonApi\Resources\JsonApiCollection;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use PHPat\Selector\Classname;
@@ -49,6 +50,7 @@ final class ArchitectureTest
         JsonApiCollection::class,
         Value::class,
         ValueDateTime::class,
+        JsonApiFormRequest::class,
     ];
 
     /**

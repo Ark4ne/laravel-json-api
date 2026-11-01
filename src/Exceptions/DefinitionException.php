@@ -20,6 +20,14 @@ final class DefinitionException extends LogicException implements JsonApiExcepti
     }
 
     /**
+     * A `JsonApiFormRequest` does not name the resource its `include` and `fields` are validated against.
+     */
+    public static function formRequestWithoutResource(string $class): self
+    {
+        return new self("[{$class}] does not name its resource: declare the resource class it validates against (`protected string \$resource = …Resource::class;`).");
+    }
+
+    /**
      * `can()` was given a gate class that does not implement Laravel's `Gate` contract.
      */
     public static function notAGate(string $class): self

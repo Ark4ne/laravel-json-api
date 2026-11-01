@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Ark4ne\JsonApi\Requests\Rules;
+namespace Ark4ne\JsonApi\Http\Rules;
 
 use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Context\SparseFieldsets;

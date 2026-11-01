@@ -98,6 +98,12 @@ public static function collection($resource): UserCollection
 `PrepareData::prepareData()`. Read the requested include and fields from the context of the request:
 `app(JsonApiContext::class)->include` (`IncludeTree`) and `->fields` (`SparseFieldsets`).
 
+### Validation rules
+
+`Rules\Fields` and `Rules\Includes` move to the `Http` layer: replace `Ark4ne\JsonApi\Requests\Rules\` by
+`Ark4ne\JsonApi\Http\Rules\` in your imports. A form request that only validates `include` and `fields` can extend
+`Ark4ne\JsonApi\Http\JsonApiFormRequest` instead (`protected string $resource = PostResource::class;`).
+
 ### Validation messages
 
 The messages of `Rules\Fields` and `Rules\Includes` are translations of the package. Messages customized under

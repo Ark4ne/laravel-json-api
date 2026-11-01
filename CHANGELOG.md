@@ -116,9 +116,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **Type naming convention** `type.naming`: the type of a resource that declares none, from its class name without the
   `Resource` suffix: `kebab-singular` (default, `blog-post`), `kebab-plural` (`blog-posts`), `snake-plural`
   (`blog_posts`), or a class implementing `Configuration\TypeNaming`.
+- **`Http\JsonApiFormRequest`**: a form request declaring `protected string $resource = PostResource::class;`
+  validates the `include` and `fields` query parameters against the definition of the resource (`Rules\Includes`,
+  `Rules\Fields`, both `nullable`), then the rules of its own `rules()`: a rule keyed `include` or `fields` replaces
+  the preconfigured one and stays `nullable`; a nested key (`fields.*`) is added to it. Both parameters are read from the query string only: a member of the body
+  with the same name is neither validated nor returned by `validated()`. A form request that names no resource throws
+  a `DefinitionException`.
 
 ### Changed
 
+- **Breaking:** the validation rules move from `Ark4ne\JsonApi\Requests\Rules` to `Ark4ne\JsonApi\Http\Rules`.
 - **Breaking:** the messages of `Rules\Fields` and `Rules\Includes` are translations of the package,
   `jsonapi::validation.fields.*` and `jsonapi::validation.includes.*`, published by
   `vendor:publish --tag=jsonapi-lang`, instead of `validation.custom.jsonapi.*`. `Rules\Includes` read the keys of

@@ -17,8 +17,13 @@ envoyé, ce que l'application applique si elle le souhaite.
 
 ### Requêtes
 
-- [ ] **E7.1** `JsonApiFormRequest` : règles `include` et `fields` préconfigurées depuis la `ResourceDefinition`
+- [x] **E7.1** `JsonApiFormRequest` : règles `include` et `fields` préconfigurées depuis la `ResourceDefinition`
       (`protected string $resource = PostResource::class;`)
+      > Classe de base (abstraite, ajoutée aux classes de base de l'architecture). `include` / `fields` lus dans la
+      > query string seule (un membre homonyme du corps est ignoré), `nullable` (`?include=`), puis les `rules()` de la
+      > requête : une règle de clé `include` / `fields` remplace la préconfigurée et reste `nullable`. Sans `$resource` : `DefinitionException`.
+      > Règles déplacées de `Requests\Rules` vers `Http\Rules` (couche `Http` de l'architecture, désormais contrôlée
+      > par phpat). Requêtes de `tests/app` passées sur `JsonApiFormRequest`.
 - [x] **E7.3** Corriger `Rules\Includes::BASE` (pointe sur `jsonapi.fields`) ; messages en traductions publiables
       (`lang/`), y compris `invalid_depth` ajouté par E1.11
       > Traductions `jsonapi::validation.{fields,includes}.*` (`lang/en/validation.php`, tag `jsonapi-lang`),

@@ -6,8 +6,8 @@ namespace Test\Feature\Loading;
 
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Exceptions\RenderingException;
-use Ark4ne\JsonApi\Requests\Rules\Fields;
-use Ark4ne\JsonApi\Requests\Rules\Includes;
+use Ark4ne\JsonApi\Http\Rules\Fields;
+use Ark4ne\JsonApi\Http\Rules\Includes;
 use Ark4ne\JsonApi\Support\DiagnosticLevel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
