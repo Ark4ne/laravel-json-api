@@ -9,6 +9,8 @@ use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Descriptors\ValueTypes;
+use Ark4ne\JsonApi\Exceptions\InvalidConfigurationException;
+use Ark4ne\JsonApi\Http\Errors\ErrorRenderer;
 use Ark4ne\JsonApi\Http\Errors\ErrorRenderers;
 use Ark4ne\JsonApi\Laravel\Commands\CacheDefinitionsCommand;
 use Ark4ne\JsonApi\Laravel\Commands\CheckDefinitionsCommand;
@@ -28,8 +30,9 @@ use WeakMap;
  *   boot.
  * - Adds `RouteLinksStage` before the stages of `rendering.stages`: the links of `#[JsonApiRoutes]`.
  * - Binds one `JsonApiContext` per request object, built from it on first use.
- * - Binds the `ErrorRenderers` of the package, with the `jsonapi` member and `app.debug`, used by
- *   `JsonApi::renderErrors()`; an application binds its own to replace them.
+ * - Binds the `ErrorRenderers` of the package and those of `errors.renderers` (built by the container, checked at
+ *   boot), with the `jsonapi` member and `app.debug`, used by `JsonApi::renderErrors()`; an application binds its
+ *   own to replace them all.
  * - Registers `jsonapi:cache`, `jsonapi:clear`, `jsonapi:check` and `make:jsonapi-resource`; `php artisan optimize`
  *   caches the definitions. `vendor:publish --tag=jsonapi-stubs` publishes the stub of `make:jsonapi-resource`.
  * - Loads the messages of the validation rules (`jsonapi::validation.*`), published by `--tag=jsonapi-lang`.
@@ -74,7 +77,19 @@ final class JsonApiServiceProvider extends ServiceProvider
             /** @var Configuration $configuration */
             $configuration = $app->make(Configuration::class);
 
-            return ErrorRenderers::default($configuration->jsonapi, (bool) $app->make('config')->get('app.debug'));
+            $renderers = array_map(
+                static function (string $class) use ($app): ErrorRenderer {
+                    $renderer = $app->make($class);
+
+                    return $renderer instanceof ErrorRenderer
+                        ? $renderer
+                        : throw InvalidConfigurationException::forKey('errors.renderers', 'a list of error renderer classes');
+                },
+                $configuration->errorRenderers,
+            );
+
+            return ErrorRenderers::default($configuration->jsonapi, (bool) $app->make('config')->get('app.debug'))
+                ->with(...$renderers);
         });
 
         // One context per request object, built on first use: a new request (HTTP, Octane, test) gets its own, and the
@@ -99,6 +114,12 @@ final class JsonApiServiceProvider extends ServiceProvider
         $compiled = $this->app->make(CompiledDefinitions::class);
 
         ValueTypes::validate($configuration, JsonApi::reservedValueTypeNames());
+        // Checked at boot: `JsonApi::renderErrors()` leaves to Laravel the exceptions it cannot render.
+        foreach ($configuration->errorRenderers as $renderer) {
+            if (!is_subclass_of($renderer, ErrorRenderer::class)) {
+                throw InvalidConfigurationException::forKey('errors.renderers', 'a list of error renderer classes');
+            }
+        }
         Definitions::configure($configuration, $compiled);
 
         $this->publishes([self::CONFIG => $this->app->configPath('jsonapi.php')], 'config');

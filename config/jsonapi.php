@@ -198,6 +198,22 @@ return [
         'stages' => [],
     ],
 
+    'errors' => [
+        /*
+        |--------------------------------------------------------------------------
+        | Error renderers
+        |--------------------------------------------------------------------------
+        |
+        | Classes implementing `Ark4ne\JsonApi\Http\Errors\ErrorRenderer`,
+        | asked with the renderers of the package by decreasing `PRIORITY` by
+        | `JsonApi::renderErrors()`: one of a higher priority supporting the
+        | same exceptions replaces the renderer of the package for them. Each
+        | one is built by the container.
+        |
+        */
+        'renderers' => [],
+    ],
+
     'document' => [
         /*
         |--------------------------------------------------------------------------

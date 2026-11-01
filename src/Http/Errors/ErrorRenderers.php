@@ -49,6 +49,15 @@ final readonly class ErrorRenderers
     }
 
     /**
+     * A copy with the given renderers, by their priority: one of a higher priority supporting the same exceptions
+     * replaces a renderer for them.
+     */
+    public function with(ErrorRenderer ...$renderers): self
+    {
+        return new self($this->jsonapi, ...$this->renderers, ...array_values($renderers));
+    }
+
+    /**
      * @return list<ErrorRenderer> By decreasing priority
      */
     public function all(): array

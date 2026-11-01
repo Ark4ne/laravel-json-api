@@ -187,6 +187,42 @@ then). `shouldRenderJsonWhen()` is not read: give the same condition. An excepti
 }
 ```
 
+### Error renderers of the application
+
+A renderer implements `Ark4ne\JsonApi\Http\Errors\ErrorRenderer`; the renderers are asked by decreasing `PRIORITY`,
+the first that supports the exception renders it. Declare yours in `config/jsonapi.php` (built by the container, so
+they may have dependencies):
+
+```php
+'errors' => [
+    'renderers' => [App\Http\Errors\PaymentRequiredErrorRenderer::class],
+],
+```
+
+```php
+final readonly class PaymentRequiredErrorRenderer implements ErrorRenderer
+{
+    // Above the renderers of the package (Validation 400, Authentication / Authorization / ModelNotFound 300,
+    // Http 200, Throwable 0): a renderer of a higher priority supporting the same exceptions replaces theirs.
+    public const PRIORITY = 1000;
+
+    public function supports(Throwable $exception): bool
+    {
+        return $exception instanceof PaymentRequired;
+    }
+
+    public function render(Throwable $exception, Request $request): ErrorDocument
+    {
+        return new ErrorDocument(402, [
+            new ErrorObject(status: 402, title: 'Payment Required', detail: $exception->getMessage(), code: 'payment'),
+        ]);
+    }
+}
+```
+
+To replace them all, bind your own `ErrorRenderers` in the container
+(`ErrorRenderers::default($jsonapi)->with(...)`, or `new ErrorRenderers($jsonapi, ...$renderers)`).
+
 ## Resource
 **@see** _[{json:api} resource-type](https://jsonapi.org/format/#document-resource-objects)_
 

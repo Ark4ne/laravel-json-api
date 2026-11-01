@@ -33,6 +33,8 @@ final readonly class Configuration
      * @param list<class-string> $renderingStages Stages run after those of the package (`rendering.stages`), with
      *                                            those the service provider puts first
      * @param JsonApiObject|null $jsonapi The `jsonapi` member of the documents, `null` for none (`document.jsonapi`)
+     * @param list<class-string> $errorRenderers Error renderers asked with those of the package (`errors.renderers`),
+     *                                           checked and built by the service provider
      * @param positive-int|null $maxIncludeDepth Deepest include path accepted, `null` for no limit (`include.max-depth`)
      * @param TypeNaming $typeNaming The type of a resource that declares none (`type.naming`)
      * @param array<string, class-string> $valueTypes The value types of the application, by name (`describer.types`);
@@ -49,6 +51,7 @@ final readonly class Configuration
         public array $resourcePaths,
         public array $renderingStages,
         public ?JsonApiObject $jsonapi,
+        public array $errorRenderers,
         public ?int $maxIncludeDepth,
         public TypeNaming $typeNaming,
         public array $valueTypes,
@@ -70,6 +73,7 @@ final readonly class Configuration
             resourcePaths: [],
             renderingStages: [],
             jsonapi: new JsonApiObject(),
+            errorRenderers: [],
             maxIncludeDepth: null,
             typeNaming: TypeConvention::KebabSingular,
             valueTypes: [],
@@ -101,8 +105,9 @@ final readonly class Configuration
             linkage: self::linkage($config, $defaults->linkage),
             sparseRelationships: self::sparseRelationships($config, $defaults->sparseRelationships),
             resourcePaths: self::paths($config, $defaults->resourcePaths),
-            renderingStages: self::stages($config, $defaults->renderingStages),
+            renderingStages: self::classes($config, 'rendering.stages', 'a list of stage classes', $defaults->renderingStages),
             jsonapi: self::jsonapi($config),
+            errorRenderers: self::classes($config, 'errors.renderers', 'a list of error renderer classes'),
             maxIncludeDepth: self::maxIncludeDepth($config),
             typeNaming: self::typeNaming($config, $defaults->typeNaming),
             valueTypes: self::valueTypes($config),
@@ -127,6 +132,7 @@ final readonly class Configuration
             resourcePaths: $this->resourcePaths,
             renderingStages: $this->renderingStages,
             jsonapi: $this->jsonapi,
+            errorRenderers: $this->errorRenderers,
             maxIncludeDepth: $this->maxIncludeDepth,
             typeNaming: $this->typeNaming,
             valueTypes: self::valueTypes(['describer' => ['types' => [...$this->valueTypes, $name => $class]]]),
@@ -152,8 +158,9 @@ final readonly class Configuration
             linkage: $this->linkage,
             sparseRelationships: $this->sparseRelationships,
             resourcePaths: $this->resourcePaths,
-            renderingStages: self::stages(['rendering' => ['stages' => [...$stages, ...$this->renderingStages]]], []),
+            renderingStages: self::classes(['rendering' => ['stages' => [...$stages, ...$this->renderingStages]]], 'rendering.stages', 'a list of stage classes'),
             jsonapi: $this->jsonapi,
+            errorRenderers: $this->errorRenderers,
             maxIncludeDepth: $this->maxIncludeDepth,
             typeNaming: $this->typeNaming,
             valueTypes: $this->valueTypes,
@@ -294,29 +301,30 @@ final readonly class Configuration
     }
 
     /**
-     * Only the existence of the classes is checked here: the renderer checks they are stages.
+     * A list of classes: only their existence is checked here, what they implement by those that use them (the
+     * renderer for the stages, the service provider for the error renderers).
      *
      * @param array<array-key, mixed> $config
      * @param list<class-string> $default
      *
      * @return list<class-string>
      */
-    private static function stages(array $config, array $default): array
+    private static function classes(array $config, string $key, string $expected, array $default = []): array
     {
-        $value = self::read($config, 'rendering.stages') ?? $default;
+        $value = self::read($config, $key) ?? $default;
 
         if (!is_array($value) || !array_is_list($value)) {
-            throw InvalidConfigurationException::forKey('rendering.stages', 'a list of stage classes');
+            throw InvalidConfigurationException::forKey($key, $expected);
         }
 
-        $stages = [];
-        foreach ($value as $stage) {
-            $stages[] = is_string($stage) && class_exists($stage)
-                ? $stage
-                : throw InvalidConfigurationException::forKey('rendering.stages', 'a list of stage classes');
+        $classes = [];
+        foreach ($value as $class) {
+            $classes[] = is_string($class) && class_exists($class)
+                ? $class
+                : throw InvalidConfigurationException::forKey($key, $expected);
         }
 
-        return $stages;
+        return $classes;
     }
 
     /**

@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Test\Feature\Laravel;
 
+use Ark4ne\JsonApi\Configuration\Configuration;
+use Ark4ne\JsonApi\Exceptions\InvalidConfigurationException;
 use Ark4ne\JsonApi\Http\Errors\ErrorRenderers;
 use Ark4ne\JsonApi\Laravel\JsonApi;
+use Ark4ne\JsonApi\Laravel\JsonApiServiceProvider;
 use Closure;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\Access\Response;
@@ -23,6 +26,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Test\app\Models\Post;
 use Test\app\Models\User;
 use Test\Feature\FeatureTestCase;
+use Test\Feature\Laravel\Fixtures\ConflictErrorRenderer;
 use Test\Feature\Laravel\Fixtures\PaymentRequired;
 use Test\Feature\Laravel\Fixtures\RenderableException;
 use Throwable;
@@ -218,6 +222,38 @@ final class ErrorRenderingTest extends FeatureTestCase
         $this->renderErrors();
 
         $this->getJson('errors/authorization', self::JSONAPI)->assertStatus(403)->assertHeader('Content-Type', 'application/json');
+    }
+
+    #[DefineEnvironment('configuredRenderer')]
+    public function test_the_configured_renderers_are_built_by_the_container_and_asked_first(): void
+    {
+        $this->app?->instance(ConflictErrorRenderer::class, new ConflictErrorRenderer('Configured.'));
+        $this->renderErrors();
+
+        $this->getJson('errors/exception', self::JSONAPI)
+            ->assertStatus(409)
+            ->assertJsonPath('errors', [['status' => '409', 'title' => 'Conflict', 'detail' => 'Configured.']]);
+    }
+
+    /**
+     * @param \Illuminate\Foundation\Application $app
+     */
+    protected function configuredRenderer($app): void
+    {
+        $app['config']->set('jsonapi.errors.renderers', [ConflictErrorRenderer::class]);
+    }
+
+    public function test_a_configured_class_that_is_not_an_error_renderer_fails_at_boot(): void
+    {
+        $this->app?->make('config')->set('jsonapi.errors.renderers', [PaymentRequired::class]);
+        $this->app?->forgetInstance(Configuration::class);
+
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessage('errors.renderers');
+
+        $app = $this->app;
+        self::assertNotNull($app);
+        (new JsonApiServiceProvider($app))->boot();
     }
 
     public function test_the_renderers_are_those_of_the_container(): void

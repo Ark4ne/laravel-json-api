@@ -16,7 +16,10 @@ use Illuminate\Http\Request;
 use LogicException;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 use Test\Unit\Http\Errors\Fixtures\DomainErrorRenderer;
+use Test\Unit\Http\Errors\Fixtures\NotFoundErrorRenderer;
 
 final class ErrorRenderersTest extends TestCase
 {
@@ -43,6 +46,26 @@ final class ErrorRenderersTest extends TestCase
             HttpErrorRenderer::class,
             ThrowableErrorRenderer::class,
         ], array_map(get_class(...), ErrorRenderers::default(null)->all()));
+    }
+
+    public function test_renderers_are_added_to_a_copy_by_their_priority(): void
+    {
+        $renderers = ErrorRenderers::default(null);
+
+        $with = $renderers->with($domain = new DomainErrorRenderer());
+
+        self::assertCount(6, $renderers->all());
+        self::assertSame($domain, $with->all()[0]);
+        self::assertCount(7, $with->all());
+        self::assertSame(409, $with->render(new LogicException(), Request::create('/'))?->status);
+    }
+
+    public function test_a_renderer_of_higher_priority_replaces_the_one_of_the_package_for_its_exceptions(): void
+    {
+        $renderers = ErrorRenderers::default(null)->with(new NotFoundErrorRenderer());
+
+        self::assertSame(410, $renderers->render(new NotFoundHttpException(), Request::create('/'))?->status);
+        self::assertSame(429, $renderers->render(new TooManyRequestsHttpException(), Request::create('/'))?->status);
     }
 
     public function test_the_first_renderer_supporting_the_exception_renders_it_with_the_jsonapi_member(): void

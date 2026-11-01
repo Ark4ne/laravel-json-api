@@ -142,6 +142,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   an exception no renderer supports is rendered by Laravel. It is called after the `render()` callbacks of the
   application, which run in their order of registration. The service provider binds the renderers of the package,
   with the configured `jsonapi` member and `app.debug`.
+- **`errors.renderers`**: error renderers of the application, built by the container and asked with those of the
+  package by their `PRIORITY` (one of a higher priority replaces the renderer of the package for its exceptions);
+  checked at boot. `ErrorRenderers::with()` adds renderers to a copy.
 
 ### Changed
 

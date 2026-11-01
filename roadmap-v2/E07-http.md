@@ -58,7 +58,11 @@ envoyé, ce que l'application applique si elle le souhaite.
       > pour `expectsJson()` ou les requêtes acceptées par `$when` ; `ErrorRenderers` résolu dans le container à chaque
       > rendu (le provider lie ceux du package avec `jsonapi` et `app.debug`). Tests Feature de chaque famille, validés
       > contre le JSON Schema, et de l'opt-in (sans appel, Laravel rend l'exception).
-- [ ] **E7.4c** Renderers extensibles et remplaçables par l'application
+- [x] **E7.4c** Renderers extensibles et remplaçables par l'application
+      > Clé `errors.renderers` (classes construites par le container, existence vérifiée par `Configuration`,
+      > interface vérifiée au boot pour ne pas désactiver le rendu en silence), ajoutées aux renderers du package par
+      > `ErrorRenderers::with()` : une priorité supérieure remplace le renderer du package pour ses exceptions ; lier son
+      > propre `ErrorRenderers` remplace tout.
 
 ### Négociation de contenu
 

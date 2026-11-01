@@ -39,6 +39,7 @@ final class ConfigurationTest extends TestCase
         self::assertSame(SparseRelationships::Filter, $configuration->sparseRelationships);
         self::assertSame([], $configuration->resourcePaths);
         self::assertSame([], $configuration->renderingStages);
+        self::assertSame([], $configuration->errorRenderers);
         self::assertEquals(new JsonApiObject('1.1'), $configuration->jsonapi);
         self::assertNull($configuration->maxIncludeDepth);
         self::assertSame(TypeConvention::KebabSingular, $configuration->typeNaming);
@@ -65,6 +66,7 @@ final class ConfigurationTest extends TestCase
             'fields' => ['relationships' => 'keep'],
             'definitions' => ['paths' => ['/app/Http/Resources']],
             'rendering' => ['stages' => [self::class]],
+            'errors' => ['renderers' => [self::class]],
             'include' => ['max-depth' => 3],
             'type' => ['naming' => 'snake-plural'],
             'document' => ['jsonapi' => [
@@ -84,6 +86,7 @@ final class ConfigurationTest extends TestCase
         self::assertSame(SparseRelationships::Keep, $configuration->sparseRelationships);
         self::assertSame(['/app/Http/Resources'], $configuration->resourcePaths);
         self::assertSame([self::class], $configuration->renderingStages);
+        self::assertSame([self::class], $configuration->errorRenderers);
         self::assertSame(3, $configuration->maxIncludeDepth);
         self::assertSame(TypeConvention::SnakePlural, $configuration->typeNaming);
         self::assertSame(['money' => MoneyValue::class], $configuration->valueTypes);
@@ -172,6 +175,8 @@ final class ConfigurationTest extends TestCase
         yield 'type.naming unknown convention' => [['type' => ['naming' => 'camel']], 'type.naming'];
         yield 'type.naming not a type naming' => [['type' => ['naming' => self::class]], 'type.naming'];
         yield 'rendering.stages unknown class' => [['rendering' => ['stages' => ['App\\Unknown']]], 'rendering.stages'];
+        yield 'errors.renderers not a list' => [['errors' => ['renderers' => 'Renderer']], 'errors.renderers'];
+        yield 'errors.renderers unknown class' => [['errors' => ['renderers' => ['App\\Unknown']]], 'errors.renderers'];
     }
 
     /**
