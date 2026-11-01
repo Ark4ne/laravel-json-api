@@ -137,6 +137,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   (`404`, without the class of the model), `HttpErrorRenderer` (status and headers of the `HttpException`) and
   `ThrowableErrorRenderer` (`500`, message and location in debug only). A message that is not UTF-8 is substituted. The exceptions Laravel prepares
   (`ModelNotFoundException` and `AuthorizationException` made `HttpException`s) are recognized.
+- **`JsonApi::renderErrors($exceptions, when: null)`** in `bootstrap/app.php` (`->withExceptions()`) renders the
+  exceptions through the `ErrorRenderers` of the container, for the requests that expect JSON or those `when` accepts;
+  an exception no renderer supports is rendered by Laravel. It is called after the `render()` callbacks of the
+  application, which run in their order of registration. The service provider binds the renderers of the package,
+  with the configured `jsonapi` member and `app.debug`.
 
 ### Changed
 

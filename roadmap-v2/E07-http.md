@@ -52,8 +52,12 @@ envoyé, ce que l'application applique si elle le souhaite.
       > contre le JSON Schema. Revue : statut de la `ValidationException` conservé, sa réponse propre laissée à Laravel,
       > `source.parameter` pour une requête sans corps, clés entières ; `denyAsNotFound()` sans message par défaut ;
       > en-têtes de l'`HttpException` préparée conservés (`PreparedException`) ; UTF-8 invalide substitué.
-- [ ] **E7.4b** Branchement en une ligne dans `bootstrap/app.php` :
+- [x] **E7.4b** Branchement en une ligne dans `bootstrap/app.php` :
       `->withExceptions(fn ($e) => JsonApi::renderErrors($e))`
+      > `JsonApi::renderErrors(Exceptions $exceptions, ?Closure $when = null)` : callback `render()` du handler, actif
+      > pour `expectsJson()` ou les requêtes acceptées par `$when` ; `ErrorRenderers` résolu dans le container à chaque
+      > rendu (le provider lie ceux du package avec `jsonapi` et `app.debug`). Tests Feature de chaque famille, validés
+      > contre le JSON Schema, et de l'opt-in (sans appel, Laravel rend l'exception).
 - [ ] **E7.4c** Renderers extensibles et remplaçables par l'application
 
 ### Négociation de contenu

@@ -314,7 +314,7 @@ the application handles them as it would in any Laravel API.
   resource class.
 - **Errors** (**Chain of Responsibility**): one `ErrorRenderer` per exception family (`ValidationException`,
   `AuthorizationException`, `ModelNotFoundException`, `HttpException`, `Throwable`), ordered by a public `PRIORITY`
-  constant, wired in one line in `bootstrap/app.php`.
+  constant, wired in one line in `bootstrap/app.php` (`JsonApi::renderErrors($exceptions)`).
 - **Content negotiation** middleware: `415` / `406` as the specification requires, `ext` and `profile` parameters.
 
 ## 11. Extension points

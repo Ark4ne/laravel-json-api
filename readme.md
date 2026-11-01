@@ -146,6 +146,47 @@ The messages are translations of the package: `php artisan vendor:publish --tag=
 | `jsonapi::validation.includes.invalid_includes` | ":include" doesn't have relationship ":relation".            |
 | `jsonapi::validation.includes.invalid_depth`  | ":include" is deeper than the maximum include depth of :depth. |
 
+## Errors
+**@see** _[{json:api} errors](https://jsonapi.org/format/#errors)_
+
+One line in `bootstrap/app.php` renders the exceptions as JSON:API error documents, for the requests that expect JSON:
+
+```php
+use Ark4ne\JsonApi\Laravel\JsonApi;
+use Illuminate\Foundation\Configuration\Exceptions;
+
+->withExceptions(function (Exceptions $exceptions) {
+    // Your own render callbacks first: Laravel runs them in order, and every exception has a JSON:API rendering.
+    $exceptions->render(fn (PaymentRequired $e) => response()->json([...], 402));
+
+    JsonApi::renderErrors($exceptions);
+    // or for some requests only: JsonApi::renderErrors($exceptions, fn ($request) => $request->is('api/*'));
+})
+```
+
+The requests rendered are those that expect JSON (`$request->expectsJson()`), or those the closure accepts; it
+receives the request and the exception as Laravel prepared it (`ModelNotFoundException` is a `NotFoundHttpException`
+then). `shouldRenderJsonWhen()` is not read: give the same condition. An exception that renders itself (`render()`,
+`Responsable`) or a `ValidationException` with a response of its own is still rendered by Laravel.
+
+| Exception | Status | Error objects |
+|-----------|--------|---------------|
+| `ValidationException` | its status (`422`) | one per message, `source.pointer` (`/data/attributes/title`) or `source.parameter` (`fields[post]`) |
+| `AuthenticationException` | `401` | its message |
+| `AuthorizationException` | `403`, or the status of `denyWithStatus()` / `denyAsNotFound()` | its message |
+| `ModelNotFoundException` | `404` | no detail: the class of the model is not disclosed |
+| `HttpException` (`abort()`) | its status, with its headers | its message |
+| any other | `500` | its message, class, file and line only when `app.debug` is on |
+
+```json
+{
+  "jsonapi": {"version": "1.1"},
+  "errors": [
+    {"status": "422", "title": "Unprocessable Content", "detail": "The title field is required.", "source": {"pointer": "/data/attributes/title"}}
+  ]
+}
+```
+
 ## Resource
 **@see** _[{json:api} resource-type](https://jsonapi.org/format/#document-resource-objects)_
 

@@ -9,6 +9,7 @@ use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Descriptors\ValueTypes;
+use Ark4ne\JsonApi\Http\Errors\ErrorRenderers;
 use Ark4ne\JsonApi\Laravel\Commands\CacheDefinitionsCommand;
 use Ark4ne\JsonApi\Laravel\Commands\CheckDefinitionsCommand;
 use Ark4ne\JsonApi\Laravel\Commands\ClearDefinitionsCommand;
@@ -27,6 +28,8 @@ use WeakMap;
  *   boot.
  * - Adds `RouteLinksStage` before the stages of `rendering.stages`: the links of `#[JsonApiRoutes]`.
  * - Binds one `JsonApiContext` per request object, built from it on first use.
+ * - Binds the `ErrorRenderers` of the package, with the `jsonapi` member and `app.debug`, used by
+ *   `JsonApi::renderErrors()`; an application binds its own to replace them.
  * - Registers `jsonapi:cache`, `jsonapi:clear`, `jsonapi:check` and `make:jsonapi-resource`; `php artisan optimize`
  *   caches the definitions. `vendor:publish --tag=jsonapi-stubs` publishes the stub of `make:jsonapi-resource`.
  * - Loads the messages of the validation rules (`jsonapi::validation.*`), published by `--tag=jsonapi-lang`.
@@ -64,6 +67,14 @@ final class JsonApiServiceProvider extends ServiceProvider
             $configuration = $app->make(Configuration::class);
 
             return new ResourceFinder($configuration->resourcePaths !== [] ? $configuration->resourcePaths : [app_path()]);
+        });
+
+        // Resolved by `JsonApi::renderErrors()` for each exception it renders: `app.debug` is read then.
+        $this->app->bind(ErrorRenderers::class, static function (Application $app): ErrorRenderers {
+            /** @var Configuration $configuration */
+            $configuration = $app->make(Configuration::class);
+
+            return ErrorRenderers::default($configuration->jsonapi, (bool) $app->make('config')->get('app.debug'));
         });
 
         // One context per request object, built on first use: a new request (HTTP, Octane, test) gets its own, and the
