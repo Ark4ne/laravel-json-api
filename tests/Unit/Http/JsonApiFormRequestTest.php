@@ -11,6 +11,7 @@ use Illuminate\Validation\ValidationException;
 use Test\app\Http\Resources\PostResource;
 use Test\TestCase;
 use Test\Unit\Http\Fixtures\PostFormRequest;
+use Test\Unit\Http\Fixtures\PostUpdateFormRequest;
 use Test\Unit\Http\Fixtures\PostWriteFormRequest;
 use Test\Unit\Http\Fixtures\ResourcelessFormRequest;
 
@@ -112,6 +113,60 @@ final class JsonApiFormRequestTest extends TestCase
 
         self::assertSame([], $this->errors($class::create('/posts?fields[post]=unknown')));
         self::assertSame([], $this->errors($request));
+    }
+
+    public function test_the_resource_object_of_the_body_holds_only_the_validated_members(): void
+    {
+        $request = $this->resolve(PostWriteFormRequest::class, '/posts', 'POST', ['data' => [
+            'type' => 'post',
+            'attributes' => ['title' => 'Title', 'content' => 'Not validated'],
+        ]]);
+
+        $document = $request->jsonApi();
+
+        self::assertNull($document->type());
+        self::assertSame(['title' => 'Title'], $document->attributes());
+    }
+
+    public function test_the_linkage_of_the_relationships_is_read_from_the_validated_data(): void
+    {
+        $document = $this->resolve(PostUpdateFormRequest::class, '/posts/1', 'PATCH', ['data' => ['relationships' => [
+            'user' => ['data' => ['type' => 'user', 'id' => 1]],
+            'comments' => ['data' => [['type' => 'comment', 'id' => '2'], ['type' => 'comment', 'id' => 3]]],
+        ]]])->jsonApi();
+
+        self::assertSame(['id' => 1], $document->relationship('user'));
+        self::assertSame(['1'], $document->ids('user'));
+        self::assertSame(['2', '3'], $document->ids('comments'));
+    }
+
+    public function test_a_relationship_cleared_is_read_when_its_linkage_has_a_rule(): void
+    {
+        $document = $this->resolve(PostUpdateFormRequest::class, '/posts/1', 'PATCH', ['data' => ['relationships' => [
+            'user' => ['data' => null],
+            'comments' => ['data' => []],
+        ]]])->jsonApi();
+
+        self::assertTrue($document->hasRelationship('user'));
+        self::assertNull($document->relationship('user'));
+        self::assertTrue($document->hasRelationship('comments'));
+        self::assertSame([], $document->ids('comments'));
+    }
+
+    public function test_a_relationship_cleared_is_missing_when_only_its_identifiers_have_rules(): void
+    {
+        $document = $this->resolve(PostUpdateFormRequest::class, '/posts/1', 'PATCH', ['data' => ['relationships' => [
+            'editor' => ['data' => null],
+        ]]])->jsonApi();
+
+        self::assertFalse($document->hasRelationship('editor'));
+    }
+
+    public function test_the_errors_of_the_body_are_keyed_by_the_path_of_the_member(): void
+    {
+        $errors = $this->errors(PostWriteFormRequest::class, '/posts', 'POST', ['data' => ['attributes' => []]]);
+
+        self::assertSame(['data.attributes.title'], array_keys($errors));
     }
 
     public function test_a_form_request_without_resource_throws(): void

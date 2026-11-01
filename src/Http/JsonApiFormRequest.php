@@ -22,6 +22,8 @@ use Illuminate\Foundation\Http\FormRequest;
  * Its `rules()` hold the rest (the body, the other parameters); a rule of theirs keyed `include` or `fields` replaces
  * the preconfigured one, and stays `nullable` (`?include=` asks for no include). Both parameters are read from the query string only, as the rendering reads them: a member of
  * the body with the same name is neither validated nor returned by `validated()`.
+ *
+ * `jsonApi()` reads the resource object of the body (`ResourceDocument`) from the validated data.
  */
 abstract class JsonApiFormRequest extends FormRequest
 {
@@ -32,6 +34,14 @@ abstract class JsonApiFormRequest extends FormRequest
      * @var class-string<\Ark4ne\JsonApi\Resources\JsonApiResource<*>|\Ark4ne\JsonApi\Resources\JsonApiCollection<*>>
      */
     protected string $resource;
+
+    /**
+     * The resource object of the body, from the validated data: a member without rule is missing from it.
+     */
+    public function jsonApi(): ResourceDocument
+    {
+        return ResourceDocument::fromArray($this->validated());
+    }
 
     /**
      * The data of the form request, with `include` and `fields` taken from the query string.

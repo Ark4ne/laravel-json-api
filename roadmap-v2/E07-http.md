@@ -29,8 +29,13 @@ envoyé, ce que l'application applique si elle le souhaite.
       > Traductions `jsonapi::validation.{fields,includes}.*` (`lang/en/validation.php`, tag `jsonapi-lang`),
       > traduites par `$fail(...)->translate()` de Laravel : plus de helper `trans()` ni de trait `UseTrans`. Règles
       > `final`, sans état entre deux valeurs. Coquille corrigée : `doesn't exist`. Baseline −54 lignes.
-- [ ] **E7.7** Lecture du corps d'écriture (`data.attributes`, `data.relationships`) :
+- [x] **E7.7** Lecture du corps d'écriture (`data.attributes`, `data.relationships`) :
       `$request->jsonApi()->attributes()`, erreurs de validation pointant vers `/data/attributes/x`
+      > `JsonApiFormRequest::jsonApi()` → `Http\ResourceDocument` construit depuis `validated()` (décision : pas de
+      > macro, pas de corps brut) : `type`, `id` en string, attributs, linkage, `ids()`, `hasRelationship()` (un
+      > to-one vidé est envoyé), `meta`. Un membre mal formé se lit comme absent. Une relation vidée (`null`, `[]`)
+      > n'est lue que si son linkage a sa propre règle (`data.relationships.tags.data`), documenté et testé. Les erreurs sont clées par le chemin
+      > du membre (`data.attributes.title`) : leur `source.pointer` (`/data/attributes/title`) est écrit par E7.4.
 
 ### Erreurs
 

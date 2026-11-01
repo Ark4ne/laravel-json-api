@@ -71,6 +71,43 @@ class PostStoreRequest extends JsonApiFormRequest
 }
 ```
 
+### Write requests
+
+`jsonApi()` reads the resource object of the body from the validated data: a member without rule is missing from it.
+To read a relationship cleared (`'data' => null`, or `[]` for a to-many one), give its linkage a rule of its own
+(`data.relationships.tags.data`): the rules of its identifiers alone (`data.relationships.tags.data.*.id`) leave it out
+of the validated data. The validation errors are keyed by the path of the member (`data.attributes.title`).
+
+```php
+class PostStoreRequest extends JsonApiFormRequest
+{
+    protected string $resource = PostResource::class;
+
+    public function rules(): array
+    {
+        return [
+            'data.type' => ['required', 'in:post'],
+            'data.attributes.title' => ['required', 'string'],
+            'data.relationships.user.data.id' => ['required', 'exists:users,id'],
+            'data.relationships.tags.data' => ['sometimes', 'array'],
+            'data.relationships.tags.data.*.id' => ['required', 'exists:tags,id'],
+        ];
+    }
+}
+
+// In the controller
+$document = $request->jsonApi();
+
+$document->type();                 // 'post'
+$document->id();                   // null: no client-generated id
+$document->attributes();           // ['title' => '…']
+$document->attribute('title');     // '…'
+$document->relationship('user');   // ['id' => 1]: the linkage, as sent
+$document->ids('user');            // ['1']: the ids, as strings
+$document->hasRelationship('tags'); // false when not sent, true for 'data' => [] (every tag detached)
+$document->ids('tags');            // []
+```
+
 ### Include and fields rules
 
 In any other form request, use the rules `Rules\Includes` and `Rules\Fields` directly:

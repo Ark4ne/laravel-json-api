@@ -122,6 +122,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   the preconfigured one and stays `nullable`; a nested key (`fields.*`) is added to it. Both parameters are read from the query string only: a member of the body
   with the same name is neither validated nor returned by `validated()`. A form request that names no resource throws
   a `DefinitionException`.
+- **`JsonApiFormRequest::jsonApi()`** reads the resource object of a write request from the validated data, as an
+  `Http\ResourceDocument`: `type()`, `id()` (a string), `attributes()` / `attribute()` / `hasAttribute()`,
+  `relationships()` / `relationship()` (the linkage) / `hasRelationship()` (`true` for a cleared to-one relationship),
+  `ids()` (the ids of a linkage, as strings) and `meta()`. A member without rule is missing from it, and so is a
+  relationship cleared (`null` or `[]`) unless its linkage (`data.relationships.tags.data`) has a rule of its own.
 
 ### Changed
 

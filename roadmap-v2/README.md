@@ -14,7 +14,7 @@ dépendance vers eux.
 ## Progression
 
 <!-- progress:start -->
-**Avancement global : `███████░░░` 72 % (114 / 158 livrables)**
+**Avancement global : `███████░░░` 72 % (115 / 158 livrables)**
 
 | EPIC | Jalon | Statut | Avancement | Livrables |
 | --- | --- | --- | --- | --- |
@@ -25,7 +25,7 @@ dépendance vers eux.
 | [E4 — Moteur de rendu](E04-rendu.md) | M2 | Terminé | `██████████` 100 % | 12 / 12 |
 | [E5 — Relations et chargement](E05-relations.md) | M3 | Terminé | `██████████` 100 % | 15 / 15 |
 | [E6 — API d'écriture des ressources (DX)](E06-dx.md) | M1, M3 | En cours | `█████████░` 93 % | 14 / 15 |
-| [E7 — Couche HTTP](E07-http.md) | M4 | En cours | `██░░░░░░░░` 20 % | 2 / 10 |
+| [E7 — Couche HTTP](E07-http.md) | M4 | En cours | `███░░░░░░░` 30 % | 3 / 10 |
 | [E8 — Positionnement face au JSON:API natif de Laravel](E08-natif-laravel.md) | M5 | En cours | `█░░░░░░░░░` 14 % | 1 / 7 |
 | [E9 — Contrat public pour `laravel-openapi-generator`](E09-openapi-generator.md) | M5 | À faire | `░░░░░░░░░░` 0 % | 0 / 7 |
 | [E10 — Stratégie de tests et qualité](E10-tests.md) | M0 → M5 | En cours | `██░░░░░░░░` 20 % | 2 / 10 |
