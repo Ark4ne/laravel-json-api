@@ -66,8 +66,14 @@ envoyé, ce que l'application applique si elle le souhaite.
 
 ### Négociation de contenu
 
-- [ ] **E7.5** Middleware `jsonapi` : `415` si le `Content-Type` porte des paramètres non autorisés, `406` si
+- [x] **E7.5** Middleware `jsonapi` : `415` si le `Content-Type` porte des paramètres non autorisés, `406` si
       l'`Accept` est incompatible, gestion de `ext` / `profile` (JSON:API 1.1)
+      > `Http\Middleware\NegotiateContent`, alias `jsonapi` posé par le provider (opt-in par route). Extensions
+      > supportées = `document.jsonapi.ext` ; profils inconnus ignorés ; `q` n'est pas un paramètre ; casse du media type
+      > ignorée, `q=0` refuse l'occurrence. Erreurs en `HttpException` avec `Vary: Accept` (rendues par
+      > `renderErrors()`), `Vary: Accept` sur toute réponse ; alias `jsonapi` de l'application conservé. Revue : le
+      > `Content-Type` porte `ext` / `profile` sur toutes les routes (`JsonApiObject::contentType()`, utilisé par
+      > `ToResponse` et `ErrorDocument`), le middleware ne le touche plus.
 
 ### Pagination
 

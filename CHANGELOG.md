@@ -145,6 +145,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **`errors.renderers`**: error renderers of the application, built by the container and asked with those of the
   package by their `PRIORITY` (one of a higher priority replaces the renderer of the package for its exceptions);
   checked at boot. `ErrorRenderers::with()` adds renderers to a copy.
+- **Content negotiation**: the `jsonapi` route middleware (`Http\Middleware\NegotiateContent`) answers `415` to a
+  JSON:API `Content-Type` with a parameter other than `ext` / `profile` or an unsupported extension, `406` to an
+  `Accept` whose every JSON:API media type is such or refused (`q=0`), and adds `Vary: Accept` to every response, its
+  errors included. An application alias `jsonapi` is kept.
+- The documents and error documents are served with the extensions and profiles of `document.jsonapi` in their
+  `Content-Type` (`JsonApiObject::contentType()`), as the specification requires when an extension applies.
 
 ### Changed
 

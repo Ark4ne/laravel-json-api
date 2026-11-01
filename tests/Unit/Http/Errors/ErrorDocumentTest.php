@@ -43,6 +43,17 @@ final class ErrorDocumentTest extends TestCase
         self::assertSame(['errors' => [['status' => '429']]], $response->getData(true));
     }
 
+    public function test_the_content_type_names_the_extensions_of_the_jsonapi_member(): void
+    {
+        $document = (new ErrorDocument(500, [new ErrorObject(status: 500)]))
+            ->withJsonApi(new JsonApiObject(ext: ['https://jsonapi.org/ext/atomic']));
+
+        self::assertSame(
+            'application/vnd.api+json; ext="https://jsonapi.org/ext/atomic"',
+            $document->toResponse()->headers->get('Content-Type'),
+        );
+    }
+
     public function test_a_detail_that_is_not_utf8_is_substituted_rather_than_failing(): void
     {
         $response = (new ErrorDocument(500, [new ErrorObject(status: 500, detail: "Driver \xB1 error")]))->toResponse();

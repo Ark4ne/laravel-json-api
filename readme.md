@@ -187,6 +187,29 @@ then). `shouldRenderJsonWhen()` is not read: give the same condition. An excepti
 }
 ```
 
+### Content negotiation
+**@see** _[{json:api} content-negotiation](https://jsonapi.org/format/#content-negotiation)_
+
+The `jsonapi` route middleware applies the content negotiation of JSON:API 1.1:
+
+```php
+Route::middleware('jsonapi')->group(function () {
+    Route::apiResource('posts', PostController::class);
+});
+```
+
+- `415 Unsupported Media Type` when the `Content-Type` of the request is `application/vnd.api+json` with a parameter
+  other than `ext` and `profile`, or with an extension the server does not support;
+- `406 Not Acceptable` when every `application/vnd.api+json` of the `Accept` header has such a parameter or extension,
+  or is refused (`q=0`); an `Accept` of `*/*` or `application/json` is served;
+- every response, these errors included, gets `Vary: Accept`.
+
+The supported extensions are those of `document.jsonapi.ext`; unknown profiles are ignored. Both errors are
+`HttpException`s, rendered as error documents by `JsonApi::renderErrors()`. On every route, with or without the
+middleware, the documents are served with the extensions and profiles of `document.jsonapi` in their `Content-Type`
+(`application/vnd.api+json; ext="https://jsonapi.org/ext/atomic"`). An application that already has a `jsonapi`
+middleware alias keeps it: alias `NegotiateContent` under another name.
+
 ### Error renderers of the application
 
 A renderer implements `Ark4ne\JsonApi\Http\Errors\ErrorRenderer`; the renderers are asked by decreasing `PRIORITY`,

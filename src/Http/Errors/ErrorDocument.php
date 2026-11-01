@@ -52,14 +52,14 @@ final readonly class ErrorDocument
     }
 
     /**
-     * The response, served as `application/vnd.api+json`.
+     * The response, served as `application/vnd.api+json` with the extensions and profiles of the `jsonapi` member.
      */
     public function toResponse(): JsonResponse
     {
         return new JsonResponse(
             $this->toArray(),
             $this->status,
-            [...$this->headers, 'Content-Type' => 'application/vnd.api+json'],
+            [...$this->headers, 'Content-Type' => $this->jsonapi?->contentType() ?? JsonApiObject::MEDIA_TYPE],
             // An error renderer never fails on a message that is not UTF-8 (a database driver error in debug).
             JSON_INVALID_UTF8_SUBSTITUTE,
         );

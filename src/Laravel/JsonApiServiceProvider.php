@@ -12,6 +12,7 @@ use Ark4ne\JsonApi\Descriptors\ValueTypes;
 use Ark4ne\JsonApi\Exceptions\InvalidConfigurationException;
 use Ark4ne\JsonApi\Http\Errors\ErrorRenderer;
 use Ark4ne\JsonApi\Http\Errors\ErrorRenderers;
+use Ark4ne\JsonApi\Http\Middleware\NegotiateContent;
 use Ark4ne\JsonApi\Laravel\Commands\CacheDefinitionsCommand;
 use Ark4ne\JsonApi\Laravel\Commands\CheckDefinitionsCommand;
 use Ark4ne\JsonApi\Laravel\Commands\ClearDefinitionsCommand;
@@ -19,6 +20,7 @@ use Ark4ne\JsonApi\Laravel\Commands\MakeResourceCommand;
 use Ark4ne\JsonApi\Laravel\Rendering\RouteLinksStage;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 use WeakMap;
 
@@ -35,6 +37,8 @@ use WeakMap;
  *   own to replace them all.
  * - Registers `jsonapi:cache`, `jsonapi:clear`, `jsonapi:check` and `make:jsonapi-resource`; `php artisan optimize`
  *   caches the definitions. `vendor:publish --tag=jsonapi-stubs` publishes the stub of `make:jsonapi-resource`.
+ * - Aliases the content negotiation middleware `jsonapi` (`NegotiateContent`), applied by the routes that name it,
+ *   unless the application already has a `jsonapi` alias.
  * - Loads the messages of the validation rules (`jsonapi::validation.*`), published by `--tag=jsonapi-lang`.
  */
 final class JsonApiServiceProvider extends ServiceProvider
@@ -121,6 +125,12 @@ final class JsonApiServiceProvider extends ServiceProvider
             }
         }
         Definitions::configure($configuration, $compiled);
+
+        // Opt-in: applied by the routes that name it; an alias `jsonapi` of the application is kept.
+        $router = $this->app->make(Router::class);
+        if (!array_key_exists('jsonapi', $router->getMiddleware())) {
+            $router->aliasMiddleware('jsonapi', NegotiateContent::class);
+        }
 
         $this->publishes([self::CONFIG => $this->app->configPath('jsonapi.php')], 'config');
         $this->publishes([self::STUB => $this->app->basePath('stubs/jsonapi-resource.stub')], 'jsonapi-stubs');
