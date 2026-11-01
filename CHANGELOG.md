@@ -119,6 +119,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- **Breaking:** the messages of `Rules\Fields` and `Rules\Includes` are translations of the package,
+  `jsonapi::validation.fields.*` and `jsonapi::validation.includes.*`, published by
+  `vendor:publish --tag=jsonapi-lang`, instead of `validation.custom.jsonapi.*`. `Rules\Includes` read the keys of
+  `fields`: its own keys are used now. `":resource" doesn't exists.` is fixed in `":resource" doesn't exist.`.
+  Both rules are `final` and keep no state between two values; `Rules\Traits\UseTrans` is removed.
+
 - `array()->of(ValueStruct::class)` throws a `DefinitionException` asking for an instance, when declared, instead of
   failing on rendering (a struct needs its closure).
 

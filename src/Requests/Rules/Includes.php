@@ -7,86 +7,57 @@ namespace Ark4ne\JsonApi\Requests\Rules;
 use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Context\IncludeTree;
 use Ark4ne\JsonApi\Definition\RelatedResource;
-use Ark4ne\JsonApi\Requests\Rules\Traits\UseTrans;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 
 /**
  * Validates an include path against the relationships declared by the definitions of the resources it goes through.
  *
+ * Its messages are the translations `jsonapi::validation.includes.*` (`vendor:publish --tag=jsonapi-lang`).
+ *
  * @template T as \Ark4ne\JsonApi\Resources\JsonApiResource|\Ark4ne\JsonApi\Resources\JsonApiCollection
  */
-class Includes implements ValidationRule
+final class Includes implements ValidationRule
 {
-    use UseTrans;
-
-    private const BASE = 'validation.custom.jsonapi.fields';
-
-    /**
-     * @var array<int, array{":include": string, ":relation": string}>
-     */
-    protected array $failures = [];
-
-    /**
-     * @var list<string> The include paths deeper than the maximum depth
-     */
-    protected array $tooDeep = [];
-
     /**
      * @param class-string<T> $resource
      * @param positive-int|null $maxDepth Deepest include path accepted; the configured one (`include.max-depth`) when
      *                                    `null`
      */
     public function __construct(
-        protected string $resource,
-        protected ?int $maxDepth = null,
+        private readonly string $resource,
+        private readonly ?int $maxDepth = null,
     ) {}
 
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
         if (!is_string($value)) {
-            $fail($this->trans(
-                sprintf('%s.invalid', self::BASE),
-                'The selected :attribute is invalid.',
-            ));
+            $fail('jsonapi::validation.includes.invalid')->translate();
+
             return;
         }
 
+        $maxDepth = $this->maxDepth ?? Definitions::configuration()->maxIncludeDepth;
+        $failures = [];
+        $tooDeep = [];
+
         // Parsed as the rendering parses it, every segment kept: the depth is checked here.
-        if (!$this->assert([$this->resource], IncludeTree::parse($value))) {
-            foreach ($this->message() as $message) {
-                $fail($message);
-            }
+        $this->assert([$this->resource], IncludeTree::parse($value), '', $maxDepth, $failures, $tooDeep);
+
+        if ($failures === [] && $tooDeep === []) {
+            return;
         }
-    }
 
-    /**
-     * @return array<string>
-     */
-    private function message(): array
-    {
-        $message = $this->trans(
-            sprintf('%s.invalid', self::BASE),
-            'The selected :attribute is invalid.',
-        );
-
-        $depth = (string) ($this->maxDepth ?? Definitions::configuration()->maxIncludeDepth);
-
-        return array_merge([$message], array_map(
-            fn($failure) => $this->trans(
-                sprintf('%s.invalid_includes', self::BASE),
-                '":include" doesn\'t have relationship ":relation".',
-                $failure,
-            ),
-            $this->failures,
-        ), array_map(
-            fn(string $path) => $this->trans(
-                sprintf('%s.invalid_depth', self::BASE),
-                '":include" is deeper than the maximum include depth of :depth.',
-                [':include' => $path, ':depth' => $depth],
-            ),
-            $this->tooDeep,
-        ));
+        $fail('jsonapi::validation.includes.invalid')->translate();
+        foreach ($failures as $failure) {
+            $fail('jsonapi::validation.includes.invalid_includes')->translate($failure);
+        }
+        foreach ($tooDeep as $path) {
+            $fail('jsonapi::validation.includes.invalid_depth')->translate([
+                'include' => $path,
+                'depth' => (string) $maxDepth,
+            ]);
+        }
     }
 
     /**
@@ -95,15 +66,21 @@ class Includes implements ValidationRule
      * them to have it, path by path.
      *
      * @param non-empty-list<string> $classes
+     * @param list<array{include: string, relation: string}> $failures The relationships that do not exist
+     * @param list<string> $tooDeep The include paths deeper than the maximum depth
      */
-    private function assert(array $classes, IncludeTree $include, string $path = ''): bool
-    {
+    private function assert(
+        array $classes,
+        IncludeTree $include,
+        string $path,
+        ?int $maxDepth,
+        array &$failures,
+        array &$tooDeep,
+    ): void {
         $definitions = array_map(
             static fn(string $class) => Definitions::for(RelatedResource::resolve($class)),
             $classes,
         );
-
-        $maxDepth = $this->maxDepth ?? Definitions::configuration()->maxIncludeDepth;
 
         foreach ($include->children($path) as $relation) {
             $child = $path === '' ? $relation : "{$path}.{$relation}";
@@ -114,17 +91,12 @@ class Includes implements ValidationRule
             }
 
             if ($maxDepth !== null && substr_count($child, '.') >= $maxDepth) {
-                $this->tooDeep[] = $child;
+                $tooDeep[] = $child;
             } elseif ($related === []) {
-                $this->failures[] = [
-                    ':include' => $path === '' ? $definitions[0]->type : $path,
-                    ':relation' => $relation,
-                ];
+                $failures[] = ['include' => $path === '' ? $definitions[0]->type : $path, 'relation' => $relation];
             } else {
-                $this->assert(array_values(array_unique($related)), $include, $child);
+                $this->assert(array_values(array_unique($related)), $include, $child, $maxDepth, $failures, $tooDeep);
             }
         }
-
-        return $this->failures === [] && $this->tooDeep === [];
     }
 }

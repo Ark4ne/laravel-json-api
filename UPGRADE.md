@@ -98,6 +98,16 @@ public static function collection($resource): UserCollection
 `PrepareData::prepareData()`. Read the requested include and fields from the context of the request:
 `app(JsonApiContext::class)->include` (`IncludeTree`) and `->fields` (`SparseFieldsets`).
 
+### Validation messages
+
+The messages of `Rules\Fields` and `Rules\Includes` are translations of the package. Messages customized under
+`validation.custom.jsonapi.*` in `lang/{locale}/validation.php` are no longer read: publish the translations
+(`php artisan vendor:publish --tag=jsonapi-lang`) and edit `lang/vendor/jsonapi/{locale}/validation.php`, whose keys
+are the same without the `custom.jsonapi.` prefix (`fields.invalid_fields`, `includes.invalid_depth`…). A test
+asserting `":resource" doesn't exists.` reads `":resource" doesn't exist.` now.
+
+Both rules are `final`: compose them instead of extending them. `Rules\Traits\UseTrans` is removed.
+
 ### Schema and assertions
 
 `JsonApiResource::schema()`, `JsonApiCollection::schema()` and `Skeleton` are removed: `PostResource::definition()`

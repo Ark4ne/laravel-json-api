@@ -127,7 +127,7 @@ class ResourceTest extends FeatureTestCase
             'fields' => [
                 'The selected fields is invalid.',
                 '"user" doesn\'t have fields "unknown".',
-                '"foo" doesn\'t exists.',
+                '"foo" doesn\'t exist.',
             ],
         ]);
     }
@@ -172,7 +172,7 @@ class ResourceTest extends FeatureTestCase
         ], 'fields' => [
             'The selected fields is invalid.',
             '"user" doesn\'t have fields "one_field".',
-            '"unknown" doesn\'t exists.',
+            '"unknown" doesn\'t exist.',
         ]]);
     }
 

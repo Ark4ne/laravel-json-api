@@ -19,8 +19,11 @@ envoyé, ce que l'application applique si elle le souhaite.
 
 - [ ] **E7.1** `JsonApiFormRequest` : règles `include` et `fields` préconfigurées depuis la `ResourceDefinition`
       (`protected string $resource = PostResource::class;`)
-- [ ] **E7.3** Corriger `Rules\Includes::BASE` (pointe sur `jsonapi.fields`) ; messages en traductions publiables
+- [x] **E7.3** Corriger `Rules\Includes::BASE` (pointe sur `jsonapi.fields`) ; messages en traductions publiables
       (`lang/`), y compris `invalid_depth` ajouté par E1.11
+      > Traductions `jsonapi::validation.{fields,includes}.*` (`lang/en/validation.php`, tag `jsonapi-lang`),
+      > traduites par `$fail(...)->translate()` de Laravel : plus de helper `trans()` ni de trait `UseTrans`. Règles
+      > `final`, sans état entre deux valeurs. Coquille corrigée : `doesn't exist`. Baseline −54 lignes.
 - [ ] **E7.7** Lecture du corps d'écriture (`data.attributes`, `data.relationships`) :
       `$request->jsonApi()->attributes()`, erreurs de validation pointant vers `/data/attributes/x`
 

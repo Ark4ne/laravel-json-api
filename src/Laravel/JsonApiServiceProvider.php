@@ -29,12 +29,15 @@ use WeakMap;
  * - Binds one `JsonApiContext` per request object, built from it on first use.
  * - Registers `jsonapi:cache`, `jsonapi:clear`, `jsonapi:check` and `make:jsonapi-resource`; `php artisan optimize`
  *   caches the definitions. `vendor:publish --tag=jsonapi-stubs` publishes the stub of `make:jsonapi-resource`.
+ * - Loads the messages of the validation rules (`jsonapi::validation.*`), published by `--tag=jsonapi-lang`.
  */
 final class JsonApiServiceProvider extends ServiceProvider
 {
     private const CONFIG = __DIR__ . '/../../config/jsonapi.php';
 
     private const STUB = __DIR__ . '/../../stubs/jsonapi-resource.stub';
+
+    private const LANG = __DIR__ . '/../../lang';
 
     public function register(): void
     {
@@ -89,6 +92,8 @@ final class JsonApiServiceProvider extends ServiceProvider
 
         $this->publishes([self::CONFIG => $this->app->configPath('jsonapi.php')], 'config');
         $this->publishes([self::STUB => $this->app->basePath('stubs/jsonapi-resource.stub')], 'jsonapi-stubs');
+        $this->loadTranslationsFrom(self::LANG, 'jsonapi');
+        $this->publishes([self::LANG => $this->app->langPath('vendor/jsonapi')], 'jsonapi-lang');
 
         if ($this->app->runningInConsole()) {
             $this->commands([

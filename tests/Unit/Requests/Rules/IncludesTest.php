@@ -8,6 +8,7 @@ use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Requests\Rules\Includes;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Translation\PotentiallyTranslatedString;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Test\app\Http\Resources\UserCollection;
@@ -23,13 +24,7 @@ class IncludesTest extends TestCase
     #[DataProvider('validationDataProvider')]
     public function testPasses(mixed $values, array $expected): void
     {
-        $rule = new Includes(UserResource::class);
-        $errors = [];
-
-        $rule->validate('fields', $values, function ($message) use (&$errors): void {
-            $errors[] = $message;
-        });
-        self::assertEquals($expected, $errors);
+        self::assertEquals($expected, self::errors(new Includes(UserResource::class), $values));
     }
 
     public static function validationDataProvider()
@@ -83,19 +78,19 @@ class IncludesTest extends TestCase
      */
     private static function errors(ValidationRule $rule, mixed $value): array
     {
-        $errors = [];
+        /** @var list<PotentiallyTranslatedString> $messages */
+        $messages = [];
 
         $rule->validate(
             'include',
             $value,
-            function (string $message) use (&$errors): PotentiallyTranslatedString {
-                $errors[] = $message;
-
-                return new PotentiallyTranslatedString($message, app('translator'));
+            function (string $message) use (&$messages): PotentiallyTranslatedString {
+                return $messages[] = new PotentiallyTranslatedString($message, app('translator'));
             },
         );
 
-        return $errors;
+        // As the validator reads them: translated when the rule asked for it.
+        return array_map(static fn(PotentiallyTranslatedString $message): string => (string) $message, $messages);
     }
 
     public function test_an_include_deeper_than_the_maximum_depth_fails(): void
@@ -124,5 +119,35 @@ class IncludesTest extends TestCase
         } finally {
             Definitions::configure(Configuration::defaults());
         }
+    }
+
+    public function test_the_messages_are_the_translations_of_the_includes(): void
+    {
+        // Loaded first: the lines added complete the file instead of replacing it.
+        app('translator')->load('jsonapi', 'validation', 'en');
+        app('translator')->addLines(['validation.includes.invalid_includes' => ':include has no :relation'], 'en', 'jsonapi');
+
+        self::assertSame(
+            ['The selected :attribute is invalid.', 'user has no unknown'],
+            self::errors(new Includes(UserResource::class), 'unknown'),
+        );
+    }
+
+    public function test_a_rule_validates_each_value_on_its_own(): void
+    {
+        $rule = new Includes(UserResource::class);
+
+        self::assertNotSame([], self::errors($rule, 'unknown'));
+        self::assertSame([], self::errors($rule, 'posts'));
+    }
+
+    public function test_the_validator_names_the_attribute(): void
+    {
+        $validator = Validator::make(['include' => 'unknown'], ['include' => [new Includes(UserResource::class)]]);
+
+        self::assertSame([
+            'The selected include is invalid.',
+            '"user" doesn\'t have relationship "unknown".',
+        ], $validator->errors()->get('include'));
     }
 }

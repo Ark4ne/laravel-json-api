@@ -445,48 +445,6 @@ parameters:
 			path: src/Filters/PolicyFilterRule.php
 
 		-
-			message: '#^Ark4ne\\JsonApi\\Requests\\Rules\\Fields should be final$#'
-			identifier: phpat.testClassesAreFinal
-			count: 1
-			path: src/Requests/Rules/Fields.php
-
-		-
-			message: '#^Ark4ne\\JsonApi\\Requests\\Rules\\Fields should not include Ark4ne\\JsonApi\\Requests\\Rules\\Traits\\UseTrans$#'
-			identifier: phpat.testOnlyResourcesUseTraits
-			count: 1
-			path: src/Requests/Rules/Fields.php
-
-		-
-			message: '#^Calling trans\(\) is forbidden, global helpers are reserved to src/Laravel/\: inject a dependency instead\.$#'
-			identifier: disallowed.function
-			count: 1
-			path: src/Requests/Rules/Fields.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 2
-			path: src/Requests/Rules/Fields.php
-
-		-
-			message: '#^Ark4ne\\JsonApi\\Requests\\Rules\\Includes should be final$#'
-			identifier: phpat.testClassesAreFinal
-			count: 1
-			path: src/Requests/Rules/Includes.php
-
-		-
-			message: '#^Ark4ne\\JsonApi\\Requests\\Rules\\Includes should not include Ark4ne\\JsonApi\\Requests\\Rules\\Traits\\UseTrans$#'
-			identifier: phpat.testOnlyResourcesUseTraits
-			count: 1
-			path: src/Requests/Rules/Includes.php
-
-		-
-			message: '#^Calling trans\(\) is forbidden, global helpers are reserved to src/Laravel/\: inject a dependency instead\.$#'
-			identifier: disallowed.function
-			count: 1
-			path: src/Requests/Rules/Includes.php
-
-		-
 			message: '#^Argument of an invalid type Illuminate\\Support\\Collection\|null supplied for foreach, only iterables are supported\.$#'
 			identifier: foreach.nonIterable
 			count: 1
@@ -1531,12 +1489,6 @@ parameters:
 			path: tests/Unit/Requests/Rules/FieldsTest.php
 
 		-
-			message: '#^Parameter \#3 \$fail of method Ark4ne\\JsonApi\\Requests\\Rules\\Fields\<Test\\app\\Http\\Resources\\UserResource\>\:\:validate\(\) expects Closure\(string, string\|null\=\)\: Illuminate\\Translation\\PotentiallyTranslatedString, Closure\(mixed\)\: void given\.$#'
-			identifier: argument.type
-			count: 1
-			path: tests/Unit/Requests/Rules/FieldsTest.php
-
-		-
 			message: '#^Method Test\\Unit\\Requests\\Rules\\IncludesTest\:\:testPasses\(\) has parameter \$expected with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -1545,12 +1497,6 @@ parameters:
 		-
 			message: '#^Method Test\\Unit\\Requests\\Rules\\IncludesTest\:\:validationDataProvider\(\) has no return type specified\.$#'
 			identifier: missingType.return
-			count: 1
-			path: tests/Unit/Requests/Rules/IncludesTest.php
-
-		-
-			message: '#^Parameter \#3 \$fail of method Ark4ne\\JsonApi\\Requests\\Rules\\Includes\<Test\\app\\Http\\Resources\\UserResource\>\:\:validate\(\) expects Closure\(string, string\|null\=\)\: Illuminate\\Translation\\PotentiallyTranslatedString, Closure\(mixed\)\: void given\.$#'
-			identifier: argument.type
 			count: 1
 			path: tests/Unit/Requests/Rules/IncludesTest.php
 

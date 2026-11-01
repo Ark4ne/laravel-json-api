@@ -6,6 +6,7 @@ namespace Test\Unit\Requests\Rules;
 
 use Ark4ne\JsonApi\Requests\Rules\Fields;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Translation\PotentiallyTranslatedString;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Test\app\Http\Resources\UserCollection;
@@ -21,13 +22,7 @@ class FieldsTest extends TestCase
     #[DataProvider('validationDataProvider')]
     public function testPasses(mixed $values, array $expected): void
     {
-        $rule = new Fields(UserResource::class);
-        $errors = [];
-
-        $rule->validate('fields', $values, function ($message) use (&$errors): void {
-            $errors[] = $message;
-        });
-        self::assertEquals($expected, $errors);
+        self::assertEquals($expected, self::errors(new Fields(UserResource::class), $values));
     }
 
     public static function validationDataProvider()
@@ -45,7 +40,7 @@ class FieldsTest extends TestCase
             // invalid cases
             [['user' => 'name,email', 'unknown' => 'content'], [
                 'The selected :attribute is invalid.',
-                '"unknown" doesn\'t exists.',
+                '"unknown" doesn\'t exist.',
             ]],
             [['user' => 'name,unknown', 'post' => 'content'], [
                 'The selected :attribute is invalid.',
@@ -82,7 +77,7 @@ class FieldsTest extends TestCase
         self::assertSame([
             'The selected :attribute is invalid.',
             '"gamma" doesn\'t have fields "name".',
-            '"unknown" doesn\'t exists.',
+            '"unknown" doesn\'t exist.',
         ], self::errors(new Fields(AlphaResource::class), ['gamma' => 'label,name', 'unknown' => 'id']));
     }
 
@@ -96,18 +91,48 @@ class FieldsTest extends TestCase
      */
     private static function errors(ValidationRule $rule, mixed $value): array
     {
-        $errors = [];
+        /** @var list<PotentiallyTranslatedString> $messages */
+        $messages = [];
 
         $rule->validate(
             'fields',
             $value,
-            function (string $message) use (&$errors): PotentiallyTranslatedString {
-                $errors[] = $message;
-
-                return new PotentiallyTranslatedString($message, app('translator'));
+            function (string $message) use (&$messages): PotentiallyTranslatedString {
+                return $messages[] = new PotentiallyTranslatedString($message, app('translator'));
             },
         );
 
-        return $errors;
+        // As the validator reads them: translated when the rule asked for it.
+        return array_map(static fn(PotentiallyTranslatedString $message): string => (string) $message, $messages);
+    }
+
+    public function test_the_messages_are_the_translations_of_the_fields(): void
+    {
+        // Loaded first: the lines added complete the file instead of replacing it.
+        app('translator')->load('jsonapi', 'validation', 'en');
+        app('translator')->addLines(['validation.fields.invalid_resource' => 'no :resource'], 'en', 'jsonapi');
+
+        self::assertSame(
+            ['The selected :attribute is invalid.', 'no unknown'],
+            self::errors(new Fields(UserResource::class), ['unknown' => 'a']),
+        );
+    }
+
+    public function test_a_rule_validates_each_value_on_its_own(): void
+    {
+        $rule = new Fields(UserResource::class);
+
+        self::assertNotSame([], self::errors($rule, ['unknown' => 'a']));
+        self::assertSame([], self::errors($rule, ['user' => 'name']));
+    }
+
+    public function test_the_validator_names_the_attribute(): void
+    {
+        $validator = Validator::make(['fields' => ['unknown' => 'a']], ['fields' => [new Fields(UserResource::class)]]);
+
+        self::assertSame([
+            'The selected fields is invalid.',
+            '"unknown" doesn\'t exist.',
+        ], $validator->errors()->get('fields'));
     }
 }

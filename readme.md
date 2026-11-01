@@ -80,14 +80,17 @@ class UserFetchRequest extends FormRequest
 
 
 ### Customize validation message
-| Trans key                                             | default                                              |
-|-------------------------------------------------------|------------------------------------------------------|
-| `validation.custom.jsonapi.fields.invalid`            | The selected :attribute is invalid.                  |
-| `validation.custom.jsonapi.fields.invalid_fields`     | ":resource" doesn \' t have fields ":fields".        |
-| `validation.custom.jsonapi.fields.invalid_resource`   | ":resource" doesn \' t exists.                       |
-| `validation.custom.jsonapi.includes.invalid`          | The selected :attribute is invalid.                  |
-| `validation.custom.jsonapi.includes.invalid_includes` | ":include" doesn \' t have relationship ":relation". |
-| `validation.custom.jsonapi.includes.invalid_depth`    | ":include" is deeper than the maximum include depth of :depth. |
+The messages are translations of the package: `php artisan vendor:publish --tag=jsonapi-lang` copies them to
+`lang/vendor/jsonapi/en/validation.php`, to edit or translate.
+
+| Trans key                                     | default                                                        |
+|-----------------------------------------------|----------------------------------------------------------------|
+| `jsonapi::validation.fields.invalid`          | The selected :attribute is invalid.                            |
+| `jsonapi::validation.fields.invalid_fields`   | ":resource" doesn't have fields ":fields".                     |
+| `jsonapi::validation.fields.invalid_resource` | ":resource" doesn't exist.                                     |
+| `jsonapi::validation.includes.invalid`        | The selected :attribute is invalid.                            |
+| `jsonapi::validation.includes.invalid_includes` | ":include" doesn't have relationship ":relation".            |
+| `jsonapi::validation.includes.invalid_depth`  | ":include" is deeper than the maximum include depth of :depth. |
 
 ## Resource
 **@see** _[{json:api} resource-type](https://jsonapi.org/format/#document-resource-objects)_
