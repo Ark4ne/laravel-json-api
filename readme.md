@@ -753,6 +753,18 @@ Usage is the same as laravel collections.
 UserResource::collection(User::all()); // => JsonApiCollection
 ```
 
+### Pagination
+**@see** _[{json:api} pagination](https://jsonapi.org/format/#fetching-pagination)_
+
+A paginated collection keeps the output of Laravel's paginators (`paginate()`, `simplePaginate()`,
+`cursorPaginate()`): the `links` `first`, `last`, `prev` and `next` the specification names (`null` when unavailable:
+`last` for `simplePaginate()`, `first` and `last` for `cursorPaginate()`, `prev` and `next` at the ends), and the `meta` of Laravel. The specification fixes no format for the `page`, `sort` and `filter` parameters: handle them as in any
+Laravel API (it requires a `400 Bad Request` for an unsupported `sort`).
+
+```php
+UserResource::collection(User::query()->paginate()); // ?page=2
+```
+
 
 ## Described notation
 

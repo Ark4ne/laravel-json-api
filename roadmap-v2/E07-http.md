@@ -77,8 +77,11 @@ envoyé, ce que l'application applique si elle le souhaite.
 
 ### Pagination
 
-- [ ] **E7.6** Test : les documents paginés (offset et curseur) avec la sortie Laravel inchangée valident le JSON
+- [x] **E7.6** Test : les documents paginés (offset et curseur) avec la sortie Laravel inchangée valident le JSON
       Schema JSON:API
+      > `tests/Feature/PaginationTest.php` : `paginate()`, `simplePaginate()`, `cursorPaginate()` parcourus page par
+      > page par leur lien `next` (toutes les ressources, une fois chacune), liens `first` / `last` / `prev` / `next` de
+      > la spec, `meta` de Laravel inchangé, page vide ; chaque document validé contre le JSON Schema.
 
 ## Retiré
 
@@ -87,5 +90,10 @@ envoyé, ce que l'application applique si elle le souhaite.
 
 ## Critères de sortie
 
-- [ ] Toutes les réponses d'erreur des tests valident contre le JSON Schema JSON:API
-- [ ] Aucune de ces briques n'est active sans opt-in explicite
+- [x] Toutes les réponses d'erreur des tests valident contre le JSON Schema JSON:API
+      > `FeatureTestCase` valide toute réponse `application/vnd.api+json` (erreurs de `renderErrors()` et du middleware
+      > comprises) ; les tests unitaires des renderers valident chaque document produit.
+- [x] Aucune de ces briques n'est active sans opt-in explicite
+      > `JsonApiFormRequest` (héritage), `JsonApi::renderErrors()` (appel dans `bootstrap/app.php`), middleware
+      > `jsonapi` (nommé par la route) ; testé : sans appel Laravel rend l'exception, une route sans middleware ne
+      > négocie pas.
