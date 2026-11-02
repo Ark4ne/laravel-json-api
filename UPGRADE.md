@@ -2,6 +2,10 @@
 
 ## From 1.x to 2.0
 
+Coding agents can follow the `laravel-json-api-upgrade` skill shipped in the package
+(`vendor/ark4ne/laravel-json-api/skills/laravel-json-api-upgrade/`): the same changes as a procedure, with a mapping
+of every 1.x construct and tested examples.
+
 ### Requirements
 
 PHP `^8.3` and Laravel `^12.46` or `^13.0`.
@@ -24,7 +28,14 @@ $title = $this->string()->nullable(false);
 
 The provider is now `Ark4ne\JsonApi\Laravel\JsonApiServiceProvider`. Package discovery registers it; if your
 application lists `Ark4ne\JsonApi\Providers\LaravelJsonApiProvider` in `bootstrap/providers.php` or
-`config/app.php`, replace it.
+`config/app.php`, replace it:
+
+```php
+// 1.x
+Ark4ne\JsonApi\Providers\LaravelJsonApiProvider::class,
+// 2.0
+Ark4ne\JsonApi\Laravel\JsonApiServiceProvider::class,
+```
 
 ### Configuration
 
@@ -39,6 +50,13 @@ names the key. Compare your published file with the package one for the new keys
   `config/jsonapi.php` still setting `describer.date` throws an `InvalidConfigurationException` at boot: rename it
   `describer.datetime`. `Values\ValueDate` is the date without time; the 1.x class is
   `Values\ValueDateTime`.
+
+  ```php
+  // 1.x: 2026-10-31T10:00:00+00:00
+  'published-at' => $this->date(),
+  // 2.0: the same output
+  'published-at' => $this->datetime(),
+  ```
 - A float with a precision is rounded instead of floored: `$this->float()->precision(2)` renders `1.24` for `1.239`
   (1.x: `1.23`), `1.15` for `1.15` (1.x: `1.14`). Add `->truncate()` to truncate.
 - A date declared `nullable(false)` renders `null` for `null` (1.x: `1970-01-01T00:00:00+00:00`). With
@@ -76,6 +94,14 @@ public static function collection($resource): UserCollection
 - A relationship read from a relation (`$this->one(UserResource::class)`) loads it, in batch, even when it is not
   included. Add `->withLoad(false)` where an application loads it itself, or `->whenIncluded()` to render its `data`
   only when included.
+
+  ```php
+  // 1.x: the relation is read as it is, loaded resource by resource if it is not
+  'author' => $this->one(UserResource::class),
+  // 2.0: loaded in batch; to load it yourself, or render it only when included
+  'author' => $this->one(UserResource::class)->withLoad(false),
+  'author' => $this->one(UserResource::class)->whenIncluded(),
+  ```
 - `->withLoad(true)` loads the relation the relationship is read from: `$this->one(PostResource::class, 'post')` under
   the name `main-post` loads `post` (1.x: `main-post`).
 - A `withLoad(['comments' => fn($query) => …])` constraint now filters the linkage too: the identifiers listed in
@@ -95,14 +121,33 @@ public static function collection($resource): UserCollection
 
 ### Static helpers
 
-`Support\Includes`, `Support\Fields`, `Support\With` and `Support\Supported` are removed, with
-`PrepareData::prepareData()`. Read the requested include and fields from the context of the request:
-`app(JsonApiContext::class)->include` (`IncludeTree`) and `->fields` (`SparseFieldsets`).
+`Support\Includes`, `Support\Fields`, `Support\With`, `Support\Supported` and `Support\Traits\HasLocalCache` are
+removed, with `PrepareData::prepareData()` and the Octane `RequestReceived` listener (each request gets its own
+context, nothing to reset). Read the requested include and fields from the context of the request:
+
+```php
+// 1.x
+Includes::include($request, 'posts');
+Fields::has($request, 'title', 'post');
+// 2.0
+$context = app(JsonApiContext::class);
+$context->include->has('posts');           // IncludeTree
+$context->fields->allows('post', 'title'); // SparseFieldsets
+```
 
 ### Validation rules
 
 `Rules\Fields` and `Rules\Includes` move to the `Http` layer: replace `Ark4ne\JsonApi\Requests\Rules\` by
-`Ark4ne\JsonApi\Http\Rules\` in your imports. A form request that only validates `include` and `fields` can extend
+`Ark4ne\JsonApi\Http\Rules\` in your imports:
+
+```php
+// 1.x
+use Ark4ne\JsonApi\Requests\Rules\Includes;
+// 2.0
+use Ark4ne\JsonApi\Http\Rules\Includes;
+```
+
+A form request that only validates `include` and `fields` can extend
 `Ark4ne\JsonApi\Http\JsonApiFormRequest` instead (`protected string $resource = PostResource::class;`).
 
 ### Validation messages
@@ -119,6 +164,9 @@ Both rules are `final`: compose them instead of extending them. `Rules\Traits\Us
 
 `JsonApiResource::schema()`, `JsonApiCollection::schema()` and `Skeleton` are removed: `PostResource::definition()`
 returns the `ResourceDefinition` (type, attributes, relationships with their related class and eager-loads).
+
+`Support\FakeModel`, internal, is replaced by `Support\Probe`: code that built a resource on a `FakeModel` to read
+what it declares reads `PostResource::definition()` instead.
 
 `Asserts\AssertJsonApiResource` is removed: run `php artisan jsonapi:check` in the CI, or call
 `Testing\ResourceAssertions::assertValid(PostResource::class)` in a test.
@@ -154,10 +202,24 @@ return the resource from the controller, or call `->toResponse($request)`. `with
 the meta of `toDocumentMeta()`; what you add in `with()` or `additional()` is still merged into the response. The second
 argument of `toArray()` (`$included` / `$minimal`) is removed: remove it from your overrides.
 
+```php
+// 1.x
+$document = (new PostResource($post))->toArray($request, true);
+// 2.0
+$document = (new PostResource($post))->toResponse($request)->getData(true);
+```
+
 `Resources\Resourceable` and `Relationship::toArray()` are removed. A relationship points to a `JsonApiResource` or a
 `JsonApiCollection`, and a collection collects `JsonApiResource`s: anything else renders no resource object.
 
 ### The JSON follows the specification
+
+```jsonc
+// 1.x
+{"data": {"type": "post", "id": 1, "attributes": [], "relationships": {"author": []}}}
+// 2.0
+{"jsonapi": {"version": "1.1"}, "data": {"type": "post", "id": "1", "relationships": {"author": {"data": null}}}}
+```
 
 Clients reading the documents must expect:
 
@@ -183,18 +245,45 @@ Clients reading the documents must expect:
   are merged key by key, the first resource setting a key keeping it, instead of gathered into lists. To set document
   meta for the whole collection, override `toDocumentMeta()` on the collection class: it wins over those of the resources.
 
+### Closures that are not requested are not run
+
+A closure of an attribute left out by `fields[type]`, or of a relationship whose linkage is not rendered, is never
+called: 1.x called it, then dropped the value. Code that relied on the side effects of such a closure (a counter, a
+log, a lazy load) must do it elsewhere.
+
+```php
+// GET /posts?fields[post]=title
+'word-count' => $this->integer(fn() => $this->countWords()), // 1.x: called; 2.0: not called
+```
+
 ### New value helpers
 
 `$this->uuid()`, `ulid()`, `decimal()`, `json()`, `time()` and `datetime()` are value descriptors now. A resource that
-called a model method of one of these names through `$this` must call it on the model: `$this->resource->uuid()`.
+called a model method of one of these names through `$this` must call it on the model:
+
+```php
+// 1.x: the uuid() method of the model, through the resource
+'uuid' => $this->uuid(),
+// 2.0
+'uuid' => $this->resource->uuid(),
+```
 
 ### Renamed methods
 
 - `toMeta()` (document meta) is renamed `toDocumentMeta()`, on resources and collections: a class still declaring
   `toMeta()` throws a `DefinitionException` (when compiled for a resource, when rendered for a collection) instead
   of losing its meta silently. `toResourceMeta()` is unchanged.
-- On `Relationship` (`PostResource::relationship(...)`), `withLinks()`, `withMeta()` and `withIdentifierMeta()` are
-  renamed `links()`, `meta()` and `identifierMeta()`, as on the relationship descriptors.
+- On `Relationship` (`PostResource::relationship(...)`), `withLinks()` and `withMeta()` are renamed `links()` and
+  `meta()`, as on the relationship descriptors.
+
+  ```php
+  // 1.x
+  protected function toMeta(Request $request): ?iterable { return ['total' => …]; }
+  PostResource::relationship(fn() => …)->withLinks(fn() => […]);
+  // 2.0
+  protected function toDocumentMeta(Request $request): ?iterable { return ['total' => …]; }
+  PostResource::relationship(fn() => …)->links(fn() => […]);
+  ```
 - `toId(Request $request): int|string|null` is a hook of the resources, read by the default `toIdentifier()`: a
   resource declaring a `toId()` of another signature must rename it.
 

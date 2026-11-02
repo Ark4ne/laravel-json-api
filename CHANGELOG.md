@@ -33,6 +33,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   the timestamps, relationships from the methods typed with a relation. `vendor:publish --tag=jsonapi-stubs` publishes
   its stub.
 - **`Testing\ResourceAssertions::assertValid(PostResource::class, strict: false)`** for the test suites of applications.
+- **Agent skills** shipped in the package, their examples run by the test suite: `skills/laravel-json-api/` (the
+  rules, the reference of every helper, attribute, configuration key and command, and recipes) for coding agents
+  writing resources, `skills/laravel-json-api-upgrade/` (procedure, mapping of every 1.x construct, ported examples)
+  for the migration from 1.x.
 - **`Context\JsonApiContext`**, bound once per request: the parsed `include` (`IncludeTree`) and `fields`
   (`SparseFieldsets`), the configuration and the diagnostics of the request. `include` and `fields` are read from the
   query string only, as the specification defines them.
@@ -252,8 +256,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   configured one), which the compilation no longer fills from the configuration.
 - **Breaking:** `toMeta()` (document meta) is renamed `toDocumentMeta()` on resources and collections; a class still
   declaring `toMeta()` throws a `DefinitionException` rather than losing its meta silently.
-- **Breaking:** `Relationship::withLinks()`, `withMeta()` and `withIdentifierMeta()` are renamed `links()`, `meta()`
-  and `identifierMeta()`, as on the relationship descriptors.
+- **Breaking:** `Relationship::withLinks()` and `withMeta()` are renamed `links()` and `meta()`, as on the relationship
+  descriptors.
 
 - **Breaking:** `$this->uuid()`, `ulid()`, `decimal()`, `json()`, `time()` and `datetime()` in a resource return a
   value descriptor instead of calling the method of that name on the model: call it on `$this->resource`.

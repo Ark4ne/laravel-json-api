@@ -28,6 +28,10 @@ native `JsonApiRequest` is read like any request.
 composer require ark4ne/laravel-json-api
 ```
 
+Coding agents (Claude Code, Cursor…) can load the skills shipped in `vendor/ark4ne/laravel-json-api/skills/`:
+`laravel-json-api` (the rules, the reference of every helper, tested recipes) and `laravel-json-api-upgrade` (the
+migration from 1.x).
+
 # Config
 | Path                         | Type                     | Description                                                                             |
 |------------------------------|--------------------------|-----------------------------------------------------------------------------------------|
@@ -512,7 +516,7 @@ protected function toRelationships(Request $request): array
     return [
         'avatar' => AvatarResource::relationship($this->avatar),
         // with conditional relationship
-        'administrator' => $this->when($request->user()->isAdmin(), UserResource::relationship(fn() => $this->administrator),
+        'administrator' => $this->when($request->user()->isAdmin(), UserResource::relationship(fn() => $this->administrator)),
         // as collection, with conditional value
         'comments' => CommentResource::relationship(fn() => $this->whenLoaded('comments'))->asCollection(),
         // with relationship (allow to include links and meta on relation)
@@ -740,7 +744,7 @@ Returns document meta (`toMeta()` in 1.x: a resource or a collection still decla
 protected function toDocumentMeta(Request $request): ?iterable
 {
     return [
-        "copyright": "Copyright 2022 My Awesome Api",
+        'copyright' => 'Copyright 2022 My Awesome Api',
     ];
 }
 ```

@@ -18,15 +18,15 @@ d'agent et site de documentation à jour.
 
 ### Migration
 
-- [ ] **E11.2** `UPGRADE.md` 1.x → 2.0 exhaustif : une section par rupture (🔴 des autres EPICs), avec exemple
+- [x] **E11.2** `UPGRADE.md` 1.x → 2.0 exhaustif : une section par rupture (🔴 des autres EPICs), avec exemple
       avant / après
 - [ ] **E11.4** Règles Rector optionnelles pour les renommages mécaniques (`withLinks` → `links`,
       `toMeta` → `toDocumentMeta`…)
 
 ### Documentation
 
-- [ ] **E11.3** Skill d'agent `skills/laravel-json-api/` (API publique), testé par un `SkillTest`
-- [ ] **E11.3b** Skill d'upgrade `skills/laravel-json-api-upgrade/`
+- [x] **E11.3** Skill d'agent `skills/laravel-json-api/` (API publique), testé par un `SkillTest`
+- [x] **E11.3b** Skill d'upgrade `skills/laravel-json-api-upgrade/`
 - [ ] **E11.5** Site `laravel-json-api-docs` (Nuxt) : section V2, doc versionnée 1.x / 2.x
 - [ ] **E11.6** README allégé (renvoi vers le site), `CHANGELOG.md` au format *Keep a Changelog*
 
