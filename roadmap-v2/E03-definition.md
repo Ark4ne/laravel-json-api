@@ -76,5 +76,11 @@ comme `laravel-openapi-generator`, sans réflexion sur nos membres privés.
 
 - [x] `Skeleton` et `Concerns\Schema` remplacés par `Definitions` ; les règles `Includes` / `Fields` lisent la
       définition
-- [ ] Benchmark : rendu d'une ressource en FPM, avec et sans cache compilé (E4.7)
-- [ ] La définition contient tout ce que le générateur lit aujourd'hui par réflexion (liste établie en E9.1)
+- [x] Benchmark : rendu d'une ressource en FPM, avec et sans cache compilé (E4.7)
+      > `composer benchmark -- --cold` (2026-11-02, PHP 8.5.3, cache fichier d'opcache) : un post, 3 includes, médiane
+      > de 20 process neufs. Définitions : 0,92 ms compilées au premier usage, 0,25 ms lues du fichier (×0,27) ;
+      > définitions + premier rendu : ×0,995, les classes chargées par la `Probe` l'étant alors par le rendu. Non
+      > mesuré : une application de nombreuses ressources (le fichier les charge toutes, la compilation seulement celles
+      > du document).
+- ~~La définition contient tout ce que le générateur lit aujourd'hui par réflexion (liste établie en E9.1)~~ : vérifié
+  dans le dépôt `laravel-openapi-generator` (2026-11-02)

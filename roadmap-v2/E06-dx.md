@@ -91,4 +91,6 @@
       > 174 lignes contre 192 en v1.9 (Post, Comment, User), documents rendus identiques : type par convention,
       > relations devinées (`$this->one()`, `one('post')`, `many()`), `links(self:, related:)`, descripteurs typés,
       > `datetime()` au format par défaut. Les cas limites (struct, `applyWhen`, valeurs brutes) sont gardés.
-- [ ] Chaque nouvelle API est documentée dans le skill (E11.3)
+- [x] Chaque nouvelle API est documentée dans le skill (E11.3)
+      > Ajouts : diagnostics (codes, niveaux), casts de `string()` / `integer()` / `float()`, items de `array()`,
+      > closure typée de `Filters::when()`.

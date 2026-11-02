@@ -86,5 +86,5 @@ php artisan make:jsonapi-resource PostResource --model=Post                     
 | A value has the wrong type | Use the matching descriptor (`integer()`, `datetime()`, `decimal()`, `enum()`…) instead of a raw value |
 | A date lost its time | `date()` is a date without time: use `datetime()` |
 | `DefinitionException` when rendered | The definition cannot be compiled: run `php artisan jsonapi:check` to read why |
-| `RenderingException` | A value has no JSON form (a date `nullable(false)` given `null` with `describer.strict`, an enum value out of its cases, a member without name) |
+| `RenderingException` | A value has no JSON form (an array given to `string()` / `integer()` / `float()`, a date `nullable(false)` given `null` with `describer.strict`, an enum value out of its cases, a member without name), or the identifier is neither an integer nor a string |
 | The error body is Laravel's | `JsonApi::renderErrors()` is not called, or the request does not expect JSON |

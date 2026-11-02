@@ -105,8 +105,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `->when(fn($request, $user) => …)`, `struct()`) receive a `User`, and `when()` returns `MissingValue|` the type of
   its value. The hooks (`toRelationships()`, `toLinks()`, `toResourceMeta()`…) declare `Relation<T>` / `Value<T>`;
   `toLinks()` accepts link objects; `relationship()` gives a `Relationship<static>`, `collection()` a
-  `JsonApiCollection<static>`; `filters()` receives `Filters`, whose `when()` accepts a closure typed on the related model; `array()->of()` and
-  `arrayOf()` accept a descriptor written for any model. Checked by PHPStan on `tests/Types`.
+  `JsonApiCollection<static>`; `filters()` receives `Filters`, whose `when()` accepts a closure typed on the related
+  model; `array()->of()` and `arrayOf()` accept a descriptor written for any model. Checked by PHPStan on
+  `tests/Types`.
 - **Relationships without resource class**: `$this->one()`, `$this->one('user')`, `$this->many()` on a resource
   rendering an Eloquent model guess the related resource as `Model::toResource()` does: the model of the resource
   (`#[JsonApiModel(Post::class)]`, otherwise `App\Http\Resources\PostResource` → `App\Models\Post`), the related model of

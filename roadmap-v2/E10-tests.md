@@ -65,5 +65,6 @@ patterns des libs modèles.
 
 ## Critères de sortie
 
-- [ ] Couverture ≥ 90 %, MSI ≥ 80 % — couverture 96,3 % (2026-11-02) ; MSI à mesurer (Infection non installé ici)
+- [x] Couverture ≥ 90 %, MSI ≥ 80 % — couverture 96,3 %, MSI 87 % (2026-11-02, Infection global, timeout 30 s ;
+      283 mutants sur 3 071 dépassent encore le timeout et ne sont pas comptés)
 - [ ] Suite verte sur toute la matrice PHP × Laravel, en CI GitHub (premier push de `v2.0`)

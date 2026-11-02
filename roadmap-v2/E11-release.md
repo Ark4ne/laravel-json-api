@@ -13,15 +13,17 @@ d'agent et site de documentation à jour.
 
 - [ ] **E11.1** Release **1.10** : `@deprecated` + `trigger_deprecation()` sur tout ce qui disparaît ou change de sens
       en V2
-- [ ] **E11.1b** 1.10 : activation optionnelle par config des nouveaux comportements (`id` en string,
-      `data: null`…), pour migrer progressivement
+- ~~**E11.1b** 1.10 : activation optionnelle par config des nouveaux comportements (`id` en string,
+      `data: null`…), pour migrer progressivement~~ : abandonné (2026-11-02), `UPGRADE.md` et le skill d'upgrade
+      couvrent la migration
 
 ### Migration
 
 - [x] **E11.2** `UPGRADE.md` 1.x → 2.0 exhaustif : une section par rupture (🔴 des autres EPICs), avec exemple
       avant / après
-- [ ] **E11.4** Règles Rector optionnelles pour les renommages mécaniques (`withLinks` → `links`,
-      `toMeta` → `toDocumentMeta`…)
+- ~~**E11.4** Règles Rector optionnelles pour les renommages mécaniques (`withLinks` → `links`,
+      `toMeta` → `toDocumentMeta`…)~~ : abandonné (2026-11-02), trois renommages seulement, couverts par le skill
+      d'upgrade
 
 ### Documentation
 

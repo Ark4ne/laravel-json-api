@@ -12,6 +12,8 @@
     "phpUnit": {
         "customPath": "vendor/bin/phpunit"
     },
+    // The Feature tests boot an application: the default 10 s would skip the mutants they cover.
+    "timeout": 30,
     "minMsi": 80,
     "minCoveredMsi": 80,
     "mutators": {

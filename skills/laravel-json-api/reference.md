@@ -37,9 +37,9 @@ name) or a closure computing the value (it receives the model): `$this->string()
 | Helper | Renders | Modifiers of its own |
 | --- | --- | --- |
 | `bool()` | a boolean | |
-| `integer()` | an integer | |
-| `float()` | a float | `->precision(2)` (rounded), `->truncate()` |
-| `string()` | a string | |
+| `integer()` | an integer (a scalar cast; anything else throws a `RenderingException`) | |
+| `float()` | a float (a scalar cast; anything else throws a `RenderingException`) | `->precision(2)` (rounded), `->truncate()` |
+| `string()` | a string (a scalar or a `Stringable` cast; anything else throws a `RenderingException`) | |
 | `date()` | a date without time, `Y-m-d` | `->format('d/m/Y')` |
 | `datetime()` | a date and time, `describer.datetime` (ATOM) | `->format('Y-m-d H:i')` |
 | `time()` | a time of day, `H:i:s` | `->format('H:i')` |
@@ -47,7 +47,7 @@ name) or a closure computing the value (it receives the model): `$this->string()
 | `uuid()` | a UUID as a string | |
 | `ulid()` | a ULID as a string | |
 | `json()` | a JSON string, decoded | |
-| `array()` | a list | `->of($this->integer())`, `->of(ValueInteger::class)`, `->of('money')` |
+| `array()` | a list: the items of a collection, an arrayable, an iterable, the properties of an object; a scalar as the only item, `null` as none | `->of($this->integer())`, `->of(ValueInteger::class)`, `->of('money')` |
 | `arrayOf($this->string(), 'tags')` | a typed list | |
 | `enum()` | the value of a backed enum, the name of a unit enum | `->of(State::class)`: casts a raw value through the enum |
 | `struct(fn() => [...])` | an object of described members | |
@@ -96,7 +96,7 @@ Modifiers of every relationship:
 | `->whenLoaded(?string $relation = null)` | Rendered only when the relation is loaded; loaded when included |
 | `->whenPivotLoaded(string $table, ?string $accessor = null)` | Rendered only when the pivot is loaded |
 | `->linkage(Linkage $linkage)` | `Configuration\Linkage::Always`, `Loaded` or `Included` for this relationship |
-| `->filters(Closure $filters)` | Renders only the related resources passing the rules: `fn(Filters $filters) => $filters->can('view')->when(fn($request, $model) => …)` (immutable: return the result) |
+| `->filters(Closure $filters)` | Renders only the related resources passing the rules: `fn(Filters $filters) => $filters->can('view')->when(fn(Request $request, Comment $comment) => …)` (immutable: return the result; a callback may return any truthy value) |
 | `->can(iterable\|string $abilities, array $arguments = [], string $gateClass = Gate::class, ?string $guard = null)` | Rendered only when the user has the abilities on the model |
 | `->when(...)`, `->unless(...)` | As for values |
 
@@ -148,6 +148,24 @@ Validated at boot: a wrong value throws `Exceptions\InvalidConfigurationExceptio
 | `php artisan jsonapi:check [resources…] [--strict]` | Prints the diagnostics of the definitions; fails on an error (on a warning too with `--strict`) |
 | `php artisan jsonapi:cache` | Compiles every definition into `bootstrap/cache/jsonapi.php` (run by `php artisan optimize`) |
 | `php artisan jsonapi:clear` | Removes the compiled definitions (run by `optimize:clear`) |
+
+## Diagnostics
+
+Collected when a definition is compiled and printed by `jsonapi:check` / `ResourceAssertions::assertValid()`: an error
+fails the check, a warning fails it with `--strict` / `strict: true`. The last two are found while rendering, in debug
+only, in the diagnostics of the `JsonApiContext`.
+
+| Code | Level | Cause and fix |
+| --- | --- | --- |
+| `eager-attribute` | warning | A member is a raw value (`$this->title`): write a descriptor or a closure |
+| `merge-when` | warning | Members of `mergeWhen()` / `mergeUnless()`, hidden from the definition: use `applyWhen()` |
+| `unnamed-member` | warning | A member without name, left out on the probe: key it, or give the descriptor its attribute |
+| `reserved-name` | error | A member named `id` or `type` |
+| `invalid-member` | error | A member that throws on the probe, or a relationship to a class that is not a resource |
+| `hook-failure` | error | A hook threw on the probe (an `if` on the model, a call on a relation): use the descriptors |
+| `missing-route` | error | The `self` route of `#[JsonApiRoutes]` does not exist |
+| `load-conflict` | warning | Two relationships load the same relation with different `withLoad()` constraints |
+| `filter-on-unloaded` | warning | `->filters()` on a relation that is not loaded, read resource by resource: let it load |
 
 ## HTTP
 

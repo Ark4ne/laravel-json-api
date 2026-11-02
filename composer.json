@@ -84,7 +84,7 @@
         "cs": "Check the code style (PER-CS).",
         "cs:fix": "Fix the code style (PER-CS).",
         "mutation": "Run mutation testing (requires infection to be installed globally).",
-        "benchmark": "Compare the rendering time and peak memory with 1.9 and Laravel's JSON:API resources (options: --iterations, --posts, --tolerance, --only, --update-reference).",
+        "benchmark": "Compare the rendering time and peak memory with 1.9 and Laravel's JSON:API resources (options: --iterations, --posts, --tolerance, --only, --update-reference; --cold for the first rendering in a new process, with and without compiled definitions).",
         "ci": "Run every blocking check of the CI locally."
     },
     "extra": {

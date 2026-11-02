@@ -30,6 +30,7 @@ composer stan:baseline   # regenerate phpstan-baseline.neon (it may only shrink)
 composer cs              # code style check (PER-CS); composer cs:fix to fix
 composer ci              # every blocking check except coverage and mutation
 composer benchmark       # rendering time and memory against 1.9 and Laravel's JSON:API (fails on regression)
+composer benchmark -- --cold # first rendering in a new process (FPM), with and without compiled definitions
 
 vendor/bin/phpunit --filter test_name
 vendor/bin/phpunit tests/Unit

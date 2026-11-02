@@ -14,22 +14,22 @@ dépendance vers eux.
 ## Progression
 
 <!-- progress:start -->
-**Avancement global : `█████████░` 90 % (141 / 156 livrables)**
+**Avancement global : `█████████░` 94 % (144 / 152 livrables)**
 
 | EPIC | Jalon | Statut | Avancement | Livrables |
 | --- | --- | --- | --- | --- |
 | [E0 — Socle, outillage et conventions](E00-socle.md) | M0 | Terminé | `██████████` 100 % | 18 / 18 |
 | [E1 — Conformité à la spec JSON:API 1.1](E01-conformite-spec.md) | M2 | Terminé | `██████████` 100 % | 15 / 15 |
 | [E2 — Corrections de bugs et nettoyage de la dette](E02-bugs-dette.md) | M2 | Terminé | `██████████` 100 % | 18 / 18 |
-| [E3 — Modèle de définition et évolution du FakeModel](E03-definition.md) | M1 | En cours | `████████░░` 89 % | 17 / 19 |
+| [E3 — Modèle de définition et évolution du FakeModel](E03-definition.md) | M1 | Terminé | `██████████` 100 % | 18 / 18 |
 | [E4 — Moteur de rendu](E04-rendu.md) | M2 | Terminé | `██████████` 100 % | 12 / 12 |
 | [E5 — Relations et chargement](E05-relations.md) | M3 | Terminé | `██████████` 100 % | 15 / 15 |
-| [E6 — API d'écriture des ressources (DX)](E06-dx.md) | M1, M3 | En cours | `█████████░` 93 % | 14 / 15 |
+| [E6 — API d'écriture des ressources (DX)](E06-dx.md) | M1, M3 | Terminé | `██████████` 100 % | 15 / 15 |
 | [E7 — Couche HTTP](E07-http.md) | M4 | Terminé | `██████████` 100 % | 10 / 10 |
 | [E8 — Positionnement face au JSON:API natif de Laravel](E08-natif-laravel.md) | M5 | En cours | `████████░░` 85 % | 6 / 7 |
-| [E9 — Contrat public pour `laravel-openapi-generator`](E09-openapi-generator.md) | M5 | En cours | `████████░░` 83 % | 5 / 6 |
-| [E10 — Stratégie de tests et qualité](E10-tests.md) | M0 → M5 | En cours | `███████░░░` 77 % | 7 / 9 |
-| [E11 — Documentation, migration et release](E11-release.md) | M5 | En cours | `███░░░░░░░` 33 % | 4 / 12 |
+| [E9 — Contrat public pour `laravel-openapi-generator`](E09-openapi-generator.md) | M5 | Terminé | `██████████` 100 % | 5 / 5 |
+| [E10 — Stratégie de tests et qualité](E10-tests.md) | M0 → M5 | En cours | `████████░░` 88 % | 8 / 9 |
+| [E11 — Documentation, migration et release](E11-release.md) | M5 | En cours | `████░░░░░░` 40 % | 4 / 10 |
 <!-- progress:end -->
 
 ## Mettre à jour la progression
@@ -104,3 +104,5 @@ La release 1.10 de dépréciation (E11.1) se prépare dès que les ruptures sont
 | 2026-10-30 | Pas de JSON Schema 1.1 officiel : le schéma de jsonapi.org (2020-12) est copié dans les tests et complété des membres 1.1 ; les 12 documents Feature qu'il rejette sont les tests rouges d'E1 (E10.1) |
 | 2026-10-30 | Meta de document : uniquement celles des ressources primaires (jamais des incluses) ; dans une collection, la première ressource qui pose une clé la garde, et le `toMeta()` de la collection l'emporte sur celles des ressources (E4) |
 | 2026-10-30 | M0 clos : la baseline (1 256 erreurs) est vidée par chaque EPIC sur le code qu'il réécrit, vide avant le tag (E11.9) ; `fixtures:update` et `benchmark` livrés avec E10.2 et E4.7 ; CI GitHub confirmée au premier push (E10) |
+| 2026-11-02 | `app()` du Gate isolé dans `Support\Gates` (seule exception à « conteneur dans `Laravel/` uniquement ») : les règles ne reçoivent que la requête (E11.9) |
+| 2026-11-02 | E11.1b abandonné ; E11.1 (1.10) plus tard ; site de doc (E11.5, E11.6, E8.4) après la release ; push, suppression de `roadmap-v2/` et tag en attente ; le contrat du générateur se vérifie dans son dépôt (E9, E3) |

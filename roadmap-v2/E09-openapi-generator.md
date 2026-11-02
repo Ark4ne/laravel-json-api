@@ -64,4 +64,5 @@ générateur garde ses propres fixtures.
 
 ## Critères de sortie
 
-- [ ] Le scénario JSON:API du générateur passe avec la V2 sans aucune réflexion sur nos classes
+- ~~Le scénario JSON:API du générateur passe avec la V2 sans aucune réflexion sur nos classes~~ : suivi dans le dépôt
+  `laravel-openapi-generator` (2026-11-02)
