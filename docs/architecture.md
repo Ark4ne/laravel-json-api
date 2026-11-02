@@ -126,7 +126,7 @@ final readonly class AttributeDefinition
 
 | Object | Content |
 | --- | --- |
-| `ResourceDefinition` | Resource class, `type`, attributes, relationships, declared links and meta, the routes of its links (`routes`, `RouteNames` of `#[JsonApiRoutes]`), diagnostics of its compilation |
+| `ResourceDefinition` | Resource class, `type`, attributes, relationships, declared links and meta of the resource object, top-level meta of the document (`documentMeta`, `toDocumentMeta()`), the routes of its links (`routes`, `RouteNames` of `#[JsonApiRoutes]`), diagnostics of its compilation |
 | `AttributeDefinition` | Name, dotted path inside structs, `ValueType`, nullable, format, enum class, item type, children (structs), conditional, sparse (`whenInFields`: out unless requested) |
 | `RelationshipDefinition` | Name, related resource classes (`related`: one, given or guessed from the model when compiled (`$this->one('user')`, `GuessedResource`), or those of `morphs`, the resource class of each model class of a polymorphic relationship; none for native resources, whose class is `native`), `Cardinality::One` / `Many`, `LoadDefinition`, `linkage`, declared links (and the names of those declared by name, `namedLinks`) and meta, conditional, source |
 | `LoadDefinition` | Relation paths eager-loaded when the relationship is included, and those loaded with a constraint closure |
@@ -143,8 +143,28 @@ Rules:
    `Definitions::for()`. Cycles (`post.author.posts`) cost nothing.
 4. **Defaults resolved at compilation.** A descriptor without explicit nullability or date format stores "unset"; the
    compiler resolves it from the `Configuration`, so a definition is always complete.
-5. **Semver.** Every public property and method of `Definition\*`, `Compilation\Definitions::for()` and
-   `JsonApiResource::definition()` follows semver: a change is a major version.
+5. **Semver.** The definition model is the public API of the package for the tools: a change is a major version.
+
+### The public contract for the tools
+
+What a tool (`laravel-openapi-generator`, `jsonapi:check`…) may read without reflection, under semver:
+
+- every public property and method of `Definition\*`, except the `@internal` methods of `DefinitionSource`;
+- `Compilation\Definitions::for()` (cached) and `::compile()` (from the current code), `JsonApiResource::definition()`
+  and `JsonApiCollection::definition()` (that of the resource it collects);
+- the cases of `ValueType`: a new case is a major version, so a tool may match them exhaustively; a custom value type
+  declares one of them;
+- `Http\Rules\Includes::resource()` and `Http\Rules\Fields::resource()`, the resource a rule validates against.
+
+What the definition leaves to the runtime:
+
+- the `id` is always rendered as a string (`ResourceObject::identify()`): there is no type to read;
+- a value without descriptor is `ValueType::Mixed`: a tool that wants more renders the resource on a sample of its
+  model, through its public API (`toResponse()`, `resolve()`);
+- the links and meta of a relationship object are closures: the definition tells whether they exist (`hasLinks`,
+  `hasMeta`, `hasIdentifierMeta`) and the names of the links declared by name (`namedLinks`), not their content;
+- the include paths and the fields of each type are those of the definitions reached through `related`; a relationship
+  to native resources (`native`) is a leaf whose fields are unknown.
 
 ## 4. Compilation: the probe
 

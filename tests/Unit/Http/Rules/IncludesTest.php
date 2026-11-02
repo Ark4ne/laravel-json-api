@@ -86,6 +86,12 @@ class IncludesTest extends TestCase
         self::assertSame([], self::errors(new Includes(UserCollection::class), 'posts.user,comments'));
     }
 
+    public function test_the_rule_tells_the_resource_it_validates_against(): void
+    {
+        self::assertSame(UserResource::class, (new Includes(UserResource::class))->resource());
+        self::assertSame(UserCollection::class, (new Includes(UserCollection::class))->resource());
+    }
+
     /**
      * @return list<string>
      */

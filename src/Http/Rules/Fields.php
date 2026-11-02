@@ -32,6 +32,17 @@ final class Fields implements ValidationRule
         private readonly string $resource,
     ) {}
 
+    /**
+     * The resource (or collection) the values are validated against: public contract, for the tools that document the
+     * rule.
+     *
+     * @return class-string<T>
+     */
+    public function resource(): string
+    {
+        return $this->resource;
+    }
+
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
         if (!is_array($value) || array_filter($value, static fn($fields) => $fields !== null && !is_string($fields)) !== []) {

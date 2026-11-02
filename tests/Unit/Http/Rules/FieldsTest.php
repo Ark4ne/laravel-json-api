@@ -112,6 +112,12 @@ class FieldsTest extends TestCase
         self::assertSame([], self::errors(new Fields(UserCollection::class), ['user' => 'name', 'comment' => 'content']));
     }
 
+    public function test_the_rule_tells_the_resource_it_validates_against(): void
+    {
+        self::assertSame(UserResource::class, (new Fields(UserResource::class))->resource());
+        self::assertSame(UserCollection::class, (new Fields(UserCollection::class))->resource());
+    }
+
     /**
      * @return list<string>
      */

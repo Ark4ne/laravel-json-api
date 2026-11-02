@@ -80,4 +80,11 @@ final class TypedResource extends JsonApiResource
             'created-at' => $this->datetime(),
         ];
     }
+
+    protected function toDocumentMeta(Request $request): iterable
+    {
+        return [
+            'version' => $this->integer(fn() => 1),
+        ];
+    }
 }

@@ -79,6 +79,7 @@ final readonly class DefinitionCompiler
             ->relationships(...$run['relationships'])
             ->links(...$run['links'])
             ->meta(...$run['meta'])
+            ->documentMeta(...$run['documentMeta'])
             ->routes($class::declaredRoutes());
 
         foreach ([...array_keys($definition->attributes), ...array_keys($definition->relationships)] as $name) {
@@ -163,6 +164,7 @@ final readonly class DefinitionCompiler
      *     relationships: list<RelationshipDefinition>,
      *     links: list<AttributeDefinition>,
      *     meta: list<AttributeDefinition>,
+     *     documentMeta: list<AttributeDefinition>,
      *     diagnostics: Diagnostics,
      * }
      */
@@ -201,6 +203,11 @@ final readonly class DefinitionCompiler
                 'toResourceMeta',
                 $diagnostics,
                 static fn() => $members->attributes($source->describeResourceMeta($request), 'resource-meta'),
+            ),
+            'documentMeta' => $this->guard(
+                'toDocumentMeta',
+                $diagnostics,
+                static fn() => $members->attributes($source->describeDocumentMeta($request), 'meta'),
             ),
             'diagnostics' => $diagnostics,
         ];

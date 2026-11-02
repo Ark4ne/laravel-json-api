@@ -12,9 +12,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - **Resource definitions.** `PostResource::definition()` (or `PostCollection::definition()`) returns the
   `ResourceDefinition` of a resource, compiled once from its hooks without a model: type, typed attributes, struct
-  members, relationships with their cardinality and eager-loads, links, meta. It is the public, immutable and
-  serializable model read by the validation rules and by external tools. `toDefinition()` lets a resource write it by
-  hand.
+  members, relationships with their cardinality and eager-loads, links, meta of the resource object and of the document
+  (`documentMeta`, from `toDocumentMeta()`). It is the public, immutable and serializable model read by the validation
+  rules and by external tools, under semver with `Definitions::for()` and the cases of `ValueType`
+  (`docs/architecture.md` §3). `toDefinition()` lets a resource write it by hand.
+- `Includes::resource()` and `Fields::resource()` return the resource a validation rule validates against, for the
+  tools that document the rules.
 - **Diagnostics** collected at compilation: eager attribute, `mergeWhen()`, member without name left out on the probe
   (`unnamed-member`), member named `id` or `type`, member that cannot be described, hook failing without a model. The members of `mergeWhen()` / `mergeUnless()` are missing from
   the definition whatever the condition, with a `merge-when` warning: `applyWhen()` is the way to group conditional

@@ -20,6 +20,8 @@ final readonly class ResourceDefinition
      * @param array<string, RelationshipDefinition> $relationships
      * @param array<string, AttributeDefinition> $links Links of the resource object (`toLinks()`)
      * @param array<string, AttributeDefinition> $meta Meta of the resource object (`toResourceMeta()`)
+     * @param array<string, AttributeDefinition> $documentMeta Top-level meta of the document it is the primary data of
+     *                                                         (`toDocumentMeta()`)
      * @param list<Diagnostic> $diagnostics Findings of the compilation
      * @param RouteNames|null $routes The routes its links are generated with (`#[JsonApiRoutes]`)
      */
@@ -30,6 +32,7 @@ final readonly class ResourceDefinition
         public array $relationships = [],
         public array $links = [],
         public array $meta = [],
+        public array $documentMeta = [],
         public array $diagnostics = [],
         public ?RouteNames $routes = null,
     ) {}
@@ -77,6 +80,14 @@ final readonly class ResourceDefinition
     public function meta(AttributeDefinition ...$meta): self
     {
         return $this->copy(meta: self::named($meta));
+    }
+
+    /**
+     * Replaces the top-level meta of the document.
+     */
+    public function documentMeta(AttributeDefinition ...$documentMeta): self
+    {
+        return $this->copy(documentMeta: self::named($documentMeta));
     }
 
     /**
@@ -137,6 +148,7 @@ final readonly class ResourceDefinition
      *     relationships: array<string, RelationshipDefinition>,
      *     links: array<string, AttributeDefinition>,
      *     meta: array<string, AttributeDefinition>,
+     *     documentMeta?: array<string, AttributeDefinition>,
      *     diagnostics: list<Diagnostic>,
      *     routes?: RouteNames|null,
      * } $properties
@@ -166,6 +178,7 @@ final readonly class ResourceDefinition
      * @param array<string, RelationshipDefinition>|null $relationships
      * @param array<string, AttributeDefinition>|null $links
      * @param array<string, AttributeDefinition>|null $meta
+     * @param array<string, AttributeDefinition>|null $documentMeta
      * @param list<Diagnostic>|null $diagnostics
      * @param RouteNames|false|null $routes `null` to keep the current ones, `false` for none
      */
@@ -174,6 +187,7 @@ final readonly class ResourceDefinition
         ?array $relationships = null,
         ?array $links = null,
         ?array $meta = null,
+        ?array $documentMeta = null,
         ?array $diagnostics = null,
         RouteNames|false|null $routes = null,
     ): self {
@@ -184,6 +198,7 @@ final readonly class ResourceDefinition
             relationships: $relationships ?? $this->relationships,
             links: $links ?? $this->links,
             meta: $meta ?? $this->meta,
+            documentMeta: $documentMeta ?? $this->documentMeta,
             diagnostics: $diagnostics ?? $this->diagnostics,
             routes: $routes === false ? null : $routes ?? $this->routes,
         );

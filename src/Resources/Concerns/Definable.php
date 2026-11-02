@@ -151,4 +151,14 @@ trait Definable
     {
         return $this->toResourceMeta($request) ?? [];
     }
+
+    /**
+     * @return iterable<array-key, mixed>
+     *
+     * @internal
+     */
+    public function describeDocumentMeta(Request $request): iterable
+    {
+        return $this->toDocumentMeta($request) ?? [];
+    }
 }

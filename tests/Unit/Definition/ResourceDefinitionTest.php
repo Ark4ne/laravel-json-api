@@ -42,6 +42,7 @@ final class ResourceDefinitionTest extends TestCase
             )
             ->links(AttributeDefinition::of('self', ValueType::String)->computed())
             ->meta(AttributeDefinition::of('created-at', ValueType::Date)->format('Y-m-d'))
+            ->documentMeta(AttributeDefinition::of('version', ValueType::String))
             ->diagnostics(new Diagnostic(DiagnosticLevel::Warning, 'code', 'Message', 'title'));
     }
 
@@ -53,6 +54,7 @@ final class ResourceDefinitionTest extends TestCase
         self::assertSame(['author', 'comments'], array_keys($definition->relationships));
         self::assertSame(['self'], array_keys($definition->links));
         self::assertSame(['created-at'], array_keys($definition->meta));
+        self::assertSame(['version'], array_keys($definition->documentMeta));
     }
 
     public function test_members_are_read_by_name(): void

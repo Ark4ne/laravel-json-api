@@ -309,6 +309,15 @@ final class DefinitionCompilerTest extends TestCase
         self::assertSame(ValueType::Date, $definition->meta['created-at']->type);
     }
 
+    public function test_the_document_meta_is_described_like_attributes(): void
+    {
+        $definition = $this->compile(TypedResource::class);
+
+        self::assertSame(['version'], array_keys($definition->documentMeta));
+        self::assertSame(ValueType::Integer, $definition->documentMeta['version']->type);
+        self::assertTrue($definition->documentMeta['version']->computed);
+    }
+
     public function test_a_well_written_resource_has_no_diagnostic(): void
     {
         self::assertSame([], $this->compile(TypedResource::class)->diagnostics);

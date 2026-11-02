@@ -96,4 +96,13 @@ interface DefinitionSource
      * @internal
      */
     public function describeResourceMeta(Request $request): iterable;
+
+    /**
+     * The raw top-level meta of the document (`toDocumentMeta()`).
+     *
+     * @return iterable<array-key, mixed>
+     *
+     * @internal
+     */
+    public function describeDocumentMeta(Request $request): iterable;
 }

@@ -30,6 +30,17 @@ final class Includes implements ValidationRule
         private readonly ?int $maxDepth = null,
     ) {}
 
+    /**
+     * The resource (or collection) the values are validated against: public contract, for the tools that document the
+     * rule.
+     *
+     * @return class-string<T>
+     */
+    public function resource(): string
+    {
+        return $this->resource;
+    }
+
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
         if (!is_string($value)) {
