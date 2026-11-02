@@ -108,7 +108,8 @@ class ResourceTest extends FeatureTestCase
         foreach ($included as $post) {
             self::assertIsArray($post);
             self::assertSame('post', $post['type'] ?? null);
-            self::assertSame(['title', 'content'], array_keys($post['attributes'] ?? []));
+            self::assertIsArray($post['attributes'] ?? null);
+            self::assertSame(['title', 'content'], array_keys($post['attributes']));
             self::assertArrayNotHasKey('relationships', $post);
         }
 

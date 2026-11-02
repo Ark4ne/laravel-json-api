@@ -12,7 +12,7 @@ use Illuminate\Http\Request;
  * @template T
  * @extends Value<T>
  */
-class ValueBool extends Value
+final class ValueBool extends Value
 {
     public function value(mixed $of, Request $request, Configuration $configuration): bool
     {

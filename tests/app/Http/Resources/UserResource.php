@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Test\app\Http\Resources;
 
 use Ark4ne\JsonApi\Resources\JsonApiResource;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Test\app\Models\User;
 
@@ -63,7 +65,7 @@ class UserResource extends JsonApiResource
                     related: fn() => "https://api.example.com/user/{$this->resource->id}/posts",
                 )
                 ->meta(fn() => [
-                    'total' => $this->resource->posts()->getQuery()->count(),
+                    'total' => $this->resource->posts()->toBase()->count(),
                 ])
                 ->withLoad(true),
             'comments' => $this->many()
@@ -73,9 +75,9 @@ class UserResource extends JsonApiResource
                     related: fn() => "https://api.example.com/user/{$this->resource->id}/comments",
                 )
                 ->meta(fn() => [
-                    'total' => $this->resource->comments()->getQuery()->count(),
+                    'total' => $this->resource->comments()->toBase()->count(),
                 ])
-                ->withLoad(['comments' => fn($q) => $q->where('content', 'like', '%e%')]),
+                ->withLoad(['comments' => fn(Builder|Relation $query) => $query->where('content', 'like', '%e%')]),
         ];
     }
 }

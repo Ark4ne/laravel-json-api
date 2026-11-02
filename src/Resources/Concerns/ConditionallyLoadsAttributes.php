@@ -154,9 +154,9 @@ trait ConditionallyLoadsAttributes
             if ($raw instanceof Describer) {
                 $value = $raw;
             } elseif ($raw instanceof Relationship) {
-                $value = RelationRaw::fromRelationship($raw);
+                $value = RelationRaw::wrap($raw->getResource(), static fn() => $raw);
             } else {
-                $value = new ValueMixed(is_callable($raw) ? $raw : static fn() => $raw);
+                $value = new ValueMixed($raw instanceof Closure ? $raw : static fn() => $raw);
             }
 
             return $value->when(static fn() => value($condition));

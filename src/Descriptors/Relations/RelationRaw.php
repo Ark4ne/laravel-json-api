@@ -6,27 +6,32 @@ namespace Ark4ne\JsonApi\Descriptors\Relations;
 
 use Ark4ne\JsonApi\Definition\DescribesRelationship;
 use Ark4ne\JsonApi\Definition\RelationshipDefinition;
-use Ark4ne\JsonApi\Resources\Relationship;
 use Closure;
 
 /**
+ * A relationship of a resource (`PostResource::relationship()`) wrapped as a descriptor, for `applyWhen()`.
+ *
  * @internal
+ *
+ * @extends Relation<mixed>
  */
 final class RelationRaw extends Relation
 {
-    private function __construct(string $related, Closure|string|null $relation)
+    /**
+     * @param class-string $related
+     */
+    private function __construct(string $related, Closure $relation)
     {
         parent::__construct($related, $relation);
     }
 
-    protected function value(Closure $value): Relationship
+    /**
+     * @param class-string $related
+     * @param Closure(): DescribesRelationship $relationship
+     */
+    public static function wrap(string $related, Closure $relationship): self
     {
-        return ($this->relation)();
-    }
-
-    public static function fromRelationship(Relationship $relationship): self
-    {
-        return new self($relationship->getResource(), static fn() => $relationship);
+        return new self($related, $relationship);
     }
 
     public function definition(string $name): RelationshipDefinition
@@ -45,9 +50,10 @@ final class RelationRaw extends Relation
     }
 
     /**
-     * The wrapped relationship, through its contract: the descriptors do not depend on the resources.
+     * The wrapped relationship, through its contract: the descriptors do not depend on the resources. Its conditions
+     * (`applyWhen()`) are those of this descriptor: `passes()`.
      */
-    private function relationship(): DescribesRelationship
+    public function relationship(): DescribesRelationship
     {
         $relation = $this->relation;
         assert($relation instanceof Closure);

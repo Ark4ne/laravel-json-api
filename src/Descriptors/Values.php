@@ -205,7 +205,7 @@ trait Values
     }
 
     /**
-     * @param Value<T> $type
+     * @param Value<*> $type
      * @param null|string|Closure(T):(array<mixed>|null) $attribute
      * @return ValueArray<T, mixed>
      */

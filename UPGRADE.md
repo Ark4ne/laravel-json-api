@@ -287,12 +287,34 @@ called a model method of one of these names through `$this` must call it on the 
 - `toId(Request $request): int|string|null` is a hook of the resources, read by the default `toIdentifier()`: a
   resource declaring a `toId()` of another signature must rename it.
 
+### Final classes
+
+The descriptors (`RelationOne`, `RelationMany`, `ValueString` and the other values), `Relationship`, `Filters`,
+`CallbackFilterRule` and `PolicyFilterRule` are `final`. A subclass of one of them must become a wrapper, or a
+`Closure` rule (`->when(fn($request, $model, $attribute) => …)`). `Support\Arr`, the `Descriptors\Descriptors` trait,
+`Descriptors\Resolver`, `Traits\HasRelationLoad` and `RelationMissing` are removed: use Laravel's `Arr`, and
+`withLoad()` on the descriptors and on `Relationship`.
+
+### `applyWhen()`
+
+- A relationship given to `applyWhen()` is now left out when the condition fails (1.x rendered it anyway).
+- Only a `Closure` member is called to read its value: another callable (`'strlen'`, `[$service, 'method']`) is rendered
+  as it is. Wrap it in a closure (`fn() => $service->method()`).
+
+### Casts
+
+`string()`, `integer()` and `float()` throw a `RenderingException` for a value they cannot cast (an array, an object
+that is not `Stringable`), and a resource whose identifier is neither an integer nor a string throws one too.
+
 ### Static analysis
 
 `JsonApiResource<User>` now types the descriptors: `$this->string()` is a `ValueString<User>`, `$this->one(…)` a
 `RelationOne<User>`. A hook annotated with `Relation<mixed>` or `Value<mixed>` (`@return iterable<string,
 Relation<mixed>>`) fails PHPStan: name the model (`Relation<User>`), or remove the `@return`, inherited from the
 parent. Nothing changes at runtime.
+
+`Filters` is no longer generic: replace `Filters<Post>` with `Filters`; `when()` takes a closure typed on the model
+(`fn(Request $request, Post $post) => …`).
 
 ### Deployment
 

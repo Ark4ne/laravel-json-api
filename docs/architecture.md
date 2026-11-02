@@ -75,7 +75,7 @@ Support ← Configuration ← Definition ← Descriptors ← Compilation ← Con
 | Support | `src/Support/` | Building blocks without internal dependency: `Arr`, `Values`, `Probe`, `Diagnostics` |
 | Configuration | `src/Configuration/` | `Configuration`: typed, validated, readonly view of `config/jsonapi.php` |
 | Definition | `src/Definition/` | Public immutable model: `ResourceDefinition`, `AttributeDefinition`, `RelationshipDefinition`, `ValueType`, `Cardinality`; the `DefinitionSource` contract |
-| Descriptors | `src/Descriptors/` | Fluent immutable builders (`ValueString`, `RelationMany`…), their `Condition`s and the value type registry |
+| Descriptors | `src/Descriptors/` | Fluent immutable builders (`ValueString`, `RelationMany`…), their conditions and the value type registry |
 | Compilation | `src/Compilation/` | `Definitions` (repository and memory cache), `DefinitionCompiler` (probe run), `CompiledDefinitions` (file cache) |
 | Context | `src/Context/` | `JsonApiContext`, `IncludeTree`, `SparseFieldsets` |
 | Loading | `src/Loading/` | `LoadPlanner`, `LoadPlan`, `LoadedRelations` |
@@ -94,6 +94,7 @@ Support ← Configuration ← Definition ← Descriptors ← Compilation ← Con
 - **Laravel.** Every layer may depend on `Illuminate\Contracts\*`, on `Illuminate\Http\Request` and on the Laravel
   classes it documents (`JsonResource`, `Model`, `Relation`…). Only the `Laravel` layer uses facades, global helpers
   (`config()`, `app()`, `request()`…) and the container. Checked by `phpat` and `spaze/phpstan-disallowed-calls`.
+  One exception: `Support\Gates` resolves the gate of the `can()` rules, closures that receive the request only.
 
 ## 3. The definition model
 
@@ -202,9 +203,11 @@ OPcache read.
 **describe** (`definition(string $name)`) and **resolve** a value for a given resource instance and context.
 
 - **Immutable.** Every fluent method returns a clone: a descriptor can be shared or reused without side effects.
-- **Conditions are objects.** `when()`, `unless()`, `whenHas()`, `whenFilled()`, `whenNotNull()`, `whenInFields()`,
-  `whenLoaded()`, `can()`… each add a `Condition` (**Specification** pattern) evaluated by the renderer. The
-  definition records that the field is conditional, and `whenInFields()` additionally marks it sparse.
+- **Conditions are rules.** `when()`, `unless()`, `whenHas()`, `whenFilled()`, `whenNotNull()`, `whenInFields()`,
+  `whenLoaded()`, `can()`… each add a rule, a `Closure(Request, model, string $attribute): bool`, to the immutable
+  list of the descriptor (`Describer::withRule()`); the renderer asks `passes()`, which requires every rule. The
+  definition records that the field is conditional (`isConditional()`), and `whenInFields()` additionally marks it
+  sparse. An application writes its own condition as a closure: `->when(fn(Request $request, Post $post) => …)`.
 - **Value types are a registry** (**Strategy** + **Registry**): each `Value` subclass declares its `ValueType` and how it
   casts a raw value. An application registers its own (`JsonApi::valueType('money', MoneyValue::class)`, or
   `describer.types`: the registry `Descriptors\ValueTypes` reads the `Configuration`, no static state), and the new
@@ -367,7 +370,6 @@ the application handles them as it would in any Laravel API.
 | Extension point | Interface | Registered by | Example |
 | --- | --- | --- | --- |
 | Value type | `Descriptors\Values\Value` (abstract base) | `JsonApi::valueType()` | `MoneyValue` |
-| Condition | `Descriptors\Condition` | Descriptor method or `->when(new MyCondition)` | `WhenFeatureCondition` |
 | Rendering stage | `Rendering\Stage` | Configuration (`rendering.stages`) | `TimestampsMetaStage` |
 | Error renderer | `Http\Errors\ErrorRenderer` | Configuration or service provider | `DomainErrorRenderer` |
 | Type naming | `Configuration\TypeNaming` (conventions of the package: `TypeConvention`) | Configuration (`type.naming`) | `PrefixedTypeNaming` |
@@ -395,13 +397,13 @@ Registries order their entries by priority, never by the order of a configuratio
 
 | Topic | Rule |
 | --- | --- |
-| Classes | `final` by default. Extensible base classes, listed in the architecture test: `JsonApiResource`, `JsonApiCollection`, `Descriptors\Values\Value`, `Descriptors\Values\ValueDateTime` (base of `ValueDate` and `ValueTime`), `Http\JsonApiFormRequest` |
+| Classes | `final` by default. Extensible base classes, listed in the architecture test: `JsonApiResource`, `JsonApiCollection`, `Descriptors\Describer` and `Descriptors\Relations\Relation` (abstract roots of the descriptors, extended by the package only), `Descriptors\Values\Value`, `Descriptors\Values\ValueDateTime` (base of `ValueDate` and `ValueTime`), `Http\JsonApiFormRequest` |
 | Traits | Only in `src/Resources/` |
 | Global state | No singleton, no mutable static property; the only static state is `Compilation\Definitions` (pure cache, configuration set once at boot) |
 | Facades and helpers | Only in `src/Laravel/` |
 | Types | `declare(strict_types=1)`, every signature typed, PHPStan max; `mixed` only for free values, documented |
 | PHPDoc | Generics on the public API (`JsonApiResource<User>`, `Value<User>`, `Closure(User): mixed`); no redundant PHPDoc |
-| Naming | Interfaces without suffix (`Stage`, `Condition`, `ErrorRenderer`); implementations named after what they handle (`AttributesStage`, `ValidationErrorRenderer`, `WhenHasCondition`) |
+| Naming | Interfaces without suffix (`Stage`, `ErrorRenderer`, `TypeNaming`); implementations named after what they handle (`AttributesStage`, `ValidationErrorRenderer`) |
 | Public API | Everything not documented as public is `@internal` and may change in a minor version |
 | Language | Everything is in English, `docs/` included |
 
@@ -435,9 +437,11 @@ Registries order their entries by priority, never by the order of a configuratio
 
 ### Add a condition
 
-1. Create `src/Descriptors/Conditions/<Name>Condition.php` implementing `Condition`.
-2. Add the fluent method on the descriptor (returning a clone).
-3. Unit test the condition alone and its effect on the definition (`conditional`, `sparse`).
+1. Add the fluent method on the descriptor (`Describer`, or `Value` / `Relation` when it applies to one kind only):
+   it returns `$this->when(fn(Request $request, mixed $model, string $attribute): bool => …)`, a clone with one more
+   rule.
+2. Unit test the rule (passing, failing, combined with another) and its effect on the definition (`conditional`,
+   `sparse`).
 
 ### Add an error renderer
 

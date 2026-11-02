@@ -33,7 +33,6 @@ class TypedArrayTest extends TestCase
         $input = ['php', 'laravel', 'json-api', true, 1.0];
         $result = $array->value($input, $this->request, Configuration::defaults());
 
-        self::assertIsArray($result);
         self::assertCount(5, $result);
         self::assertSame(['php', 'laravel', 'json-api', '1', '1'], $result);
     }
@@ -46,7 +45,6 @@ class TypedArrayTest extends TestCase
         $input = [1.5, '2', 3, '4.9'];
         $result = $array->value($input, $this->request, Configuration::defaults());
 
-        self::assertIsArray($result);
         self::assertCount(4, $result);
         self::assertSame([1, 2, 3, 4], $result);
     }
@@ -63,7 +61,6 @@ class TypedArrayTest extends TestCase
         ];
         $result = $array->value($input, $this->request, Configuration::defaults());
 
-        self::assertIsArray($result);
         self::assertCount(3, $result);
         self::assertSame([1, 0, 2], $result); // Assuming backed enum values
     }
@@ -83,7 +80,6 @@ class TypedArrayTest extends TestCase
         ];
         $result = $outerArray->value($input, $this->request, Configuration::defaults());
 
-        self::assertIsArray($result);
         self::assertCount(3, $result);
         self::assertSame([
             [1, 2, 3],
@@ -99,7 +95,6 @@ class TypedArrayTest extends TestCase
 
         $result = $array->value([], $this->request, Configuration::defaults());
 
-        self::assertIsArray($result);
         self::assertCount(0, $result);
     }
 
@@ -110,7 +105,6 @@ class TypedArrayTest extends TestCase
         $input = [1, 'string', true, 3.14];
         $result = $array->value($input, $this->request, Configuration::defaults());
 
-        self::assertIsArray($result);
         self::assertCount(4, $result);
         self::assertSame([1, 'string', true, 3.14], $result);
     }

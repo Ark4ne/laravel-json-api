@@ -105,7 +105,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `->when(fn($request, $user) => …)`, `struct()`) receive a `User`, and `when()` returns `MissingValue|` the type of
   its value. The hooks (`toRelationships()`, `toLinks()`, `toResourceMeta()`…) declare `Relation<T>` / `Value<T>`;
   `toLinks()` accepts link objects; `relationship()` gives a `Relationship<static>`, `collection()` a
-  `JsonApiCollection<static>`; `filters()` receives `Filters<mixed>`. Checked by PHPStan on `tests/Types`.
+  `JsonApiCollection<static>`; `filters()` receives `Filters`, whose `when()` accepts a closure typed on the related model; `array()->of()` and
+  `arrayOf()` accept a descriptor written for any model. Checked by PHPStan on `tests/Types`.
 - **Relationships without resource class**: `$this->one()`, `$this->one('user')`, `$this->many()` on a resource
   rendering an Eloquent model guess the related resource as `Model::toResource()` does: the model of the resource
   (`#[JsonApiModel(Post::class)]`, otherwise `App\Http\Resources\PostResource` → `App\Models\Post`), the related model of
@@ -261,6 +262,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - **Breaking:** `$this->uuid()`, `ulid()`, `decimal()`, `json()`, `time()` and `datetime()` in a resource return a
   value descriptor instead of calling the method of that name on the model: call it on `$this->resource`.
+- **Breaking:** the descriptors (`RelationOne`, `RelationMany`, `ValueString` and the other values), `Relationship`,
+  `Filters`, `CallbackFilterRule` and `PolicyFilterRule` are `final`; `Describer` and `Relation` stay abstract roots,
+  extended by the package only.
+- **Breaking:** `Filters` is no longer generic (`Filters` instead of `Filters<Post>`).
+- **Breaking:** `applyWhen()` calls a `Closure` member to read its value; another callable (`'strlen'`, `[$a, 'b']`)
+  is rendered as it is.
+- A `string()`, `integer()` or `float()` value that cannot be cast (an array, an object that is not `Stringable`)
+  throws a `RenderingException` naming the expected type, instead of a PHP error or a silent `0`/`'Array'`.
+- A resource whose identifier is neither an integer nor a string throws a `RenderingException`.
+- `array()` reads the items of a collection, an arrayable, an iterable, a `JsonSerializable` or the properties of an
+  object, a scalar as the only item and `null` as none.
+
+### Fixed
+
+- A relationship given to `applyWhen()` (`PostResource::relationship(...)`) is left out when the condition fails; it
+  was rendered whatever the condition.
+- A condition (`when()`, `unless()`) may return any truthy value, as Laravel's `when()`: a non-boolean result threw a
+  `TypeError`.
 
 ### Removed
 
@@ -285,3 +304,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **Breaking:** `ConditionallyLoadsAttributes::whenIncluded($request, $type, $value)` is renamed
   `whenInIncludes($request, $relationship, $value)`: `whenIncluded()` is only the one of the relationships.
 - `JsonApiResource::requestedRelationshipsLoad()` (internal), replaced by the `LoadPlanner`.
+- **Breaking:** `Support\Arr`, the `Descriptors\Descriptors` trait, `Descriptors\Resolver`, `Traits\HasRelationLoad`
+  and `Descriptors\Relations\RelationMissing`, unused or internal: use Laravel's `Arr`, and `withLoad()` on the
+  descriptors and on `Relationship`.

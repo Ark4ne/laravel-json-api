@@ -34,7 +34,7 @@ class FiltersTest extends TestCase
     }
 
     /**
-     * @param Filters<mixed> $filters
+     * @param Filters $filters
      *
      * @return array<mixed>
      */

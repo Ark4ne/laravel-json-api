@@ -40,6 +40,11 @@ final class ResourceTypes extends JsonApiResource
 
                 return $post->title;
             }),
+            // The items of an array are described whatever the model of the resource.
+            'tags' => $this->array('tags')->of($this->string()),
+            'scores' => $this->arrayOf($this->integer(), 'scores'),
+            // A condition may return any truthy value.
+            'state' => $this->string()->when(static fn($request, Post $post): mixed => $post->is_public),
             'content' => $this->string()->when(static function ($request, $post, $attribute): bool {
                 assertType('Illuminate\Http\Request', $request);
                 assertType('Test\app\Models\Post', $post);
@@ -56,8 +61,12 @@ final class ResourceTypes extends JsonApiResource
         assertType('Ark4ne\JsonApi\Descriptors\Relations\RelationMany<Test\app\Models\Post>', $this->many());
 
         assertType('Ark4ne\JsonApi\Resources\Relationship<Test\app\Http\Resources\UserResource>', UserResource::relationship(fn() => $this->resource->user));
+        // A filter callback names the related model it is written for.
+        $this->many(PostResource::class)->filters(
+            static fn($filters) => $filters->when(static fn(Request $request, Post $post): bool => $post->is_public),
+        );
         $this->many(CommentResource::class)->filters(static function ($filters) {
-            assertType('Ark4ne\JsonApi\Filters\Filters<mixed>', $filters);
+            assertType('Ark4ne\JsonApi\Filters\Filters', $filters);
 
             return $filters;
         });

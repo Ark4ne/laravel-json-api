@@ -106,6 +106,29 @@ abstract class FeatureTestCase extends TestCase
     }
 
     /**
+     * The identifiers of the included resources, in order.
+     *
+     * @param TestResponse<\Symfony\Component\HttpFoundation\Response> $response
+     *
+     * @return list<array{type: string, id: string}>
+     */
+    protected function includedIdentifiers(TestResponse $response): array
+    {
+        $included = $response->json('included');
+        self::assertIsArray($included);
+
+        $identifiers = [];
+        foreach ($included as $resource) {
+            self::assertIsArray($resource);
+            self::assertIsString($resource['type'] ?? null);
+            self::assertIsString($resource['id'] ?? null);
+            $identifiers[] = ['type' => $resource['type'], 'id' => $resource['id']];
+        }
+
+        return $identifiers;
+    }
+
+    /**
      * Asserts the document of a response is the expected file `expected/<name>.json` next to the test class.
      * `composer fixtures:update` (`JSONAPI_FIXTURES_UPDATE=1`) writes the files instead: review them in the diff.
      *
@@ -146,6 +169,7 @@ abstract class FeatureTestCase extends TestCase
 
     private static function loadSeed(): void
     {
+        /** @var list<array{query: string, bindings: array<mixed>, time: float|null}>|null $seed */
         static $seed;
 
         DB::beginTransaction();

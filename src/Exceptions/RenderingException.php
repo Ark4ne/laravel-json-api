@@ -37,6 +37,23 @@ final class RenderingException extends LogicException implements JsonApiExceptio
     }
 
     /**
+     * The default `toIdentifier()` found no identifier: neither `toId()`, a model key nor an `id` attribute, as an
+     * integer or a string.
+     */
+    public static function noIdentifier(string $resource): self
+    {
+        return new self("[{$resource}] has no identifier: give its resource an id, or implement toId().");
+    }
+
+    /**
+     * A value of a `string()`, `integer()` or `float()` has no scalar form (an array, an object without `__toString()`).
+     */
+    public static function notCastable(mixed $value, string $type): self
+    {
+        return new self('[' . get_debug_type($value) . "] cannot be rendered as {$type}: give a scalar value.");
+    }
+
+    /**
      * A date value is neither a date, a timestamp nor a string.
      */
     public static function notADate(mixed $value): self

@@ -112,8 +112,10 @@ class ValuesTest extends TestCase
 
     /**
      * Return a list of data to test hasAttribute method
+     *
+     * @return array<string, array{mixed, string, bool, mixed}>
      */
-    public static function dataAttribute()
+    public static function dataAttribute(): array
     {
         return [
             'array' => [['a' => 1], 'a', true, 1],
@@ -136,7 +138,7 @@ class ValuesTest extends TestCase
      * @dataProvider dataAttribute
      */
     #[DataProvider('dataAttribute')]
-    public function test_has_attribute_reads_arrays_objects_and_models(mixed $data, mixed $attribute, mixed $expected, mixed $_ignored): void
+    public function test_has_attribute_reads_arrays_objects_and_models(mixed $data, string $attribute, bool $expected, mixed $_ignored): void
     {
         self::assertEquals($expected, Values::hasAttribute($data, $attribute));
     }
@@ -145,8 +147,27 @@ class ValuesTest extends TestCase
      * @dataProvider dataAttribute
      */
     #[DataProvider('dataAttribute')]
-    public function test_get_attribute_reads_arrays_objects_and_models(mixed $data, mixed $attribute, mixed $has, mixed $expected): void
+    public function test_get_attribute_reads_arrays_objects_and_models(mixed $data, string $attribute, bool $has, mixed $expected): void
     {
         self::assertEquals($expected, Values::getAttribute($data, $attribute));
+    }
+
+    public function test_the_attributes_of_a_wrapped_resource_are_those_of_the_resource_it_wraps(): void
+    {
+        $object = new JsonResource(new JsonResource((object) ['id' => 7]));
+        $array = new JsonResource(['id' => 8]);
+
+        self::assertTrue(Values::hasAttribute($object, 'id'));
+        self::assertSame(7, Values::getAttribute($object, 'id'));
+        self::assertTrue(Values::hasAttribute($array, 'id'));
+        self::assertSame(8, Values::getAttribute($array, 'id'));
+        self::assertFalse(Values::hasAttribute($object, 'name'));
+        self::assertNull(Values::getAttribute($object, 'name'));
+    }
+
+    public function test_a_value_that_is_neither_an_array_nor_an_object_has_no_attribute(): void
+    {
+        self::assertFalse(Values::hasAttribute('scalar', 'id'));
+        self::assertNull(Values::getAttribute(null, 'id'));
     }
 }

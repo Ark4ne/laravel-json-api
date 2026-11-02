@@ -17,12 +17,14 @@ trait AsApiController
     abstract protected function getModelClass(): string;
 
     /**
-     * @return class-string<\Ark4ne\JsonApi\Resources\JsonApiResource>
+     * @return class-string<JsonApiResource<*>>
      */
     abstract protected function getResourceClass(): string;
 
     /**
      * Display a listing of the resource.
+     *
+     * @return JsonApiCollection<JsonApiResource<*>>
      */
     public function index(Request $request): JsonApiCollection
     {
@@ -50,6 +52,8 @@ trait AsApiController
 
     /**
      * Display the specified resource.
+     *
+     * @return JsonApiResource<*>
      */
     public function show(Request $request, string $id): JsonApiResource
     {

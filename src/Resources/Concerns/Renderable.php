@@ -9,10 +9,12 @@ use Ark4ne\JsonApi\Configuration\Linkage;
 use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Descriptors\Relations\Relation;
+use Ark4ne\JsonApi\Descriptors\Relations\RelationRaw;
 use Ark4ne\JsonApi\Loading\LoadedRelations;
 use Ark4ne\JsonApi\Rendering\RelationshipSource;
 use Ark4ne\JsonApi\Resources\Relationship;
 use Ark4ne\JsonApi\Support\Values;
+use Illuminate\Http\Resources\MissingValue;
 use Illuminate\Http\Resources\PotentiallyMissing;
 
 /**
@@ -92,11 +94,20 @@ trait Renderable
             $name = (string) Describer::retrieveName($relationship, $key);
             $definition = $definitions[$name] ?? null;
 
-            if ($relationship instanceof Relation) {
+            if ($relationship instanceof RelationRaw) {
+                // A relationship of `applyWhen()`: rendered without data when its condition fails, as a descriptor is.
+                $raw = $relationship->relationship();
+                if (!$raw instanceof Relationship) {
+                    continue;
+                }
+                $relationship = $relationship->passes($context->request, $model, $name)
+                    ? $raw
+                    : $raw->withValue(static fn() => new MissingValue());
+            } elseif ($relationship instanceof Relation) {
                 // A resource guessed from the model is that of the definition: guessed once, when compiled.
-                $relationship = $relationship
+                $relationship = Relationship::declared($relationship
                     ->resolveRelated($name, $definition?->related[0] ?? $definition?->native)
-                    ->resolveFor($context->request, $model, $name, $context->configuration);
+                    ->resolveFor($context->request, $model, $name, $context->configuration));
             } elseif (!$relationship instanceof Relationship) {
                 continue;
             }

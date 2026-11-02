@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Filters;
 
+use Ark4ne\JsonApi\Support\Gates;
 use Illuminate\Contracts\Auth\Access\Gate;
 use Illuminate\Http\Request;
 
 /**
- * @template Resource
+ * @template TModel
  *
- * @implements FilterRule<Resource>
+ * @implements FilterRule<TModel>
  */
-class PolicyFilterRule implements FilterRule
+final class PolicyFilterRule implements FilterRule
 {
     /**
      * @param iterable<string>|string $abilities
@@ -27,12 +28,12 @@ class PolicyFilterRule implements FilterRule
 
     /**
      * @param Request $request
-     * @param Resource $model
+     * @param TModel $model
      * @return bool
      */
     public function passes(Request $request, mixed $model): bool
     {
-        return app($this->gateClass)
+        return Gates::resolve($this->gateClass)
             ->forUser($request->user($this->guard))
             ->allows($this->abilities, [$model, ...$this->arguments]);
     }

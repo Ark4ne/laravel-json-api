@@ -8,7 +8,6 @@ use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Descriptors\Values\Value;
 use Ark4ne\JsonApi\Descriptors\Values\ValueStruct;
-use Ark4ne\JsonApi\Support\Arr;
 use Closure;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Http\Resources\MergeValue;
@@ -121,7 +120,7 @@ final readonly class ValueResolver
             $value = $value->toArray();
         }
 
-        return is_array($value) ? Arr::toArray($value) : $value;
+        return is_array($value) ? array_map(self::plain(...), $value) : $value;
     }
 
     private static function isMissing(mixed $value): bool

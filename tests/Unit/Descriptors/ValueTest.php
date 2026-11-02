@@ -31,8 +31,11 @@ use Test\Support\Reflect;
 use Test\TestCase;
 use UnitEnum;
 
-class ValueTest extends TestCase
+final class ValueTest extends TestCase
 {
+    /**
+     * @return array<string, array{mixed}>
+     */
     public static function models(): array
     {
         return [
@@ -42,7 +45,10 @@ class ValueTest extends TestCase
         ];
     }
 
-    public static function values()
+    /**
+     * @return array<string, array{class-string<Value<mixed>>, mixed, mixed, mixed}>
+     */
+    public static function values(): array
     {
         date_default_timezone_set('Europe/London');
 
@@ -81,13 +87,16 @@ class ValueTest extends TestCase
         ];
     }
 
-    public static function modelsValues()
+    /**
+     * @return array<string, list<mixed>>
+     */
+    public static function modelsValues(): array
     {
         $set = [];
 
         foreach (self::values() as $v => $value) {
             foreach (self::models() as $m => $model) {
-                $set["$v.$m"] = [...$model, ...$value];
+                $set["{$v}.{$m}"] = [$model[0], ...$value];
             }
         }
 
@@ -100,7 +109,7 @@ class ValueTest extends TestCase
     #[DataProvider('values')]
     public function test_each_value_casts_the_raw_value_to_its_type(mixed $class, mixed $value, mixed $excepted, mixed $_ignored): void
     {
-        /** @var \Ark4ne\JsonApi\Descriptors\Values\Value $v */
+        /** @var Value<mixed> $v */
         $v = new $class(null);
         self::assertEquals($excepted, Reflect::invoke($v, 'value', $value, new Request(), Configuration::defaults()));
     }
@@ -113,7 +122,7 @@ class ValueTest extends TestCase
     {
         data_set($model, 'attr', $value);
 
-        /** @var \Ark4ne\JsonApi\Descriptors\Values\Value $v */
+        /** @var Value<mixed> $v */
         $v = new $class('attr');
         self::assertEquals(
             $excepted,
@@ -129,7 +138,7 @@ class ValueTest extends TestCase
     {
         data_set($model, 'attr', null);
 
-        /** @var \Ark4ne\JsonApi\Descriptors\Values\Value $v */
+        /** @var Value<mixed> $v */
         $v = new $class('attr');
         self::assertNull($v->valueFor(new Request(), $model, 'attr'));
     }
@@ -142,10 +151,10 @@ class ValueTest extends TestCase
     {
         data_set($model, 'attr', null);
 
-        /** @var \Ark4ne\JsonApi\Descriptors\Values\Value $v */
+        /** @var Value<mixed> $v */
         $v = new $class('attr');
         self::assertNull($v->valueFor(new Request(), $model, 'attr'));
-        /** @var \Ark4ne\JsonApi\Descriptors\Values\Value $v */
+        /** @var Value<mixed> $v */
         $v = new $class('attr');
         self::assertTrue($v->isNullable());
         $v = $v->nullable(false);
@@ -297,6 +306,70 @@ class ValueTest extends TestCase
         );
     }
 
+    public function test_the_members_of_a_struct_resolve_their_descriptors_against_the_model(): void
+    {
+        $model = new class (['b' => 1, 'f' => 123]) extends Model {
+            protected $fillable = ['b', 'f'];
+        };
+        $struct = new ValueStruct(static fn() => [
+            'a' => 'abc',
+            'b' => new ValueMixed(null),
+            'c' => new ValueMixed('c'),
+            'd' => new ValueMixed(fn() => 'd'),
+            new ValueMixed('e'),
+            new ValueMixed('f'),
+        ]);
+
+        self::assertSame(
+            ['a' => 'abc', 'b' => 1, 'c' => null, 'd' => 'd', 'e' => null, 'f' => 123],
+            $struct->valueFor(new Request(), $model, 'struct'),
+        );
+        self::assertSame([], (new ValueStruct(static fn() => []))->valueFor(new Request(), $model, 'struct'));
+    }
+
+    /**
+     * @return iterable<string, array{Value<mixed>, mixed}>
+     */
+    public static function uncastable(): iterable
+    {
+        yield 'string of an array' => [new ValueString(null), ['a']];
+        yield 'string of an object' => [new ValueString(null), new stdClass()];
+        yield 'integer of an array' => [new ValueInteger(null), ['a']];
+        yield 'float of an object' => [new ValueFloat(null), new stdClass()];
+    }
+
+    /**
+     * @param Value<mixed> $value
+     */
+    #[DataProvider('uncastable')]
+    public function test_a_value_without_scalar_form_cannot_be_cast(Value $value, mixed $raw): void
+    {
+        $this->expectException(RenderingException::class);
+        $this->expectExceptionMessage('cannot be rendered as');
+
+        Reflect::invoke($value, 'value', $raw, new Request(), Configuration::defaults());
+    }
+
+    public function test_scalars_and_stringables_are_cast(): void
+    {
+        $request = new Request();
+        $configuration = Configuration::defaults();
+
+        self::assertSame('1', Reflect::invoke(new ValueString(null), 'value', 1, $request, $configuration));
+        self::assertSame('abc', Reflect::invoke(new ValueString(null), 'value', str('abc'), $request, $configuration));
+        self::assertSame(12, Reflect::invoke(new ValueInteger(null), 'value', '12', $request, $configuration));
+        self::assertSame(1.5, Reflect::invoke(new ValueFloat(null), 'value', '1.5', $request, $configuration));
+    }
+
+    public function test_a_condition_may_return_any_truthy_value_as_laravel_s_when_does(): void
+    {
+        $value = new ValueMixed(static fn() => 'shown');
+
+        self::assertSame('shown', $value->when(static fn() => 1)->valueFor(new Request(), [], 'v'));
+        self::assertInstanceOf(MissingValue::class, $value->when(static fn() => 0)->valueFor(new Request(), [], 'v'));
+        self::assertInstanceOf(MissingValue::class, $value->unless(static fn() => 'yes')->valueFor(new Request(), [], 'v'));
+    }
+
     public function test_float_precision_rounds_to_the_given_digits(): void
     {
         $request = new Request();
@@ -321,7 +394,7 @@ class ValueTest extends TestCase
         self::assertEquals('1640995200', Reflect::invoke($v, 'value', '2022-01-01 00:00:00', $request, Configuration::defaults()));
     }
 
-    private function throughRetrieverTest(&$model, Closure $missing, Closure $update, Closure $check, $expected): void
+    private function throughRetrieverTest(mixed &$model, Closure $missing, Closure $update, Closure $check, mixed $expected): void
     {
         $valueWithRetriever = new ValueBool('attr');
         self::assertInstanceOf(MissingValue::class, $missing($valueWithRetriever));

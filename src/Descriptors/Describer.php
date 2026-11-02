@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Ark4ne\JsonApi\Descriptors;
 
 use Ark4ne\JsonApi\Configuration\Configuration;
+use Ark4ne\JsonApi\Support\Values;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MissingValue;
-use Illuminate\Support\Arr;
 
 /**
  * @template T
@@ -21,9 +21,10 @@ abstract class Describer
     protected array $rules = [];
 
     /**
-     * Display field whether the given condition is true.
+     * Renders the member only when the condition holds: a closure receives the request, the model and the name of the
+     * member, and may return any truthy value, as with Laravel's `when()`.
      *
-     * @param bool|Closure(Request, T, string):bool $condition
+     * @param bool|Closure(Request, T, string): mixed $condition
      *
      * @return static
      */
@@ -33,13 +34,13 @@ abstract class Describer
             Request $request,
             mixed   $model,
             string  $attribute,
-        ): bool => $condition instanceof Closure ? $condition($request, $model, $attribute) : $condition);
+        ): bool => (bool) ($condition instanceof Closure ? $condition($request, $model, $attribute) : $condition));
     }
 
     /**
-     * Display field whether the given condition is true.
+     * Renders the member only when the condition does not hold (see `when()`).
      *
-     * @param bool|Closure(Request, T, string):bool $condition
+     * @param bool|Closure(Request, T, string): mixed $condition
      *
      * @return static
      */
@@ -49,7 +50,7 @@ abstract class Describer
             Request $request,
             mixed   $model,
             string  $attribute,
-        ): bool => !($condition instanceof Closure ? $condition($request, $model, $attribute) : $condition));
+        ): bool => !(bool) ($condition instanceof Closure ? $condition($request, $model, $attribute) : $condition));
     }
 
     /**
@@ -162,7 +163,7 @@ abstract class Describer
 
     private function retrieveValue(mixed $model, string $attribute): mixed
     {
-        $value = static fn($attr) => Arr::accessible($model) ? $model[$attr] : $model->$attr;
+        $value = static fn(string $attr): mixed => Values::getAttribute($model, $attr);
 
         $retriever = $this->retriever();
         if ($retriever === null) {
@@ -203,9 +204,9 @@ abstract class Describer
     public static function retrieveName(mixed $value, int|string $key, ?string $prefix = null): int|string
     {
         if (is_int($key) && $value instanceof self && is_string($retriever = $value->retriever())) {
-            return $prefix ? $prefix . '.' . $retriever : $retriever;
+            $key = $retriever;
         }
 
-        return $prefix ? $prefix . '.' . $key : $key;
+        return $prefix !== null && $prefix !== '' ? $prefix . '.' . $key : $key;
     }
 }

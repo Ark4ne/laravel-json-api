@@ -24,7 +24,8 @@ final class MakeResourceCommandTest extends FeatureTestCase
 
         $this->base = sys_get_temp_dir() . '/jsonapi-make-' . bin2hex(random_bytes(4));
         (new Filesystem())->ensureDirectoryExists("{$this->base}/app");
-        $this->app?->useAppPath("{$this->base}/app");
+        self::assertNotNull($this->app);
+        $this->app->useAppPath("{$this->base}/app");
         // Detected from `composer.json` and the path of the application otherwise.
         Reflect::set($this->app, 'namespace', 'App\\');
     }

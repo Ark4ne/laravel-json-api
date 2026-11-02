@@ -44,7 +44,7 @@ abstract class JsonApiResource extends JsonResource implements DefinitionSource,
     use Concerns\ToResponse;
 
     /** @var T */
-    public $resource;
+    public $resource; // @phpstan-ignore property.phpDocType (narrows Laravel's mixed to the model: JsonApiResource<User>)
 
     /**
      * A value type the application registers (`JsonApi::valueType('money', MoneyValue::class)`) is written
@@ -96,7 +96,7 @@ abstract class JsonApiResource extends JsonResource implements DefinitionSource,
      *
      * @return JsonApiCollection<static>
      */
-    public static function collection($resource): JsonApiCollection
+    public static function collection($resource): JsonApiCollection // @phpstan-ignore method.childReturnType (a JSON:API collection, not Laravel's anonymous one)
     {
         return new JsonApiCollection($resource, static::class);
     }

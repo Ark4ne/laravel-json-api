@@ -18,7 +18,7 @@ use UnitEnum;
  * @template U of UnitEnum
  * @extends Value<T>
  */
-class ValueEnum extends Value
+final class ValueEnum extends Value
 {
     /**
      * @var class-string<U>|null

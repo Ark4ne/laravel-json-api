@@ -19,11 +19,12 @@ use Test\app\Factories\UserFactory;
  * @property DateTimeInterface $updated_at
  *
  * @property-read Post|null $post
- * @property-read Post[]|\Illuminate\Support\Collection<Post> $posts
- * @property-read Comment[]|\Illuminate\Support\Collection<Comment> $comments
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Post> $posts
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Comment> $comments
  */
 class User extends Model
 {
+    /** @use HasFactory<UserFactory> */
     use HasFactory;
 
     protected static function newFactory(): UserFactory
@@ -31,16 +32,25 @@ class User extends Model
         return new UserFactory();
     }
 
+    /**
+     * @return BelongsTo<Post, $this>
+     */
     public function post(): BelongsTo
     {
         return $this->belongsTo(Post::class);
     }
 
+    /**
+     * @return HasMany<Post, $this>
+     */
     public function posts(): HasMany
     {
         return $this->hasMany(Post::class);
     }
 
+    /**
+     * @return HasMany<Comment, $this>
+     */
     public function comments(): HasMany
     {
         return $this->hasMany(Comment::class);

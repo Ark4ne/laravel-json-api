@@ -9,18 +9,22 @@ use Ark4ne\JsonApi\Definition\AttributeDefinition;
 use Ark4ne\JsonApi\Definition\ValueType;
 use Ark4ne\JsonApi\Descriptors\ValueTypes;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Enumerable;
+use JsonSerializable;
+use Traversable;
 
 /**
  * @template T
  * @template U
  * @extends Value<T>
  */
-class ValueArray extends Value
+final class ValueArray extends Value
 {
     /**
-     * @var string|Value<U>|null
+     * @var string|Value<*>|null The descriptor of the items, whatever the model it was written for
      */
     protected string|Value|null $type = null;
 
@@ -28,7 +32,7 @@ class ValueArray extends Value
      * Define the type of elements in the array: a descriptor, or a value type by its name (`'integer'`, a registered
      * `'money'`) or its class, resolved against the configuration
      *
-     * @param string|class-string<Value<U>>|Value<U> $type
+     * @param string|Value<*> $type
      * @return static
      *
      * @throws DefinitionException when a class is given that needs more than an attribute (a struct)
@@ -64,12 +68,32 @@ class ValueArray extends Value
         $type = $this->itemType($configuration);
 
         if ($type === null) {
-            return (new Collection($of))->toArray();
+            return self::items($of)->toArray();
         }
 
-        return (new Collection($of))
+        return self::items($of)
             ->map(fn($item) => $type->value($item, $request, $configuration))
             ->toArray();
+    }
+
+    /**
+     * The items of the raw value, as Laravel's `Collection` reads them: the items of a collection, an arrayable or an iterable, the result
+     * of a `JsonSerializable`, the properties of another object, a scalar as the only item, `null` as none.
+     *
+     * @return Collection<array-key, mixed>
+     */
+    private static function items(mixed $of): Collection
+    {
+        return new Collection(match (true) {
+            $of === null => [],
+            is_array($of) => $of,
+            $of instanceof Enumerable => $of->all(),
+            $of instanceof Arrayable => $of->toArray(),
+            $of instanceof Traversable => iterator_to_array($of),
+            $of instanceof JsonSerializable => (array) $of->jsonSerialize(),
+            is_object($of) => get_object_vars($of),
+            default => [$of],
+        });
     }
 
     protected function valueType(): ValueType
@@ -78,7 +102,7 @@ class ValueArray extends Value
     }
 
     /**
-     * @return Value<mixed>|null
+     * @return Value<*>|null
      */
     private function itemType(Configuration $configuration): ?Value
     {

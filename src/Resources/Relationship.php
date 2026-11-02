@@ -12,6 +12,7 @@ use Ark4ne\JsonApi\Definition\DescribesRelationship;
 use Ark4ne\JsonApi\Definition\LoadDefinition;
 use Ark4ne\JsonApi\Definition\RelatedResource;
 use Ark4ne\JsonApi\Definition\RelationshipDefinition;
+use Ark4ne\JsonApi\Descriptors\Relations\DeclaredRelationship;
 use Ark4ne\JsonApi\Descriptors\Relations\Links;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Exceptions\RenderingException;
@@ -21,8 +22,10 @@ use Ark4ne\JsonApi\Rendering\RenderableResource;
 use Ark4ne\JsonApi\Rendering\ResolvedRelationship;
 use Ark4ne\JsonApi\Support\Morphs;
 use Ark4ne\JsonApi\Support\Values;
-use Ark4ne\JsonApi\Traits\HasRelationLoad;
 use Closure;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\Relation as EloquentRelation;
+use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Http\Resources\JsonApi\JsonApiResource as NativeJsonApiResource;
 use Illuminate\Http\Resources\MissingValue;
@@ -30,12 +33,10 @@ use Illuminate\Http\Resources\MissingValue;
 use function value;
 
 /**
- * @template T as JsonApiResource|JsonApiCollection|NativeJsonApiResource
+ * @template T as JsonResource The related resource: of the package, Laravel's `JsonApiResource`, or a collection of them
  */
-class Relationship implements DescribesRelationship, RelationshipSource
+final class Relationship implements DescribesRelationship, RelationshipSource
 {
-    use HasRelationLoad;
-
     /** Filters run on a relation that is not loaded: it is read resource by resource. */
     public const FILTER_ON_UNLOADED = 'filter-on-unloaded';
 
@@ -55,7 +56,13 @@ class Relationship implements DescribesRelationship, RelationshipSource
      */
     protected ?Closure $loaded = null;
 
-    /** @var Filters<mixed>|null */
+    /**
+     * The relations loaded to render the relationship, `null` when not declared (`withLoad()`).
+     *
+     * @var bool|string|array<string, callable(Builder|EloquentRelation):mixed>|array<array-key, string|string[]|mixed>|null
+     */
+    protected bool|string|array|null $load = null;
+
     protected ?Filters $filters = null;
 
     /** @var list<string> The links declared by name (`links(self: …)`) */
@@ -75,6 +82,43 @@ class Relationship implements DescribesRelationship, RelationshipSource
         protected ?Closure $meta = null,
         protected ?Closure $identifierMeta = null,
     ) {}
+
+    /**
+     * The relationship a relation descriptor declares for one resource (`Relation::resolveFor()`).
+     *
+     * @internal
+     *
+     * @return self<*>
+     *
+     * @throws DefinitionException when the related class is not a resource
+     */
+    public static function declared(DeclaredRelationship $declared): self
+    {
+        $related = $declared->related;
+        if (!is_a($related, JsonResource::class, true)) {
+            throw DefinitionException::notADefinitionSource($related);
+        }
+
+        $relationship = new self($related, $declared->value, $declared->links, $declared->meta, $declared->identifierMeta);
+
+        if ($declared->cardinality === Cardinality::Many) {
+            $relationship->asCollection();
+        }
+
+        if ($declared->linkage !== null) {
+            $relationship->linkage($declared->linkage);
+        }
+
+        if ($declared->morphs !== []) {
+            $relationship->withMorphs($declared->morphs);
+        }
+
+        if ($declared->filters !== null) {
+            $relationship->withFilters($declared->filters);
+        }
+
+        return $relationship;
+    }
 
     /**
      * Re-set value for relation
@@ -133,6 +177,20 @@ class Relationship implements DescribesRelationship, RelationshipSource
     public function identifierMeta(Closure $identifierMeta): self
     {
         $this->identifierMeta = $identifierMeta;
+
+        return $this;
+    }
+
+    /**
+     * The Eloquent relations loaded to render the relationship, as `Relation::withLoad()`.
+     *
+     * @param bool|string|array<string, callable(Builder|EloquentRelation):mixed>|array<array-key, string|string[]|mixed> $load
+     *
+     * @return $this
+     */
+    public function withLoad(bool|string|array $load): self
+    {
+        $this->load = $load;
 
         return $this;
     }
@@ -241,7 +299,7 @@ class Relationship implements DescribesRelationship, RelationshipSource
     /**
      * Set filters for the relationship
      *
-     * @param Filters<mixed> $filters
+     * @param Filters $filters
      * @return $this
      */
     public function withFilters(Filters $filters): static
@@ -373,9 +431,11 @@ class Relationship implements DescribesRelationship, RelationshipSource
             return ResolvedRelationship::toMany($related, $links, $meta, $identifierMeta);
         }
 
-        $renderable = $resource instanceof NativeJsonApiResource
-            ? new NativeResource($resource, NativeResource::requestOf($context->request))
-            : $resource;
+        $renderable = match (true) {
+            $resource instanceof NativeJsonApiResource => new NativeResource($resource, NativeResource::requestOf($context->request)),
+            $resource instanceof RenderableResource => $resource,
+            default => throw DefinitionException::notADefinitionSource($resource::class),
+        };
 
         return $renderable->renderedModel() !== null
             ? ResolvedRelationship::toOne($renderable, $links, $meta, $this->identifierMetaOf($resource))

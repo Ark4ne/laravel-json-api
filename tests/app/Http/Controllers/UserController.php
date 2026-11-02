@@ -23,16 +23,25 @@ class UserController extends Controller
         return User::class;
     }
 
+    /**
+     * @return class-string<JsonApiResource<*>>
+     */
     protected function getResourceClass(): string
     {
         return UserResource::class;
     }
 
+    /**
+     * @return JsonApiCollection<JsonApiResource<*>>
+     */
     public function index(UserRequest $request): JsonApiCollection
     {
         return $this->apiIndex($request);
     }
 
+    /**
+     * @return JsonApiResource<*>
+     */
     public function show(UserRequest $request, string $id): JsonApiResource
     {
         return $this->apiShow($request, $id);

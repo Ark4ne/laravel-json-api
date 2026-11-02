@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
 use Ark4ne\JsonApi\Compilation\Definitions;
+use Ark4ne\JsonApi\Exceptions\RenderingException;
+use Ark4ne\JsonApi\Support\Values;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 
@@ -54,11 +56,11 @@ trait Identifier
             return $id;
         }
 
-        if ($this->resource instanceof Model) {
-            return $this->resource->getKey();
-        }
+        $id = $this->resource instanceof Model
+            ? $this->resource->getKey()
+            : Values::getAttribute($this->resource, 'id');
 
-        return $this->resource->id;
+        return is_int($id) || is_string($id) ? $id : throw RenderingException::noIdentifier(static::class);
     }
 
     /**

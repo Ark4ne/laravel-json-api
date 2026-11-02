@@ -18,13 +18,13 @@ trait PrepareData
     protected ?bool $autoWhenIncluded = null;
 
     /**
-     * @template TKey as array-key
-     * @template TValue
-     * @param iterable<TKey, TValue> $data
+     * The members of a hook, the `MergeValue`s merged in place.
      *
-     * @return iterable<TKey, TValue>
+     * @param iterable<mixed> $data
+     *
+     * @return array<array-key, mixed>
      */
-    protected function mergeValues(iterable $data): iterable
+    protected function mergeValues(iterable $data): array
     {
         return Values::mergeValues($data);
     }

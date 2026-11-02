@@ -57,7 +57,7 @@ The resource **describes**, the definition is **compiled once**, the renderer **
   hooks on a `Probe`; they are the public contract read by the rules and by external tools.
 - A `JsonApiContext` (fields, include, path, configuration, diagnostics) is passed explicitly: no static state, no
   singleton (the only static cache is `Compilation\Definitions`).
-- Descriptors are immutable fluent builders; conditions are `Condition` objects; value types live in a registry.
+- Descriptors are immutable fluent builders; conditions are rules (`Closure(Request, model, attribute): bool`); value types live in a registry.
 - Classes are `final` (except the base classes listed in the architecture test); traits only in `src/Resources/`;
   `declare(strict_types=1)`; PHPStan max.
 

@@ -7,7 +7,6 @@ namespace Test\Unit\Descriptors;
 use Ark4ne\JsonApi\Configuration\Linkage;
 use Ark4ne\JsonApi\Definition\Cardinality;
 use Ark4ne\JsonApi\Descriptors\Relations\RelationMany;
-use Ark4ne\JsonApi\Descriptors\Relations\RelationMissing;
 use Ark4ne\JsonApi\Descriptors\Relations\RelationOne;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Resources\Relationship;
@@ -18,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MissingValue;
 use Illuminate\Support\Facades\Gate;
+use LogicException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use stdClass;
 use Test\app\Http\Resources\CommentResource;
@@ -32,6 +32,9 @@ use Test\Unit\Rendering\Fixtures\Contexts;
 
 class RelationTest extends TestCase
 {
+    /**
+     * @return list<array{mixed}>
+     */
     public static function resourceProvider(): array
     {
         return [
@@ -41,78 +44,68 @@ class RelationTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider resourceProvider
-     */
     #[DataProvider('resourceProvider')]
     public function test_when_included_sets_the_linkage_of_the_relationship(mixed $model): void
     {
         $stub = new RelationOne(UserResource::class, fn() => null);
 
-        $relation = $stub->resolveFor(new Request(), $model, 'null');
-        self::assertInstanceOf(Relationship::class, $relation);
-        self::assertNull(Reflect::get($relation, 'linkage'));
+        self::assertNull($stub->resolveFor(new Request(), $model, 'null')->linkage);
 
         $stub = $stub->whenIncluded();
-        $relation = $stub->resolveFor(new Request(), $model, 'null');
-        self::assertInstanceOf(Relationship::class, $relation);
-        self::assertSame(Linkage::Included, Reflect::get($relation, 'linkage'));
+        self::assertSame(Linkage::Included, $stub->resolveFor(new Request(), $model, 'null')->linkage);
 
         $stub = $stub->whenIncluded(false);
-        $relation = $stub->resolveFor(new Request(), $model, 'null');
-        self::assertInstanceOf(Relationship::class, $relation);
-        self::assertSame(Linkage::Always, Reflect::get($relation, 'linkage'));
+        self::assertSame(Linkage::Always, $stub->resolveFor(new Request(), $model, 'null')->linkage);
 
         $stub = $stub->whenIncluded(true);
-        $relation = $stub->resolveFor(new Request(), $model, 'null');
-        self::assertInstanceOf(Relationship::class, $relation);
-        self::assertSame(Linkage::Included, Reflect::get($relation, 'linkage'));
+        self::assertSame(Linkage::Included, $stub->resolveFor(new Request(), $model, 'null')->linkage);
     }
 
-
-    /**
-     * @dataProvider resourceProvider
-     */
     #[DataProvider('resourceProvider')]
-    public function test_the_meta_closure_is_given_to_the_relationship(mixed $model): void
+    public function test_the_meta_and_links_closures_are_declared_for_the_relationship(mixed $model): void
     {
         $stub = new RelationOne(UserResource::class, fn() => null);
 
-        $relation = $stub->resolveFor(new Request(), $model, 'null');
+        $declared = $stub->resolveFor(new Request(), $model, 'null');
+        self::assertNull($declared->meta);
+        self::assertNull($declared->links);
 
-        self::assertInstanceOf(Relationship::class, $relation);
-        self::assertEmpty(Reflect::get($relation, 'meta'));
+        $declared = $stub->meta(fn() => ['meta'])->links(fn() => ['links'])->resolveFor(new Request(), $model, 'null');
+        self::assertSame(['meta'], ($declared->meta ?? self::fail())());
+        self::assertSame(['links'], ($declared->links ?? self::fail())());
+    }
 
-        $stub = $stub->meta(fn() => ['test']);
-        $relation = $stub->resolveFor(new Request(), $model, 'null');
+    #[DataProvider('resourceProvider')]
+    public function test_the_related_value_is_read_only_when_the_conditions_pass(mixed $model): void
+    {
+        $stub = new RelationOne(UserResource::class, fn() => 'related');
 
-        self::assertInstanceOf(Relationship::class, $relation);
-        self::assertInstanceOf(Closure::class, Reflect::get($relation, 'meta'));
-        self::assertEquals(['test'], Reflect::get($relation, 'meta')());
+        self::assertSame('related', ($stub->resolveFor(new Request(), $model, 'any')->value)());
+        self::assertInstanceOf(MissingValue::class, ($stub->when(false)->resolveFor(new Request(), $model, 'any')->value)());
+    }
+
+    public function test_the_declared_relationship_knows_its_resource_and_cardinality(): void
+    {
+        $one = (new RelationOne(UserResource::class, null))->resolveFor(new Request(), [], 'author');
+        $many = (new RelationMany(CommentResource::class, null))->resolveFor(new Request(), [], 'comments');
+
+        self::assertSame(UserResource::class, $one->related);
+        self::assertSame(Cardinality::One, $one->cardinality);
+        self::assertSame(CommentResource::class, $many->related);
+        self::assertSame(Cardinality::Many, $many->cardinality);
+    }
+
+    public function test_an_unresolved_related_resource_cannot_be_declared(): void
+    {
+        $this->expectException(LogicException::class);
+
+        (new RelationOne(null, null))->resolveFor(new Request(), [], 'author');
     }
 
     /**
-     * @dataProvider resourceProvider
+     * @return list<array{string, string|Closure|null, string}>
      */
-    #[DataProvider('resourceProvider')]
-    public function test_the_links_closure_is_given_to_the_relationship(mixed $model): void
-    {
-        $stub = new RelationOne(UserResource::class, fn() => null);
-
-        $relation = $stub->resolveFor(new Request(), $model, 'null');
-
-        self::assertInstanceOf(Relationship::class, $relation);
-        self::assertEmpty(Reflect::get($relation, 'links'));
-
-        $stub = $stub->links(fn() => ['test']);
-        $relation = $stub->resolveFor(new Request(), $model, 'null');
-
-        self::assertInstanceOf(Relationship::class, $relation);
-        self::assertInstanceOf(Closure::class, Reflect::get($relation, 'links'));
-        self::assertEquals(['test'], Reflect::get($relation, 'links')());
-    }
-
-    public static function dataWhenLoaded()
+    public static function dataWhenLoaded(): array
     {
         return [
             ['attr', null, 'attr'],
@@ -137,7 +130,10 @@ class RelationTest extends TestCase
         self::assertFalse($check);
     }
 
-    public static function dataWhenPivotLoaded()
+    /**
+     * @return list<array{string, string|Closure|null, string}>
+     */
+    public static function dataWhenPivotLoaded(): array
     {
         return [
             ['attr', null, 'attr'],
@@ -208,22 +204,6 @@ class RelationTest extends TestCase
         self::assertFalse($relation->passes(new Request(), ['public' => false], 'author'));
     }
 
-    /**
-     * @dataProvider resourceProvider
-     */
-    #[DataProvider('resourceProvider')]
-    public function test_a_missing_relation_renders_a_relationship_without_value(mixed $model): void
-    {
-        $missing = RelationMissing::fromRelationship(new Relationship(UserResource::class, fn() => null));
-
-        $check = Reflect::invoke($missing, 'check', new Request(), $model, 'any');
-        $value = Reflect::invoke($missing, 'valueFor', new Request(), $model, 'any');
-
-        self::assertFalse($check);
-        self::assertInstanceOf(Relationship::class, $value);
-        self::assertInstanceOf(MissingValue::class, value(Reflect::get($value, 'value')));
-    }
-
     public function test_the_definition_records_the_related_resource_and_the_cardinality(): void
     {
         $one = (new RelationOne(UserResource::class, null))->definition('author');
@@ -248,7 +228,6 @@ class RelationTest extends TestCase
     {
         $this->expectException(DefinitionException::class);
 
-        /** @phpstan-ignore argument.type */
         (new RelationOne(stdClass::class, null))->definition('other');
     }
 
@@ -342,9 +321,9 @@ class RelationTest extends TestCase
             (new User())->forceFill(['id' => 2])->setRelation('membership', (new Pivot())->forceFill(['user_id' => 2])),
         ]));
 
-        $relationship = (new RelationMany(UserResource::class, 'members'))
+        $relationship = Relationship::declared((new RelationMany(UserResource::class, 'members'))
             ->pivotMeta(['role'], 'membership')
-            ->resolveFor(new Request(), $post, 'members');
+            ->resolveFor(new Request(), $post, 'members'));
 
         self::assertTrue($relationship->definition('members')->hasIdentifierMeta);
         self::assertSame([['role' => 'owner'], []], $relationship->resolve(Contexts::of(), true)->identifierMeta);
@@ -352,9 +331,9 @@ class RelationTest extends TestCase
 
     public function test_pivot_meta_of_a_related_resource_without_pivot_is_empty(): void
     {
-        $relationship = (new RelationMany(UserResource::class, 'members'))
+        $relationship = Relationship::declared((new RelationMany(UserResource::class, 'members'))
             ->pivotMeta(['role'])
-            ->resolveFor(new Request(), ['members' => [(object) ['id' => 1]]], 'members');
+            ->resolveFor(new Request(), ['members' => [(object) ['id' => 1]]], 'members'));
 
         self::assertSame([[]], $relationship->resolve(Contexts::of(), true)->identifierMeta);
     }

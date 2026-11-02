@@ -6,13 +6,14 @@ namespace Ark4ne\JsonApi\Descriptors\Values;
 
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Definition\ValueType;
+use Ark4ne\JsonApi\Exceptions\RenderingException;
 use Illuminate\Http\Request;
 
 /**
  * @template T
  * @extends Value<T>
  */
-class ValueFloat extends Value
+final class ValueFloat extends Value
 {
     /** `null` until set: the configuration decides (`describer.precision`). */
     protected ?int $precision = null;
@@ -37,7 +38,7 @@ class ValueFloat extends Value
 
     public function value(mixed $of, Request $request, Configuration $configuration): float
     {
-        $float = (float) $of;
+        $float = is_scalar($of) || $of === null ? (float) $of : throw RenderingException::notCastable($of, 'a float');
         $precision = $this->precision ?? $configuration->precision;
 
         if ($precision === null) {

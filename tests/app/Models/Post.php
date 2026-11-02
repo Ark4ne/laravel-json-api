@@ -17,19 +17,21 @@ use Test\app\Factories\PostFactory;
  * @property State $state
  * @property string $title
  * @property string $content
+ * @property bool $is_public
  * @property DateTimeInterface $created_at
  * @property DateTimeInterface $updated_at
  *
  * @property-read User $user
- * @property-read Comment[]|\Illuminate\Support\Collection<Comment> $comments
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Comment> $comments
  */
 class Post extends Model
 {
+    /** @use HasFactory<PostFactory> */
     use HasFactory;
 
-    /** @var array<string, mixed> */
     protected $casts = [
         'state' => State::class,
+        'is_public' => 'boolean',
     ];
 
     protected static function newFactory(): PostFactory
@@ -37,13 +39,19 @@ class Post extends Model
         return new PostFactory();
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * @return HasMany<Comment, $this>
+     */
     public function comments(): HasMany
     {
-        return $this->hasMany(Comment::class);
+        return $this->hasMany(Comment::class, 'post_id');
     }
 }

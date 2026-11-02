@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Test\Architecture;
 
+use Ark4ne\JsonApi\Descriptors\Describer;
+use Ark4ne\JsonApi\Descriptors\Relations\Relation;
 use Ark4ne\JsonApi\Descriptors\Values\Value;
 use Ark4ne\JsonApi\Descriptors\Values\ValueDateTime;
 use Ark4ne\JsonApi\Http\JsonApiFormRequest;
@@ -48,6 +50,8 @@ final class ArchitectureTest
     private const BASE_CLASSES = [
         JsonApiResource::class,
         JsonApiCollection::class,
+        Describer::class,
+        Relation::class,
         Value::class,
         ValueDateTime::class,
         JsonApiFormRequest::class,
@@ -123,7 +127,7 @@ final class ArchitectureTest
         return PHPat::rule()
             ->classes(Selector::AllOf(Selector::inNamespace(self::ROOT), Selector::isInterface()))
             ->shouldBeNamed('/^(?!.*Interface$).*$/', true)
-            ->because('interfaces are named after a role: Stage, Condition, ErrorRenderer.');
+            ->because('interfaces are named after a role: Stage, ErrorRenderer, TypeNaming.');
     }
 
     private static function layer(string $layer): ClassNamespace

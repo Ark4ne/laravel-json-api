@@ -14,9 +14,8 @@ use Ark4ne\JsonApi\Definition\RelationshipDefinition;
 use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Filters\Filters;
-use Ark4ne\JsonApi\Resources\Relationship;
+use Ark4ne\JsonApi\Support\Gates;
 use Ark4ne\JsonApi\Support\Values;
-use Ark4ne\JsonApi\Traits\HasRelationLoad;
 use Closure;
 use Illuminate\Contracts\Auth\Access\Gate;
 use Illuminate\Database\Eloquent\Builder;
@@ -25,7 +24,7 @@ use Illuminate\Database\Eloquent\Relations\Relation as EloquentRelation;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\MissingValue;
-use Illuminate\Support\Arr;
+use LogicException;
 
 /**
  * @template T
@@ -33,15 +32,18 @@ use Illuminate\Support\Arr;
  */
 abstract class Relation extends Describer implements DescribesRelationship
 {
-    use HasRelationLoad;
-
+    /**
+     * The relations loaded to render the relationship, `null` when not declared (`withLoad()`).
+     *
+     * @var bool|string|array<string, callable(Builder|EloquentRelation):mixed>|array<array-key, string|string[]|mixed>|null
+     */
+    protected bool|string|array|null $load = null;
     protected ?Closure $links = null;
     /** @var list<string> The links declared by name (`links(self: …)`) */
     protected array $linkNames = [];
     protected ?Closure $meta = null;
     protected ?Closure $identifierMeta = null;
     protected ?Linkage $linkage = null;
-    /** @var Filters<mixed>|null */
     protected ?Filters $filters = null;
 
     /**
@@ -50,8 +52,8 @@ abstract class Relation extends Describer implements DescribesRelationship
     protected array $morphs = [];
 
     /**
-     * @param class-string<\Ark4ne\JsonApi\Resources\JsonApiResource|\Ark4ne\JsonApi\Resources\JsonApiCollection|\Illuminate\Http\Resources\JsonApi\JsonApiResource>|null $related
-     *        `null` to guess it from the model of `$resource` (`GuessedResource`)
+     * @param class-string|null $related The related resource class (a JSON:API resource or collection of the package, or
+     *        a Laravel `JsonApiResource`), `null` to guess it from the model of `$resource` (`GuessedResource`)
      * @param string|Closure|null $relation
      * @param class-string|null $resource The resource declaring the relationship
      */
@@ -64,7 +66,7 @@ abstract class Relation extends Describer implements DescribesRelationship
     /**
      * The resource class given, `null` when guessed from the model (`$this->one('author')`).
      *
-     * @return class-string<\Ark4ne\JsonApi\Resources\JsonApiResource|\Ark4ne\JsonApi\Resources\JsonApiCollection|\Illuminate\Http\Resources\JsonApi\JsonApiResource>|null
+     * @return class-string|null
      */
     public function related(): ?string
     {
@@ -204,7 +206,7 @@ abstract class Relation extends Describer implements DescribesRelationship
     /**
      * Renders only the related resources passing every rule of the filters.
      *
-     * @param Closure(Filters<mixed>): Filters<mixed> $filters Receives empty filters and returns them with their
+     * @param Closure(Filters): Filters $filters Receives empty filters and returns them with their
      *                                                        rules (`fn(Filters $filters) => $filters->can('view')`):
      *                                                        they are immutable
      * @return static
@@ -229,11 +231,9 @@ abstract class Relation extends Describer implements DescribesRelationship
             $gateClass,
             $guard,
         ): bool {
-            $gate = app($gateClass);
-
-            return $gate instanceof Gate
-                ? $gate->forUser($request->user($guard))->allows($abilities, [$model, ...$arguments])
-                : throw DefinitionException::notAGate($gateClass);
+            return Gates::resolve($gateClass)
+                ->forUser($request->user($guard))
+                ->allows($abilities, [$model, ...$arguments]);
         });
     }
 
@@ -314,12 +314,22 @@ abstract class Relation extends Describer implements DescribesRelationship
         });
     }
 
+    /**
+     * What the relationship renders for the model: the related value is read only when every condition passes, a
+     * `MissingValue` otherwise.
+     *
+     * @param T $model
+     *
+     * @throws LogicException when the related resource is not resolved (`resolveRelated()`)
+     *
+     * @internal Turned into a `Resources\Relationship` by the resource.
+     */
     public function resolveFor(
         Request $request,
         mixed $model,
         string $attribute,
         ?Configuration $configuration = null,
-    ): Relationship {
+    ): DeclaredRelationship {
         $retriever = $this->retriever();
 
         if ($retriever instanceof Closure) {
@@ -327,26 +337,21 @@ abstract class Relation extends Describer implements DescribesRelationship
         } else {
             $value = static fn() => match (true) {
                 $model instanceof Model => $model->getRelationValue($retriever ?? $attribute),
-                Arr::accessible($model) => $model[$retriever ?? $attribute],
-                default => $model->{$retriever ?? $attribute},
+                default => Values::getAttribute($model, $retriever ?? $attribute),
             };
         }
 
-        $relation = $this->resolveRelated($attribute)->value(fn() => $this->check($request, $model, $attribute) ? $value() : new MissingValue());
-
-        if ($this->linkage !== null) {
-            $relation->linkage($this->linkage);
-        }
-
-        if ($this->morphs !== []) {
-            $relation->withMorphs($this->morphs);
-        }
-
-        if ($this->filters !== null) {
-            $relation->withFilters($this->filters);
-        }
-
-        return $relation;
+        return new DeclaredRelationship(
+            $this->related ?? throw new LogicException('The related resource is resolved by resolveRelated() first.'),
+            $this->cardinality(),
+            fn() => $this->check($request, $model, $attribute) ? $value() : new MissingValue(),
+            $this->links,
+            $this->meta,
+            $this->identifierMeta,
+            $this->linkage,
+            $this->morphs,
+            $this->filters,
+        );
     }
 
     /**
@@ -404,6 +409,4 @@ abstract class Relation extends Describer implements DescribesRelationship
     {
         return Cardinality::One;
     }
-
-    abstract protected function value(Closure $value): Relationship;
 }

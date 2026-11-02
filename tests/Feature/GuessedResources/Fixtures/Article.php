@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Test\Feature\GuessedResources\Fixtures;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Test\app\Models\Comment;
 use Test\app\Models\Post;
 
 /**
@@ -16,14 +14,6 @@ use Test\app\Models\Post;
 final class Article extends Post
 {
     protected $table = 'posts';
-
-    /**
-     * @return HasMany<Comment, $this>
-     */
-    public function comments(): HasMany
-    {
-        return $this->hasMany(Comment::class, 'post_id');
-    }
 
     /**
      * @return BelongsTo<Writer, $this>

@@ -9,6 +9,9 @@ use Test\app\Models\Comment;
 use Test\app\Models\Post;
 use Test\app\Models\User;
 
+/**
+ * @extends Factory<Comment>
+ */
 class CommentFactory extends Factory
 {
     protected $model = Comment::class;

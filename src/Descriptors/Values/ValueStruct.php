@@ -7,8 +7,8 @@ namespace Ark4ne\JsonApi\Descriptors\Values;
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Definition\AttributeDefinition;
 use Ark4ne\JsonApi\Definition\ValueType;
+use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Descriptors\Members;
-use Ark4ne\JsonApi\Descriptors\Resolver;
 use Ark4ne\JsonApi\Support\Diagnostics;
 use Ark4ne\JsonApi\Support\Values;
 use Closure;
@@ -19,10 +19,8 @@ use Illuminate\Support\Collection;
  * @template T
  * @extends Value<T>
  */
-class ValueStruct extends Value
+final class ValueStruct extends Value
 {
-    use Resolver;
-
     protected mixed $resource;
 
     public function __construct(Closure $values)
@@ -42,16 +40,24 @@ class ValueStruct extends Value
     }
 
     /**
-     * @param iterable<array-key, mixed> $of
-     * @param Request $request
+     * The members the closure returns, each descriptor resolved against the model.
+     *
+     * @param mixed $of The members, by name
      *
      * @return array<array-key, mixed>
      */
     public function value(mixed $of, Request $request, Configuration $configuration): array
     {
-        $attributes = Values::mergeValues($this->resolveValues($request, Values::mergeValues($of), $configuration));
+        $resolved = [];
 
-        return (new Collection($attributes))->toArray();
+        foreach (is_iterable($of) ? Values::mergeValues($of) : [] as $key => $member) {
+            $name = Describer::retrieveName($member, $key);
+            $resolved[$name] = \value($member instanceof Describer
+                ? $member->valueFor($request, $this->resource, (string) $name, $configuration)
+                : $member);
+        }
+
+        return (new Collection(Values::mergeValues($resolved)))->toArray();
     }
 
     /**

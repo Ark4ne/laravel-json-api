@@ -33,7 +33,7 @@ class JsonApiCollection extends ResourceCollection
     /**
      * @var class-string<T>
      */
-    public $collects;
+    public $collects; // @phpstan-ignore property.phpDocType (narrows Laravel's string to the resource collected)
 
     /**
      * The definition of the resources this collection collects.
@@ -53,7 +53,7 @@ class JsonApiCollection extends ResourceCollection
      */
     public function __construct($resource, ?string $collects = null)
     {
-        $this->collects = $collects ?: $this->collects;
+        $this->collects = $collects ?? $this->collects;
 
         parent::__construct($resource);
     }
@@ -120,7 +120,7 @@ class JsonApiCollection extends ResourceCollection
     private function renderableResources(JsonApiContext $context): array
     {
         $resources = [];
-        foreach ($this->collection as $resource) {
+        foreach ($this->collection ?? [] as $resource) {
             if ($resource instanceof RenderableResource) {
                 $resources[] = $resource;
             }

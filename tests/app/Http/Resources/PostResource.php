@@ -42,7 +42,7 @@ class PostResource extends JsonApiResource
             )->meta(fn() => [
                 'total' => $this->resource->relationLoaded('comments')
                     ? $this->resource->comments->count()
-                    : $this->resource->comments()->getQuery()->count(),
+                    : $this->resource->comments()->toBase()->count(),
             ])->withLoad('comments'),
         ];
     }

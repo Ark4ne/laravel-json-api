@@ -14,7 +14,7 @@ dépendance vers eux.
 ## Progression
 
 <!-- progress:start -->
-**Avancement global : `████████░░` 89 % (140 / 156 livrables)**
+**Avancement global : `█████████░` 90 % (141 / 156 livrables)**
 
 | EPIC | Jalon | Statut | Avancement | Livrables |
 | --- | --- | --- | --- | --- |
@@ -29,7 +29,7 @@ dépendance vers eux.
 | [E8 — Positionnement face au JSON:API natif de Laravel](E08-natif-laravel.md) | M5 | En cours | `████████░░` 85 % | 6 / 7 |
 | [E9 — Contrat public pour `laravel-openapi-generator`](E09-openapi-generator.md) | M5 | En cours | `████████░░` 83 % | 5 / 6 |
 | [E10 — Stratégie de tests et qualité](E10-tests.md) | M0 → M5 | En cours | `███████░░░` 77 % | 7 / 9 |
-| [E11 — Documentation, migration et release](E11-release.md) | M5 | En cours | `██░░░░░░░░` 25 % | 3 / 12 |
+| [E11 — Documentation, migration et release](E11-release.md) | M5 | En cours | `███░░░░░░░` 33 % | 4 / 12 |
 <!-- progress:end -->
 
 ## Mettre à jour la progression

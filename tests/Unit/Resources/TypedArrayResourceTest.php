@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Test\Unit\Resources;
 
 use Ark4ne\JsonApi\Resources\JsonApiResource;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use PHPUnit\Framework\Assert;
 use Test\Support\Stub;
 use Test\TestCase;
 
-class TypedArrayResourceTest extends TestCase
+final class TypedArrayResourceTest extends TestCase
 {
     public function test_an_array_of_strings_casts_each_item_to_a_string(): void
     {
@@ -18,7 +20,7 @@ class TypedArrayResourceTest extends TestCase
             'tags' => ['php', 'laravel', 'json-api', true, 1.0],
         ]);
 
-        $resource = new class ($model) extends JsonApiResource {
+        $resource = new /** @extends JsonApiResource<Model> */ class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'article';
@@ -50,7 +52,7 @@ class TypedArrayResourceTest extends TestCase
             'scores' => [1.5, '2', 3, '4.9'],
         ]);
 
-        $resource = new class ($model) extends JsonApiResource {
+        $resource = new /** @extends JsonApiResource<Model> */ class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'game';
@@ -82,7 +84,7 @@ class TypedArrayResourceTest extends TestCase
             'prices' => [10, '20.5', 30.75, '40'],
         ]);
 
-        $resource = new class ($model) extends JsonApiResource {
+        $resource = new /** @extends JsonApiResource<Model> */ class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'product';
@@ -118,7 +120,7 @@ class TypedArrayResourceTest extends TestCase
             ],
         ]);
 
-        $resource = new class ($model) extends JsonApiResource {
+        $resource = new /** @extends JsonApiResource<Model> */ class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'matrix';
@@ -157,7 +159,7 @@ class TypedArrayResourceTest extends TestCase
             'tags' => [],
         ]);
 
-        $resource = new class ($model) extends JsonApiResource {
+        $resource = new /** @extends JsonApiResource<Model> */ class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'article';
@@ -189,7 +191,7 @@ class TypedArrayResourceTest extends TestCase
             'mixed' => [1, 'string', true, 3.14],
         ]);
 
-        $resource = new class ($model) extends JsonApiResource {
+        $resource = new /** @extends JsonApiResource<Model> */ class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'mixed-data';
@@ -223,7 +225,7 @@ class TypedArrayResourceTest extends TestCase
             'prices' => [10.5, 20.75],
         ]);
 
-        $resource = new class ($model) extends JsonApiResource {
+        $resource = new /** @extends JsonApiResource<Model> */ class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'complex';
@@ -263,7 +265,7 @@ class TypedArrayResourceTest extends TestCase
             'flags' => [true, false, 1, 0, 'true', ''],
         ]);
 
-        $resource = new class ($model) extends JsonApiResource {
+        $resource = new /** @extends JsonApiResource<Model> */ class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'flags';
@@ -295,7 +297,7 @@ class TypedArrayResourceTest extends TestCase
             'numbers' => [1, 2, 3, 4, 5],
         ]);
 
-        $resource = new class ($model) extends JsonApiResource {
+        $resource = new /** @extends JsonApiResource<Model> */ class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'calculated';
@@ -306,7 +308,12 @@ class TypedArrayResourceTest extends TestCase
                 return [
                     'doubled' => $this->arrayOf(
                         $this->integer(),
-                        fn() => array_map(fn($n) => $n * 2, $this->numbers),
+                        static function (Model $model): array {
+                            $numbers = $model->getAttribute('numbers');
+                            Assert::assertIsArray($numbers);
+
+                            return array_map(static fn(mixed $n): mixed => is_int($n) ? $n * 2 : $n, $numbers);
+                        },
                     ),
                 ];
             }
@@ -337,7 +344,7 @@ class TypedArrayResourceTest extends TestCase
             'flags' => [true, false, 1, 0],
         ]);
 
-        $resource = new class ($model) extends JsonApiResource {
+        $resource = new /** @extends JsonApiResource<Model> */ class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'conditional-item';
@@ -371,7 +378,7 @@ class TypedArrayResourceTest extends TestCase
             'flags' => [true, false, 1, 0],
         ]);
 
-        $resource = new class ($model) extends JsonApiResource {
+        $resource = new /** @extends JsonApiResource<Model> */ class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'conditional-array';
@@ -401,7 +408,7 @@ class TypedArrayResourceTest extends TestCase
             'flags' => [true, false, 1, 0],
         ]);
 
-        $resource = new class ($model) extends JsonApiResource {
+        $resource = new /** @extends JsonApiResource<Model> */ class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'conditional-array-true';
@@ -433,7 +440,7 @@ class TypedArrayResourceTest extends TestCase
             'absent' => null,
         ]);
 
-        $resource = new class ($model) extends JsonApiResource {
+        $resource = new /** @extends JsonApiResource<Model> */ class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'when-not-null';
@@ -467,7 +474,7 @@ class TypedArrayResourceTest extends TestCase
             'empty' => [],
         ]);
 
-        $resource = new class ($model) extends JsonApiResource {
+        $resource = new /** @extends JsonApiResource<Model> */ class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'when-filled';
@@ -501,7 +508,7 @@ class TypedArrayResourceTest extends TestCase
             'existing' => [1, 2, 3],
         ]);
 
-        $resource = new class ($model) extends JsonApiResource {
+        $resource = new /** @extends JsonApiResource<Model> */ class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'when-has';
@@ -534,7 +541,7 @@ class TypedArrayResourceTest extends TestCase
             'tags' => ['php', 'laravel'],
         ]);
 
-        $resource = new class ($model) extends JsonApiResource {
+        $resource = new /** @extends JsonApiResource<Model> */ class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'unless';
@@ -569,7 +576,7 @@ class TypedArrayResourceTest extends TestCase
             'is_admin' => true,
         ]);
 
-        $resource = new class ($model) extends JsonApiResource {
+        $resource = new /** @extends JsonApiResource<Model> */ class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'closure-condition';
@@ -581,11 +588,11 @@ class TypedArrayResourceTest extends TestCase
                     'admin_tags' => $this->arrayOf(
                         $this->string(),
                         'admin_tags',
-                    )->when(fn() => $this->is_admin),
+                    )->when(static fn(Request $request, Model $model): mixed => $model->getAttribute('is_admin')),
                     'user_tags' => $this->arrayOf(
                         $this->string(),
                         'user_tags',
-                    )->unless(fn() => $this->is_admin),
+                    )->unless(static fn(Request $request, Model $model): mixed => $model->getAttribute('is_admin')),
                 ];
             }
         };
@@ -610,7 +617,7 @@ class TypedArrayResourceTest extends TestCase
             'has_permission' => true,
         ]);
 
-        $resource = new class ($model) extends JsonApiResource {
+        $resource = new /** @extends JsonApiResource<Model> */ class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'multiple-conditions';
@@ -620,8 +627,8 @@ class TypedArrayResourceTest extends TestCase
             {
                 return [
                     'tags' => $this->arrayOf($this->string(), 'tags')
-                        ->when(fn() => $this->is_visible)
-                        ->when(fn() => $this->has_permission),
+                        ->when(static fn(Request $request, Model $model): mixed => $model->getAttribute('is_visible'))
+                        ->when(static fn(Request $request, Model $model): mixed => $model->getAttribute('has_permission')),
                 ];
             }
         };
@@ -645,7 +652,7 @@ class TypedArrayResourceTest extends TestCase
             'has_permission' => false,
         ]);
 
-        $resource = new class ($model) extends JsonApiResource {
+        $resource = new /** @extends JsonApiResource<Model> */ class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'multiple-conditions-false';
@@ -655,8 +662,8 @@ class TypedArrayResourceTest extends TestCase
             {
                 return [
                     'tags' => $this->arrayOf($this->string(), 'tags')
-                        ->when(fn() => $this->is_visible)
-                        ->when(fn() => $this->has_permission),
+                        ->when(static fn(Request $request, Model $model): mixed => $model->getAttribute('is_visible'))
+                        ->when(static fn(Request $request, Model $model): mixed => $model->getAttribute('has_permission')),
                 ];
             }
         };
@@ -678,7 +685,7 @@ class TypedArrayResourceTest extends TestCase
             'flags' => [true, false, 1, 0],
         ]);
 
-        $resource = new class ($model) extends JsonApiResource {
+        $resource = new /** @extends JsonApiResource<Model> */ class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'of-syntax-no-attr';
@@ -712,7 +719,7 @@ class TypedArrayResourceTest extends TestCase
             'abc' => ['php', 'laravel', 'json-api', 1, true],
         ]);
 
-        $resource = new class ($model) extends JsonApiResource {
+        $resource = new /** @extends JsonApiResource<Model> */ class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'of-syntax-with-attr';
@@ -744,7 +751,7 @@ class TypedArrayResourceTest extends TestCase
             'def' => [1, 2, 3, 4, 5],
         ]);
 
-        $resource = new class ($model) extends JsonApiResource {
+        $resource = new /** @extends JsonApiResource<Model> */ class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'of-syntax-with-closure';
@@ -753,7 +760,12 @@ class TypedArrayResourceTest extends TestCase
             public function toAttributes(Request $request): iterable
             {
                 return [
-                    'def' => $this->array(fn() => $this->def)->of($this->integer()),
+                    'def' => $this->array(static function (Model $model): array {
+                        $def = $model->getAttribute('def');
+                        Assert::assertIsArray($def);
+
+                        return $def;
+                    })->of($this->integer()),
                 ];
             }
         };
@@ -776,7 +788,7 @@ class TypedArrayResourceTest extends TestCase
             'numbers' => [1, 2, 3],
         ]);
 
-        $resource = new class ($model) extends JsonApiResource {
+        $resource = new /** @extends JsonApiResource<Model> */ class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'of-syntax-transformation';
@@ -785,7 +797,12 @@ class TypedArrayResourceTest extends TestCase
             public function toAttributes(Request $request): iterable
             {
                 return [
-                    'doubled' => $this->array(fn() => array_map(fn($n) => $n * 2, $this->numbers))
+                    'doubled' => $this->array(static function (Model $model): array {
+                        $numbers = $model->getAttribute('numbers');
+                        Assert::assertIsArray($numbers);
+
+                        return array_map(static fn(mixed $n): mixed => is_int($n) ? $n * 2 : $n, $numbers);
+                    })
                         ->of($this->integer()),
                 ];
             }
@@ -810,7 +827,7 @@ class TypedArrayResourceTest extends TestCase
             'show_scores' => true,
         ]);
 
-        $resource = new class ($model) extends JsonApiResource {
+        $resource = new /** @extends JsonApiResource<Model> */ class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'of-syntax-conditions';
@@ -821,7 +838,7 @@ class TypedArrayResourceTest extends TestCase
                 return [
                     'scores' => $this->array('scores')
                         ->of($this->integer())
-                        ->when(fn() => $this->show_scores),
+                        ->when(static fn(Request $request, Model $model): mixed => $model->getAttribute('show_scores')),
                 ];
             }
         };
@@ -847,7 +864,7 @@ class TypedArrayResourceTest extends TestCase
             ],
         ]);
 
-        $resource = new class ($model) extends JsonApiResource {
+        $resource = new /** @extends JsonApiResource<Model> */ class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'of-syntax-nested';
@@ -885,7 +902,7 @@ class TypedArrayResourceTest extends TestCase
             'scores' => [95, 87, 92],
         ]);
 
-        $resource = new class ($model) extends JsonApiResource {
+        $resource = new /** @extends JsonApiResource<Model> */ class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'mixed-syntax';
@@ -928,7 +945,7 @@ class TypedArrayResourceTest extends TestCase
             'numbers' => [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
         ]);
 
-        $resource = new class ($model) extends JsonApiResource {
+        $resource = new /** @extends JsonApiResource<Model> */ class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'conditional-items';
@@ -940,7 +957,7 @@ class TypedArrayResourceTest extends TestCase
                     // Note: when() on the item type doesn't filter individual items
                     // It would apply to the entire descriptor, not per-item
                     'even-numbers' => $this->array('numbers')->of(
-                        $this->integer()->when(fn($request, $model, $attr) => $attr % 2 === 0),
+                        $this->integer()->when(static fn(Request $request, mixed $model, string $attr): bool => (int) $attr % 2 === 0),
                     ),
                 ];
             }

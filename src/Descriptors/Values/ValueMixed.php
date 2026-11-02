@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
  * @template T
  * @extends Value<T>
  */
-class ValueMixed extends Value
+final class ValueMixed extends Value
 {
     public function value(mixed $of, Request $request, Configuration $configuration): mixed
     {

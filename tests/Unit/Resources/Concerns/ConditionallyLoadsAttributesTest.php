@@ -9,6 +9,7 @@ use Ark4ne\JsonApi\Descriptors\Relations\RelationRaw;
 use Ark4ne\JsonApi\Descriptors\Values\ValueMixed;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Ark4ne\JsonApi\Resources\Relationship;
+use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MergeValue;
 use Illuminate\Http\Resources\MissingValue;
@@ -17,9 +18,12 @@ use Test\app\Http\Resources\UserResource;
 use Test\Support\Reflect;
 use Test\TestCase;
 
-class ConditionallyLoadsAttributesTest extends TestCase
+final class ConditionallyLoadsAttributesTest extends TestCase
 {
-    public static function data()
+    /**
+     * @return list<array{bool, string, list<string>}>
+     */
+    public static function data(): array
     {
         return [
             [false, 'test', []],
@@ -87,16 +91,17 @@ class ConditionallyLoadsAttributesTest extends TestCase
         self::assertInstanceOf(MergeValue::class, $actual);
         self::assertInstanceOf(ValueMixed::class, $actual->data['missing.1']);
         self::assertInstanceOf(ValueMixed::class, $actual->data['missing.2']);
-        self::assertEquals('abc', $actual->data['missing.1']->retriever()());
-        self::assertEquals(123, $actual->data['missing.2']->retriever()());
+        self::assertEquals('abc', self::retrieved($actual->data['missing.1']));
+        self::assertEquals(123, self::retrieved($actual->data['missing.2']));
         $actual = Reflect::invoke($stub, 'applyWhen', true, [
             'present.1' => 'abc',
             'present.2' => 123,
         ]);
+        self::assertInstanceOf(MergeValue::class, $actual);
         self::assertInstanceOf(ValueMixed::class, $actual->data['present.1']);
         self::assertInstanceOf(ValueMixed::class, $actual->data['present.2']);
-        self::assertEquals('abc', $actual->data['present.1']->retriever()());
-        self::assertEquals(123, $actual->data['present.2']->retriever()());
+        self::assertEquals('abc', self::retrieved($actual->data['present.1']));
+        self::assertEquals(123, self::retrieved($actual->data['present.2']));
 
         $actual = Reflect::invoke($stub, 'applyWhen', true, [
             'present.1' => $p1 = (new ValueMixed(fn() => 'abc')),
@@ -111,7 +116,7 @@ class ConditionallyLoadsAttributesTest extends TestCase
         $this->assertConditionalCopyOf($p3, $actual->data['present.3']);
         $this->assertConditionalCopyOf($p4, $actual->data['present.4']);
         self::assertInstanceOf(RelationRaw::class, $actual->data['present.5']);
-        self::assertInstanceOf(Relationship::class, $actual->data['present.5']->retriever()());
+        self::assertInstanceOf(Relationship::class, self::retrieved($actual->data['present.5']));
 
         $actual = Reflect::invoke($stub, 'applyWhen', false, [
             'missing.1' => $p1 = (new ValueMixed(fn() => 'abc')),
@@ -126,7 +131,22 @@ class ConditionallyLoadsAttributesTest extends TestCase
         $this->assertConditionalCopyOf($p3, $actual->data['missing.3']);
         $this->assertConditionalCopyOf($p4, $actual->data['missing.4']);
         self::assertInstanceOf(RelationRaw::class, $actual->data['missing.5']);
-        self::assertInstanceOf(Relationship::class, $actual->data['missing.5']->retriever()());
+        self::assertInstanceOf(Relationship::class, self::retrieved($actual->data['missing.5']));
+    }
+
+    public function test_apply_when_calls_a_closure_but_renders_another_callable_as_it_is(): void
+    {
+        $stub = new class (null) extends JsonApiResource {};
+        $actual = Reflect::invoke($stub, 'applyWhen', true, [
+            'closure' => static fn() => 'called',
+            'function name' => 'trim',
+        ]);
+        self::assertInstanceOf(MergeValue::class, $actual);
+        self::assertInstanceOf(ValueMixed::class, $actual->data['closure']);
+        self::assertInstanceOf(ValueMixed::class, $actual->data['function name']);
+
+        self::assertSame('called', $actual->data['closure']->valueFor(new Request(), null, 'closure'));
+        self::assertSame('trim', $actual->data['function name']->valueFor(new Request(), null, 'function name'));
     }
 
     public function test_when_has_renders_the_value_only_when_the_resource_has_the_attribute(): void
@@ -159,6 +179,21 @@ class ConditionallyLoadsAttributesTest extends TestCase
      * @param \Ark4ne\JsonApi\Descriptors\Describer<mixed> $original
      *
      * Descriptors are immutable: applyWhen() gives conditional copies and leaves the originals untouched.
+     */
+    /**
+     * The raw value a descriptor of `applyWhen()` reads.
+     */
+    private static function retrieved(mixed $descriptor): mixed
+    {
+        self::assertInstanceOf(\Ark4ne\JsonApi\Descriptors\Describer::class, $descriptor);
+        $retriever = $descriptor->retriever();
+        self::assertInstanceOf(Closure::class, $retriever);
+
+        return $retriever();
+    }
+
+    /**
+     * @param \Ark4ne\JsonApi\Descriptors\Describer<mixed> $original
      */
     private function assertConditionalCopyOf(\Ark4ne\JsonApi\Descriptors\Describer $original, mixed $actual): void
     {

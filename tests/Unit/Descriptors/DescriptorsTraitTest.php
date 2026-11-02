@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Test\Unit\Descriptors;
 
+use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Descriptors\Relations;
 use Ark4ne\JsonApi\Descriptors\Relations\RelationMany;
 use Ark4ne\JsonApi\Descriptors\Relations\RelationOne;
@@ -26,9 +27,12 @@ use stdClass;
 use Test\Support\Reflect;
 use Test\TestCase;
 
-class DescriptorsTraitTest extends TestCase
+final class DescriptorsTraitTest extends TestCase
 {
-    public static function methods()
+    /**
+     * @return array<string, array{0: class-string<Describer<mixed>>, 1: string, 2?: class-string}>
+     */
+    public static function methods(): array
     {
         return [
             'bool' => [ValueBool::class, 'bool'],
@@ -48,14 +52,16 @@ class DescriptorsTraitTest extends TestCase
     /**
      * @dataProvider methods
      */
+    /**
+     * @param class-string<Describer<mixed>> $expected
+     */
     #[DataProvider('methods')]
-    public function test_each_helper_builds_its_descriptor_with_its_retriever(mixed $expected, mixed $method, mixed ...$args): void
+    public function test_each_helper_builds_its_descriptor_with_its_retriever(string $expected, string $method, mixed ...$args): void
     {
         $mock = new class extends stdClass {
             /** @use Values<mixed> */ use Values;
             /** @use Relations<mixed> */ use Relations;
         };
-        /** @var \Ark4ne\JsonApi\Descriptors\Describer $descriptor */
         $descriptor = Reflect::invoke($mock, $method, ...$args);
         self::assertInstanceOf($expected, $descriptor);
         self::assertNull($descriptor->retriever());

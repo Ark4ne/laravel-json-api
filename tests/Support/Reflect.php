@@ -6,9 +6,12 @@ namespace Test\Support;
 
 use ReflectionClass;
 
-class Reflect
+/**
+ * Reads and calls the members a test cannot reach otherwise.
+ */
+final class Reflect
 {
-    public static function invoke($object, string $method, ...$args)
+    public static function invoke(object $object, string $method, mixed ...$args): mixed
     {
         $reflect = new ReflectionClass($object);
         $reflectMethod = $reflect->getMethod($method);
@@ -16,7 +19,7 @@ class Reflect
         return $reflectMethod->invoke($object, ...$args);
     }
 
-    public static function set($object, string $property, $value): void
+    public static function set(object $object, string $property, mixed $value): void
     {
         $reflect = new ReflectionClass($object);
         $reflectProperty = $reflect->getProperty($property);
@@ -24,7 +27,7 @@ class Reflect
         $reflectProperty->setValue($object, $value);
     }
 
-    public static function get($object, string $property): mixed
+    public static function get(object $object, string $property): mixed
     {
         $reflect = new ReflectionClass($object);
         $reflectProperty = $reflect->getProperty($property);

@@ -6,6 +6,7 @@ namespace Ark4ne\JsonApi\Resources\Concerns;
 
 use Ark4ne\JsonApi\Definition\DefinitionSource;
 use Closure;
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -38,12 +39,13 @@ trait Attributes
      * ];
      * ```
      */
-    public function toAttributes(Request $request): iterable
+    public function toAttributes(Request $request): iterable // @phpstan-ignore method.childReturnType (hooks return any iterable of members)
     {
         $resource = $this->resource;
 
         $attributes = match (true) {
             $resource instanceof Model => $resource->attributesToArray(),
+            $resource instanceof Arrayable => $resource->toArray(),
             is_object($resource) && method_exists($resource, 'toArray') => $resource->toArray(),
             is_array($resource) => $resource,
             is_iterable($resource) => iterator_to_array($resource),
@@ -52,7 +54,7 @@ trait Attributes
 
         return is_array($attributes)
             ? array_diff_key($attributes, array_flip($this->identificationKeys()))
-            : $attributes;
+            : (is_iterable($attributes) ? $attributes : []);
     }
 
     /**

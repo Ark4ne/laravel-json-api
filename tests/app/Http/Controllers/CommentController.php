@@ -23,16 +23,25 @@ class CommentController extends Controller
         return Comment::class;
     }
 
+    /**
+     * @return class-string<JsonApiResource<*>>
+     */
     protected function getResourceClass(): string
     {
         return CommentResource::class;
     }
 
+    /**
+     * @return JsonApiCollection<JsonApiResource<*>>
+     */
     public function index(CommentRequest $request): JsonApiCollection
     {
         return $this->apiIndex($request);
     }
 
+    /**
+     * @return JsonApiResource<*>
+     */
     public function show(CommentRequest $request, string $id): JsonApiResource
     {
         return $this->apiShow($request, $id);

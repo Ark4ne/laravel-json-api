@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Test\Unit\Resources;
 
 use Ark4ne\JsonApi\Exceptions\RenderingException;
-use Ark4ne\JsonApi\Resources\JsonApiCollection;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Http\Request;
 use Test\Support\Stub;
@@ -16,7 +15,7 @@ class JsonApiResourceTest extends TestCase
     public function test_a_resource_without_members_renders_its_type_and_id(): void
     {
         $model = Stub::model(['id' => 1]);
-        $resource = new class ($model) extends JsonApiResource {
+        $resource = new /** @extends JsonApiResource<\Illuminate\Database\Eloquent\Model> */ class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'my-model';
@@ -40,15 +39,15 @@ class JsonApiResourceTest extends TestCase
     public function test_the_document_meta_is_only_in_the_document_of_the_response(): void
     {
         $model = Stub::model(['id' => 1]);
-        $resource = new class ($model) extends JsonApiResource {
+        $resource = new /** @extends JsonApiResource<\Illuminate\Database\Eloquent\Model> */ class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'my-model';
             }
 
-            public function toResourceMeta(Request $request): ?iterable
+            public function toResourceMeta(Request $request): iterable
             {
-                return ['self' => $this->id];
+                return ['self' => $this->resource->getKey()];
             }
 
             public function toDocumentMeta(Request $request): iterable
@@ -90,7 +89,6 @@ class JsonApiResourceTest extends TestCase
 
         $collection = $resource::collection(\collect(Stub::model(['id' => 1])));
 
-        self::assertInstanceOf(JsonApiCollection::class, $collection);
         self::assertEquals($resource::class, $collection->collects);
     }
 

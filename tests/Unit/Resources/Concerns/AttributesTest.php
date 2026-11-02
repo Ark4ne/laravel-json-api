@@ -16,7 +16,7 @@ use Test\app\Models\User;
 use Test\Support\Reflect;
 use Test\TestCase;
 
-class AttributesTest extends TestCase
+final class AttributesTest extends TestCase
 {
     public function test_the_default_attributes_are_those_of_the_model_as_an_array(): void
     {
@@ -28,11 +28,15 @@ class AttributesTest extends TestCase
         };
 
         $object = new class extends stdClass {
-            public $foo = 'bar';
-            public $baz = 'tar';
-            public function toArray()
+            public string $foo = 'bar';
+            public string $baz = 'tar';
+
+            /**
+             * @return array<string, string>
+             */
+            public function toArray(): array
             {
-                return (array) $this;
+                return ['foo' => $this->foo, 'baz' => $this->baz];
             }
         };
 
@@ -68,15 +72,19 @@ class AttributesTest extends TestCase
     public function test_the_requested_attributes_are_rendered(): void
     {
         $object = new class extends stdClass {
-            public $foo = 'bar';
-            public $baz = 'tar';
-            public function toArray()
+            public string $foo = 'bar';
+            public string $baz = 'tar';
+
+            /**
+             * @return array<string, string>
+             */
+            public function toArray(): array
             {
-                return (array) $this;
+                return ['foo' => $this->foo, 'baz' => $this->baz];
             }
         };
 
-        $stub = new class ($object) extends JsonApiResource {
+        $stub = new /** @extends JsonApiResource<object{foo: string, baz: string}> */ class ($object) extends JsonApiResource {
             protected function toType(Request $request): string
             {
                 return 'my-type';
@@ -89,16 +97,16 @@ class AttributesTest extends TestCase
 
             public function toAttributes(Request $request): iterable
             {
-                return collect([
-                    'foo' => $this->foo,
-                    'baz' => fn() => $this->baz,
+                $attributes = [
+                    'foo' => $this->resource->foo,
+                    'baz' => fn() => $this->resource->baz,
                     'when_false' => $this->when(
                         false,
-                        fn() => "when_false-{$this->foo}-{$this->baz}",
+                        fn() => "when_false-{$this->resource->foo}-{$this->resource->baz}",
                     ),
                     'when_true' => $this->when(
                         true,
-                        fn() => "when_true-{$this->foo}-{$this->baz}",
+                        fn() => "when_true-{$this->resource->foo}-{$this->resource->baz}",
                     ),
                     $this->mergeWhen(false, fn() => [
                         'merged-false' => 'merged-false',
@@ -106,7 +114,9 @@ class AttributesTest extends TestCase
                     $this->mergeWhen(true, fn() => [
                         'merged-true' => 'merged-true',
                     ]),
-                ]);
+                ];
+
+                return collect($attributes);
             }
         };
 
