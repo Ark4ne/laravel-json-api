@@ -85,7 +85,8 @@ public static function collection($resource): UserCollection
   $value)`.
 - `RelationshipDefinition::$whenIncluded` is `$linkage` (`Configuration\Linkage|null`).
 - `RelationshipDefinition::$related` is a list of resource classes (`$relationship->related[0]` for a relationship
-  that is not polymorphic). Run `php artisan jsonapi:cache` again after upgrading.
+  that is not polymorphic), empty for a relationship to Laravel's native resources (`isNative()`, `$native`). Run
+  `php artisan jsonapi:cache` again after upgrading.
 - `Filters` is immutable: `->filters(fn(Filters $filters) => $filters->can('view'))` works as before, but a closure
   calling `can()` / `when()` without returning their result loses the rules. Chain them and return the result.
 - `Relationship::links()` is `links(?Closure $links = null, string|Closure|null $self = null, string|Closure|null
@@ -194,6 +195,8 @@ called a model method of one of these names through `$this` must call it on the 
   of losing its meta silently. `toResourceMeta()` is unchanged.
 - On `Relationship` (`PostResource::relationship(...)`), `withLinks()`, `withMeta()` and `withIdentifierMeta()` are
   renamed `links()`, `meta()` and `identifierMeta()`, as on the relationship descriptors.
+- `toId(Request $request): int|string|null` is a hook of the resources, read by the default `toIdentifier()`: a
+  resource declaring a `toId()` of another signature must rename it.
 
 ### Static analysis
 

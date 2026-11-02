@@ -6,6 +6,7 @@ namespace Ark4ne\JsonApi\Definition;
 
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Illuminate\Http\Resources\Attributes\Collects;
+use Illuminate\Http\Resources\JsonApi\JsonApiResource as NativeJsonApiResource;
 use ReflectionClass;
 
 /**
@@ -33,6 +34,31 @@ final class RelatedResource
         }
 
         return $class;
+    }
+
+    /**
+     * Whether the class is a resource of Laravel's native JSON:API (`Illuminate\Http\Resources\JsonApi\JsonApiResource`).
+     *
+     * @phpstan-assert-if-true class-string<NativeJsonApiResource> $class
+     */
+    public static function isNative(string $class): bool
+    {
+        return is_a($class, NativeJsonApiResource::class, true);
+    }
+
+    /**
+     * The native resource class a relationship relates to: the class itself, or the native resource a collection
+     * collects; `null` for any other class.
+     *
+     * @return class-string<NativeJsonApiResource>|null
+     */
+    public static function native(string $class): ?string
+    {
+        if (!self::isNative($class) && class_exists($class) && !is_subclass_of($class, DefinitionSource::class)) {
+            $class = self::collects($class) ?? $class;
+        }
+
+        return self::isNative($class) ? $class : null;
     }
 
     /**

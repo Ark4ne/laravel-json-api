@@ -5,21 +5,23 @@ declare(strict_types=1);
 namespace Ark4ne\JsonApi\Definition;
 
 use Ark4ne\JsonApi\Configuration\Linkage;
+use Illuminate\Http\Resources\JsonApi\JsonApiResource as NativeJsonApiResource;
 
 /**
  * What a resource declares about one relationship.
  *
  * The related resources are referenced by their class only: definitions never nest one another, so cycles
  * (`post.author.posts`) cost nothing. Read a related definition with `Definitions::for($class)` for each class of
- * `$related`: one, or several for a polymorphic relationship (`morphs`).
+ * `$related`: one, or several for a polymorphic relationship (`morphs`). A relationship to resources of Laravel's native
+ * `JsonApiResource` has no related definition: `$related` is empty, `$native` names the class.
  *
  * Immutable, serializable. Public contract: semver (docs/architecture.md §3).
  */
 final readonly class RelationshipDefinition
 {
     /**
-     * @param non-empty-list<class-string<DefinitionSource>> $related Resource classes of the related resources: one,
-     *                                                               several for a polymorphic relationship
+     * @param list<class-string<DefinitionSource>> $related Resource classes of the related resources: one, several for
+     *                                                     a polymorphic relationship, none for native resources
      * @param bool $conditional Whether the relationship may be left out (`when()`, `can()`, `whenLoaded()`…)
      * @param Linkage|null $linkage When it renders its linkage while not included (`whenIncluded()`, `whenLoaded()`);
      *                             `null` for the configured one (`relationship.linkage`)
@@ -33,6 +35,10 @@ final readonly class RelationshipDefinition
      * @param list<string> $namedLinks The links declared by name (`links(self: …, related: …)`): the names a document
      *                                 may render, rendered unless their closure gives `null`; those of a closure are
      *                                 unknown
+     * @param class-string<NativeJsonApiResource>|null $native The native resource class of the related resources
+     *                                                         (`Illuminate\Http\Resources\JsonApi\JsonApiResource`):
+     *                                                         their type and members are unknown, nothing is included
+     *                                                         under them
      */
     private function __construct(
         public string $name,
@@ -48,6 +54,7 @@ final readonly class RelationshipDefinition
         public bool $hasIdentifierMeta = false,
         public array $morphs = [],
         public array $namedLinks = [],
+        public ?string $native = null,
     ) {}
 
     /**
@@ -67,6 +74,21 @@ final readonly class RelationshipDefinition
     }
 
     /**
+     * The relationship to the related resources of a class: one of the package or a native one, a collection standing
+     * for the resource it collects.
+     *
+     * @throws \Ark4ne\JsonApi\Exceptions\DefinitionException when the class is neither
+     */
+    public static function to(string $name, string $class, Cardinality $cardinality): self
+    {
+        $native = RelatedResource::native($class);
+
+        return $native !== null
+            ? new self($name, [], $cardinality, LoadDefinition::none(), native: $native)
+            : new self($name, [RelatedResource::resolve($class)], $cardinality, LoadDefinition::none());
+    }
+
+    /**
      * A polymorphic relationship: its related resources are those of the map, by model class. An empty map leaves the
      * relationship as it is.
      *
@@ -80,6 +102,14 @@ final readonly class RelationshipDefinition
     public function isPolymorphic(): bool
     {
         return $this->morphs !== [];
+    }
+
+    /**
+     * Whether the related resources are native ones (`$native`).
+     */
+    public function isNative(): bool
+    {
+        return $this->native !== null;
     }
 
     public function name(string $name): self
@@ -143,7 +173,7 @@ final readonly class RelationshipDefinition
      *
      * @param array{
      *     name: string,
-     *     related: non-empty-list<class-string<DefinitionSource>>,
+     *     related: list<class-string<DefinitionSource>>,
      *     cardinality: Cardinality,
      *     load: LoadDefinition,
      *     conditional: bool,
@@ -155,6 +185,7 @@ final readonly class RelationshipDefinition
      *     hasIdentifierMeta?: bool,
      *     morphs?: array<class-string, class-string<DefinitionSource>>,
      *     namedLinks?: list<string>,
+     *     native?: class-string<NativeJsonApiResource>|null,
      * } $properties
      */
     public static function __set_state(array $properties): self
@@ -163,7 +194,7 @@ final readonly class RelationshipDefinition
     }
 
     /**
-     * @param non-empty-list<class-string<DefinitionSource>>|null $related
+     * @param list<class-string<DefinitionSource>>|null $related
      * @param array<class-string, class-string<DefinitionSource>>|null $morphs
      * @param list<string>|null $namedLinks
      */
@@ -195,6 +226,7 @@ final readonly class RelationshipDefinition
             hasIdentifierMeta: $hasIdentifierMeta ?? $this->hasIdentifierMeta,
             morphs: $morphs ?? $this->morphs,
             namedLinks: $namedLinks ?? $this->namedLinks,
+            native: $this->native,
         );
     }
 }

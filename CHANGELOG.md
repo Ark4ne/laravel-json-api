@@ -151,6 +151,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   errors included. An application alias `jsonapi` is kept.
 - The documents and error documents are served with the extensions and profiles of `document.jsonapi` in their
   `Content-Type` (`JsonApiObject::contentType()`), as the specification requires when an extension applies.
+- **Interoperability with Laravel's native JSON:API.** `one()` / `many()` accept a native resource class
+  (`Illuminate\Http\Resources\JsonApi\JsonApiResource`), a collection collecting one, or guess one (`#[UseResource]`,
+  the naming convention), outside a morph map: its linkage is loaded in batch as any other, `links()` / `meta()` /
+  `identifierMeta()` receive it; included, it is rendered as a leaf by its own `resolve()`, with its `fields[type]`,
+  never its relationships, and nothing is loaded nor included under it (the `Includes` rule rejects such a path; the
+  `Fields` rule accepts the fields of its type as they are, read without model, and a type no definition has when it
+  cannot be). Its definition names the class (`RelationshipDefinition::$native`,
+  `isNative()`) and relates no definition: `$related` is empty. `RelationshipDefinition::to()` builds the relationship
+  to a resource, a collection or a native resource. A native `JsonApiRequest` renders as any request.
+- **`toId()`**, the hook of Laravel's native resources, gives the identifier read by the default `toIdentifier()`
+  (`null` by default: the model key).
 
 ### Changed
 

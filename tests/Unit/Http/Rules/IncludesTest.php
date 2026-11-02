@@ -11,6 +11,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Translation\PotentiallyTranslatedString;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Test\app\Http\Resources\NativePostResource;
 use Test\app\Http\Resources\UserCollection;
 use Test\app\Http\Resources\UserResource;
 use Test\TestCase;
@@ -69,6 +70,15 @@ class IncludesTest extends TestCase
             'The selected :attribute is invalid.',
             '"beta.gamma" doesn\'t have relationship "unknown".',
         ], self::errors(new Includes(AlphaResource::class), 'beta.gamma.unknown'));
+    }
+
+    public function test_nothing_is_included_under_a_native_resource(): void
+    {
+        self::assertSame([], self::errors(new Includes(NativePostResource::class), 'user,comments'));
+        self::assertSame([
+            'The selected :attribute is invalid.',
+            '"user" doesn\'t have relationship "posts".',
+        ], self::errors(new Includes(NativePostResource::class), 'user.posts'));
     }
 
     public function test_a_collection_validates_the_includes_of_the_resources_it_collects(): void

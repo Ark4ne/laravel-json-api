@@ -128,7 +128,7 @@ final readonly class AttributeDefinition
 | --- | --- |
 | `ResourceDefinition` | Resource class, `type`, attributes, relationships, declared links and meta, the routes of its links (`routes`, `RouteNames` of `#[JsonApiRoutes]`), diagnostics of its compilation |
 | `AttributeDefinition` | Name, dotted path inside structs, `ValueType`, nullable, format, enum class, item type, children (structs), conditional, sparse (`whenInFields`: out unless requested) |
-| `RelationshipDefinition` | Name, related resource classes (`related`: one, given or guessed from the model when compiled (`$this->one('user')`, `GuessedResource`), or those of `morphs`, the resource class of each model class of a polymorphic relationship), `Cardinality::One` / `Many`, `LoadDefinition`, `linkage`, declared links (and the names of those declared by name, `namedLinks`) and meta, conditional, source |
+| `RelationshipDefinition` | Name, related resource classes (`related`: one, given or guessed from the model when compiled (`$this->one('user')`, `GuessedResource`), or those of `morphs`, the resource class of each model class of a polymorphic relationship; none for native resources, whose class is `native`), `Cardinality::One` / `Many`, `LoadDefinition`, `linkage`, declared links (and the names of those declared by name, `namedLinks`) and meta, conditional, source |
 | `LoadDefinition` | Relation paths eager-loaded when the relationship is included, and those loaded with a constraint closure |
 | `ValueType` | The type of a value as the tools need it: `string`, `integer`, `number`, `boolean`, `date`, `enum`, `array`, `struct`, `mixed`, or a custom type of the registry |
 
@@ -282,6 +282,9 @@ interface Stage
   (`fields.relationships = 'filter'`, the default). `'keep'` restricts attributes only and renders every relationship,
   as 1.x did: a deliberate, opt-in departure from the specification; a relationship named in `fields` is then accepted
   and ignored. `ResourceDefinition::fields()` lists the names `fields[type]` accepts in both modes.
+- **Native resources** (`Illuminate\Http\Resources\JsonApi\JsonApiResource`) related to are rendered as leaves by
+  `Resources\NativeResource`, a `RenderableResource`: type and id by their public `resolveResourceType()` /
+  `resolveResourceIdentifier()`, resource object by `resolve()`, from a copy of the request without `include` (§9).
 - **Pagination** keeps Laravel's paginated output (`links.first/last/prev/next`, `meta`): it already complies with the
   specification.
 
@@ -304,6 +307,28 @@ façades (`$this->string()`, `$this->one()`, `$this->applyWhen()`) that delegate
 of its own. A collection reads `$collects`, and `#[Collects]` when it exists (Laravel 13). `$preserveKeys` and
 `#[PreserveKeys]` do not apply: `data` is always a JSON list. Laravel's `newCollection()` is not used, its return type
 is `AnonymousResourceCollection`.
+
+### Laravel's native JSON:API
+
+Laravel (12.46+, 13) ships `Illuminate\Http\Resources\JsonApi\JsonApiResource`. The package stays **independent** of
+it (decision Q1): `JsonApiResource` extends `JsonResource`, never the native resource.
+
+- **Why.** Extending it means overriding its `protected` internals (`resolveResourceData()`, the relationship
+  compilation), which change in minor releases: when Laravel 12.45 reworked `JsonResource` for it, 1.x had to override
+  `resolveResourceData()` to keep rendering. The native resource has none of
+  what the package is built on: no definition, typed values, include and fieldset validation, links and meta per
+  relationship, resources that are not Eloquent models, linkage without N+1, nor a contract for the tooling.
+- **Interoperability at the boundaries**, through public APIs only:
+  - the context accepts a native `JsonApiRequest`, a `Request` like any other (§6);
+  - a relationship may relate native resources (`$this->one(NativeUserResource::class)`): its definition names their
+    class (`RelationshipDefinition::$native`) and relates no definition, their type and fields being unknown without a
+    model. They are leaves: rendered by their own `resolve()`, with their `fields[type]`, never their relationships;
+    nothing is loaded nor included under them, and the `Includes` rule rejects a path below them. The `Fields` rule
+    accepts the fields of their type as they are, the type read without model (`toType()` on a resource of `null`),
+    and a type no definition has when it cannot be read. A collection collecting them stands for them, and they are
+    guessed as any resource; a morph map cannot hold them;
+  - conventions are aligned when they cost nothing: the `jsonapi` member, a maximum include depth
+    (`include.max-depth`), `toId()` read by `toIdentifier()`.
 
 ## 10. HTTP
 

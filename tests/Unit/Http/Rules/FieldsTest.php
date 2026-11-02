@@ -9,9 +9,11 @@ use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Translation\PotentiallyTranslatedString;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Test\app\Http\Resources\NativePostResource;
 use Test\app\Http\Resources\UserCollection;
 use Test\app\Http\Resources\UserResource;
 use Test\TestCase;
+use Test\Unit\Http\Rules\Fixtures\UntypedNativeHolderResource;
 use Test\Unit\Resources\Fixtures\AlphaResource;
 
 class FieldsTest extends TestCase
@@ -82,6 +84,27 @@ class FieldsTest extends TestCase
             '"gamma" doesn\'t have fields "name".',
             '"unknown" doesn\'t exist.',
         ], self::errors(new Fields(AlphaResource::class), ['gamma' => 'label,name', 'unknown' => 'id']));
+    }
+
+    public function test_the_fields_of_a_native_type_pass_as_they_are(): void
+    {
+        self::assertSame([], self::errors(new Fields(NativePostResource::class), [
+            'post' => 'title,user',
+            'users' => 'name,unknown',
+        ]));
+        self::assertSame([
+            'The selected :attribute is invalid.',
+            '"pots" doesn\'t exist.',
+        ], self::errors(new Fields(NativePostResource::class), ['pots' => 'title']));
+    }
+
+    public function test_a_type_no_definition_has_passes_once_a_native_resource_of_unknown_type_is_reachable(): void
+    {
+        self::assertSame([], self::errors(new Fields(UntypedNativeHolderResource::class), ['anything' => 'name']));
+        self::assertSame([
+            'The selected :attribute is invalid.',
+            '"holder" doesn\'t have fields "unknown".',
+        ], self::errors(new Fields(UntypedNativeHolderResource::class), ['holder' => 'unknown']));
     }
 
     public function test_a_collection_validates_the_fields_of_the_resources_it_collects(): void

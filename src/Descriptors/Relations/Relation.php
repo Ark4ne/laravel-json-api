@@ -50,7 +50,7 @@ abstract class Relation extends Describer implements DescribesRelationship
     protected array $morphs = [];
 
     /**
-     * @param class-string<\Ark4ne\JsonApi\Resources\JsonApiResource|\Ark4ne\JsonApi\Resources\JsonApiCollection>|null $related
+     * @param class-string<\Ark4ne\JsonApi\Resources\JsonApiResource|\Ark4ne\JsonApi\Resources\JsonApiCollection|\Illuminate\Http\Resources\JsonApi\JsonApiResource>|null $related
      *        `null` to guess it from the model of `$resource` (`GuessedResource`)
      * @param string|Closure|null $relation
      * @param class-string|null $resource The resource declaring the relationship
@@ -64,7 +64,7 @@ abstract class Relation extends Describer implements DescribesRelationship
     /**
      * The resource class given, `null` when guessed from the model (`$this->one('author')`).
      *
-     * @return class-string<\Ark4ne\JsonApi\Resources\JsonApiResource|\Ark4ne\JsonApi\Resources\JsonApiCollection>|null
+     * @return class-string<\Ark4ne\JsonApi\Resources\JsonApiResource|\Ark4ne\JsonApi\Resources\JsonApiCollection|\Illuminate\Http\Resources\JsonApi\JsonApiResource>|null
      */
     public function related(): ?string
     {
@@ -371,12 +371,9 @@ abstract class Relation extends Describer implements DescribesRelationship
      */
     public function definition(string $name): RelationshipDefinition
     {
-        $related = RelatedResource::resolve($this->related ?? $this->guessed($name));
         $computed = $this->relation instanceof Closure;
 
-        return ($this->cardinality() === Cardinality::Many
-            ? RelationshipDefinition::many($name, $related)
-            : RelationshipDefinition::one($name, $related))
+        return RelationshipDefinition::to($name, $this->related ?? $this->guessed($name), $this->cardinality())
             ->load(LoadDefinition::fromDeclaration(
                 $this->load ?? !$computed,
                 is_string($this->relation) ? $this->relation : $name,

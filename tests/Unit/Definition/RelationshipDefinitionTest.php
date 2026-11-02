@@ -10,6 +10,9 @@ use Ark4ne\JsonApi\Definition\LoadDefinition;
 use Ark4ne\JsonApi\Definition\RelationshipDefinition;
 use PHPUnit\Framework\TestCase;
 use Test\app\Http\Resources\CommentResource;
+use Test\app\Http\Resources\NativeCommentResource;
+use Test\app\Http\Resources\NativePostResource;
+use Test\app\Http\Resources\NativeUserResource;
 use Test\app\Http\Resources\PostResource;
 use Test\app\Http\Resources\UserResource;
 use Test\app\Models\Comment;
@@ -86,6 +89,36 @@ final class RelationshipDefinitionTest extends TestCase
         $relationship = RelationshipDefinition::one('author', UserResource::class)->namedLinks('self');
 
         self::assertEquals($relationship, eval('return ' . var_export($relationship, true) . ';'));
+    }
+
+    public function test_a_relationship_to_a_resource_relates_its_definition(): void
+    {
+        $relationship = RelationshipDefinition::to('author', UserResource::class, Cardinality::Many);
+
+        self::assertEquals(RelationshipDefinition::many('author', UserResource::class), $relationship);
+        self::assertFalse($relationship->isNative());
+    }
+
+    public function test_a_relationship_to_native_resources_names_their_class_and_relates_no_definition(): void
+    {
+        $relationship = RelationshipDefinition::to('author', NativeUserResource::class, Cardinality::One);
+
+        self::assertTrue($relationship->isNative());
+        self::assertSame(NativeUserResource::class, $relationship->native);
+        self::assertSame([], $relationship->related);
+        self::assertSame(Cardinality::One, $relationship->cardinality);
+        self::assertTrue($relationship->conditional()->isNative());
+        self::assertEquals($relationship, eval('return ' . var_export($relationship, true) . ';'));
+    }
+
+    public function test_the_definition_of_a_resource_reads_its_relationships_to_native_resources(): void
+    {
+        $definition = NativePostResource::definition();
+
+        self::assertSame(NativeUserResource::class, $definition->relationship('user')?->native);
+        self::assertSame(Cardinality::Many, $definition->relationship('comments')?->cardinality);
+        self::assertSame(NativeCommentResource::class, $definition->relationship('notes')?->native);
+        self::assertSame(['title', 'user', 'comments', 'writer', 'notes'], $definition->fields());
     }
 
     public function test_a_polymorphic_relationship_relates_the_resources_of_its_map(): void

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Ark4ne\JsonApi\Descriptors\Relations;
 
 use Ark4ne\JsonApi\Definition\DefinitionSource;
+use Ark4ne\JsonApi\Definition\RelatedResource;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Illuminate\Database\Eloquent\Attributes\UseResource;
 use Illuminate\Database\Eloquent\Model;
@@ -34,7 +35,8 @@ final class GuessedResource
      * @param class-string|null $resource The resource declaring the relationship
      * @param string $relation The relation of its model
      *
-     * @return class-string<DefinitionSource>
+     * @return class-string<DefinitionSource|\Illuminate\Http\Resources\JsonApi\JsonApiResource> A resource of the
+     *         package, or a native one
      *
      * @throws DefinitionException when the resource cannot be guessed
      */
@@ -72,13 +74,13 @@ final class GuessedResource
             $class = $declared->newInstance()->class;
 
             // The resource the model declares, as `toResource()` would render it: never another one.
-            return is_subclass_of($class, DefinitionSource::class)
+            return is_subclass_of($class, DefinitionSource::class) || RelatedResource::isNative($class)
                 ? $class
                 : throw $fail("#[UseResource] of [{$related}] is not a JSON:API resource");
         }
 
         foreach ($related::guessResourceName() as $class) {
-            if (is_subclass_of($class, DefinitionSource::class)) {
+            if (is_subclass_of($class, DefinitionSource::class) || RelatedResource::isNative($class)) {
                 return $class;
             }
         }

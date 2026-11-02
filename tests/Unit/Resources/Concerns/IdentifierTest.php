@@ -62,4 +62,24 @@ class IdentifierTest extends TestCase
 
         self::assertSame(Str::afterLast($id, '.'), Reflect::invoke($stub, 'toIdentifier', new Request()));
     }
+
+    public function test_the_id_hook_of_laravel_native_resources_gives_the_identifier(): void
+    {
+        $stub = new class (Stub::model(['id' => 7])) extends JsonApiResource {
+            public function toId(Request $request): string
+            {
+                return 'seven';
+            }
+        };
+
+        self::assertSame('seven', Reflect::invoke($stub, 'toIdentifier', new Request()));
+    }
+
+    public function test_the_id_hook_giving_null_leaves_the_default_identifier(): void
+    {
+        $stub = new class (Stub::model(['id' => 7])) extends JsonApiResource {};
+
+        self::assertNull(Reflect::invoke($stub, 'toId', new Request()));
+        self::assertSame(7, Reflect::invoke($stub, 'toIdentifier', new Request()));
+    }
 }

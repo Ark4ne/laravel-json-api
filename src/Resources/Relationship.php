@@ -24,12 +24,13 @@ use Ark4ne\JsonApi\Support\Values;
 use Ark4ne\JsonApi\Traits\HasRelationLoad;
 use Closure;
 use Illuminate\Http\Resources\Json\ResourceCollection;
+use Illuminate\Http\Resources\JsonApi\JsonApiResource as NativeJsonApiResource;
 use Illuminate\Http\Resources\MissingValue;
 
 use function value;
 
 /**
- * @template T as JsonApiResource|JsonApiCollection
+ * @template T as JsonApiResource|JsonApiCollection|NativeJsonApiResource
  */
 class Relationship implements DescribesRelationship, RelationshipSource
 {
@@ -255,11 +256,7 @@ class Relationship implements DescribesRelationship, RelationshipSource
      */
     public function definition(string $name): RelationshipDefinition
     {
-        $related = RelatedResource::resolve($this->resource);
-
-        return ($this->asCollection
-            ? RelationshipDefinition::many($name, $related)
-            : RelationshipDefinition::one($name, $related))
+        return RelationshipDefinition::to($name, $this->resource, $this->asCollection ? Cardinality::Many : Cardinality::One)
             ->morphs(array_map(RelatedResource::resolve(...), $this->morphs))
             ->load(LoadDefinition::fromDeclaration($this->load ?? false, $name))
             ->linkage($this->linkage)
@@ -357,22 +354,31 @@ class Relationship implements DescribesRelationship, RelationshipSource
             /** @var iterable<mixed> $collected */
             $collected = $resource->collection ?? [];
             $related = [];
+            $identifierMeta = [];
             foreach ($collected as $item) {
                 if ($item instanceof RenderableResource) {
                     $related[] = $item;
+                } elseif ($item instanceof NativeJsonApiResource) {
+                    $related[] = new NativeResource($item, $native ??= NativeResource::requestOf($context->request));
+                } else {
+                    continue;
+                }
+
+                // The closure receives the related resource as declared: the native one, not its adapter.
+                if ($this->identifierMeta !== null) {
+                    $identifierMeta[] = $this->identifierMetaOf($item);
                 }
             }
 
-            return ResolvedRelationship::toMany(
-                $related,
-                $links,
-                $meta,
-                $this->identifierMeta === null ? [] : array_map($this->identifierMetaOf(...), $related),
-            );
+            return ResolvedRelationship::toMany($related, $links, $meta, $identifierMeta);
         }
 
-        return $resource->renderedModel() !== null
-            ? ResolvedRelationship::toOne($resource, $links, $meta, $this->identifierMetaOf($resource))
+        $renderable = $resource instanceof NativeJsonApiResource
+            ? new NativeResource($resource, NativeResource::requestOf($context->request))
+            : $resource;
+
+        return $renderable->renderedModel() !== null
+            ? ResolvedRelationship::toOne($renderable, $links, $meta, $this->identifierMetaOf($resource))
             : ResolvedRelationship::toOne(null, $links, $meta);
     }
 
@@ -407,7 +413,7 @@ class Relationship implements DescribesRelationship, RelationshipSource
     /**
      * @return array<array-key, mixed>
      */
-    private function identifierMetaOf(RenderableResource $related): array
+    private function identifierMetaOf(RenderableResource|NativeJsonApiResource $related): array
     {
         return $this->identifierMeta === null ? [] : Links::members(($this->identifierMeta)($related));
     }

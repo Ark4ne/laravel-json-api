@@ -34,6 +34,14 @@ final class Article extends Post
     }
 
     /**
+     * @return BelongsTo<NativeWriter, $this>
+     */
+    public function nativeWriter(): BelongsTo
+    {
+        return $this->belongsTo(NativeWriter::class, 'user_id');
+    }
+
+    /**
      * @return MorphTo<\Illuminate\Database\Eloquent\Model, $this>
      */
     public function commentable(): MorphTo

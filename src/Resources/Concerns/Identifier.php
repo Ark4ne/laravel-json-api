@@ -40,7 +40,7 @@ trait Identifier
      *
      * @param \Illuminate\Http\Request $request
      *
-     * @return int|string
+     * @return int|string By default, that of `toId()`, otherwise the key of the model, otherwise its `id`
      *
      * ```
      * return $this->id; // resource identifier
@@ -48,11 +48,29 @@ trait Identifier
      */
     protected function toIdentifier(Request $request): int|string
     {
+        $id = $this->toId($request);
+
+        if ($id !== null) {
+            return $id;
+        }
+
         if ($this->resource instanceof Model) {
             return $this->resource->getKey();
         }
 
         return $this->resource->id;
+    }
+
+    /**
+     * The identifier, named as Laravel's native resources name it: an alias of `toIdentifier()`, which reads it.
+     *
+     * @param \Illuminate\Http\Request $request
+     *
+     * @return int|string|null `null` for the default identifier of `toIdentifier()`
+     */
+    protected function toId(Request $request): int|string|null
+    {
+        return null;
     }
 
 }

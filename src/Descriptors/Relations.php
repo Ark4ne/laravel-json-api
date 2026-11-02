@@ -18,8 +18,10 @@ trait Relations
      * A to-one relationship. Without resource class, the resource is guessed from the Eloquent model of the resource,
      * as `Model::toResource()` does (`GuessedResource`): `$this->one()` reads the relation named like the member,
      * `$this->one('author')` the relation `author`. A resource whose model is not an Eloquent model passes the class.
+     * A resource of Laravel's native JSON:API (`Illuminate\Http\Resources\JsonApi\JsonApiResource`) is rendered as a
+     * leaf: its type, id, attributes, links and meta, never its relationships, nothing included under it.
      *
-     * @param class-string<\Ark4ne\JsonApi\Resources\JsonApiResource|\Ark4ne\JsonApi\Resources\JsonApiCollection>|string|null $for
+     * @param class-string<\Ark4ne\JsonApi\Resources\JsonApiResource|\Ark4ne\JsonApi\Resources\JsonApiCollection|\Illuminate\Http\Resources\JsonApi\JsonApiResource>|string|null $for
      *        The resource class; a name without namespace is the relation (`'author'`)
      * @param null|string|Closure(T):mixed $relation
      *
@@ -35,7 +37,7 @@ trait Relations
      * A to-many relationship. Without resource class, the resource is guessed like that of `one()`:
      * `$this->many()`, `$this->many('comments')`.
      *
-     * @param class-string<\Ark4ne\JsonApi\Resources\JsonApiResource|\Ark4ne\JsonApi\Resources\JsonApiCollection>|string|null $for
+     * @param class-string<\Ark4ne\JsonApi\Resources\JsonApiResource|\Ark4ne\JsonApi\Resources\JsonApiCollection|\Illuminate\Http\Resources\JsonApi\JsonApiResource>|string|null $for
      *        The resource class; a name without namespace is the relation (`'comments'`)
      * @param null|string|Closure(T):mixed $relation
      *
@@ -85,7 +87,7 @@ trait Relations
      * The resource class, the relation and the resource declaring them: a name without namespace is the relation, its
      * resource guessed (`'author'`, never a class: a resource class has a namespace).
      *
-     * @return array{0: class-string<\Ark4ne\JsonApi\Resources\JsonApiResource<mixed>|\Ark4ne\JsonApi\Resources\JsonApiCollection<\Ark4ne\JsonApi\Resources\JsonApiResource<mixed>>>|null, 1: string|Closure|null, 2: class-string}
+     * @return array{0: class-string<\Ark4ne\JsonApi\Resources\JsonApiResource<mixed>|\Ark4ne\JsonApi\Resources\JsonApiCollection<\Ark4ne\JsonApi\Resources\JsonApiResource<mixed>>|\Illuminate\Http\Resources\JsonApi\JsonApiResource>|null, 1: string|Closure|null, 2: class-string}
      */
     private static function declared(?string $for, string|Closure|null $relation): array
     {
@@ -93,7 +95,7 @@ trait Relations
             return [null, $for, static::class];
         }
 
-        /** @var class-string<\Ark4ne\JsonApi\Resources\JsonApiResource<mixed>|\Ark4ne\JsonApi\Resources\JsonApiCollection<\Ark4ne\JsonApi\Resources\JsonApiResource<mixed>>>|null $for Checked when compiled (`RelatedResource`) */
+        /** @var class-string<\Ark4ne\JsonApi\Resources\JsonApiResource<mixed>|\Ark4ne\JsonApi\Resources\JsonApiCollection<\Ark4ne\JsonApi\Resources\JsonApiResource<mixed>>|\Illuminate\Http\Resources\JsonApi\JsonApiResource>|null $for Checked when compiled (`RelatedResource`) */
         return [$for, $relation, static::class];
     }
 

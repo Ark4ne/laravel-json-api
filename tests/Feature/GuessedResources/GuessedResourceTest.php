@@ -9,6 +9,7 @@ use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Illuminate\Http\Request;
 use Illuminate\Testing\TestResponse;
 use Test\app\Http\Resources\CommentResource;
+use Test\app\Http\Resources\NativeUserResource;
 use Test\app\Http\Resources\PostResource;
 use Test\app\Http\Resources\UserResource;
 use Test\Feature\FeatureTestCase;
@@ -35,6 +36,11 @@ final class GuessedResourceTest extends FeatureTestCase
     {
         self::assertSame(UserResource::class, GuessedResource::of(GuessedPostResource::class, 'user'));
         self::assertSame(WriterResource::class, GuessedResource::of(GuessedPostResource::class, 'writer'));
+    }
+
+    public function test_the_native_resource_declared_by_the_related_model_is_guessed(): void
+    {
+        self::assertSame(NativeUserResource::class, GuessedResource::of(GuessedPostResource::class, 'nativeWriter'));
     }
 
     public function test_the_definition_records_the_guessed_resources(): void

@@ -95,7 +95,7 @@ trait Renderable
             if ($relationship instanceof Relation) {
                 // A resource guessed from the model is that of the definition: guessed once, when compiled.
                 $relationship = $relationship
-                    ->resolveRelated($name, $definition?->related[0] ?? null)
+                    ->resolveRelated($name, $definition?->related[0] ?? $definition?->native)
                     ->resolveFor($context->request, $model, $name, $context->configuration);
             } elseif (!$relationship instanceof Relationship) {
                 continue;

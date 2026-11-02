@@ -6,6 +6,23 @@ A Lightweight [{JSON:API}](https://jsonapi.org/) Resource for Laravel.
 ![example branch parameter](https://github.com/Ark4ne/laravel-json-api/actions/workflows/php.yml/badge.svg)
 [![codecov](https://codecov.io/gh/Ark4ne/laravel-json-api/branch/master/graph/badge.svg?token=F7XBLAGTDP)](https://codecov.io/gh/Ark4ne/laravel-json-api)
 
+# Why this package rather than Laravel's native JSON:API?
+Laravel (12.46+, 13) ships `Illuminate\Http\Resources\JsonApi\JsonApiResource`. This package stays independent of it
+and interoperates with it: a relationship may relate native resources ([Native resources](#native-resources)), and a
+native `JsonApiRequest` is read like any request.
+
+|                                                                   | Laravel's native        | This package                                      |
+|-------------------------------------------------------------------|-------------------------|---------------------------------------------------|
+| `id` as a string, `"data": null`, primary data out of `included`  | ✅                       | ✅                                                 |
+| Attributes resolved after the sparse fieldset                     | ✅                       | ✅                                                 |
+| Relationships that are not included                               | left out                | linkage loaded in batch, or left out (`relationship.linkage`) |
+| Typed values: nullable, date format, decimal precision, enum      | ❌                       | ✅                                                 |
+| Definition of a resource, validation of `include` and `fields`    | ❌                       | ✅ (`JsonApiFormRequest`, `jsonapi:check`)         |
+| Links and meta per relationship, `whenIncluded()`, `can()`, filters | ❌                     | ✅                                                 |
+| Resources that are not Eloquent models                            | ❌ (exception)           | ✅                                                 |
+| Public contract for the tooling (OpenAPI)                         | ❌                       | ✅                                                 |
+| Error documents, content negotiation                              | ❌                       | ✅                                                 |
+
 # Installation
 ```shell
 composer require ark4ne/laravel-json-api
@@ -407,7 +424,8 @@ protected function toIdentifier(Request $request): int|string
 }
 ```
 
-Default returns model id.
+Default returns `toId()` when it gives an id (the hook of Laravel's native resources, `null` by default), otherwise the
+model id.
 
 ### toAttributes
 _**@see** [{json:api} resource-attributes](https://jsonapi.org/format/#document-resource-object-attributes)_
@@ -855,6 +873,30 @@ protected function toRelationships(Request $request): array
 
 `include=commentable.author` is valid when one of the related resources has `author`, path by path:
 `include=commentable.author,commentable.channel` is valid when posts have `author` and videos `channel`.
+
+### Native resources
+
+A relationship may relate resources of Laravel's native JSON:API (`Illuminate\Http\Resources\JsonApi\JsonApiResource`):
+
+```php
+protected function toRelationships(Request $request): array
+{
+    return [
+        'author' => $this->one(NativeUserResource::class),
+        'tags' => $this->many(NativeTagResource::class),
+    ];
+}
+```
+
+A collection collecting native resources stands for them, and a native resource is guessed as any other
+([without resource class](#without-resource-class): `#[UseResource]`, then the naming convention). Their linkage is
+rendered and loaded in batch as any other; `links()`, `meta()` and `identifierMeta()` receive the native resource.
+Included, they are rendered as leaves by their own `resolve()`, with their `fields[type]`: their relationships are
+never rendered, nothing is loaded nor included under them, and the `Includes` rule rejects `include=author.posts`.
+
+Their fields are unknown without a model: the `Fields` rule accepts those of their type as they are, the type being
+read without model (their `toType()`, otherwise Laravel's default). When their `toType()` needs a model, it accepts a
+type no definition has. A polymorphic relationship (`morph()`) cannot render native resources.
 
 ### Linkage and loading
 _**@see** [{json:api}: resource linkage](https://jsonapi.org/format/#document-resource-object-linkage)_

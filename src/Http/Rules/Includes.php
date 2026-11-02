@@ -12,6 +12,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
 
 /**
  * Validates an include path against the relationships declared by the definitions of the resources it goes through.
+ * Nothing is included under a relationship to native resources (`RelationshipDefinition::$native`).
  *
  * Its messages are the translations `jsonapi::validation.includes.*` (`vendor:publish --tag=jsonapi-lang`).
  *
@@ -86,16 +87,23 @@ final class Includes implements ValidationRule
             $child = $path === '' ? $relation : "{$path}.{$relation}";
 
             $related = [];
+            $native = false;
             foreach ($definitions as $definition) {
-                $related = [...$related, ...$definition->relationship($relation)->related ?? []];
+                $relationship = $definition->relationship($relation);
+                $related = [...$related, ...$relationship->related ?? []];
+                $native = $native || ($relationship?->isNative() ?? false);
             }
 
             if ($maxDepth !== null && substr_count($child, '.') >= $maxDepth) {
                 $tooDeep[] = $child;
-            } elseif ($related === []) {
-                $failures[] = ['include' => $path === '' ? $definitions[0]->type : $path, 'relation' => $relation];
-            } else {
+            } elseif ($related !== []) {
                 $this->assert(array_values(array_unique($related)), $include, $child, $maxDepth, $failures, $tooDeep);
+            } elseif ($native) {
+                foreach ($include->children($child) as $nested) {
+                    $failures[] = ['include' => $child, 'relation' => $nested];
+                }
+            } else {
+                $failures[] = ['include' => $path === '' ? $definitions[0]->type : $path, 'relation' => $relation];
             }
         }
     }

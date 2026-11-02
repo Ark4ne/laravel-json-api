@@ -9,7 +9,10 @@ use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Resources\JsonApiCollection;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Http\Resources\Attributes\Collects;
+use Illuminate\Http\Resources\JsonApi\JsonApiResource as NativeJsonApiResource;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Test\app\Http\Resources\NativeUserResource;
 
 final class RelatedResourceTest extends TestCase
 {
@@ -36,6 +39,25 @@ final class RelatedResourceTest extends TestCase
     {
         self::assertSame(ConventionResource::class, RelatedResource::resolve(ConventionCollection::class));
         self::assertSame(ConventionResource::class, ConventionCollection::definition()->class);
+    }
+
+    /**
+     * @return iterable<string, array{class-string, bool}>
+     */
+    public static function classes(): iterable
+    {
+        yield 'a native resource' => [NativeUserResource::class, true];
+        yield 'the native base resource' => [NativeJsonApiResource::class, true];
+        yield 'a resource of the package' => [ConventionResource::class, false];
+    }
+
+    /**
+     * @param class-string $class
+     */
+    #[DataProvider('classes')]
+    public function test_a_resource_of_laravel_native_json_api_is_native(string $class, bool $native): void
+    {
+        self::assertSame($native, RelatedResource::isNative($class));
     }
 
     public function test_a_class_that_is_not_a_resource_throws(): void

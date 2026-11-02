@@ -88,7 +88,8 @@ final readonly class LoadPlanner
                     $plan = $this->plan(RelatedResource::resolve($related), $context->withPath($name));
                     $plans[] = new LoadPlan($plan->relations, $plan->sources, $plan->nested, $relationship->morphs, $related);
                 }
-            } else {
+            } elseif (!$relationship->isNative()) {
+                // A native resource is a leaf: nothing is planned under it.
                 $plans[] = $this->plan(RelatedResource::resolve($relationship->related[0]), $context->withPath($name));
             }
 
