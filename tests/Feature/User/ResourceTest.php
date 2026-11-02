@@ -4,40 +4,47 @@ declare(strict_types=1);
 
 namespace Test\Feature\User;
 
-use Ark4ne\JsonApi\Support\Arr;
-use DateTimeInterface;
 use Illuminate\Http\Request;
 use Orchestra\Testbench\Attributes\DefineEnvironment;
-use Test\app\Http\Resources\CommentResource;
-use Test\app\Http\Resources\PostResource;
-use Test\app\Models\Comment;
-use Test\app\Models\Post;
+use Test\app\Http\Resources\UserResource;
 use Test\app\Models\User;
 use Test\app\Rendering\ServedStage;
 use Test\Feature\FeatureTestCase;
 
 class ResourceTest extends FeatureTestCase
 {
-    public function testShowBasic(): void
+    public function test_show_renders_the_user(): void
     {
         $user = $this->dataSeed();
 
         $response = $this->get("user/{$user->id}");
 
-        $response->assertExactJson($this->getJsonResult($user));
+        $this->assertDocument('show', $response);
     }
 
-    public function testShowWithAttributes(): void
+    public function test_rendering_a_resource_twice_gives_the_same_document_and_leaves_it_unchanged(): void
+    {
+        $resource = UserResource::make($this->dataSeed());
+        $request = Request::create('/?include=posts.comments,comments.post');
+
+        $first = $resource->toResponse($request)->getContent();
+        $second = $resource->toResponse($request)->getContent();
+
+        self::assertSame($first, $second);
+        self::assertSame([], $resource->with);
+    }
+
+    public function test_show_renders_only_the_requested_fields(): void
     {
         $user = $this->dataSeed();
 
         $response = $this->get("user/{$user->id}?fields[user]=name");
 
-        $response->assertExactJson($this->getJsonResult($user, ['name']));
+        $this->assertDocument('show-fields-name', $response);
     }
 
 
-    public function testShowWithStructAttributes(): void
+    public function test_show_renders_the_requested_struct_members(): void
     {
         $user = $this->dataSeed();
 
@@ -49,50 +56,43 @@ class ResourceTest extends FeatureTestCase
 
         $response = $this->get("user/{$user->id}?fields[user]=" . implode(',', $attrs));
 
-        $response->assertExactJson($this->getJsonResult($user, $attrs));
+        $this->assertDocument('show-fields-struct', $response);
     }
 
-    public function testShowWithRelationshipsPosts(): void
+    public function test_show_includes_the_posts(): void
     {
         $user = $this->dataSeed();
 
         $response = $this->get("user/{$user->id}?include=posts");
 
-        $response->assertExactJson($this->getJsonResult($user, null, ['posts']));
+        $this->assertDocument('show-include-posts', $response);
     }
 
-    public function testShowWithRelationshipsComments(): void
+    public function test_show_includes_the_comments(): void
     {
         $user = $this->dataSeed();
 
         $response = $this->get("user/{$user->id}?include=comments");
 
-        $response->assertExactJson($this->getJsonResult($user, null, ['comments']));
+        $this->assertDocument('show-include-comments', $response);
     }
 
-    public function testShowWithRelationshipsPostsComments(): void
+    public function test_show_includes_the_posts_and_the_comments(): void
     {
         $user = $this->dataSeed();
 
         $response = $this->get("user/{$user->id}?include=posts,comments");
 
-        $response->assertExactJson($this->getJsonResult($user, null, ['posts', 'comments']));
+        $this->assertDocument('show-include-posts-comments', $response);
     }
 
-    public function testShowWithRelationshipsDeepInclude(): void
+    public function test_show_never_includes_the_primary_resource_reached_through_a_deep_include(): void
     {
         $user = $this->dataSeed();
 
         // The primary resource reached through posts.user is never repeated in included.
-        $expected = $this->getJsonResult($user, null, ['posts']);
-
-        $response = $this->get("user/{$user->id}?include=posts.user");
-
-        $response->assertExactJson($expected);
-
-        $response = $this->get("user/{$user->id}?include=posts.user.posts.user.posts.user");
-
-        $response->assertExactJson($expected);
+        $this->assertDocument('show-include-posts', $this->get("user/{$user->id}?include=posts.user"));
+        $this->assertDocument('show-include-posts', $this->get("user/{$user->id}?include=posts.user.posts.user.posts.user"));
     }
 
     public function test_the_fieldset_of_a_type_restricts_its_included_resources_only(): void
@@ -116,7 +116,7 @@ class ResourceTest extends FeatureTestCase
         self::assertNotNull($response->json('data.relationships.posts'));
     }
 
-    public function testShowFailWithAttributes(): void
+    public function test_show_rejects_unknown_fields_and_types(): void
     {
         $user = $this->dataSeed();
 
@@ -132,7 +132,7 @@ class ResourceTest extends FeatureTestCase
         ]);
     }
 
-    public function testShowFailWithIncludes(): void
+    public function test_show_rejects_an_unknown_include(): void
     {
         $user = $this->dataSeed();
 
@@ -145,7 +145,7 @@ class ResourceTest extends FeatureTestCase
         ]]);
     }
 
-    public function testShowFailWithIncludesSub(): void
+    public function test_show_rejects_an_unknown_nested_include(): void
     {
         $user = $this->dataSeed();
 
@@ -158,7 +158,7 @@ class ResourceTest extends FeatureTestCase
         ]]);
     }
 
-    public function testShowMultipleFailures(): void
+    public function test_show_reports_every_invalid_include_and_field(): void
     {
         $user = $this->dataSeed();
 
@@ -177,13 +177,13 @@ class ResourceTest extends FeatureTestCase
     }
 
     #[DefineEnvironment('resolveRelationshipsWhenIncluded')]
-    public function testShowBasicAutoWhenIncluded(): void
+    public function test_show_leaves_out_the_linkage_of_relationships_not_included_when_configured_so(): void
     {
         $user = $this->dataSeed();
 
         $response = $this->get("user/{$user->id}");
 
-        $response->assertExactJson($this->getJsonResult($user, null, null, false));
+        $this->assertDocument('show-linkage-when-included', $response);
     }
 
     #[DefineEnvironment('registerServedStage')]
@@ -221,101 +221,4 @@ class ResourceTest extends FeatureTestCase
         return $user;
     }
 
-    /**
-     * @param list<string>|null $attributes
-     * @param list<string>|null $relationships
-     *
-     * @return array<string, mixed>
-     */
-    private function getJsonResult(User $user, ?array $attributes = null, ?array $relationships = null, bool $withIncluded = true): array
-    {
-        $request = new Request(array_merge(
-            ($attributes !== null ? ['fields' => ['user' => implode(',', $attributes)]] : []),
-            ($relationships !== null ? ['include' => implode(',', $relationships)] : []),
-        ));
-
-        // fields[user] restricts the relationships too (fields.relationships = filter).
-        $relationshipsOf = static fn(array $relationships) => $attributes === null
-            ? $relationships
-            : array_intersect_key($relationships, array_flip($attributes));
-
-        return array_filter([
-            'jsonapi' => ['version' => '1.1'],
-            'data' => array_filter([
-                'id' => (string) $user->id,
-                'type' => 'user',
-                'attributes' => Arr::intersectKeyStruct([
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    "with-apply-conditional-closure" => "huge-data-set",
-                    "with-apply-conditional-raw" => "huge-data-set",
-                    "with-apply-conditional-value" => "huge-data-set",
-                    "struct-set" => [
-                        "name" => $user->name,
-                        "closure" => "closure",
-                        "email" => $user->email,
-                        "casted" => "string",
-                        "with-apply-conditional-raw" => "huge-data-set",
-                        "sub-struct" => [
-                            "int" => 200,
-                            "float" => 1.1,
-                        ],
-                    ],
-                ], Arr::undot(array_fill_keys($attributes ?? [
-                    'name',
-                    'email',
-                    "with-apply-conditional-closure",
-                    "with-apply-conditional-raw",
-                    "with-apply-conditional-value",
-                    "struct-set",
-                ], true))),
-                'relationships' => $relationshipsOf(array_filter([
-                    // Resolved only when included: without data nor links, it is left out.
-                    'main-post' => $withIncluded ? ['data' => null] : null,
-                    'posts' => array_filter([
-                        'data' => $withIncluded ? $user->posts->map(fn(Post $post) => ['type' => 'post', 'id' => (string) $post->id])->all() : null,
-                        'links' => [
-                            'self' => "https://api.example.com/user/{$user->id}/relationships/posts",
-                            'related' => "https://api.example.com/user/{$user->id}/posts",
-                        ],
-                        'meta' => [
-                            'total' => $user->posts->count(),
-                        ],
-                    ]),
-                    'comments' => array_filter([
-                        // when loaded only
-                        'data' => $withIncluded && in_array('comments', $relationships ?? [], true)
-                            ? $user->comments->map(fn(Comment $comment) => [
-                                'type' => 'comment',
-                                'id' => (string) $comment->id,
-                            ])->all()
-                            : null,
-                        'links' => [
-                            'self' => "https://api.example.com/user/{$user->id}/relationships/comments",
-                            'related' => "https://api.example.com/user/{$user->id}/comments",
-                        ],
-                        'meta' => [
-                            'total' => $user->comments->count(),
-                        ],
-                    ]),
-                ], static fn($relationship) => $relationship !== null)),
-                'meta' => [
-                    'created_at' => $user->created_at->format(DateTimeInterface::ATOM),
-                    'updated_at' => $user->updated_at->format(DateTimeInterface::ATOM),
-                ],
-            ], static fn($member) => $member !== []),
-            'included' => collect()
-                ->merge(
-                    in_array('posts', $relationships ?? [], true)
-                        ? $user->posts->mapInto(PostResource::class)->map->toArray($request)
-                        : [],
-                )
-                ->merge(
-                    in_array('comments', $relationships ?? [], true)
-                        ? $user->comments->mapInto(CommentResource::class)->map->toArray($request)
-                        : [],
-                )
-                ->toArray(),
-        ]);
-    }
 }

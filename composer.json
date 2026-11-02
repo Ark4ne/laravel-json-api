@@ -60,6 +60,10 @@
         "cs": "php-cs-fixer fix --dry-run --diff",
         "cs:fix": "php-cs-fixer fix",
         "mutation": "infection --threads=max --show-mutations",
+        "fixtures:update": [
+            "@putenv JSONAPI_FIXTURES_UPDATE=1",
+            "phpunit tests/Feature"
+        ],
         "benchmark": [
             "Composer\\Config::disableProcessTimeout",
             "@php bin/benchmark.php"
@@ -74,6 +78,7 @@
     "scripts-descriptions": {
         "test": "Run the whole PHPUnit suite.",
         "test:coverage": "Run the tests with line coverage and fail under 90%.",
+        "fixtures:update": "Write the expected documents of the Feature tests (tests/Feature/**/expected/*.json): review the diff.",
         "stan": "Run PHPStan at max level with Larastan, the phpat architecture rules and the disallowed calls.",
         "stan:baseline": "Regenerate the PHPStan baseline (it may only shrink: review the diff).",
         "cs": "Check the code style (PER-CS).",

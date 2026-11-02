@@ -25,7 +25,7 @@ class TypedArrayTest extends TestCase
         $this->request = new Request();
     }
 
-    public function testArrayOfStrings(): void
+    public function test_an_array_of_strings_casts_each_item_to_a_string(): void
     {
         $array = new ValueArray('tags');
         $array = $array->of(new ValueString(null));
@@ -38,7 +38,7 @@ class TypedArrayTest extends TestCase
         self::assertSame(['php', 'laravel', 'json-api', '1', '1'], $result);
     }
 
-    public function testArrayOfIntegers(): void
+    public function test_an_array_of_integers_casts_each_item_to_an_integer(): void
     {
         $array = new ValueArray('scores');
         $array = $array->of(new ValueInteger(null));
@@ -51,7 +51,7 @@ class TypedArrayTest extends TestCase
         self::assertSame([1, 2, 3, 4], $result);
     }
 
-    public function testArrayOfEnums(): void
+    public function test_an_array_of_enums_renders_the_value_of_each_case(): void
     {
         $array = new ValueArray('statuses');
         $array = $array->of(new ValueEnum(null));
@@ -68,7 +68,7 @@ class TypedArrayTest extends TestCase
         self::assertSame([1, 0, 2], $result); // Assuming backed enum values
     }
 
-    public function testNestedArrays(): void
+    public function test_an_array_of_arrays_casts_the_items_of_the_inner_arrays(): void
     {
         $innerArray = new ValueArray(null);
         $innerArray = $innerArray->of(new ValueInteger(null));
@@ -92,7 +92,7 @@ class TypedArrayTest extends TestCase
         ], $result);
     }
 
-    public function testEmptyArray(): void
+    public function test_an_empty_typed_array_renders_an_empty_list(): void
     {
         $array = new ValueArray('tags');
         $array = $array->of(new ValueString(null));
@@ -103,7 +103,7 @@ class TypedArrayTest extends TestCase
         self::assertCount(0, $result);
     }
 
-    public function testArrayWithoutTypeSpecification(): void
+    public function test_an_untyped_array_renders_its_items_as_they_are(): void
     {
         $array = new ValueArray('mixed');
 

@@ -7,9 +7,7 @@ namespace Test\Unit\Http\Rules;
 use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Http\Rules\Includes;
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Translation\PotentiallyTranslatedString;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Test\app\Http\Resources\NativePostResource;
 use Test\app\Http\Resources\UserCollection;
@@ -23,9 +21,9 @@ class IncludesTest extends TestCase
      * @param list<string> $expected
      */
     #[DataProvider('validationDataProvider')]
-    public function testPasses(mixed $values, array $expected): void
+    public function test_the_includes_are_validated_against_the_resource(mixed $values, array $expected): void
     {
-        self::assertEquals($expected, self::errors(new Includes(UserResource::class), $values));
+        self::assertEquals($expected, self::ruleErrors('include', new Includes(UserResource::class), $values));
     }
 
     /**
@@ -65,25 +63,25 @@ class IncludesTest extends TestCase
 
     public function test_the_includes_are_read_from_the_definitions(): void
     {
-        self::assertSame([], self::errors(new Includes(AlphaResource::class), 'beta.gamma.alpha.gammas,gammas.lazy'));
+        self::assertSame([], self::ruleErrors('include', new Includes(AlphaResource::class), 'beta.gamma.alpha.gammas,gammas.lazy'));
         self::assertSame([
             'The selected :attribute is invalid.',
             '"beta.gamma" doesn\'t have relationship "unknown".',
-        ], self::errors(new Includes(AlphaResource::class), 'beta.gamma.unknown'));
+        ], self::ruleErrors('include', new Includes(AlphaResource::class), 'beta.gamma.unknown'));
     }
 
     public function test_nothing_is_included_under_a_native_resource(): void
     {
-        self::assertSame([], self::errors(new Includes(NativePostResource::class), 'user,comments'));
+        self::assertSame([], self::ruleErrors('include', new Includes(NativePostResource::class), 'user,comments'));
         self::assertSame([
             'The selected :attribute is invalid.',
             '"user" doesn\'t have relationship "posts".',
-        ], self::errors(new Includes(NativePostResource::class), 'user.posts'));
+        ], self::ruleErrors('include', new Includes(NativePostResource::class), 'user.posts'));
     }
 
     public function test_a_collection_validates_the_includes_of_the_resources_it_collects(): void
     {
-        self::assertSame([], self::errors(new Includes(UserCollection::class), 'posts.user,comments'));
+        self::assertSame([], self::ruleErrors('include', new Includes(UserCollection::class), 'posts.user,comments'));
     }
 
     public function test_the_rule_tells_the_resource_it_validates_against(): void
@@ -92,38 +90,19 @@ class IncludesTest extends TestCase
         self::assertSame(UserCollection::class, (new Includes(UserCollection::class))->resource());
     }
 
-    /**
-     * @return list<string>
-     */
-    private static function errors(ValidationRule $rule, mixed $value): array
-    {
-        /** @var list<PotentiallyTranslatedString> $messages */
-        $messages = [];
-
-        $rule->validate(
-            'include',
-            $value,
-            function (string $message) use (&$messages): PotentiallyTranslatedString {
-                return $messages[] = new PotentiallyTranslatedString($message, app('translator'));
-            },
-        );
-
-        // As the validator reads them: translated when the rule asked for it.
-        return array_map(static fn(PotentiallyTranslatedString $message): string => (string) $message, $messages);
-    }
 
     public function test_an_include_deeper_than_the_maximum_depth_fails(): void
     {
-        self::assertSame([], self::errors(new Includes(UserResource::class, maxDepth: 2), 'posts.user,comments'));
+        self::assertSame([], self::ruleErrors('include', new Includes(UserResource::class, maxDepth: 2), 'posts.user,comments'));
         self::assertSame([
             'The selected :attribute is invalid.',
             '"posts.user.posts" is deeper than the maximum include depth of 2.',
-        ], self::errors(new Includes(UserResource::class, maxDepth: 2), 'posts.user.posts'));
+        ], self::ruleErrors('include', new Includes(UserResource::class, maxDepth: 2), 'posts.user.posts'));
     }
 
     public function test_the_include_is_parsed_as_the_rendering_parses_it(): void
     {
-        self::assertSame([], self::errors(new Includes(UserResource::class), 'posts , comments,,posts.user'));
+        self::assertSame([], self::ruleErrors('include', new Includes(UserResource::class), 'posts , comments,,posts.user'));
     }
 
     public function test_the_maximum_depth_defaults_to_the_configuration(): void
@@ -134,7 +113,7 @@ class IncludesTest extends TestCase
             self::assertSame([
                 'The selected :attribute is invalid.',
                 '"posts.user" is deeper than the maximum include depth of 1.',
-            ], self::errors(new Includes(UserResource::class), 'posts.user'));
+            ], self::ruleErrors('include', new Includes(UserResource::class), 'posts.user'));
         } finally {
             Definitions::configure(Configuration::defaults());
         }
@@ -148,7 +127,7 @@ class IncludesTest extends TestCase
 
         self::assertSame(
             ['The selected :attribute is invalid.', 'user has no unknown'],
-            self::errors(new Includes(UserResource::class), 'unknown'),
+            self::ruleErrors('include', new Includes(UserResource::class), 'unknown'),
         );
     }
 
@@ -156,8 +135,8 @@ class IncludesTest extends TestCase
     {
         $rule = new Includes(UserResource::class);
 
-        self::assertNotSame([], self::errors($rule, 'unknown'));
-        self::assertSame([], self::errors($rule, 'posts'));
+        self::assertNotSame([], self::ruleErrors('include', $rule, 'unknown'));
+        self::assertSame([], self::ruleErrors('include', $rule, 'posts'));
     }
 
     public function test_the_validator_names_the_attribute(): void

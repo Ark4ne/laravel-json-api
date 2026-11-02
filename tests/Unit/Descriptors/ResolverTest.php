@@ -14,7 +14,7 @@ use Test\TestCase;
 
 class ResolverTest extends TestCase
 {
-    public function testResolveValue(): void
+    public function test_values_resolve_their_descriptors_against_the_model(): void
     {
         $stub = new class extends stdClass {
             use Resolver;

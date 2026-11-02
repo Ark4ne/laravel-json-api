@@ -37,6 +37,8 @@ composer test:coverage   # line coverage, minimum 90 %
 - **Static analysis:** PHPStan at max level with Larastan, strict rules, the `phpat` architecture rules and the
   disallowed calls. `phpstan-baseline.neon` holds the debt of the 1.x code: it may only shrink, never grow.
 - **Tests:** PHPUnit, on PHP 8.3 to 8.5 and Laravel 12 and 13 in the CI.
+- **Expected documents:** the Feature scenarios compare their documents to `tests/Feature/<Scenario>/expected/*.json`
+  (`assertDocument()`); `composer fixtures:update` rewrites them: review the diff before committing.
 - **Mutation testing:** Infection (`composer mutation`, requires `infection` installed globally).
 - **Performance:** `composer benchmark` renders 1,000 posts with 3 includes with this package, with 1.9 and with
   Laravel's JSON:API resources (`bin/benchmark/`). It fails when the implementations do not render the same resources,

@@ -45,7 +45,7 @@ class RelationTest extends TestCase
      * @dataProvider resourceProvider
      */
     #[DataProvider('resourceProvider')]
-    public function testIncluded($model): void
+    public function test_when_included_sets_the_linkage_of_the_relationship(mixed $model): void
     {
         $stub = new RelationOne(UserResource::class, fn() => null);
 
@@ -74,7 +74,7 @@ class RelationTest extends TestCase
      * @dataProvider resourceProvider
      */
     #[DataProvider('resourceProvider')]
-    public function testMeta($model): void
+    public function test_the_meta_closure_is_given_to_the_relationship(mixed $model): void
     {
         $stub = new RelationOne(UserResource::class, fn() => null);
 
@@ -95,7 +95,7 @@ class RelationTest extends TestCase
      * @dataProvider resourceProvider
      */
     #[DataProvider('resourceProvider')]
-    public function testLinks($model): void
+    public function test_the_links_closure_is_given_to_the_relationship(mixed $model): void
     {
         $stub = new RelationOne(UserResource::class, fn() => null);
 
@@ -125,7 +125,7 @@ class RelationTest extends TestCase
      * @dataProvider dataWhenLoaded
      */
     #[DataProvider('dataWhenLoaded')]
-    public function testWhenLoaded(string $expectedAttr, string|Closure|null $relation, string $invokedAttr): void
+    public function test_when_loaded_checks_the_relation_the_relationship_reads(string $expectedAttr, string|Closure|null $relation, string $invokedAttr): void
     {
         $mockModel = $this->getMockBuilder(Model::class)->onlyMethods(['relationLoaded'])->getMock();
         $mockModel->expects(self::once())->method('relationLoaded')->with($expectedAttr)->willReturn(false);
@@ -150,7 +150,7 @@ class RelationTest extends TestCase
      * @dataProvider dataWhenPivotLoaded
      */
     #[DataProvider('dataWhenPivotLoaded')]
-    public function testWhenPivotLoaded(string $expectedAttr, string|Closure|null $relation, string $invokedAttr): void
+    public function test_when_pivot_loaded_checks_the_pivot_of_the_relationship(string $expectedAttr, string|Closure|null $relation, string $invokedAttr): void
     {
         $model = new class extends Model {};
 
@@ -212,7 +212,7 @@ class RelationTest extends TestCase
      * @dataProvider resourceProvider
      */
     #[DataProvider('resourceProvider')]
-    public function testRelationMissing($model): void
+    public function test_a_missing_relation_renders_a_relationship_without_value(mixed $model): void
     {
         $missing = RelationMissing::fromRelationship(new Relationship(UserResource::class, fn() => null));
 

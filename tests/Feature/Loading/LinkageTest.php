@@ -4,17 +4,13 @@ declare(strict_types=1);
 
 namespace Test\Feature\Loading;
 
-use Illuminate\Contracts\Support\Responsable;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Testing\TestResponse;
 use Orchestra\Testbench\Attributes\DefineEnvironment;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Test\app\Models\Post;
 use Test\app\Models\User;
 use Test\Feature\FeatureTestCase;
 use Test\Feature\Loading\Fixtures\LinkagePostResource;
 use Test\Feature\Loading\Fixtures\LinkageUserResource;
-use Test\Support\JsonApiSchema;
 
 /**
  * The relations a document renders are loaded in batch, before rendering: one query per relation and per level, never
@@ -58,6 +54,37 @@ class LinkageTest extends FeatureTestCase
 
         self::assertSame(4, $queries);
         $response->assertJsonCount(5, 'data.relationships.comments.data');
+    }
+
+    /**
+     * No N+1: one resource or all of them, the same queries. (The resources of `tests/app` count the posts and comments
+     * of each user in the meta of their relationships: those queries are theirs, not the loading's.)
+     */
+    #[DataProvider('includes')]
+    public function test_the_number_of_queries_does_not_depend_on_the_number_of_resources(bool $users, string $include): void
+    {
+        // Fresh models for each rendering: nothing loaded by the first one.
+        $models = static fn() => $users ? User::query()->get() : Post::query()->get();
+        $collection = static fn(mixed $models) => $users
+            ? LinkageUserResource::collection($models)
+            : LinkagePostResource::collection($models);
+
+        [, $one] = $this->render($collection($models()->take(1)), "include={$include}");
+        [, $every] = $this->render($collection($all = $models()), "include={$include}");
+
+        self::assertGreaterThan(1, $all->count());
+        self::assertSame($one, $every);
+    }
+
+    /**
+     * @return iterable<string, array{bool, string}> Users or posts, and the include
+     */
+    public static function includes(): iterable
+    {
+        yield 'linkage only' => [false, ''];
+        yield 'to-one' => [false, 'user'];
+        yield 'to-many then to-one' => [false, 'comments.user'];
+        yield 'back to the same type' => [true, 'posts.user.posts'];
     }
 
     public function test_relations_already_loaded_are_not_loaded_again(): void
@@ -178,36 +205,5 @@ class LinkageTest extends FeatureTestCase
         $app['config']->set('jsonapi.relationship.linkage', 'loaded');
     }
 
-    /**
-     * Renders the document of a resource, valid against the JSON:API schema, and counts the SQL queries it runs.
-     *
-     * @return array{TestResponse<\Symfony\Component\HttpFoundation\Response>, int}
-     */
-    private function render(Responsable $resource, string $query = ''): array
-    {
-        DB::flushQueryLog();
-        DB::enableQueryLog();
 
-        $response = $resource->toResponse(Request::create("/?{$query}"));
-        $queries = count(DB::getQueryLog());
-
-        DB::disableQueryLog();
-
-        self::assertSame([], JsonApiSchema::errors($response->getContent()));
-
-        return [TestResponse::fromBaseResponse($response), $queries];
-    }
-
-    /**
-     * @param TestResponse<\Symfony\Component\HttpFoundation\Response> $response
-     *
-     * @return list<string>
-     */
-    private function includedTypes(TestResponse $response): array
-    {
-        $types = $response->json('included.*.type');
-        self::assertIsArray($types);
-
-        return array_values(array_filter($types, is_string(...)));
-    }
 }

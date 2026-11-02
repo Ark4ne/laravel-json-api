@@ -11,7 +11,7 @@ use Test\TestCase;
 
 class TypedArrayResourceTest extends TestCase
 {
-    public function testResourceWithArrayOfStrings(): void
+    public function test_an_array_of_strings_casts_each_item_to_a_string(): void
     {
         $model = Stub::model([
             'id' => 1,
@@ -43,7 +43,7 @@ class TypedArrayResourceTest extends TestCase
         self::assertSame(['php', 'laravel', 'json-api', '1', '1'], $result['attributes']['tags']);
     }
 
-    public function testResourceWithArrayOfIntegers(): void
+    public function test_an_array_of_integers_renders_each_item_as_an_integer(): void
     {
         $model = Stub::model([
             'id' => 2,
@@ -75,7 +75,7 @@ class TypedArrayResourceTest extends TestCase
         self::assertSame([1, 2, 3, 4], $result['attributes']['scores']);
     }
 
-    public function testResourceWithArrayOfFloats(): void
+    public function test_an_array_of_floats_renders_each_item_as_a_float(): void
     {
         $model = Stub::model([
             'id' => 3,
@@ -107,7 +107,7 @@ class TypedArrayResourceTest extends TestCase
         self::assertEquals([10.0, 20.5, 30.75, 40.0], $result['attributes']['prices']);
     }
 
-    public function testResourceWithNestedTypedArrays(): void
+    public function test_an_array_of_arrays_types_the_items_of_the_inner_arrays(): void
     {
         $model = Stub::model([
             'id' => 4,
@@ -150,7 +150,7 @@ class TypedArrayResourceTest extends TestCase
         ], $result['attributes']['matrix']);
     }
 
-    public function testResourceWithEmptyArray(): void
+    public function test_an_empty_typed_array_renders_an_empty_list(): void
     {
         $model = Stub::model([
             'id' => 5,
@@ -182,7 +182,7 @@ class TypedArrayResourceTest extends TestCase
         self::assertEmpty($result['attributes']['tags']);
     }
 
-    public function testResourceWithUntypedArray(): void
+    public function test_an_untyped_array_renders_its_items_as_they_are(): void
     {
         $model = Stub::model([
             'id' => 6,
@@ -214,7 +214,7 @@ class TypedArrayResourceTest extends TestCase
         self::assertSame([1, 'string', true, 3.14], $result['attributes']['mixed']);
     }
 
-    public function testResourceWithMultipleTypedArrays(): void
+    public function test_several_typed_arrays_render_side_by_side(): void
     {
         $model = Stub::model([
             'id' => 7,
@@ -256,7 +256,7 @@ class TypedArrayResourceTest extends TestCase
         self::assertEquals([10.5, 20.75], $result['attributes']['prices']);
     }
 
-    public function testResourceWithArrayOfBooleans(): void
+    public function test_an_array_of_booleans_casts_each_item_to_a_boolean(): void
     {
         $model = Stub::model([
             'id' => 8,
@@ -288,7 +288,7 @@ class TypedArrayResourceTest extends TestCase
         self::assertSame([true, false, true, false, true, false], $result['attributes']['flags']);
     }
 
-    public function testResourceWithArrayAndClosure(): void
+    public function test_a_typed_array_reads_its_items_from_a_closure(): void
     {
         $model = Stub::model([
             'id' => 9,
@@ -330,7 +330,7 @@ class TypedArrayResourceTest extends TestCase
      * The when() only affects whether the entire array attribute is included, not individual items.
      * This test documents the actual behavior.
      */
-    public function testArrayWithItemTypeConditionsAreNotEvaluated(): void
+    public function test_a_condition_on_the_item_type_does_not_filter_the_items(): void
     {
         $model = Stub::model([
             'id' => 10,
@@ -364,7 +364,7 @@ class TypedArrayResourceTest extends TestCase
         self::assertSame([true, false, true, false], $result['attributes']['flags']);
     }
 
-    public function testArrayWithArrayTypeWhenFalse(): void
+    public function test_a_typed_array_with_a_false_condition_is_left_out(): void
     {
         $model = Stub::model([
             'id' => 12,
@@ -394,7 +394,7 @@ class TypedArrayResourceTest extends TestCase
         self::assertArrayNotHasKey('attributes', $result);
     }
 
-    public function testArrayWithArrayTypeWhenTrue(): void
+    public function test_a_typed_array_with_a_true_condition_is_rendered(): void
     {
         $model = Stub::model([
             'id' => 13,
@@ -425,7 +425,7 @@ class TypedArrayResourceTest extends TestCase
         self::assertSame([true, false, true, false], $result['attributes']['flags']);
     }
 
-    public function testArrayWithWhenNotNull(): void
+    public function test_a_typed_array_with_when_not_null_is_left_out_when_null(): void
     {
         $model = Stub::model([
             'id' => 14,
@@ -459,7 +459,7 @@ class TypedArrayResourceTest extends TestCase
         self::assertSame([1, 2, 3], $result['attributes']['present']);
     }
 
-    public function testArrayWithWhenFilled(): void
+    public function test_a_typed_array_with_when_filled_is_left_out_when_empty(): void
     {
         $model = Stub::model([
             'id' => 15,
@@ -494,7 +494,7 @@ class TypedArrayResourceTest extends TestCase
         self::assertSame([1, 2, 3], $result['attributes']['filled']);
     }
 
-    public function testArrayWithWhenHas(): void
+    public function test_a_typed_array_with_when_has_is_left_out_when_the_model_lacks_the_attribute(): void
     {
         $model = Stub::model([
             'id' => 16,
@@ -527,7 +527,7 @@ class TypedArrayResourceTest extends TestCase
         self::assertSame([1, 2, 3], $result['attributes']['existing']);
     }
 
-    public function testArrayWithUnless(): void
+    public function test_a_typed_array_with_unless_is_left_out_when_the_condition_holds(): void
     {
         $model = Stub::model([
             'id' => 17,
@@ -560,7 +560,7 @@ class TypedArrayResourceTest extends TestCase
         self::assertSame(['php', 'laravel'], $result['attributes']['visible']);
     }
 
-    public function testArrayWithClosureCondition(): void
+    public function test_a_typed_array_with_a_closure_condition_reads_the_model(): void
     {
         $model = Stub::model([
             'id' => 18,
@@ -601,7 +601,7 @@ class TypedArrayResourceTest extends TestCase
         self::assertSame(['admin', 'super'], $result['attributes']['admin_tags']);
     }
 
-    public function testArrayWithMultipleConditions(): void
+    public function test_a_typed_array_with_conditions_that_all_hold_is_rendered(): void
     {
         $model = Stub::model([
             'id' => 19,
@@ -636,7 +636,7 @@ class TypedArrayResourceTest extends TestCase
         self::assertSame(['php', 'laravel'], $result['attributes']['tags']);
     }
 
-    public function testArrayWithMultipleConditionsOneFalse(): void
+    public function test_a_typed_array_with_one_false_condition_is_left_out(): void
     {
         $model = Stub::model([
             'id' => 20,
@@ -671,7 +671,7 @@ class TypedArrayResourceTest extends TestCase
 
     // Alternative syntax: array()->of()
 
-    public function testArrayWithOfSyntaxNoAttribute(): void
+    public function test_array_then_of_reads_the_attribute_named_like_the_member(): void
     {
         $model = Stub::model([
             'id' => 21,
@@ -705,7 +705,7 @@ class TypedArrayResourceTest extends TestCase
         self::assertArrayHasKey('flags', $result['attributes']);
     }
 
-    public function testArrayWithOfSyntaxWithAttribute(): void
+    public function test_array_then_of_reads_the_attribute_it_is_given(): void
     {
         $model = Stub::model([
             'id' => 22,
@@ -737,7 +737,7 @@ class TypedArrayResourceTest extends TestCase
         self::assertSame(['php', 'laravel', 'json-api', '1', '1'], $result['attributes']['abc']);
     }
 
-    public function testArrayWithOfSyntaxWithClosure(): void
+    public function test_array_then_of_reads_its_items_from_a_closure(): void
     {
         $model = Stub::model([
             'id' => 23,
@@ -769,7 +769,7 @@ class TypedArrayResourceTest extends TestCase
         self::assertSame([1, 2, 3, 4, 5], $result['attributes']['def']);
     }
 
-    public function testArrayWithOfSyntaxAndTransformation(): void
+    public function test_array_then_of_types_the_items_of_a_transformed_array(): void
     {
         $model = Stub::model([
             'id' => 24,
@@ -802,7 +802,7 @@ class TypedArrayResourceTest extends TestCase
         self::assertSame([2, 4, 6], $result['attributes']['doubled']);
     }
 
-    public function testArrayWithOfSyntaxWithConditions(): void
+    public function test_array_then_of_with_a_true_condition_is_rendered(): void
     {
         $model = Stub::model([
             'id' => 25,
@@ -837,7 +837,7 @@ class TypedArrayResourceTest extends TestCase
         self::assertSame([95, 87, 92, 78], $result['attributes']['scores']);
     }
 
-    public function testArrayWithOfSyntaxNested(): void
+    public function test_array_then_of_types_the_items_of_nested_arrays(): void
     {
         $model = Stub::model([
             'id' => 26,
@@ -877,7 +877,7 @@ class TypedArrayResourceTest extends TestCase
         ], $result['attributes']['matrix']);
     }
 
-    public function testArrayWithOfSyntaxMixedWithArrayOf(): void
+    public function test_array_of_and_array_then_of_render_side_by_side(): void
     {
         $model = Stub::model([
             'id' => 27,
@@ -921,7 +921,7 @@ class TypedArrayResourceTest extends TestCase
      * are not evaluated per-item. The condition affects the entire array descriptor,
      * not individual items.
      */
-    public function testArrayWithOfSyntaxItemTypeCondition(): void
+    public function test_a_condition_on_the_item_type_of_array_then_of_does_not_filter_the_items(): void
     {
         $model = Stub::model([
             'id' => 28,

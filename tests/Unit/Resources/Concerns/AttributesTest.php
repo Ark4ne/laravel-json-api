@@ -18,7 +18,7 @@ use Test\TestCase;
 
 class AttributesTest extends TestCase
 {
-    public function testToAttributes(): void
+    public function test_the_default_attributes_are_those_of_the_model_as_an_array(): void
     {
         $stub = fn($object) => new class ($object) extends JsonApiResource {
             protected function toType(Request $request): string

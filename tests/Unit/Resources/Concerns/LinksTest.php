@@ -13,7 +13,7 @@ use Test\TestCase;
 
 class LinksTest extends TestCase
 {
-    public function testToLinks(): void
+    public function test_to_links_returns_null_by_default_and_the_declared_links_otherwise(): void
     {
         $id = uniqid('id', true);
 

@@ -10,7 +10,6 @@ use Ark4ne\JsonApi\Http\Rules\Fields;
 use Ark4ne\JsonApi\Http\Rules\Includes;
 use Ark4ne\JsonApi\Support\DiagnosticLevel;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -23,7 +22,6 @@ use Test\Feature\Loading\Fixtures\EmptyMorphResource;
 use Test\Feature\Loading\Fixtures\LinkageFeedResource;
 use Test\Feature\Loading\Fixtures\LinkageLikeResource;
 use Test\Feature\Loading\Fixtures\LinkagePostResource;
-use Test\Support\JsonApiSchema;
 
 /**
  * A polymorphic relationship (`morph()`) renders each related model with the resource of its class, and loads them
@@ -48,7 +46,7 @@ class MorphTest extends FeatureTestCase
         $this->like(Post::query()->firstOrFail());
         $this->like(Comment::query()->firstOrFail());
 
-        [$response, $queries] = $this->render(Like::query()->get());
+        [$response, $queries] = $this->render(LinkageLikeResource::collection(Like::query()->get()));
 
         // The users, then the likeables: one query per class.
         self::assertSame(3, $queries);
@@ -65,7 +63,7 @@ class MorphTest extends FeatureTestCase
             $this->like($comment);
         }
 
-        [$response, $queries] = $this->render(Like::query()->get(), 'include=likeable.user');
+        [$response, $queries] = $this->render(LinkageLikeResource::collection(Like::query()->get()), 'include=likeable.user');
 
         // users, posts, comments; then, class by class, the included users of the posts and their comments (linkage),
         // the included users of the comments; then the posts of the included users (linkage), for each class.
@@ -151,23 +149,4 @@ class MorphTest extends FeatureTestCase
         $like->save();
     }
 
-    /**
-     * @param iterable<Like> $likes
-     *
-     * @return array{TestResponse<\Illuminate\Http\JsonResponse>, int}
-     */
-    private function render(iterable $likes, string $query = ''): array
-    {
-        DB::flushQueryLog();
-        DB::enableQueryLog();
-
-        $response = LinkageLikeResource::collection($likes)->toResponse(Request::create("/?{$query}"));
-        $queries = count(DB::getQueryLog());
-
-        DB::disableQueryLog();
-
-        self::assertSame([], JsonApiSchema::errors($response->getContent()));
-
-        return [TestResponse::fromBaseResponse($response), $queries];
-    }
 }

@@ -27,7 +27,7 @@ use Test\Feature\FeatureTestCase;
  */
 class DeepIncludeDeduplicationTest extends FeatureTestCase
 {
-    public function testDeepIncludeDeduplication(): void
+    public function test_a_resource_reached_by_several_include_paths_is_included_once(): void
     {
         $postAuthor    = User::factory()->create(); // User A: author of the post AND one comment
         $commentAuthor = User::factory()->create(); // User B: only appears via comments

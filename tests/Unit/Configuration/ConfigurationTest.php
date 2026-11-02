@@ -26,7 +26,7 @@ final class ConfigurationTest extends TestCase
         self::assertEquals(Configuration::defaults(), Configuration::fromArray($config));
     }
 
-    public function test_defaults(): void
+    public function test_the_defaults_are_those_of_a_fresh_installation(): void
     {
         $configuration = Configuration::defaults();
 

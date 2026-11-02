@@ -13,7 +13,7 @@ use Test\TestCase;
 
 class JsonApiResourceTest extends TestCase
 {
-    public function testBasic(): void
+    public function test_a_resource_without_members_renders_its_type_and_id(): void
     {
         $model = Stub::model(['id' => 1]);
         $resource = new class ($model) extends JsonApiResource {
@@ -37,7 +37,7 @@ class JsonApiResourceTest extends TestCase
         );
     }
 
-    public function testWithMeta(): void
+    public function test_the_document_meta_is_only_in_the_document_of_the_response(): void
     {
         $model = Stub::model(['id' => 1]);
         $resource = new class ($model) extends JsonApiResource {
@@ -79,7 +79,7 @@ class JsonApiResourceTest extends TestCase
         );
     }
 
-    public function testToCollection(): void
+    public function test_collection_collects_the_resource_class(): void
     {
         $resource = new class (null) extends JsonApiResource {
             public function toType(Request $request): string
@@ -94,7 +94,7 @@ class JsonApiResourceTest extends TestCase
         self::assertEquals($resource::class, $collection->collects);
     }
 
-    public function testReturnArray(): void
+    public function test_iterable_members_render_as_nested_arrays(): void
     {
         $resource = new class (null) extends JsonApiResource {
             public function toIdentifier(Request $request): string

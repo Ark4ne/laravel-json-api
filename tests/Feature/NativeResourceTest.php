@@ -4,11 +4,8 @@ declare(strict_types=1);
 
 namespace Test\Feature;
 
-use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\JsonApi\JsonApiRequest;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Testing\TestResponse;
 use Test\app\Http\Resources\NativeCommentResource;
 use Test\app\Http\Resources\NativePostResource;
 use Test\app\Models\Post;
@@ -110,36 +107,5 @@ final class NativeResourceTest extends FeatureTestCase
         self::assertSame([], JsonApiSchema::errors($native->getContent()));
     }
 
-    /**
-     * Renders the document of a resource, valid against the JSON:API schema, and counts the SQL queries it runs.
-     *
-     * @return array{TestResponse<\Symfony\Component\HttpFoundation\Response>, int}
-     */
-    private function render(Responsable $resource, string $query = ''): array
-    {
-        DB::flushQueryLog();
-        DB::enableQueryLog();
 
-        $response = $resource->toResponse(Request::create("/?{$query}"));
-        $queries = count(DB::getQueryLog());
-
-        DB::disableQueryLog();
-
-        self::assertSame([], JsonApiSchema::errors($response->getContent()));
-
-        return [TestResponse::fromBaseResponse($response), $queries];
-    }
-
-    /**
-     * @param TestResponse<\Symfony\Component\HttpFoundation\Response> $response
-     *
-     * @return list<string>
-     */
-    private function includedTypes(TestResponse $response): array
-    {
-        $types = $response->json('included.*.type');
-        self::assertIsArray($types);
-
-        return array_values(array_filter($types, is_string(...)));
-    }
 }

@@ -1,0 +1,672 @@
+{
+    "jsonapi": {
+        "version": "1.1"
+    },
+    "data": [
+        {
+            "type": "user",
+            "id": "1",
+            "attributes": {
+                "name": "User 1",
+                "email": "user1@example.com",
+                "with-apply-conditional-raw": "huge-data-set",
+                "with-apply-conditional-closure": "huge-data-set",
+                "with-apply-conditional-value": "huge-data-set",
+                "struct-set": {
+                    "name": "User 1",
+                    "email": "user1@example.com",
+                    "casted": "string",
+                    "with-apply-conditional-raw": "huge-data-set",
+                    "closure": "closure",
+                    "sub-struct": {
+                        "int": 200,
+                        "float": 1.1
+                    }
+                }
+            },
+            "relationships": {
+                "main-post": {
+                    "data": null
+                },
+                "posts": {
+                    "data": [
+                        {
+                            "type": "post",
+                            "id": "1"
+                        },
+                        {
+                            "type": "post",
+                            "id": "2"
+                        },
+                        {
+                            "type": "post",
+                            "id": "3"
+                        }
+                    ],
+                    "links": {
+                        "self": "https://api.example.com/user/1/relationships/posts",
+                        "related": "https://api.example.com/user/1/posts"
+                    },
+                    "meta": {
+                        "total": 3
+                    }
+                },
+                "comments": {
+                    "links": {
+                        "self": "https://api.example.com/user/1/relationships/comments",
+                        "related": "https://api.example.com/user/1/comments"
+                    },
+                    "meta": {
+                        "total": 15
+                    }
+                }
+            },
+            "meta": {
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-01T00:00:00+00:00"
+            }
+        },
+        {
+            "type": "user",
+            "id": "2",
+            "attributes": {
+                "name": "User 2",
+                "email": "user2@example.com",
+                "with-apply-conditional-raw": "huge-data-set",
+                "with-apply-conditional-closure": "huge-data-set",
+                "with-apply-conditional-value": "huge-data-set",
+                "struct-set": {
+                    "name": "User 2",
+                    "email": "user2@example.com",
+                    "casted": "string",
+                    "with-apply-conditional-raw": "huge-data-set",
+                    "closure": "closure",
+                    "sub-struct": {
+                        "int": 200,
+                        "float": 1.1
+                    }
+                }
+            },
+            "relationships": {
+                "main-post": {
+                    "data": null
+                },
+                "posts": {
+                    "data": [
+                        {
+                            "type": "post",
+                            "id": "4"
+                        },
+                        {
+                            "type": "post",
+                            "id": "5"
+                        },
+                        {
+                            "type": "post",
+                            "id": "6"
+                        }
+                    ],
+                    "links": {
+                        "self": "https://api.example.com/user/2/relationships/posts",
+                        "related": "https://api.example.com/user/2/posts"
+                    },
+                    "meta": {
+                        "total": 3
+                    }
+                },
+                "comments": {
+                    "links": {
+                        "self": "https://api.example.com/user/2/relationships/comments",
+                        "related": "https://api.example.com/user/2/comments"
+                    },
+                    "meta": {
+                        "total": 15
+                    }
+                }
+            },
+            "meta": {
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-01T00:00:00+00:00"
+            }
+        },
+        {
+            "type": "user",
+            "id": "3",
+            "attributes": {
+                "name": "User 3",
+                "email": "user3@example.com",
+                "with-apply-conditional-raw": "huge-data-set",
+                "with-apply-conditional-closure": "huge-data-set",
+                "with-apply-conditional-value": "huge-data-set",
+                "struct-set": {
+                    "name": "User 3",
+                    "email": "user3@example.com",
+                    "casted": "string",
+                    "with-apply-conditional-raw": "huge-data-set",
+                    "closure": "closure",
+                    "sub-struct": {
+                        "int": 200,
+                        "float": 1.1
+                    }
+                }
+            },
+            "relationships": {
+                "main-post": {
+                    "data": null
+                },
+                "posts": {
+                    "data": [
+                        {
+                            "type": "post",
+                            "id": "7"
+                        },
+                        {
+                            "type": "post",
+                            "id": "8"
+                        },
+                        {
+                            "type": "post",
+                            "id": "9"
+                        }
+                    ],
+                    "links": {
+                        "self": "https://api.example.com/user/3/relationships/posts",
+                        "related": "https://api.example.com/user/3/posts"
+                    },
+                    "meta": {
+                        "total": 3
+                    }
+                },
+                "comments": {
+                    "links": {
+                        "self": "https://api.example.com/user/3/relationships/comments",
+                        "related": "https://api.example.com/user/3/comments"
+                    },
+                    "meta": {
+                        "total": 15
+                    }
+                }
+            },
+            "meta": {
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-01T00:00:00+00:00"
+            }
+        },
+        {
+            "type": "user",
+            "id": "4",
+            "attributes": {
+                "name": "User 4",
+                "email": "user4@example.com",
+                "with-apply-conditional-raw": "huge-data-set",
+                "with-apply-conditional-closure": "huge-data-set",
+                "with-apply-conditional-value": "huge-data-set",
+                "struct-set": {
+                    "name": "User 4",
+                    "email": "user4@example.com",
+                    "casted": "string",
+                    "with-apply-conditional-raw": "huge-data-set",
+                    "closure": "closure",
+                    "sub-struct": {
+                        "int": 200,
+                        "float": 1.1
+                    }
+                }
+            },
+            "relationships": {
+                "main-post": {
+                    "data": null
+                },
+                "posts": {
+                    "data": [
+                        {
+                            "type": "post",
+                            "id": "10"
+                        },
+                        {
+                            "type": "post",
+                            "id": "11"
+                        },
+                        {
+                            "type": "post",
+                            "id": "12"
+                        }
+                    ],
+                    "links": {
+                        "self": "https://api.example.com/user/4/relationships/posts",
+                        "related": "https://api.example.com/user/4/posts"
+                    },
+                    "meta": {
+                        "total": 3
+                    }
+                },
+                "comments": {
+                    "links": {
+                        "self": "https://api.example.com/user/4/relationships/comments",
+                        "related": "https://api.example.com/user/4/comments"
+                    },
+                    "meta": {
+                        "total": 15
+                    }
+                }
+            },
+            "meta": {
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-01T00:00:00+00:00"
+            }
+        },
+        {
+            "type": "user",
+            "id": "5",
+            "attributes": {
+                "name": "User 5",
+                "email": "user5@example.com",
+                "with-apply-conditional-raw": "huge-data-set",
+                "with-apply-conditional-closure": "huge-data-set",
+                "with-apply-conditional-value": "huge-data-set",
+                "struct-set": {
+                    "name": "User 5",
+                    "email": "user5@example.com",
+                    "casted": "string",
+                    "with-apply-conditional-raw": "huge-data-set",
+                    "closure": "closure",
+                    "sub-struct": {
+                        "int": 200,
+                        "float": 1.1
+                    }
+                }
+            },
+            "relationships": {
+                "main-post": {
+                    "data": null
+                },
+                "posts": {
+                    "data": [
+                        {
+                            "type": "post",
+                            "id": "13"
+                        },
+                        {
+                            "type": "post",
+                            "id": "14"
+                        },
+                        {
+                            "type": "post",
+                            "id": "15"
+                        }
+                    ],
+                    "links": {
+                        "self": "https://api.example.com/user/5/relationships/posts",
+                        "related": "https://api.example.com/user/5/posts"
+                    },
+                    "meta": {
+                        "total": 3
+                    }
+                },
+                "comments": {
+                    "links": {
+                        "self": "https://api.example.com/user/5/relationships/comments",
+                        "related": "https://api.example.com/user/5/comments"
+                    },
+                    "meta": {
+                        "total": 15
+                    }
+                }
+            },
+            "meta": {
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-01T00:00:00+00:00"
+            }
+        },
+        {
+            "type": "user",
+            "id": "6",
+            "attributes": {
+                "name": "User 6",
+                "email": "user6@example.com",
+                "with-apply-conditional-raw": "huge-data-set",
+                "with-apply-conditional-closure": "huge-data-set",
+                "with-apply-conditional-value": "huge-data-set",
+                "struct-set": {
+                    "name": "User 6",
+                    "email": "user6@example.com",
+                    "casted": "string",
+                    "with-apply-conditional-raw": "huge-data-set",
+                    "closure": "closure",
+                    "sub-struct": {
+                        "int": 200,
+                        "float": 1.1
+                    }
+                }
+            },
+            "relationships": {
+                "main-post": {
+                    "data": null
+                },
+                "posts": {
+                    "data": [
+                        {
+                            "type": "post",
+                            "id": "16"
+                        },
+                        {
+                            "type": "post",
+                            "id": "17"
+                        },
+                        {
+                            "type": "post",
+                            "id": "18"
+                        }
+                    ],
+                    "links": {
+                        "self": "https://api.example.com/user/6/relationships/posts",
+                        "related": "https://api.example.com/user/6/posts"
+                    },
+                    "meta": {
+                        "total": 3
+                    }
+                },
+                "comments": {
+                    "links": {
+                        "self": "https://api.example.com/user/6/relationships/comments",
+                        "related": "https://api.example.com/user/6/comments"
+                    },
+                    "meta": {
+                        "total": 15
+                    }
+                }
+            },
+            "meta": {
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-01T00:00:00+00:00"
+            }
+        },
+        {
+            "type": "user",
+            "id": "7",
+            "attributes": {
+                "name": "User 7",
+                "email": "user7@example.com",
+                "with-apply-conditional-raw": "huge-data-set",
+                "with-apply-conditional-closure": "huge-data-set",
+                "with-apply-conditional-value": "huge-data-set",
+                "struct-set": {
+                    "name": "User 7",
+                    "email": "user7@example.com",
+                    "casted": "string",
+                    "with-apply-conditional-raw": "huge-data-set",
+                    "closure": "closure",
+                    "sub-struct": {
+                        "int": 200,
+                        "float": 1.1
+                    }
+                }
+            },
+            "relationships": {
+                "main-post": {
+                    "data": null
+                },
+                "posts": {
+                    "data": [
+                        {
+                            "type": "post",
+                            "id": "19"
+                        },
+                        {
+                            "type": "post",
+                            "id": "20"
+                        },
+                        {
+                            "type": "post",
+                            "id": "21"
+                        }
+                    ],
+                    "links": {
+                        "self": "https://api.example.com/user/7/relationships/posts",
+                        "related": "https://api.example.com/user/7/posts"
+                    },
+                    "meta": {
+                        "total": 3
+                    }
+                },
+                "comments": {
+                    "links": {
+                        "self": "https://api.example.com/user/7/relationships/comments",
+                        "related": "https://api.example.com/user/7/comments"
+                    },
+                    "meta": {
+                        "total": 15
+                    }
+                }
+            },
+            "meta": {
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-01T00:00:00+00:00"
+            }
+        },
+        {
+            "type": "user",
+            "id": "8",
+            "attributes": {
+                "name": "User 8",
+                "email": "user8@example.com",
+                "with-apply-conditional-raw": "huge-data-set",
+                "with-apply-conditional-closure": "huge-data-set",
+                "with-apply-conditional-value": "huge-data-set",
+                "struct-set": {
+                    "name": "User 8",
+                    "email": "user8@example.com",
+                    "casted": "string",
+                    "with-apply-conditional-raw": "huge-data-set",
+                    "closure": "closure",
+                    "sub-struct": {
+                        "int": 200,
+                        "float": 1.1
+                    }
+                }
+            },
+            "relationships": {
+                "main-post": {
+                    "data": null
+                },
+                "posts": {
+                    "data": [
+                        {
+                            "type": "post",
+                            "id": "22"
+                        },
+                        {
+                            "type": "post",
+                            "id": "23"
+                        },
+                        {
+                            "type": "post",
+                            "id": "24"
+                        }
+                    ],
+                    "links": {
+                        "self": "https://api.example.com/user/8/relationships/posts",
+                        "related": "https://api.example.com/user/8/posts"
+                    },
+                    "meta": {
+                        "total": 3
+                    }
+                },
+                "comments": {
+                    "links": {
+                        "self": "https://api.example.com/user/8/relationships/comments",
+                        "related": "https://api.example.com/user/8/comments"
+                    },
+                    "meta": {
+                        "total": 15
+                    }
+                }
+            },
+            "meta": {
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-01T00:00:00+00:00"
+            }
+        },
+        {
+            "type": "user",
+            "id": "9",
+            "attributes": {
+                "name": "User 9",
+                "email": "user9@example.com",
+                "with-apply-conditional-raw": "huge-data-set",
+                "with-apply-conditional-closure": "huge-data-set",
+                "with-apply-conditional-value": "huge-data-set",
+                "struct-set": {
+                    "name": "User 9",
+                    "email": "user9@example.com",
+                    "casted": "string",
+                    "with-apply-conditional-raw": "huge-data-set",
+                    "closure": "closure",
+                    "sub-struct": {
+                        "int": 200,
+                        "float": 1.1
+                    }
+                }
+            },
+            "relationships": {
+                "main-post": {
+                    "data": null
+                },
+                "posts": {
+                    "data": [
+                        {
+                            "type": "post",
+                            "id": "25"
+                        },
+                        {
+                            "type": "post",
+                            "id": "26"
+                        },
+                        {
+                            "type": "post",
+                            "id": "27"
+                        }
+                    ],
+                    "links": {
+                        "self": "https://api.example.com/user/9/relationships/posts",
+                        "related": "https://api.example.com/user/9/posts"
+                    },
+                    "meta": {
+                        "total": 3
+                    }
+                },
+                "comments": {
+                    "links": {
+                        "self": "https://api.example.com/user/9/relationships/comments",
+                        "related": "https://api.example.com/user/9/comments"
+                    },
+                    "meta": {
+                        "total": 15
+                    }
+                }
+            },
+            "meta": {
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-01T00:00:00+00:00"
+            }
+        },
+        {
+            "type": "user",
+            "id": "10",
+            "attributes": {
+                "name": "User 10",
+                "email": "user10@example.com",
+                "with-apply-conditional-raw": "huge-data-set",
+                "with-apply-conditional-closure": "huge-data-set",
+                "with-apply-conditional-value": "huge-data-set",
+                "struct-set": {
+                    "name": "User 10",
+                    "email": "user10@example.com",
+                    "casted": "string",
+                    "with-apply-conditional-raw": "huge-data-set",
+                    "closure": "closure",
+                    "sub-struct": {
+                        "int": 200,
+                        "float": 1.1
+                    }
+                }
+            },
+            "relationships": {
+                "main-post": {
+                    "data": null
+                },
+                "posts": {
+                    "data": [
+                        {
+                            "type": "post",
+                            "id": "28"
+                        },
+                        {
+                            "type": "post",
+                            "id": "29"
+                        },
+                        {
+                            "type": "post",
+                            "id": "30"
+                        }
+                    ],
+                    "links": {
+                        "self": "https://api.example.com/user/10/relationships/posts",
+                        "related": "https://api.example.com/user/10/posts"
+                    },
+                    "meta": {
+                        "total": 3
+                    }
+                },
+                "comments": {
+                    "links": {
+                        "self": "https://api.example.com/user/10/relationships/comments",
+                        "related": "https://api.example.com/user/10/comments"
+                    },
+                    "meta": {
+                        "total": 15
+                    }
+                }
+            },
+            "meta": {
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-01T00:00:00+00:00"
+            }
+        }
+    ],
+    "links": {
+        "first": "http://localhost/user?page=1",
+        "last": "http://localhost/user?page=1",
+        "prev": null,
+        "next": null
+    },
+    "meta": {
+        "current_page": 1,
+        "from": 1,
+        "last_page": 1,
+        "links": [
+            {
+                "url": null,
+                "label": "&laquo; Previous",
+                "page": null,
+                "active": false
+            },
+            {
+                "url": "http://localhost/user?page=1",
+                "label": "1",
+                "page": 1,
+                "active": true
+            },
+            {
+                "url": null,
+                "label": "Next &raquo;",
+                "page": null,
+                "active": false
+            }
+        ],
+        "path": "http://localhost/user",
+        "per_page": 15,
+        "to": 10,
+        "total": 10
+    }
+}

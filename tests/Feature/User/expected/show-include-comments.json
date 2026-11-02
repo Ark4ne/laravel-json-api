@@ -1,0 +1,507 @@
+{
+    "jsonapi": {
+        "version": "1.1"
+    },
+    "data": {
+        "type": "user",
+        "id": "1",
+        "attributes": {
+            "name": "User 1",
+            "email": "user1@example.com",
+            "with-apply-conditional-raw": "huge-data-set",
+            "with-apply-conditional-closure": "huge-data-set",
+            "with-apply-conditional-value": "huge-data-set",
+            "struct-set": {
+                "name": "User 1",
+                "email": "user1@example.com",
+                "casted": "string",
+                "with-apply-conditional-raw": "huge-data-set",
+                "closure": "closure",
+                "sub-struct": {
+                    "int": 200,
+                    "float": 1.1
+                }
+            }
+        },
+        "relationships": {
+            "main-post": {
+                "data": null
+            },
+            "posts": {
+                "data": [
+                    {
+                        "type": "post",
+                        "id": "1"
+                    },
+                    {
+                        "type": "post",
+                        "id": "2"
+                    },
+                    {
+                        "type": "post",
+                        "id": "3"
+                    }
+                ],
+                "links": {
+                    "self": "https://api.example.com/user/1/relationships/posts",
+                    "related": "https://api.example.com/user/1/posts"
+                },
+                "meta": {
+                    "total": 3
+                }
+            },
+            "comments": {
+                "data": [
+                    {
+                        "type": "comment",
+                        "id": "80"
+                    },
+                    {
+                        "type": "comment",
+                        "id": "85"
+                    },
+                    {
+                        "type": "comment",
+                        "id": "90"
+                    },
+                    {
+                        "type": "comment",
+                        "id": "94"
+                    },
+                    {
+                        "type": "comment",
+                        "id": "99"
+                    },
+                    {
+                        "type": "comment",
+                        "id": "104"
+                    },
+                    {
+                        "type": "comment",
+                        "id": "108"
+                    },
+                    {
+                        "type": "comment",
+                        "id": "113"
+                    },
+                    {
+                        "type": "comment",
+                        "id": "118"
+                    },
+                    {
+                        "type": "comment",
+                        "id": "122"
+                    },
+                    {
+                        "type": "comment",
+                        "id": "127"
+                    },
+                    {
+                        "type": "comment",
+                        "id": "132"
+                    },
+                    {
+                        "type": "comment",
+                        "id": "136"
+                    },
+                    {
+                        "type": "comment",
+                        "id": "141"
+                    },
+                    {
+                        "type": "comment",
+                        "id": "146"
+                    }
+                ],
+                "links": {
+                    "self": "https://api.example.com/user/1/relationships/comments",
+                    "related": "https://api.example.com/user/1/comments"
+                },
+                "meta": {
+                    "total": 15
+                }
+            }
+        },
+        "meta": {
+            "created_at": "2026-01-01T00:00:00+00:00",
+            "updated_at": "2026-01-01T00:00:00+00:00"
+        }
+    },
+    "included": [
+        {
+            "type": "comment",
+            "id": "80",
+            "attributes": {
+                "content": "Comment of user 1 on a post of user 6."
+            },
+            "relationships": {
+                "user": {
+                    "links": {
+                        "self": "https://api.example.com/comment/80/relationships/user",
+                        "related": "https://api.example.com/comment/80/user"
+                    }
+                },
+                "post": {
+                    "links": {
+                        "self": "https://api.example.com/comment/80/relationships/post",
+                        "related": "https://api.example.com/comment/80/post"
+                    }
+                }
+            },
+            "meta": {
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-01T00:00:00+00:00"
+            }
+        },
+        {
+            "type": "comment",
+            "id": "85",
+            "attributes": {
+                "content": "Comment of user 1 on a post of user 6."
+            },
+            "relationships": {
+                "user": {
+                    "links": {
+                        "self": "https://api.example.com/comment/85/relationships/user",
+                        "related": "https://api.example.com/comment/85/user"
+                    }
+                },
+                "post": {
+                    "links": {
+                        "self": "https://api.example.com/comment/85/relationships/post",
+                        "related": "https://api.example.com/comment/85/post"
+                    }
+                }
+            },
+            "meta": {
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-01T00:00:00+00:00"
+            }
+        },
+        {
+            "type": "comment",
+            "id": "90",
+            "attributes": {
+                "content": "Comment of user 1 on a post of user 6."
+            },
+            "relationships": {
+                "user": {
+                    "links": {
+                        "self": "https://api.example.com/comment/90/relationships/user",
+                        "related": "https://api.example.com/comment/90/user"
+                    }
+                },
+                "post": {
+                    "links": {
+                        "self": "https://api.example.com/comment/90/relationships/post",
+                        "related": "https://api.example.com/comment/90/post"
+                    }
+                }
+            },
+            "meta": {
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-01T00:00:00+00:00"
+            }
+        },
+        {
+            "type": "comment",
+            "id": "94",
+            "attributes": {
+                "content": "Comment of user 1 on a post of user 7."
+            },
+            "relationships": {
+                "user": {
+                    "links": {
+                        "self": "https://api.example.com/comment/94/relationships/user",
+                        "related": "https://api.example.com/comment/94/user"
+                    }
+                },
+                "post": {
+                    "links": {
+                        "self": "https://api.example.com/comment/94/relationships/post",
+                        "related": "https://api.example.com/comment/94/post"
+                    }
+                }
+            },
+            "meta": {
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-01T00:00:00+00:00"
+            }
+        },
+        {
+            "type": "comment",
+            "id": "99",
+            "attributes": {
+                "content": "Comment of user 1 on a post of user 7."
+            },
+            "relationships": {
+                "user": {
+                    "links": {
+                        "self": "https://api.example.com/comment/99/relationships/user",
+                        "related": "https://api.example.com/comment/99/user"
+                    }
+                },
+                "post": {
+                    "links": {
+                        "self": "https://api.example.com/comment/99/relationships/post",
+                        "related": "https://api.example.com/comment/99/post"
+                    }
+                }
+            },
+            "meta": {
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-01T00:00:00+00:00"
+            }
+        },
+        {
+            "type": "comment",
+            "id": "104",
+            "attributes": {
+                "content": "Comment of user 1 on a post of user 7."
+            },
+            "relationships": {
+                "user": {
+                    "links": {
+                        "self": "https://api.example.com/comment/104/relationships/user",
+                        "related": "https://api.example.com/comment/104/user"
+                    }
+                },
+                "post": {
+                    "links": {
+                        "self": "https://api.example.com/comment/104/relationships/post",
+                        "related": "https://api.example.com/comment/104/post"
+                    }
+                }
+            },
+            "meta": {
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-01T00:00:00+00:00"
+            }
+        },
+        {
+            "type": "comment",
+            "id": "108",
+            "attributes": {
+                "content": "Comment of user 1 on a post of user 8."
+            },
+            "relationships": {
+                "user": {
+                    "links": {
+                        "self": "https://api.example.com/comment/108/relationships/user",
+                        "related": "https://api.example.com/comment/108/user"
+                    }
+                },
+                "post": {
+                    "links": {
+                        "self": "https://api.example.com/comment/108/relationships/post",
+                        "related": "https://api.example.com/comment/108/post"
+                    }
+                }
+            },
+            "meta": {
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-01T00:00:00+00:00"
+            }
+        },
+        {
+            "type": "comment",
+            "id": "113",
+            "attributes": {
+                "content": "Comment of user 1 on a post of user 8."
+            },
+            "relationships": {
+                "user": {
+                    "links": {
+                        "self": "https://api.example.com/comment/113/relationships/user",
+                        "related": "https://api.example.com/comment/113/user"
+                    }
+                },
+                "post": {
+                    "links": {
+                        "self": "https://api.example.com/comment/113/relationships/post",
+                        "related": "https://api.example.com/comment/113/post"
+                    }
+                }
+            },
+            "meta": {
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-01T00:00:00+00:00"
+            }
+        },
+        {
+            "type": "comment",
+            "id": "118",
+            "attributes": {
+                "content": "Comment of user 1 on a post of user 8."
+            },
+            "relationships": {
+                "user": {
+                    "links": {
+                        "self": "https://api.example.com/comment/118/relationships/user",
+                        "related": "https://api.example.com/comment/118/user"
+                    }
+                },
+                "post": {
+                    "links": {
+                        "self": "https://api.example.com/comment/118/relationships/post",
+                        "related": "https://api.example.com/comment/118/post"
+                    }
+                }
+            },
+            "meta": {
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-01T00:00:00+00:00"
+            }
+        },
+        {
+            "type": "comment",
+            "id": "122",
+            "attributes": {
+                "content": "Comment of user 1 on a post of user 9."
+            },
+            "relationships": {
+                "user": {
+                    "links": {
+                        "self": "https://api.example.com/comment/122/relationships/user",
+                        "related": "https://api.example.com/comment/122/user"
+                    }
+                },
+                "post": {
+                    "links": {
+                        "self": "https://api.example.com/comment/122/relationships/post",
+                        "related": "https://api.example.com/comment/122/post"
+                    }
+                }
+            },
+            "meta": {
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-01T00:00:00+00:00"
+            }
+        },
+        {
+            "type": "comment",
+            "id": "127",
+            "attributes": {
+                "content": "Comment of user 1 on a post of user 9."
+            },
+            "relationships": {
+                "user": {
+                    "links": {
+                        "self": "https://api.example.com/comment/127/relationships/user",
+                        "related": "https://api.example.com/comment/127/user"
+                    }
+                },
+                "post": {
+                    "links": {
+                        "self": "https://api.example.com/comment/127/relationships/post",
+                        "related": "https://api.example.com/comment/127/post"
+                    }
+                }
+            },
+            "meta": {
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-01T00:00:00+00:00"
+            }
+        },
+        {
+            "type": "comment",
+            "id": "132",
+            "attributes": {
+                "content": "Comment of user 1 on a post of user 9."
+            },
+            "relationships": {
+                "user": {
+                    "links": {
+                        "self": "https://api.example.com/comment/132/relationships/user",
+                        "related": "https://api.example.com/comment/132/user"
+                    }
+                },
+                "post": {
+                    "links": {
+                        "self": "https://api.example.com/comment/132/relationships/post",
+                        "related": "https://api.example.com/comment/132/post"
+                    }
+                }
+            },
+            "meta": {
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-01T00:00:00+00:00"
+            }
+        },
+        {
+            "type": "comment",
+            "id": "136",
+            "attributes": {
+                "content": "Comment of user 1 on a post of user 10."
+            },
+            "relationships": {
+                "user": {
+                    "links": {
+                        "self": "https://api.example.com/comment/136/relationships/user",
+                        "related": "https://api.example.com/comment/136/user"
+                    }
+                },
+                "post": {
+                    "links": {
+                        "self": "https://api.example.com/comment/136/relationships/post",
+                        "related": "https://api.example.com/comment/136/post"
+                    }
+                }
+            },
+            "meta": {
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-01T00:00:00+00:00"
+            }
+        },
+        {
+            "type": "comment",
+            "id": "141",
+            "attributes": {
+                "content": "Comment of user 1 on a post of user 10."
+            },
+            "relationships": {
+                "user": {
+                    "links": {
+                        "self": "https://api.example.com/comment/141/relationships/user",
+                        "related": "https://api.example.com/comment/141/user"
+                    }
+                },
+                "post": {
+                    "links": {
+                        "self": "https://api.example.com/comment/141/relationships/post",
+                        "related": "https://api.example.com/comment/141/post"
+                    }
+                }
+            },
+            "meta": {
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-01T00:00:00+00:00"
+            }
+        },
+        {
+            "type": "comment",
+            "id": "146",
+            "attributes": {
+                "content": "Comment of user 1 on a post of user 10."
+            },
+            "relationships": {
+                "user": {
+                    "links": {
+                        "self": "https://api.example.com/comment/146/relationships/user",
+                        "related": "https://api.example.com/comment/146/user"
+                    }
+                },
+                "post": {
+                    "links": {
+                        "self": "https://api.example.com/comment/146/relationships/post",
+                        "related": "https://api.example.com/comment/146/post"
+                    }
+                }
+            },
+            "meta": {
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-01T00:00:00+00:00"
+            }
+        }
+    ]
+}

@@ -29,9 +29,11 @@ class ConditionallyLoadsAttributesTest extends TestCase
 
     /**
      * @dataProvider data
+     *
+     * @param list<string> $query
      */
     #[DataProvider('data')]
-    public function testWhenInclude($expected, $property, $query): void
+    public function test_when_in_includes_renders_the_value_only_when_the_path_is_included(bool $expected, string $property, array $query): void
     {
         $request = new Request(['include' => implode(',', $query)]);
 
@@ -52,9 +54,11 @@ class ConditionallyLoadsAttributesTest extends TestCase
 
     /**
      * @dataProvider data
+     *
+     * @param list<string> $query
      */
     #[DataProvider('data')]
-    public function testWhenInFields($expected, $property, $query): void
+    public function test_when_in_fields_renders_the_value_only_when_the_field_is_requested(bool $expected, string $property, array $query): void
     {
         $request = new Request(['fields' => ['type' => implode(',', $query)]]);
 
@@ -73,7 +77,7 @@ class ConditionallyLoadsAttributesTest extends TestCase
         self::assertSame($expected ? ['test' => true] : null, $stub->toArray($request)['attributes'] ?? null);
     }
 
-    public function testApplyWhen(): void
+    public function test_apply_when_marks_each_member_conditional_whatever_the_condition(): void
     {
         $stub = new class (null) extends JsonApiResource {};
         $actual = Reflect::invoke($stub, 'applyWhen', false, [
@@ -125,7 +129,7 @@ class ConditionallyLoadsAttributesTest extends TestCase
         self::assertInstanceOf(Relationship::class, $actual->data['missing.5']->retriever()());
     }
 
-    public function testWhenHas(): void
+    public function test_when_has_renders_the_value_only_when_the_resource_has_the_attribute(): void
     {
         $resource = new class (['a' => 1]) extends JsonApiResource {};
         self::assertEquals(1, Reflect::invoke($resource, 'whenHas', 'a'));
@@ -143,7 +147,7 @@ class ConditionallyLoadsAttributesTest extends TestCase
         self::assertEquals('missing', Reflect::invoke($resource, 'whenHas', 'b', 'abc', 'missing'));
     }
 
-    public function testUnless(): void
+    public function test_unless_leaves_the_value_out_when_the_condition_holds(): void
     {
         $resource = new class ([]) extends JsonApiResource {};
 

@@ -14,7 +14,7 @@ use Test\TestCase;
 
 class ValuesTest extends TestCase
 {
-    public function testMergeValues(): void
+    public function test_merge_values_flattens_merged_values_recursively(): void
     {
         $actual = Values::mergeValues([]);
         self::assertEquals([], $actual);
@@ -87,7 +87,7 @@ class ValuesTest extends TestCase
         ], $actual);
     }
 
-    public function testIsMissing(): void
+    public function test_is_missing_tells_missing_values_and_potentially_missing_ones(): void
     {
         $maybeMissing = fn(bool $missing) => new class ($missing) implements PotentiallyMissing {
             public function __construct(protected bool $missing) {}
@@ -136,7 +136,7 @@ class ValuesTest extends TestCase
      * @dataProvider dataAttribute
      */
     #[DataProvider('dataAttribute')]
-    public function testHasAttribute($data, $attribute, $expected, $_ignored): void
+    public function test_has_attribute_reads_arrays_objects_and_models(mixed $data, mixed $attribute, mixed $expected, mixed $_ignored): void
     {
         self::assertEquals($expected, Values::hasAttribute($data, $attribute));
     }
@@ -145,7 +145,7 @@ class ValuesTest extends TestCase
      * @dataProvider dataAttribute
      */
     #[DataProvider('dataAttribute')]
-    public function testGetAttribute($data, $attribute, $has, $expected): void
+    public function test_get_attribute_reads_arrays_objects_and_models(mixed $data, mixed $attribute, mixed $has, mixed $expected): void
     {
         self::assertEquals($expected, Values::getAttribute($data, $attribute));
     }

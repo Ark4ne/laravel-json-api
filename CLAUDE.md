@@ -24,6 +24,7 @@ supported Laravel version are used (`docs/architecture.md` §13).
 ```bash
 composer test            # whole PHPUnit suite (Unit, Feature)
 composer test:coverage   # coverage, fails under 90% of lines
+composer fixtures:update # rewrite the expected documents of tests/Feature/**/expected/ (review the diff)
 composer stan            # PHPStan max + Larastan + phpat architecture rules + disallowed calls
 composer stan:baseline   # regenerate phpstan-baseline.neon (it may only shrink)
 composer cs              # code style check (PER-CS); composer cs:fix to fix

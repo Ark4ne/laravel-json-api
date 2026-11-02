@@ -415,7 +415,9 @@ Registries order their entries by priority, never by the order of a configuratio
 - **Expected documents** are JSON files (`tests/Feature/<Scenario>/expected/*.json`), rewritten by
   `composer fixtures:update` and reviewed in the diff.
 - **Query counting:** include and linkage scenarios assert the number of SQL queries (no N+1).
-- **Object Mother** for models and resources; shared assertions live in a base `TestCase`, not in traits.
+- **One class per resource under test:** a definition is compiled and cached per class, so a test describing its own
+  members declares an anonymous resource class; models come from `Stub::model()` or the factories of `tests/app`.
+- Shared assertions and helpers live in the base `TestCase` / `FeatureTestCase`, not in traits.
 - Arrange / Act / Assert; test names are sentences (`test_null_to_one_relationship_renders_data_null`).
 - **Workflow:** contract (signatures and PHPDoc, neutral bodies) → red tests → implementation. Never implement
   behaviour that has no test yet.

@@ -67,7 +67,7 @@ class ArrTest extends TestCase
      * @dataProvider mergeProvider
      */
     #[DataProvider('mergeProvider')]
-    public function testMerge($expected, $base, $with): void
+    public function test_merge_merges_nested_arrays(mixed $expected, mixed $base, mixed $with): void
     {
         self::assertEquals($expected, Arr::merge($base, $with));
     }
@@ -96,7 +96,7 @@ class ArrTest extends TestCase
      * @dataProvider washProvider
      */
     #[DataProvider('washProvider')]
-    public function testWash($expected, $base): void
+    public function test_wash_removes_empty_values_recursively(mixed $expected, mixed $base): void
     {
         self::assertEquals($expected, Arr::wash($base));
     }
@@ -124,12 +124,12 @@ class ArrTest extends TestCase
      * @dataProvider toArrayProvider
      */
     #[DataProvider('toArrayProvider')]
-    public function testToArray($expected, $base): void
+    public function test_to_array_converts_nested_arrayables(mixed $expected, mixed $base): void
     {
         self::assertEquals($expected, Arr::toArray($base));
     }
 
-    public function testUndot(): void
+    public function test_undot_expands_dotted_keys_and_saves_values_overwritten(): void
     {
         $stub = [
             'test.a' => [
@@ -170,7 +170,7 @@ class ArrTest extends TestCase
         self::assertEquals($expected, Arr::undot($stub, '--saved--'));
     }
 
-    public function testFlatDot(): void
+    public function test_flat_dot_flattens_to_dotted_keys_with_an_optional_prefix(): void
     {
 
         $stub = [

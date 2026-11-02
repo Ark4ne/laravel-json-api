@@ -49,7 +49,7 @@ class DescriptorsTraitTest extends TestCase
      * @dataProvider methods
      */
     #[DataProvider('methods')]
-    public function testDescriptorTrait($expected, $method, ...$args): void
+    public function test_each_helper_builds_its_descriptor_with_its_retriever(mixed $expected, mixed $method, mixed ...$args): void
     {
         $mock = new class extends stdClass {
             /** @use Values<mixed> */ use Values;
