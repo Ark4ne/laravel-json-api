@@ -8,9 +8,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 documents, with a concise way of writing resources (`toAttributes`, `toRelationships`, `$this->string()`,
 `$this->one()`…), typed values, sparse fieldsets, includes and their validation.
 
-- **Branch `v2.0`: rewrite towards 2.0.0.** Plan and progress: `roadmap-v2/README.md`, one document per EPIC
-  (`roadmap-v2/E*.md`). Tick a deliverable (`- [x]`) when it is done, then run `php roadmap-v2/bin/progress.php`.
-  Throwaway tooling goes to `roadmap-v2/bin/`; the whole `roadmap-v2/` folder is deleted before the 2.0.0 tag.
 - **Architecture, patterns and conventions: `docs/architecture.md` — read it before writing any code.**
 - `ark4ne/openapi-writer` and `ark4ne/laravel-openapi-generator` are **models** for the architecture and the tooling,
   never dependencies. `laravel-openapi-generator` reads this package's resources to document them: the public
@@ -42,7 +39,7 @@ Every change follows the same cycle: **contract** (signatures and PHPDoc, neutra
 **implementation**. Never implement behaviour that has no test yet.
 
 - Every public change is documented in `CHANGELOG.md`; every breaking change also in `UPGRADE.md`.
-- `phpstan-baseline.neon` holds the debt of the 1.x code: never add an entry to it; fix the cause instead.
+- `phpstan-baseline.neon` is empty: never add an entry to it; fix the cause instead.
 
 ## Architecture (details in `docs/architecture.md`)
 
@@ -72,4 +69,4 @@ The resource **describes**, the definition is **compiled once**, the renderer **
 
 ## Language
 
-Everything is in English (code, `docs/`, commit messages), except the tracking documents of `roadmap-v2/`.
+Everything is in English (code, `docs/`, commit messages).

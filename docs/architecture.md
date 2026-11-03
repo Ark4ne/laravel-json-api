@@ -292,7 +292,7 @@ interface Stage
   reserved before it is rendered, so a resource always precedes the resources it includes.
 - **`jsonapi` member**, from `document.jsonapi` (`Configuration\JsonApiObject`): `{"version": "1.1"}` by default,
   with the `ext`, `profile` and `meta` configured; `false` leaves it out. The media type parameters `ext` / `profile`
-  are the HTTP layer's (E7).
+  are the HTTP layer's.
 - **Document meta** (`toDocumentMeta()`) come from the primary resources only, never from the included ones. In a
   collection, the first resource setting a key keeps it, and the collection's own `toDocumentMeta()` wins over those of its
   resources (pagination meta in between).

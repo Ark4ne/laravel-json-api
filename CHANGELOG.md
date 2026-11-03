@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Versions 1.0 to 1.7 are described in the
 `CHANGELOG-1.x.md` files.
 
-## [Unreleased] — 2.0.0
+## [2.0.0] — 2026-11-03
 
 ### Added
 
