@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 /**
  * `composer benchmark`: renders a collection of posts with 3 includes (`user,comments,comments.user`) with this
- * package, with 1.9 and with the JSON:API resources of Laravel, and compares time and peak memory (roadmap E4.7).
+ * package, with 1.9 and with the JSON:API resources of Laravel, and compares time and peak memory.
  *
  * Options: --iterations=5 --posts=1000 --tolerance=10 (in %) --only=current,v1.9,native --update-reference
  *
- * --cold measures instead the first rendering of a request in a new process, as under PHP-FPM (roadmap E3): one post
+ * --cold measures instead the first rendering of a request in a new process, as under PHP-FPM: one post
  * with 3 includes, in --iterations processes (20 by default), with the definitions compiled on first use and read from a
  * compiled file (`jsonapi:cache`). The opcache keeps the compiled scripts between the processes in a file cache, as the
  * opcache of FPM does between requests. The definitions are measured apart from the first rendering. Exits with 1 when
