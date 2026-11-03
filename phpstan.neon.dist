@@ -1,0 +1,66 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+    - vendor/phpstan/phpstan-phpunit/extension.neon
+    - vendor/phpstan/phpstan-phpunit/rules.neon
+    - vendor/phpstan/phpstan-strict-rules/rules.neon
+    - vendor/phpat/phpat/extension.neon
+    - vendor/spaze/phpstan-disallowed-calls/extension.neon
+    # Debt of the 1.x code, to be emptied before 2.0.0 (roadmap-v2/E00-socle.md, E0.2): it may only shrink.
+    - phpstan-baseline.neon
+
+parameters:
+    level: max
+    paths:
+        - src
+        - tests
+        - bin
+        - config
+    tmpDir: build/phpstan
+    excludePaths:
+        - tests/app/migrations.php
+        - tests/app/routes.php
+        # Extends a class that is not installed, on purpose (ResourceFinderTest).
+        - tests/Unit/Laravel/Fixtures/BrokenResource.php
+
+    # Facades, global helpers and the container belong to src/Laravel/ (docs/architecture.md §2).
+    disallowedNamespaces:
+        -
+            namespace: 'Illuminate\Support\Facades\*'
+            message: 'facades are reserved to src/Laravel/: inject a Laravel contract instead'
+            allowIn:
+                - src/Laravel/*
+                - tests/*
+                # Boots a Laravel application, as the tests do.
+                - bin/benchmark/*
+    disallowedFunctionCalls:
+        -
+            function:
+                - 'app()'
+                - 'resolve()'
+                - 'config()'
+                - 'request()'
+                - 'response()'
+                - 'env()'
+                - 'trans()'
+                - '__()'
+                - 'base_path()'
+                - 'config_path()'
+            message: 'global helpers are reserved to src/Laravel/: inject a dependency instead'
+            allowIn:
+                - src/Laravel/*
+                - tests/*
+                - config/*
+        -
+            function:
+                - 'dd()'
+                - 'dump()'
+                - 'var_dump()'
+                - 'print_r()'
+                - 'ray()'
+            message: 'debug output must not be committed'
+
+services:
+    -
+        class: Test\Architecture\ArchitectureTest
+        tags:
+            - phpat.test

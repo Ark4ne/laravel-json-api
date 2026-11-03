@@ -1,0 +1,232 @@
+{
+    "jsonapi": {
+        "version": "1.1"
+    },
+    "data": {
+        "type": "user",
+        "id": "1",
+        "attributes": {
+            "name": "User 1",
+            "email": "user1@example.com",
+            "with-apply-conditional-raw": "huge-data-set",
+            "with-apply-conditional-closure": "huge-data-set",
+            "with-apply-conditional-value": "huge-data-set",
+            "struct-set": {
+                "name": "User 1",
+                "email": "user1@example.com",
+                "casted": "string",
+                "with-apply-conditional-raw": "huge-data-set",
+                "closure": "closure",
+                "sub-struct": {
+                    "int": 200,
+                    "float": 1.1
+                }
+            }
+        },
+        "relationships": {
+            "main-post": {
+                "data": null
+            },
+            "posts": {
+                "data": [
+                    {
+                        "type": "post",
+                        "id": "1"
+                    },
+                    {
+                        "type": "post",
+                        "id": "2"
+                    },
+                    {
+                        "type": "post",
+                        "id": "3"
+                    }
+                ],
+                "links": {
+                    "self": "https://api.example.com/user/1/relationships/posts",
+                    "related": "https://api.example.com/user/1/posts"
+                },
+                "meta": {
+                    "total": 3
+                }
+            },
+            "comments": {
+                "links": {
+                    "self": "https://api.example.com/user/1/relationships/comments",
+                    "related": "https://api.example.com/user/1/comments"
+                },
+                "meta": {
+                    "total": 15
+                }
+            }
+        },
+        "meta": {
+            "created_at": "2026-01-01T00:00:00+00:00",
+            "updated_at": "2026-01-01T00:00:00+00:00"
+        }
+    },
+    "included": [
+        {
+            "type": "post",
+            "id": "1",
+            "attributes": {
+                "state": 0,
+                "title": "Post 0 of user 1"
+            },
+            "relationships": {
+                "user": {
+                    "data": {
+                        "type": "user",
+                        "id": "1"
+                    },
+                    "links": {
+                        "self": "https://api.example.com/posts/1/relationships/user"
+                    }
+                },
+                "comments": {
+                    "data": [
+                        {
+                            "type": "comment",
+                            "id": "1"
+                        },
+                        {
+                            "type": "comment",
+                            "id": "2"
+                        },
+                        {
+                            "type": "comment",
+                            "id": "3"
+                        },
+                        {
+                            "type": "comment",
+                            "id": "4"
+                        },
+                        {
+                            "type": "comment",
+                            "id": "5"
+                        }
+                    ],
+                    "links": {
+                        "self": "https://api.example.com/posts/1/relationships/comments",
+                        "related": "https://api.example.com/posts/1/comments"
+                    },
+                    "meta": {
+                        "total": 5
+                    }
+                }
+            },
+            "meta": {
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-01T00:00:00+00:00"
+            }
+        },
+        {
+            "type": "post",
+            "id": "2",
+            "attributes": {
+                "state": 0,
+                "title": "Post 1 of user 1"
+            },
+            "relationships": {
+                "user": {
+                    "data": {
+                        "type": "user",
+                        "id": "1"
+                    },
+                    "links": {
+                        "self": "https://api.example.com/posts/2/relationships/user"
+                    }
+                },
+                "comments": {
+                    "data": [
+                        {
+                            "type": "comment",
+                            "id": "6"
+                        },
+                        {
+                            "type": "comment",
+                            "id": "7"
+                        },
+                        {
+                            "type": "comment",
+                            "id": "8"
+                        },
+                        {
+                            "type": "comment",
+                            "id": "9"
+                        },
+                        {
+                            "type": "comment",
+                            "id": "10"
+                        }
+                    ],
+                    "links": {
+                        "self": "https://api.example.com/posts/2/relationships/comments",
+                        "related": "https://api.example.com/posts/2/comments"
+                    },
+                    "meta": {
+                        "total": 5
+                    }
+                }
+            },
+            "meta": {
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-01T00:00:00+00:00"
+            }
+        },
+        {
+            "type": "post",
+            "id": "3",
+            "attributes": {
+                "state": 0,
+                "title": "Post 2 of user 1"
+            },
+            "relationships": {
+                "user": {
+                    "data": {
+                        "type": "user",
+                        "id": "1"
+                    },
+                    "links": {
+                        "self": "https://api.example.com/posts/3/relationships/user"
+                    }
+                },
+                "comments": {
+                    "data": [
+                        {
+                            "type": "comment",
+                            "id": "11"
+                        },
+                        {
+                            "type": "comment",
+                            "id": "12"
+                        },
+                        {
+                            "type": "comment",
+                            "id": "13"
+                        },
+                        {
+                            "type": "comment",
+                            "id": "14"
+                        },
+                        {
+                            "type": "comment",
+                            "id": "15"
+                        }
+                    ],
+                    "links": {
+                        "self": "https://api.example.com/posts/3/relationships/comments",
+                        "related": "https://api.example.com/posts/3/comments"
+                    },
+                    "meta": {
+                        "total": 5
+                    }
+                }
+            },
+            "meta": {
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-01T00:00:00+00:00"
+            }
+        }
+    ]
+}

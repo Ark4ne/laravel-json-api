@@ -1,48 +1,102 @@
 {
-  "name": "ark4ne/laravel-json-api",
-  "description": "A Lightweight JSON:API Resource for Laravel",
-  "keywords": [
-    "laravel",
-    "laravel-json",
-    "laravel-resource",
-    "json-api",
-    "jsonapi.org"
-  ],
-  "type": "library",
-  "require": {
-    "php": "^8.1",
-    "illuminate/collections": "^10.0|^11.0|^12.0|^13.0",
-    "illuminate/http": "^10.0|^11.0|^12.0|^13.0",
-    "illuminate/support": "^10.0|^11.0|^12.0|^13.0"
-  },
-  "require-dev": {
-    "phpunit/phpunit": "^9.0|^10.0|^11.0|^12.0|^13.0",
-    "orchestra/testbench": "^7.5|^8.0|^9.0|^10.0|^11.0",
-    "phpstan/phpstan": "^1.9.18"
-  },
-  "license": "MIT",
-  "autoload": {
-    "psr-4": {
-      "Ark4ne\\JsonApi\\": "src/"
-    }
-  },
-  "autoload-dev": {
-    "psr-4": {
-      "Test\\": "tests/"
-    }
-  },
-  "authors": [
-    {
-      "name": "ark4ne",
-      "email": "gui.allegret@gmail.com"
-    }
-  ],
-  "extra": {
-    "laravel": {
-      "providers": [
-        "Ark4ne\\JsonApi\\Providers\\LaravelJsonApiProvider"
-      ]
-    }
-  },
-  "minimum-stability": "stable"
+    "name": "ark4ne/laravel-json-api",
+    "description": "A Lightweight JSON:API Resource for Laravel",
+    "keywords": [
+        "laravel",
+        "laravel-json",
+        "laravel-resource",
+        "json-api",
+        "jsonapi.org"
+    ],
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "ark4ne",
+            "email": "gui.allegret@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^8.3",
+        "illuminate/collections": "^12.46 || ^13.0",
+        "illuminate/console": "^12.46 || ^13.0",
+        "illuminate/http": "^12.46 || ^13.0",
+        "illuminate/support": "^12.46 || ^13.0"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.75",
+        "larastan/larastan": "^3.4",
+        "opis/json-schema": "^2.6",
+        "orchestra/testbench": "^10.0 || ^11.0",
+        "phpat/phpat": "^0.12.5",
+        "phpstan/phpstan": "^2.1",
+        "phpstan/phpstan-phpunit": "^2.0",
+        "phpstan/phpstan-strict-rules": "^2.0",
+        "phpunit/phpunit": "^11.5 || ^12.5 || ^13.0",
+        "spaze/phpstan-disallowed-calls": "^4.5"
+    },
+    "suggest": {
+        "phpunit/phpunit": "Required by Testing\\ResourceAssertions to assert resource definitions in the application tests."
+    },
+    "autoload": {
+        "psr-4": {
+            "Ark4ne\\JsonApi\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Test\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "test:coverage": [
+            "@putenv XDEBUG_MODE=coverage",
+            "phpunit --coverage-clover=build/coverage/clover.xml",
+            "php bin/coverage-check.php build/coverage/clover.xml 90"
+        ],
+        "stan": "phpstan analyse --memory-limit=1G",
+        "stan:baseline": "phpstan analyse --memory-limit=1G --generate-baseline",
+        "cs": "php-cs-fixer fix --dry-run --diff",
+        "cs:fix": "php-cs-fixer fix",
+        "mutation": "infection --threads=max --show-mutations",
+        "fixtures:update": [
+            "@putenv JSONAPI_FIXTURES_UPDATE=1",
+            "phpunit tests/Feature"
+        ],
+        "benchmark": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php bin/benchmark.php"
+        ],
+        "ci": [
+            "@composer validate --strict",
+            "@cs",
+            "@stan",
+            "@test"
+        ]
+    },
+    "scripts-descriptions": {
+        "test": "Run the whole PHPUnit suite.",
+        "test:coverage": "Run the tests with line coverage and fail under 90%.",
+        "fixtures:update": "Write the expected documents of the Feature tests (tests/Feature/**/expected/*.json): review the diff.",
+        "stan": "Run PHPStan at max level with Larastan, the phpat architecture rules and the disallowed calls.",
+        "stan:baseline": "Regenerate the PHPStan baseline (it may only shrink: review the diff).",
+        "cs": "Check the code style (PER-CS).",
+        "cs:fix": "Fix the code style (PER-CS).",
+        "mutation": "Run mutation testing (requires infection to be installed globally).",
+        "benchmark": "Compare the rendering time and peak memory with 1.9 and Laravel's JSON:API resources (options: --iterations, --posts, --tolerance, --only, --update-reference; --cold for the first rendering in a new process, with and without compiled definitions).",
+        "ci": "Run every blocking check of the CI locally."
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Ark4ne\\JsonApi\\Laravel\\JsonApiServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
 }

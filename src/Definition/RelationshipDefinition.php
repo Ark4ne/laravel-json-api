@@ -1,0 +1,232 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Ark4ne\JsonApi\Definition;
+
+use Ark4ne\JsonApi\Configuration\Linkage;
+use Illuminate\Http\Resources\JsonApi\JsonApiResource as NativeJsonApiResource;
+
+/**
+ * What a resource declares about one relationship.
+ *
+ * The related resources are referenced by their class only: definitions never nest one another, so cycles
+ * (`post.author.posts`) cost nothing. Read a related definition with `Definitions::for($class)` for each class of
+ * `$related`: one, or several for a polymorphic relationship (`morphs`). A relationship to resources of Laravel's native
+ * `JsonApiResource` has no related definition: `$related` is empty, `$native` names the class.
+ *
+ * Immutable, serializable. Public contract: semver (docs/architecture.md §3).
+ */
+final readonly class RelationshipDefinition
+{
+    /**
+     * @param list<class-string<DefinitionSource>> $related Resource classes of the related resources: one, several for
+     *                                                     a polymorphic relationship, none for native resources
+     * @param bool $conditional Whether the relationship may be left out (`when()`, `can()`, `whenLoaded()`…)
+     * @param Linkage|null $linkage When it renders its linkage while not included (`whenIncluded()`, `whenLoaded()`);
+     *                             `null` for the configured one (`relationship.linkage`)
+     * @param bool $hasLinks Whether it declares links (`links()`)
+     * @param bool $hasMeta Whether it declares meta (`meta()`)
+     * @param string|null $source Relation of the model it is read from, when known
+     * @param bool $computed Whether its value is computed by a closure rather than read from the model
+     * @param bool $hasIdentifierMeta Whether it declares meta on its resource identifiers (`identifierMeta()`)
+     * @param array<class-string, class-string<DefinitionSource>> $morphs The resource class rendering each model class
+     *                                                                   of a polymorphic relationship; empty otherwise
+     * @param list<string> $namedLinks The links declared by name (`links(self: …, related: …)`): the names a document
+     *                                 may render, rendered unless their closure gives `null`; those of a closure are
+     *                                 unknown
+     * @param class-string<NativeJsonApiResource>|null $native The native resource class of the related resources
+     *                                                         (`Illuminate\Http\Resources\JsonApi\JsonApiResource`):
+     *                                                         their type and members are unknown, nothing is included
+     *                                                         under them
+     */
+    private function __construct(
+        public string $name,
+        public array $related,
+        public Cardinality $cardinality,
+        public LoadDefinition $load,
+        public bool $conditional = false,
+        public ?Linkage $linkage = null,
+        public bool $hasLinks = false,
+        public bool $hasMeta = false,
+        public ?string $source = null,
+        public bool $computed = false,
+        public bool $hasIdentifierMeta = false,
+        public array $morphs = [],
+        public array $namedLinks = [],
+        public ?string $native = null,
+    ) {}
+
+    /**
+     * @param class-string<DefinitionSource> $related
+     */
+    public static function one(string $name, string $related): self
+    {
+        return new self($name, [$related], Cardinality::One, LoadDefinition::none());
+    }
+
+    /**
+     * @param class-string<DefinitionSource> $related
+     */
+    public static function many(string $name, string $related): self
+    {
+        return new self($name, [$related], Cardinality::Many, LoadDefinition::none());
+    }
+
+    /**
+     * The relationship to the related resources of a class: one of the package or a native one, a collection standing
+     * for the resource it collects.
+     *
+     * @throws \Ark4ne\JsonApi\Exceptions\DefinitionException when the class is neither
+     */
+    public static function to(string $name, string $class, Cardinality $cardinality): self
+    {
+        $native = RelatedResource::native($class);
+
+        return $native !== null
+            ? new self($name, [], $cardinality, LoadDefinition::none(), native: $native)
+            : new self($name, [RelatedResource::resolve($class)], $cardinality, LoadDefinition::none());
+    }
+
+    /**
+     * A polymorphic relationship: its related resources are those of the map, by model class. An empty map leaves the
+     * relationship as it is.
+     *
+     * @param array<class-string, class-string<DefinitionSource>> $morphs
+     */
+    public function morphs(array $morphs): self
+    {
+        return $morphs === [] ? $this : $this->copy(related: array_values(array_unique($morphs)), morphs: $morphs);
+    }
+
+    public function isPolymorphic(): bool
+    {
+        return $this->morphs !== [];
+    }
+
+    /**
+     * Whether the related resources are native ones (`$native`).
+     */
+    public function isNative(): bool
+    {
+        return $this->native !== null;
+    }
+
+    public function name(string $name): self
+    {
+        return $this->copy(name: $name);
+    }
+
+    public function load(LoadDefinition $load): self
+    {
+        return $this->copy(load: $load);
+    }
+
+    public function conditional(bool $conditional = true): self
+    {
+        return $this->copy(conditional: $conditional);
+    }
+
+    public function linkage(?Linkage $linkage): self
+    {
+        return $this->copy(linkage: $linkage);
+    }
+
+    /**
+     * Declaring no links forgets the links declared by name.
+     */
+    public function hasLinks(bool $hasLinks = true): self
+    {
+        return $this->copy(hasLinks: $hasLinks, namedLinks: $hasLinks ? null : []);
+    }
+
+    /**
+     * The links declared by name; declaring one declares links.
+     */
+    public function namedLinks(string ...$names): self
+    {
+        return $this->copy(hasLinks: $this->hasLinks || $names !== [], namedLinks: array_values($names));
+    }
+
+    public function hasMeta(bool $hasMeta = true): self
+    {
+        return $this->copy(hasMeta: $hasMeta);
+    }
+
+    public function hasIdentifierMeta(bool $hasIdentifierMeta = true): self
+    {
+        return $this->copy(hasIdentifierMeta: $hasIdentifierMeta);
+    }
+
+    public function source(?string $source): self
+    {
+        return $this->copy(source: $source);
+    }
+
+    public function computed(bool $computed = true): self
+    {
+        return $this->copy(computed: $computed);
+    }
+
+    /**
+     * Rebuilds a definition exported with `var_export()` (compiled definitions).
+     *
+     * @param array{
+     *     name: string,
+     *     related: list<class-string<DefinitionSource>>,
+     *     cardinality: Cardinality,
+     *     load: LoadDefinition,
+     *     conditional: bool,
+     *     linkage: Linkage|null,
+     *     hasLinks: bool,
+     *     hasMeta: bool,
+     *     source: string|null,
+     *     computed: bool,
+     *     hasIdentifierMeta?: bool,
+     *     morphs?: array<class-string, class-string<DefinitionSource>>,
+     *     namedLinks?: list<string>,
+     *     native?: class-string<NativeJsonApiResource>|null,
+     * } $properties
+     */
+    public static function __set_state(array $properties): self
+    {
+        return new self(...$properties);
+    }
+
+    /**
+     * @param list<class-string<DefinitionSource>>|null $related
+     * @param array<class-string, class-string<DefinitionSource>>|null $morphs
+     * @param list<string>|null $namedLinks
+     */
+    private function copy(
+        ?string $name = null,
+        ?array $related = null,
+        ?LoadDefinition $load = null,
+        ?bool $conditional = null,
+        Linkage|false|null $linkage = false,
+        ?bool $hasLinks = null,
+        ?bool $hasMeta = null,
+        string|false|null $source = false,
+        ?bool $computed = null,
+        ?bool $hasIdentifierMeta = null,
+        ?array $morphs = null,
+        ?array $namedLinks = null,
+    ): self {
+        return new self(
+            name: $name ?? $this->name,
+            related: $related ?? $this->related,
+            cardinality: $this->cardinality,
+            load: $load ?? $this->load,
+            conditional: $conditional ?? $this->conditional,
+            linkage: $linkage === false ? $this->linkage : $linkage,
+            hasLinks: $hasLinks ?? $this->hasLinks,
+            hasMeta: $hasMeta ?? $this->hasMeta,
+            source: $source === false ? $this->source : $source,
+            computed: $computed ?? $this->computed,
+            hasIdentifierMeta: $hasIdentifierMeta ?? $this->hasIdentifierMeta,
+            morphs: $morphs ?? $this->morphs,
+            namedLinks: $namedLinks ?? $this->namedLinks,
+            native: $this->native,
+        );
+    }
+}

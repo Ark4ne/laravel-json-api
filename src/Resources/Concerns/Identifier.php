@@ -1,19 +1,32 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
+use Ark4ne\JsonApi\Compilation\Definitions;
+use Ark4ne\JsonApi\Exceptions\RenderingException;
+use Ark4ne\JsonApi\Support\Values;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
+/**
+ * @phpstan-require-extends \Ark4ne\JsonApi\Resources\JsonApiResource
+ */
 trait Identifier
 {
+    /**
+     * @internal The declared type (`Definitions::declaredType()`), given by the compiler while compiling
+     */
+    protected ?string $declaredType = null;
+
     /**
      * @see https://jsonapi.org/format/#document-resource-object-identification
      *
      * @param \Illuminate\Http\Request $request
      *
-     * @return string
+     * @return string By default, the declared type: that of `#[JsonApiType]`, otherwise that of the configured naming
+     *                convention (`type.naming`); an override may call it
      *
      * ```
      * return 'post'; // resource type name
@@ -21,9 +34,7 @@ trait Identifier
      */
     protected function toType(Request $request): string
     {
-        return str_contains($this::class, '@anonymous')
-            ? 'anonymous'
-            : Str::kebab(Str::beforeLast(Str::afterLast($this::class, "\\"), 'Resource'));
+        return $this->declaredType ??= Definitions::declaredType(static::class);
     }
 
     /**
@@ -31,7 +42,7 @@ trait Identifier
      *
      * @param \Illuminate\Http\Request $request
      *
-     * @return int|string
+     * @return int|string By default, that of `toId()`, otherwise the key of the model, otherwise its `id`
      *
      * ```
      * return $this->id; // resource identifier
@@ -39,11 +50,29 @@ trait Identifier
      */
     protected function toIdentifier(Request $request): int|string
     {
-        if ($this->resource instanceof Model) {
-            return $this->resource->getKey();
+        $id = $this->toId($request);
+
+        if ($id !== null) {
+            return $id;
         }
 
-        return $this->resource->id;
+        $id = $this->resource instanceof Model
+            ? $this->resource->getKey()
+            : Values::getAttribute($this->resource, 'id');
+
+        return is_int($id) || is_string($id) ? $id : throw RenderingException::noIdentifier(static::class);
+    }
+
+    /**
+     * The identifier, named as Laravel's native resources name it: an alias of `toIdentifier()`, which reads it.
+     *
+     * @param \Illuminate\Http\Request $request
+     *
+     * @return int|string|null `null` for the default identifier of `toIdentifier()`
+     */
+    protected function toId(Request $request): int|string|null
+    {
+        return null;
     }
 
 }

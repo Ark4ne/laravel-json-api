@@ -1,10 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Descriptors\Values;
 
+use Ark4ne\JsonApi\Configuration\Configuration;
+use Ark4ne\JsonApi\Definition\AttributeDefinition;
+use Ark4ne\JsonApi\Definition\ValueType;
 use Ark4ne\JsonApi\Descriptors\Describer;
-use Ark4ne\JsonApi\Support\Config;
-use Ark4ne\JsonApi\Support\Fields;
+use Ark4ne\JsonApi\Exceptions\RenderingException;
 use Ark4ne\JsonApi\Support\Values;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
@@ -18,13 +22,14 @@ abstract class Value extends Describer
 {
     protected ?bool $autoWhenHas = null;
 
-    protected bool $nullable;
+    /** `null` until set: the configuration decides (`describer.nullable`). */
+    protected ?bool $nullable = null;
+
+    protected bool $sparse = false;
 
     public function __construct(
-        protected null|string|Closure $attribute
-    ) {
-        $this->nullable = Config::$nullable;
-    }
+        protected string|Closure|null $attribute,
+    ) {}
 
     public function retriever(): string|Closure|null
     {
@@ -33,13 +38,23 @@ abstract class Value extends Describer
 
     public function nullable(bool $nullable = true): static
     {
-        $this->nullable = $nullable;
-        return $this;
+        return $this->with('nullable', $nullable);
     }
 
-    public function isNullable(): bool
+    /**
+     * Whether the value is rendered only when its sparse fieldset requests it (`whenInFields()`).
+     */
+    public function isSparse(): bool
     {
-        return $this->nullable;
+        return $this->sparse;
+    }
+
+    /**
+     * @param Configuration|null $configuration Decides when the descriptor does not; that of a fresh installation if `null`
+     */
+    public function isNullable(?Configuration $configuration = null): bool
+    {
+        return $this->nullable ?? ($configuration ?? Configuration::defaults())->nullable;
     }
 
     /**
@@ -50,13 +65,12 @@ abstract class Value extends Describer
      */
     public function autoWhenHas(bool $autoWhenHas = true): static
     {
-        $this->autoWhenHas = $autoWhenHas;
-
-        return $this;
+        return $this->with('autoWhenHas', $autoWhenHas);
     }
 
     /**
-     * Display attribute whether the accessor attribute has been appended.
+     * Display attribute whether the accessor attribute has been appended; never on a resource that is not an Eloquent
+     * model.
      *
      * @return static
      */
@@ -64,23 +78,20 @@ abstract class Value extends Describer
     {
         return $this->when(static fn(
             Request $request,
-            Model $model,
-            string $attribute
-        ): bool => $model->hasAppended($attribute));
+            mixed $model,
+            string $attribute,
+        ): bool => $model instanceof Model && $model->hasAppended($attribute));
     }
 
     /**
-     * Display attribute only when it was specified in fields
+     * Display attribute only when it was specified in fields: the renderer decides, from the sparse fieldset of the
+     * type (`isSparse()`).
      *
      * @return static
      */
     public function whenInFields(): static
     {
-        return $this->when(static fn(
-            Request $request,
-            mixed $model,
-            string $attribute
-        ): bool => Fields::has($request, $attribute));
+        return $this->with('sparse', true);
     }
 
     /**
@@ -94,31 +105,106 @@ abstract class Value extends Describer
         return $this->when(static fn(
             Request $request,
             mixed $model,
-            string $attribute
+            string $attribute,
         ): bool => Values::hasAttribute($model, $field ?? $attribute));
     }
 
-    public function resolveFor(Request $request, mixed $model, string $field): mixed
-    {
+    public function resolveFor(
+        Request $request,
+        mixed $model,
+        string $field,
+        ?Configuration $configuration = null,
+    ): mixed {
+        $configuration ??= Configuration::defaults();
+
         if ($this->attribute instanceof Closure) {
             $value = ($this->attribute)($model, $field);
         } else {
             $value = Values::getAttribute($model, $this->attribute ?? $field);
         }
 
-        return $value === null && $this->nullable
-            ? null
-            : $this->value($value, $request);
+        if ($value === null && $this->isNullable($configuration)) {
+            return null;
+        }
+
+        $resolved = $this->value($value, $request, $configuration);
+
+        // Not nullable, but no value stands for null (a date): an error to see in strict mode, `null` otherwise.
+        return $value === null && $resolved === null && $configuration->strict
+            ? throw RenderingException::nullNotNullable($field)
+            : $resolved;
     }
 
     protected function check(Request $request, mixed $model, string $attribute): bool
     {
-        if (($this->autoWhenHas ?? false) && !($this->attribute instanceof Closure)) {
-            $this->whenHas($this->attribute);
+        $retriever = $this->attribute;
+
+        if (
+            ($this->autoWhenHas ?? false)
+            && !($retriever instanceof Closure)
+            && !((is_array($model) || is_object($model)) && Values::hasAttribute($model, $retriever ?? $attribute))
+        ) {
+            return false;
         }
 
         return parent::check($request, $model, $attribute);
     }
 
-    abstract protected function value(mixed $of, Request $request): mixed;
+    /**
+     * Whether `whenHas()` applies automatically: as set on the descriptor, otherwise as the configuration of the scope
+     * says. Never for a closure value.
+     */
+    public function appliesAutoWhenHas(bool $byConfiguration): bool
+    {
+        return !($this->attribute instanceof Closure) && ($this->autoWhenHas ?? $byConfiguration);
+    }
+
+    /**
+     * What this descriptor declares under a name: type, nullability, format, conditions, source
+     * (docs/architecture.md §3).
+     *
+     * @param mixed $subject What the compiler runs the descriptor on (the probe standing for the model), for the values
+     *                       whose definition depends on a closure (structs)
+     * @param Configuration|null $configuration Resolves the defaults left unset; those of a fresh installation if `null`
+     */
+    public function definition(
+        string $name,
+        mixed $subject = null,
+        ?Configuration $configuration = null,
+    ): AttributeDefinition {
+        $configuration ??= Configuration::defaults();
+        $computed = $this->attribute instanceof Closure;
+
+        return AttributeDefinition::of($name, $this->valueType())
+            ->format($this->valueFormat($configuration))
+            ->nullable($this->nullable ?? $configuration->nullable)
+            ->conditional($this->isConditional() || $this->sparse || $this->appliesAutoWhenHas(false))
+            ->sparse($this->sparse)
+            ->source($computed ? null : $this->attribute ?? $name)
+            ->computed($computed);
+    }
+
+    /**
+     * The type of the values this descriptor renders; `mixed` unless a subclass knows better.
+     */
+    protected function valueType(): ValueType
+    {
+        return ValueType::Mixed;
+    }
+
+    /**
+     * The format of the values this descriptor renders, refining its type for the tools reading the definition: the
+     * PHP date format of a date, `uuid`, `decimal`…; `null` for none.
+     */
+    protected function valueFormat(Configuration $configuration): ?string
+    {
+        return null;
+    }
+
+    /**
+     * The value rendered for what the model holds.
+     *
+     * @param Configuration $configuration The defaults the descriptor leaves unset (`describer.*`)
+     */
+    abstract protected function value(mixed $of, Request $request, Configuration $configuration): mixed;
 }

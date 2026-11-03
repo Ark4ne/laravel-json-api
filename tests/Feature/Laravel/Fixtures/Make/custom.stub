@@ -1,0 +1,6 @@
+<?php
+
+namespace {{ namespace }};
+
+// custom stub
+class {{ class }} {}

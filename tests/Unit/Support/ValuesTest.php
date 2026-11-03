@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\Unit\Support;
 
 use Ark4ne\JsonApi\Support\Values;
@@ -12,12 +14,12 @@ use Test\TestCase;
 
 class ValuesTest extends TestCase
 {
-    public function testMergeValues()
+    public function test_merge_values_flattens_merged_values_recursively(): void
     {
         $actual = Values::mergeValues([]);
-        $this->assertEquals([], $actual);
+        self::assertEquals([], $actual);
         $actual = Values::mergeValues(collect());
-        $this->assertEquals([], $actual);
+        self::assertEquals([], $actual);
 
         $expected = $sample = [
             'a' => 'abc',
@@ -25,71 +27,70 @@ class ValuesTest extends TestCase
             'c' => true,
             'd' => false,
             'e' => null,
-            'f' => new MissingValue,
+            'f' => new MissingValue(),
         ];
         $actual = Values::mergeValues($sample);
-        $this->assertEquals($expected, $actual);
+        self::assertEquals($expected, $actual);
         $actual = Values::mergeValues(collect($sample));
-        $this->assertEquals($expected, $actual);
+        self::assertEquals($expected, $actual);
 
         $sampleWithMerge = $sample;
         $sampleWithMerge[] = new MergeValue($sample);
 
         $actual = Values::mergeValues($sampleWithMerge);
-        $this->assertEquals($expected, $actual);
+        self::assertEquals($expected, $actual);
 
-        $actual = Values::mergeValues($sample + [
+        $actual = Values::mergeValues(
+            $sample + [
                 new MergeValue([
                     'g' => '12345',
                     'h' => [
                         'i' => 'def',
                         new MergeValue([new MergeValue([true])]),
-                        new MergeValue([[new MergeValue([[true]])]])
+                        new MergeValue([[new MergeValue([[true]])]]),
                     ],
                     'k' => [
                         new MergeValue([1, 2, 3]),
-                        new MergeValue([4, 5, 6])
+                        new MergeValue([4, 5, 6]),
                     ],
                     new MergeValue([
-                        'self' => new MissingValue()
+                        'self' => new MissingValue(),
                     ]),
                     new MergeValue([
-                        'self' => new MissingValue()
+                        'self' => new MissingValue(),
                     ]),
                     new MergeValue([
-                        'self' => 'three'
+                        'self' => 'three',
                     ]),
                     new MergeValue([
-                        'self' => new MissingValue()
+                        'self' => new MissingValue(),
                     ]),
                 ]),
-            ]
+            ],
         );
-        $this->assertEquals($sample + [
-                'g' => '12345',
-                'h' => [
-                    'i' => 'def',
-                    true,
-                    [[true]],
-                ],
-                'k' => [
-                    1,
-                    2,
-                    3,
-                    4,
-                    5,
-                    6
-                ],
-                'self' => 'three',
-            ], $actual);
+        self::assertEquals($sample + [
+            'g' => '12345',
+            'h' => [
+                'i' => 'def',
+                true,
+                [[true]],
+            ],
+            'k' => [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+            ],
+            'self' => 'three',
+        ], $actual);
     }
 
-    public function testIsMissing()
+    public function test_is_missing_tells_missing_values_and_potentially_missing_ones(): void
     {
-        $maybeMissing = fn(bool $missing) => new class($missing) implements PotentiallyMissing {
-            public function __construct(protected bool $missing)
-            {
-            }
+        $maybeMissing = fn(bool $missing) => new class ($missing) implements PotentiallyMissing {
+            public function __construct(protected bool $missing) {}
 
             public function isMissing()
             {
@@ -97,36 +98,37 @@ class ValuesTest extends TestCase
             }
         };
 
-        $this->assertEquals(false, Values::isMissing(true));
-        $this->assertEquals(false, Values::isMissing(false));
-        $this->assertEquals(false, Values::isMissing(null));
+        self::assertEquals(false, Values::isMissing(true));
+        self::assertEquals(false, Values::isMissing(false));
+        self::assertEquals(false, Values::isMissing(null));
 
-        $this->assertEquals(true, Values::isMissing(new MissingValue()));
-        $this->assertEquals(true, Values::isMissing($maybeMissing(true)));
-        $this->assertEquals(false, Values::isMissing($maybeMissing(false)));
+        self::assertEquals(true, Values::isMissing(new MissingValue()));
+        self::assertEquals(true, Values::isMissing($maybeMissing(true)));
+        self::assertEquals(false, Values::isMissing($maybeMissing(false)));
 
-        $this->assertEquals(true, Values::isMissing(new JsonResource(new MissingValue())));
+        self::assertEquals(true, Values::isMissing(new JsonResource(new MissingValue())));
     }
 
 
     /**
      * Return a list of data to test hasAttribute method
+     *
+     * @return array<string, array{mixed, string, bool, mixed}>
      */
-    public static function dataAttribute()
+    public static function dataAttribute(): array
     {
         return [
             'array' => [['a' => 1], 'a', true, 1],
             'array.empty' => [[], 'a', false, null],
             'array.fail' => [['a' => 1], 'b', false, null],
-            'object' => [(object)['a' => 1], 'a', true, 1],
-            'object.empty' => [(object)[], 'a', false, null],
-            'object.fail' => [(object)['a' => 1], 'b', false, null],
-            'model' => [new class(['a' => 1]) extends \Illuminate\Database\Eloquent\Model {
+            'object' => [(object) ['a' => 1], 'a', true, 1],
+            'object.empty' => [(object) [], 'a', false, null],
+            'object.fail' => [(object) ['a' => 1], 'b', false, null],
+            'model' => [new class (['a' => 1]) extends \Illuminate\Database\Eloquent\Model {
                 protected $fillable = ['a'];
             }, 'a', true, 1],
-            'model.empty' => [new class() extends \Illuminate\Database\Eloquent\Model {
-            }, 'a', false, null],
-            'model.fail' => [new class(['a' => 1]) extends \Illuminate\Database\Eloquent\Model {
+            'model.empty' => [new class extends \Illuminate\Database\Eloquent\Model {}, 'a', false, null],
+            'model.fail' => [new class (['a' => 1]) extends \Illuminate\Database\Eloquent\Model {
                 protected $fillable = ['a'];
             }, 'b', false, null],
         ];
@@ -136,17 +138,36 @@ class ValuesTest extends TestCase
      * @dataProvider dataAttribute
      */
     #[DataProvider('dataAttribute')]
-    public function testHasAttribute($data, $attribute, $expected, $_ignored)
+    public function test_has_attribute_reads_arrays_objects_and_models(mixed $data, string $attribute, bool $expected, mixed $_ignored): void
     {
-        $this->assertEquals($expected, Values::hasAttribute($data, $attribute));
+        self::assertEquals($expected, Values::hasAttribute($data, $attribute));
     }
 
     /**
      * @dataProvider dataAttribute
      */
     #[DataProvider('dataAttribute')]
-    public function testGetAttribute($data, $attribute, $has, $expected)
+    public function test_get_attribute_reads_arrays_objects_and_models(mixed $data, string $attribute, bool $has, mixed $expected): void
     {
-        $this->assertEquals($expected, Values::getAttribute($data, $attribute));
+        self::assertEquals($expected, Values::getAttribute($data, $attribute));
+    }
+
+    public function test_the_attributes_of_a_wrapped_resource_are_those_of_the_resource_it_wraps(): void
+    {
+        $object = new JsonResource(new JsonResource((object) ['id' => 7]));
+        $array = new JsonResource(['id' => 8]);
+
+        self::assertTrue(Values::hasAttribute($object, 'id'));
+        self::assertSame(7, Values::getAttribute($object, 'id'));
+        self::assertTrue(Values::hasAttribute($array, 'id'));
+        self::assertSame(8, Values::getAttribute($array, 'id'));
+        self::assertFalse(Values::hasAttribute($object, 'name'));
+        self::assertNull(Values::getAttribute($object, 'name'));
+    }
+
+    public function test_a_value_that_is_neither_an_array_nor_an_object_has_no_attribute(): void
+    {
+        self::assertFalse(Values::hasAttribute('scalar', 'id'));
+        self::assertNull(Values::getAttribute(null, 'id'));
     }
 }

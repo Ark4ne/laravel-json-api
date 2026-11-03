@@ -1,0 +1,51 @@
+{
+    "jsonapi": {
+        "version": "1.1"
+    },
+    "data": {
+        "type": "user",
+        "id": "1",
+        "attributes": {
+            "name": "User 1",
+            "email": "user1@example.com",
+            "with-apply-conditional-raw": "huge-data-set",
+            "with-apply-conditional-closure": "huge-data-set",
+            "with-apply-conditional-value": "huge-data-set",
+            "struct-set": {
+                "name": "User 1",
+                "email": "user1@example.com",
+                "casted": "string",
+                "with-apply-conditional-raw": "huge-data-set",
+                "closure": "closure",
+                "sub-struct": {
+                    "int": 200,
+                    "float": 1.1
+                }
+            }
+        },
+        "relationships": {
+            "posts": {
+                "links": {
+                    "self": "https://api.example.com/user/1/relationships/posts",
+                    "related": "https://api.example.com/user/1/posts"
+                },
+                "meta": {
+                    "total": 3
+                }
+            },
+            "comments": {
+                "links": {
+                    "self": "https://api.example.com/user/1/relationships/comments",
+                    "related": "https://api.example.com/user/1/comments"
+                },
+                "meta": {
+                    "total": 15
+                }
+            }
+        },
+        "meta": {
+            "created_at": "2026-01-01T00:00:00+00:00",
+            "updated_at": "2026-01-01T00:00:00+00:00"
+        }
+    }
+}

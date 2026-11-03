@@ -1,18 +1,11 @@
 <?php
 
-namespace Ark4ne\JsonApi\Descriptors\Relations;
+declare(strict_types=1);
 
-use Ark4ne\JsonApi\Resources\Relationship;
-use Closure;
+namespace Ark4ne\JsonApi\Descriptors\Relations;
 
 /**
  * @template T
  * @extends Relation<T>
  */
-class RelationOne extends Relation
-{
-    protected function value(Closure $value): Relationship
-    {
-        return new Relationship($this->related, $value, $this->links, $this->meta);
-    }
-}
+final class RelationOne extends Relation {}

@@ -1,28 +1,29 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Filters;
 
 use Closure;
 use Illuminate\Http\Request;
 
 /**
- * @template Resource
+ * @template TModel
  *
- * @implements FilterRule<Resource>
+ * @implements FilterRule<TModel>
  */
-class CallbackFilterRule implements FilterRule
+final class CallbackFilterRule implements FilterRule
 {
     /**
-     * @param Closure(Request, Resource): bool $callback
+     * @param Closure(Request, TModel): mixed $callback Keeps the model when it returns a truthy value
      */
     public function __construct(
-        protected Closure $callback
-    ) {
-    }
+        protected Closure $callback,
+    ) {}
 
     /**
      * @param Request $request
-     * @param Resource $model
+     * @param TModel $model
      * @return bool
      */
     public function passes(Request $request, mixed $model): bool

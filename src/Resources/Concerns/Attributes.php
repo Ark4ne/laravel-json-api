@@ -1,9 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
-use Ark4ne\JsonApi\Support\Arr;
-use Ark4ne\JsonApi\Support\Fields;
+use Ark4ne\JsonApi\Definition\DefinitionSource;
+use Closure;
+use Illuminate\Contracts\Support\Arrayable;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Http\Request;
 
 trait Attributes
@@ -13,9 +19,13 @@ trait Attributes
     /**
      * @see https://jsonapi.org/format/#document-resource-object-attributes
      *
+     * By default, the attributes of the model (`attributesToArray()`: casts, `$hidden` and `$appends` applied, loaded
+     * relations left out) or of the array, without `id`, `type`, the key of the model and the foreign keys of the
+     * relationships declared in `toRelationships()`.
+     *
      * @param \Illuminate\Http\Request $request
      *
-     * @return iterable<array-key, mixed|\Closure|\Ark4ne\JsonApi\Descriptors\Values\Value>
+     * @return iterable<array-key, mixed|Closure|\Ark4ne\JsonApi\Descriptors\Values\Value>
      *
      * ```
      * return [
@@ -29,62 +39,54 @@ trait Attributes
      * ];
      * ```
      */
-    public function toAttributes(Request $request): iterable
+    public function toAttributes(Request $request): iterable // @phpstan-ignore method.childReturnType (hooks return any iterable of members)
     {
-        if (is_object($this->resource) && method_exists($this->resource, 'toArray')) {
-            return $this->resource->toArray();
-        }
-        if (is_array($this->resource)) {
-            return $this->resource;
-        }
-        if (is_iterable($this->resource)) {
-            return iterator_to_array($this->resource);
-        }
+        $resource = $this->resource;
 
-        return [];
+        $attributes = match (true) {
+            $resource instanceof Model => $resource->attributesToArray(),
+            $resource instanceof Arrayable => $resource->toArray(),
+            is_object($resource) && method_exists($resource, 'toArray') => $resource->toArray(),
+            is_array($resource) => $resource,
+            is_iterable($resource) => iterator_to_array($resource),
+            default => [],
+        };
+
+        return is_array($attributes)
+            ? array_diff_key($attributes, array_flip($this->identificationKeys()))
+            : (is_iterable($attributes) ? $attributes : []);
     }
 
     /**
-     * @param \Illuminate\Http\Request $request
+     * What the default attributes leave out: `id` and `type`, which identify the resource object, and for a model its
+     * key and the foreign keys of the relationships it declares (JSON:API: they are represented by relationships).
      *
-     * @return array<string, mixed>
+     * @return list<string>
      */
-    private function requestedAttributes(Request $request): array
+    private function identificationKeys(): array
     {
-        return Fields::through($this->toType($request), function () use ($request) {
-            $attributes = $this->resolveAttributes($request);
-            $attributes = $this->filter($attributes);
+        $keys = ['id', 'type'];
+        $model = $this->resource;
 
-            $fields = Fields::get($request);
+        if (!$model instanceof Model || !$this instanceof DefinitionSource) {
+            return $keys;
+        }
 
-            $attributes = null === $fields
-                ? $attributes
-                : Arr::intersectKeyStruct($attributes, Arr::undot(array_fill_keys($fields, true)));
+        $keys[] = $model->getKeyName();
 
-            return array_map('\value', $attributes);
-        });
-    }
+        foreach ($this::definition()->relationships as $relationship) {
+            $relation = $relationship->source !== null && is_callable($method = [$model, $relationship->source])
+                ? $method()
+                : null;
 
-    /**
-     * @param Request $request
-     * @return iterable<string, \Closure|mixed>|iterable<array-key, \Ark4ne\JsonApi\Descriptors\Values\Value>
-     */
-    private function prepareAttributes(Request $request): iterable
-    {
-        $attributes = $this->toAttributes($request);
-        $attributes = $this->mergeValues($attributes);
+            if ($relation instanceof MorphTo) {
+                $keys[] = $relation->getMorphType();
+            }
+            if ($relation instanceof BelongsTo) {
+                $keys[] = $relation->getForeignKeyName();
+            }
+        }
 
-        return $this->autoWhenHas($attributes, 'attributes');
-    }
-
-    /**
-     * @param Request $request
-     * @return iterable<string, \Closure|mixed>|iterable<array-key, \Ark4ne\JsonApi\Descriptors\Values\Value>
-     */
-    private function resolveAttributes(Request $request): iterable
-    {
-        $attributes = $this->prepareAttributes($request);
-
-        return $this->resolveValues($request, $attributes);
+        return $keys;
     }
 }

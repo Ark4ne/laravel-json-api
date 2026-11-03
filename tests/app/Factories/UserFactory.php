@@ -1,11 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\app\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Test\app\Models\User;
 
+/**
+ * @extends Factory<User>
+ */
 class UserFactory extends Factory
 {
     protected $model = User::class;
@@ -15,7 +20,7 @@ class UserFactory extends Factory
         return [
             'name' => $this->faker->name(),
             'email' => $this->faker->email(),
-            'password' => Hash::make('password')
+            'password' => Hash::make('password'),
         ];
     }
 }

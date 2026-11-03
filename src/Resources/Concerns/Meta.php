@@ -1,9 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
 use Illuminate\Http\Request;
 
+/**
+ * @template T The model of the resource
+ *
+ * @phpstan-require-extends \Ark4ne\JsonApi\Resources\JsonApiResource
+ */
 trait Meta
 {
     use PrepareData;
@@ -14,7 +21,7 @@ trait Meta
      *
      * @param \Illuminate\Http\Request $request
      *
-     * @return iterable<string, mixed>|iterable<array-key, \Ark4ne\JsonApi\Descriptors\Values\Value>|null
+     * @return iterable<string, mixed>|iterable<array-key, \Ark4ne\JsonApi\Descriptors\Values\Value<T>>|null
      *
      * ```
      * return [
@@ -29,42 +36,17 @@ trait Meta
     }
 
     /**
+     * Top-level meta of the document, added by the primary resources only. `toMeta()` of 1.x, renamed: a resource
+     * still declaring `toMeta()` cannot be compiled.
+     *
      * @see https://jsonapi.org/format/#document-meta
      *
      * @param \Illuminate\Http\Request $request
      *
-     * @return iterable<string, mixed>|iterable<array-key, \Ark4ne\JsonApi\Descriptors\Values\Value>|null
+     * @return iterable<string, mixed>|iterable<array-key, \Ark4ne\JsonApi\Descriptors\Values\Value<T>>|null
      */
-    protected function toMeta(Request $request): ?iterable
+    protected function toDocumentMeta(Request $request): ?iterable
     {
         return null;
-    }
-
-    /**
-     * @param \Illuminate\Http\Request $request
-     *
-     * @return array<string, mixed>
-     */
-    private function requestedResourceMeta(Request $request): array
-    {
-        $meta = $this->toResourceMeta($request) ?? [];
-        $meta = $this->mergeValues($meta);
-        $meta = $this->autoWhenHas($meta, 'resource-meta');
-
-        return $this->resolveValues($request, $meta);
-    }
-
-    /**
-     * @param \Illuminate\Http\Request $request
-     *
-     * @return array<string, mixed>
-     */
-    private function requestedMeta(Request $request): array
-    {
-        $meta = $this->toMeta($request) ?? [];
-        $meta = $this->mergeValues($meta);
-        $meta = $this->autoWhenHas($meta, 'meta');
-
-        return $this->resolveValues($request, $meta);
     }
 }

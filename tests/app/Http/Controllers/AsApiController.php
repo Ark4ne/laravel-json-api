@@ -1,9 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\app\Http\Controllers;
 
 use Ark4ne\JsonApi\Resources\JsonApiCollection;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
+use Exception;
 use Illuminate\Http\Request;
 
 trait AsApiController
@@ -14,12 +17,14 @@ trait AsApiController
     abstract protected function getModelClass(): string;
 
     /**
-     * @return class-string<\Ark4ne\JsonApi\Resources\JsonApiResource>
+     * @return class-string<JsonApiResource<*>>
      */
     abstract protected function getResourceClass(): string;
 
     /**
      * Display a listing of the resource.
+     *
+     * @return JsonApiCollection<JsonApiResource<*>>
      */
     public function index(Request $request): JsonApiCollection
     {
@@ -42,11 +47,13 @@ trait AsApiController
      */
     public function store(Request $request)
     {
-        throw new \Exception("no implemented");
+        throw new Exception("no implemented");
     }
 
     /**
      * Display the specified resource.
+     *
+     * @return JsonApiResource<*>
      */
     public function show(Request $request, string $id): JsonApiResource
     {
@@ -70,7 +77,7 @@ trait AsApiController
      */
     public function update(Request $request, $id)
     {
-        throw new \Exception("no implemented");
+        throw new Exception("no implemented");
     }
 
     /**
@@ -82,6 +89,6 @@ trait AsApiController
      */
     public function destroy($id)
     {
-        throw new \Exception("no implemented");
+        throw new Exception("no implemented");
     }
 }

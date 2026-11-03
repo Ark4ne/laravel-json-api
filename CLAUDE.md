@@ -2,68 +2,74 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Project
+
+`ark4ne/laravel-json-api` is a Laravel package that serializes resources as [JSON:API](https://jsonapi.org/format/)
+documents, with a concise way of writing resources (`toAttributes`, `toRelationships`, `$this->string()`,
+`$this->one()`…), typed values, sparse fieldsets, includes and their validation.
+
+- **Branch `v2.0`: rewrite towards 2.0.0.** Plan and progress: `roadmap-v2/README.md`, one document per EPIC
+  (`roadmap-v2/E*.md`). Tick a deliverable (`- [x]`) when it is done, then run `php roadmap-v2/bin/progress.php`.
+  Throwaway tooling goes to `roadmap-v2/bin/`; the whole `roadmap-v2/` folder is deleted before the 2.0.0 tag.
+- **Architecture, patterns and conventions: `docs/architecture.md` — read it before writing any code.**
+- `ark4ne/openapi-writer` and `ark4ne/laravel-openapi-generator` are **models** for the architecture and the tooling,
+  never dependencies. `laravel-openapi-generator` reads this package's resources to document them: the public
+  definition model (`docs/architecture.md` §3) is its contract.
+
+Targets: PHP `^8.3`, Laravel `^12.46|^13.0` (Laravel 14 as soon as it is released). Only APIs present in every
+supported Laravel version are used (`docs/architecture.md` §13).
+
 ## Commands
 
-### Testing
-- `vendor/bin/phpunit` - Run all tests
-- `vendor/bin/phpunit --coverage-clover coverage.xml` - Run tests with coverage
-- `vendor/bin/phpunit --configuration phpunit.php8.1.xml.dist` - Run tests for specific PHP version
-- `vendor/bin/phpunit tests/Unit` - Run only unit tests
-- `vendor/bin/phpunit tests/Feature` - Run only feature tests
+```bash
+composer test            # whole PHPUnit suite (Unit, Feature)
+composer test:coverage   # coverage, fails under 90% of lines
+composer fixtures:update # rewrite the expected documents of tests/Feature/**/expected/ (review the diff)
+composer stan            # PHPStan max + Larastan + phpat architecture rules + disallowed calls
+composer stan:baseline   # regenerate phpstan-baseline.neon (it may only shrink)
+composer cs              # code style check (PER-CS); composer cs:fix to fix
+composer ci              # every blocking check except coverage and mutation
+composer benchmark       # rendering time and memory against 1.9 and Laravel's JSON:API (fails on regression)
+composer benchmark -- --cold # first rendering in a new process (FPM), with and without compiled definitions
 
-### Static Analysis
-- `vendor/bin/phpstan analyze` - Run PHPStan static analysis (level 6)
+vendor/bin/phpunit --filter test_name
+vendor/bin/phpunit tests/Unit
+```
 
-### Dependencies
-- `composer install` - Install dependencies
-- `composer require laravel/framework ^9.0` - Install specific Laravel version for testing
+## Workflow
 
-## Architecture
+Every change follows the same cycle: **contract** (signatures and PHPDoc, neutral bodies) → **red tests** →
+**implementation**. Never implement behaviour that has no test yet.
 
-This is a Laravel package that provides JSON:API compliant resource serialization. The core architecture follows these patterns:
+- Every public change is documented in `CHANGELOG.md`; every breaking change also in `UPGRADE.md`.
+- `phpstan-baseline.neon` holds the debt of the 1.x code: never add an entry to it; fix the cause instead.
 
-### Resource System
-- **JsonApiResource**: Main abstract class extending Laravel's JsonResource, implements JSON:API specification
-- **JsonApiCollection**: Handles collections of resources with proper JSON:API formatting
-- **Resourceable**: Interface defining resource contracts
+## Architecture (details in `docs/architecture.md`)
 
-### Key Components
+The resource **describes**, the definition is **compiled once**, the renderer **decides**, the document is
+**written**.
 
-#### Descriptors
-- **Values** (`src/Descriptors/Values`): Type descriptors for attributes (string, integer, float, date, enum, etc.)
-- **Relations** (`src/Descriptors/Relations`): Relationship descriptors (one, many)
+- Layers, each depending only on those to its left: `Support` ← `Configuration` ← `Definition` ← `Descriptors` ←
+  `Compilation` ← `Context` ← `Loading` ← `Rendering` ← `Resources` ← `Http` ← `Laravel` (`Exceptions` usable
+  everywhere). Enforced by `phpat` (`tests/Architecture/ArchitectureTest.php`).
+- Only `src/Laravel/` may use facades, global helpers (`config()`, `app()`, `request()`…) or the container. Enforced
+  by `disallowed-calls`.
+- Definitions (`src/Definition/`) are `final readonly`, serializable, built once per resource class by running its
+  hooks on a `Probe`; they are the public contract read by the rules and by external tools.
+- A `JsonApiContext` (fields, include, path, configuration, diagnostics) is passed explicitly: no static state, no
+  singleton (the only static cache is `Compilation\Definitions`).
+- Descriptors are immutable fluent builders; conditions are rules (`Closure(Request, model, attribute): bool`); value types live in a registry.
+- Classes are `final` (except the base classes listed in the architecture test); traits only in `src/Resources/`;
+  `declare(strict_types=1)`; PHPStan max.
 
-#### Resource Concerns
-- **Attributes**: Handles attribute serialization with field filtering
-- **Relationships**: Manages relationship loading and serialization with include support
-- **ConditionallyLoadsAttributes**: Laravel-style conditional attribute support
-- **Identifier**: Resource ID and type handling
-- **Links**: JSON:API links support
-- **Meta**: Meta information handling
-- **Schema**: Resource schema generation for validation
-- **ToResponse**: Response formatting
+## Tests
 
-The `Describer` base class (`src/Descriptors/Describer.php`) resolves attribute names automatically from the `retriever()` when a descriptor is passed as a positional array value (no explicit key needed).
+- `tests/Unit/`: one test class per class. `tests/Feature/`: Orchestra Testbench scenarios on the application of
+  `tests/app/` (SQLite in memory). `tests/Architecture/`: phpat rules, run by PHPStan.
+- Rendered documents are validated against the JSON:API 1.1 JSON Schema; include scenarios assert the number of SQL
+  queries.
+- New test names are sentences (`test_null_to_one_relationship_renders_data_null`).
 
-#### `applyWhen` vs Laravel's `mergeWhen`
-Use `$this->applyWhen($condition, [...])` instead of `$this->mergeWhen(...)` when you need the field names to be visible in schema generation (for `Rules\Fields` validation). `mergeWhen` hides field names from the schema.
+## Language
 
-### Key Features
-- **Include Support**: Dynamic relationship loading via `?include=` parameter
-- **Sparse Fieldsets**: Attribute filtering via `?fields[type]=` parameter  
-- **Described Notation**: Fluent API for defining attributes and relationships with type casting
-- **Laravel Compatibility**: Supports Laravel 9-12 and PHP 8.1-8.4
-
-### Configuration
-The package includes a config file (`config/jsonapi.php`) with settings for:
-- Nullable value handling
-- Date formatting
-- Float precision
-- Automatic whenHas conditions
-- Relationship loading behavior
-
-### Testing Structure
-- **Unit Tests**: Test individual components in isolation
-- **Feature Tests**: Test complete JSON:API response formatting
-- Uses Orchestra Testbench for Laravel package testing
-- SQLite in-memory database for testing
+Everything is in English (code, `docs/`, commit messages), except the tracking documents of `roadmap-v2/`.

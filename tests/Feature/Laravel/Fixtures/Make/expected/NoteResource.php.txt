@@ -1,0 +1,20 @@
+<?php
+
+namespace App\Http\Resources;
+
+use App\Models\Note;
+use Ark4ne\JsonApi\Resources\JsonApiResource;
+use Illuminate\Http\Request;
+
+/**
+ * @extends JsonApiResource<Note>
+ */
+class NoteResource extends JsonApiResource
+{
+    public function toAttributes(Request $request): iterable
+    {
+        return [
+            'pinned' => $this->bool(),
+        ];
+    }
+}

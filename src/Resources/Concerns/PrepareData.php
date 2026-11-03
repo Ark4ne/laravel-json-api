@@ -1,58 +1,63 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
+use Ark4ne\JsonApi\Configuration\Linkage;
 use Ark4ne\JsonApi\Descriptors\Relations\Relation;
-use Ark4ne\JsonApi\Descriptors\Resolver;
 use Ark4ne\JsonApi\Descriptors\Values\Value;
 use Ark4ne\JsonApi\Resources\Relationship;
-use Ark4ne\JsonApi\Support\Config;
 use Ark4ne\JsonApi\Support\Values;
-use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 
 trait PrepareData
 {
-    use Resolver;
-
     protected ?bool $autoWhenHas = null;
 
     protected ?bool $autoWhenIncluded = null;
 
     /**
-     * @template TKey as array-key
-     * @template TValue
-     * @param iterable<TKey, TValue> $data
+     * The members of a hook, the `MergeValue`s merged in place.
      *
-     * @return iterable<TKey, TValue>
+     * @param iterable<mixed> $data
+     *
+     * @return array<array-key, mixed>
      */
-    protected function mergeValues(iterable $data): iterable
+    protected function mergeValues(iterable $data): array
     {
         return Values::mergeValues($data);
     }
 
     /**
+     * Applies `whenHas()` to the descriptors, as the resource says (`$autoWhenHas`), otherwise as the configuration of
+     * the scope says. A descriptor that sets it itself keeps its choice.
+     *
      * @template TKey as array-key
      * @template TValue
      * @param iterable<TKey, TValue> $data
      *
      * @return iterable<TKey, TValue>
      */
-    protected function autoWhenHas(iterable $data, string $for): iterable
+    protected function autoWhenHas(iterable $data, bool $byConfiguration): iterable
     {
-        $autoWhenHas = $this->autoWhenHas ?? null;
-
-        if ($autoWhenHas || (Config::autoWhenHas($for) && $autoWhenHas !== false)) {
-            (new Collection($data))
-                ->each(fn($value, int|string $key) => $value instanceof Value
-                    ? $value->autoWhenHas()
-                    : $value);
+        if (!($this->autoWhenHas ?? $byConfiguration)) {
+            return $data;
         }
 
-        return $data;
+        // Descriptors are immutable: the modified ones replace the originals.
+        return (new Collection($data))
+            ->map(static fn($value) => $value instanceof Value && $value->appliesAutoWhenHas(true)
+                ? $value->autoWhenHas()
+                : $value)
+            ->all();
     }
 
     /**
+     * Renders the linkage of every relationship only when included (`whenIncluded()`) when the resource says so
+     * (`$autoWhenIncluded = true`), always when it says not to (`false`, for the relationships that do not set theirs);
+     * `relationship.linkage` applies otherwise.
+     *
      * @template TKey as array-key
      * @template TValue
      * @param iterable<TKey, TValue> $data
@@ -61,35 +66,18 @@ trait PrepareData
      */
     protected function autoWhenIncluded(iterable $data): iterable
     {
-        $autoWhenIncluded = $this->autoWhenIncluded ?? null;
-
-        if ($autoWhenIncluded || (Config::$autoWhenIncluded && $autoWhenIncluded !== false)) {
-            (new Collection($data))
-                ->each(fn($relation, int|string $key) => $relation instanceof Relation || $relation instanceof Relationship
-                    ? $relation->whenIncluded()
-                    : $relation);
+        if ($this->autoWhenIncluded === null) {
+            return $data;
         }
 
-        return $data;
-    }
+        $whenIncluded = $this->autoWhenIncluded;
 
-    /**
-     * @param \Illuminate\Http\Request $request
-     * @param iterable<TKey, TValue>|null $data
-     *
-     * @return iterable<TKey, TValue>
-     * @deprecated
-     *
-     * @template TKey as array-key
-     * @template TValue
-     *
-     */
-    protected function prepareData(Request $request, ?iterable $data): iterable
-    {
-        if ($data === null) {
-            return [];
-        }
-
-        return $data ? $this->resolveValues($request, Values::mergeValues($data)) : [];
+        return (new Collection($data))
+            ->map(static fn($relation) => match (true) {
+                !$relation instanceof Relation && !$relation instanceof Relationship => $relation,
+                $whenIncluded => $relation->whenIncluded(),
+                default => $relation->defaultLinkage(Linkage::Always),
+            })
+            ->all();
     }
 }

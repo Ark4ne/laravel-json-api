@@ -1,49 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Descriptors\Values;
 
-use Ark4ne\JsonApi\Support\Config;
-use Closure;
-use DateTime;
-use DateTimeInterface;
-use Illuminate\Http\Request;
+use Ark4ne\JsonApi\Configuration\Configuration;
 
 /**
+ * A calendar date without time, `Y-m-d` (`2026-10-30`) unless `format()` says otherwise.
+ *
  * @template T
- * @extends Value<T>
+ * @extends ValueDateTime<T>
  */
-class ValueDate extends Value
+final class ValueDate extends ValueDateTime
 {
-    protected string $format;
-
-    public function __construct(string|Closure|null $attribute)
+    protected function defaultFormat(Configuration $configuration): string
     {
-        parent::__construct($attribute);
-
-        $this->format = Config::$date;
-    }
-
-    public function format(string $format): static
-    {
-        $this->format = $format;
-        return $this;
-    }
-
-    /**
-     * @throws \Exception
-     */
-    public function value(mixed $of, Request $request): string
-    {
-        if ($of === null) {
-            return (new DateTime("@0"))->format($this->format);
-        }
-        if ($of instanceof DateTimeInterface) {
-            return $of->format($this->format);
-        }
-        if (is_numeric($of)) {
-            return (new DateTime("@$of"))->format($this->format);
-        }
-
-        return (new DateTime($of))->format($this->format);
+        return 'Y-m-d';
     }
 }

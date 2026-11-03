@@ -1,110 +1,119 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Resources;
 
+use Ark4ne\JsonApi\Compilation\Definitions;
+use Ark4ne\JsonApi\Context\JsonApiContext;
+use Ark4ne\JsonApi\Definition\DefinitionSource;
 use Ark4ne\JsonApi\Descriptors;
-use Ark4ne\JsonApi\Resources\Concerns;
-use Ark4ne\JsonApi\Support\Arr;
-use Illuminate\Database\Eloquent\Model;
+use Ark4ne\JsonApi\Descriptors\ValueTypes;
+use Ark4ne\JsonApi\Loading\LoadPlanner;
+use Ark4ne\JsonApi\Rendering\Document;
+use Ark4ne\JsonApi\Rendering\DocumentBuilder;
+use Ark4ne\JsonApi\Rendering\IncludedRegistry;
+use Ark4ne\JsonApi\Rendering\RenderableResource;
+use Ark4ne\JsonApi\Rendering\ResourceObjectRenderer;
+use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @template T
+ * @template T The model of the resource: `JsonApiResource<User>`
  * @property T $resource
  */
-abstract class JsonApiResource extends JsonResource implements Resourceable
+abstract class JsonApiResource extends JsonResource implements DefinitionSource, RenderableResource
 {
-    use Descriptors\Relations,
-        Descriptors\Values,
-        Concerns\Relationize,
-        Concerns\Identifier,
-        Concerns\Attributes,
-        Concerns\ConditionallyLoadsAttributes,
-        Concerns\Relationships,
-        Concerns\Links,
-        Concerns\Meta,
-        Concerns\Schema,
-        Concerns\ToResponse;
+    /** @use Descriptors\Relations<T> */
+    use Descriptors\Relations;
+    /** @use Descriptors\Values<T> */
+    use Descriptors\Values;
+    use Concerns\Relationize;
+    use Concerns\Identifier;
+    use Concerns\Attributes;
+    use Concerns\ConditionallyLoadsAttributes;
+    /** @use Concerns\Relationships<T> */
+    use Concerns\Relationships;
+    /** @use Concerns\Links<T> */
+    use Concerns\Links;
+    /** @use Concerns\Meta<T> */
+    use Concerns\Meta;
+    use Concerns\Definable;
+    use Concerns\Renderable;
+    use Concerns\ToResponse;
 
     /** @var T */
-    public $resource;
+    public $resource; // @phpstan-ignore property.phpDocType (narrows Laravel's mixed to the model: JsonApiResource<User>)
 
     /**
+     * A value type the application registers (`JsonApi::valueType('money', MoneyValue::class)`) is written
+     * `$this->money($attribute)`; any other call goes to the model, as in Laravel.
+     *
+     * @param string $method
+     * @param array<array-key, mixed> $parameters
+     */
+    public function __call($method, $parameters): mixed
+    {
+        $configuration = Definitions::configuration();
+
+        if (isset($configuration->valueTypes[$method])) {
+            $attribute = $parameters[0] ?? null;
+
+            return ValueTypes::make(
+                $configuration,
+                $method,
+                is_string($attribute) || $attribute instanceof Closure ? $attribute : null,
+            );
+        }
+
+        return parent::__call($method, $parameters);
+    }
+
+    /**
+     * The resource object of this resource (https://jsonapi.org/format/#document-resource-objects); the whole document
+     * is built by `toResponse()`.
+     *
      * @param Request $request
-     * @param bool                     $included
      *
-     * @return array{id: int|string, type: string, attributes?:array<string, string>, relationships?:array<string, mixed>, links?:mixed, meta?:mixed}
+     * @return array{type: string, id: string, attributes?: array<array-key, mixed>, relationships?: array<string, array{data?: array{type: string, id: string, meta?: array<array-key, mixed>}|list<array{type: string, id: string, meta?: array<array-key, mixed>}>|null, links?: array<array-key, mixed>, meta?: array<array-key, mixed>}>, links?: array<array-key, mixed>, meta?: array<array-key, mixed>}
      */
-    public function toArray(mixed $request, bool $included = true): array
+    public function toArray(mixed $request): array
     {
-        $loads = $this->requestedRelationshipsLoad($request);
+        $context = $this->renderingContextOf($request);
+        $this->loadRelations($context);
 
-        if (!empty($loads) && $this->resource instanceof Model) {
-            $this->resource->loadMissing($loads);
-        }
+        $renderer = ResourceObjectRenderer::configured($context->configuration);
 
-        $data = [
-            'id' => $this->toIdentifier($request),
-            'type' => $this->toType($request),
-        ];
-
-        if ($included) {
-            $data += Arr::toArray(array_filter([
-                'attributes' => $this->requestedAttributes($request),
-                'relationships' => $this->requestedRelationships($request),
-                'links' => $this->requestedLinks($request),
-                'meta' => $this->requestedResourceMeta($request)
-            ]));
-        }
-
-        return $data;
+        return $renderer->render($this, $context, new IncludedRegistry($renderer))->toArray();
     }
 
     /**
-     * @param Request|mixed $request
+     * The collection of the resources. Override it to return a collection class of your own (`UserCollection`). `data`
+     * is always a JSON list: `$preserveKeys` does not apply.
      *
-     * @return array<mixed>
-     */
-    public function with($request): array
-    {
-        $with = $this->with;
-
-        if ($meta = $this->requestedMeta($request)) {
-            $with = Arr::merge($with, ['meta' => $meta]);
-        }
-
-        return Arr::wash($with);
-    }
-
-    /**
      * @param mixed $resource
      *
      * @return JsonApiCollection<static>
      */
-    public static function collection($resource): JsonApiCollection
+    public static function collection($resource): JsonApiCollection // @phpstan-ignore method.childReturnType (a JSON:API collection, not Laravel's anonymous one)
     {
-        /** @var \Ark4ne\JsonApi\Resources\JsonApiCollection<static> $collection */
-        $collection = new class($resource, static::class) extends JsonApiCollection {
-            public ?bool $preserveKeys = null;
-        };
+        return new JsonApiCollection($resource, static::class);
+    }
 
-        if (property_exists(static::class, 'preserveKeys')) {
-            // @phpstan-ignore-next-line
-            $collection->preserveKeys = (new static([]))->preserveKeys;
-        }
+    protected function toDocument(JsonApiContext $context): Document
+    {
+        $this->loadRelations($context);
 
-        return $collection;
+        return (new DocumentBuilder(ResourceObjectRenderer::configured($context->configuration)))
+            ->resource($this, $context);
     }
 
     /**
-     * Fix breaking change in JsonResource in Laravel 12.45
-     * @phpstan-ignore-next-line
-     * @param Request $request
-     * @return array|\Illuminate\Contracts\Support\Arrayable|\JsonSerializable
+     * Loads the relations the resource renders in `$context`, before rendering (docs/architecture.md §7).
      */
-    public function resolveResourceData(Request $request)
+    private function loadRelations(JsonApiContext $context): void
     {
-        return $this->toArray($request);
+        (new LoadPlanner())->plan(static::class, $context)->apply([$this->resource]);
     }
 }

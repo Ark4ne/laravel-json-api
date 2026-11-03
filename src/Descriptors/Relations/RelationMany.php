@@ -1,21 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Descriptors\Relations;
 
-use Ark4ne\JsonApi\Resources\Relationship;
-use Closure;
+use Ark4ne\JsonApi\Definition\Cardinality;
 
 /**
  * @template T
  * @extends Relation<T>
  */
-class RelationMany extends Relation
+final class RelationMany extends Relation
 {
-    protected function value(Closure $value): Relationship
+    protected function cardinality(): Cardinality
     {
-        $relation = new Relationship($this->related, $value, $this->links, $this->meta);
-        $relation->asCollection();
-
-        return $relation;
+        return Cardinality::Many;
     }
 }

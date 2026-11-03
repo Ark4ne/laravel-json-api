@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\Unit\Descriptors;
 
+use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Descriptors\Relations;
 use Ark4ne\JsonApi\Descriptors\Relations\RelationMany;
 use Ark4ne\JsonApi\Descriptors\Relations\RelationOne;
@@ -9,6 +12,7 @@ use Ark4ne\JsonApi\Descriptors\Values;
 use Ark4ne\JsonApi\Descriptors\Values\ValueArray;
 use Ark4ne\JsonApi\Descriptors\Values\ValueBool;
 use Ark4ne\JsonApi\Descriptors\Values\ValueDate;
+use Ark4ne\JsonApi\Descriptors\Values\ValueDateTime;
 use Ark4ne\JsonApi\Descriptors\Values\ValueEnum;
 use Ark4ne\JsonApi\Descriptors\Values\ValueFloat;
 use Ark4ne\JsonApi\Descriptors\Values\ValueInteger;
@@ -18,13 +22,17 @@ use Ark4ne\JsonApi\Resources\JsonApiCollection;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Closure;
 use PHPUnit\Framework\Attributes\DataProvider;
+use ReflectionMethod;
 use stdClass;
 use Test\Support\Reflect;
 use Test\TestCase;
 
-class DescriptorsTraitTest extends TestCase
+final class DescriptorsTraitTest extends TestCase
 {
-    public static function methods()
+    /**
+     * @return array<string, array{0: class-string<Describer<mixed>>, 1: string, 2?: class-string}>
+     */
+    public static function methods(): array
     {
         return [
             'bool' => [ValueBool::class, 'bool'],
@@ -32,6 +40,7 @@ class DescriptorsTraitTest extends TestCase
             'float' => [ValueFloat::class, 'float'],
             'string' => [ValueString::class, 'string'],
             'date' => [ValueDate::class, 'date'],
+            'datetime' => [ValueDateTime::class, 'datetime'],
             'array' => [ValueArray::class, 'array'],
             'enum' => [ValueEnum::class, 'enum'],
             'mixed' => [ValueMixed::class, 'mixed'],
@@ -43,22 +52,32 @@ class DescriptorsTraitTest extends TestCase
     /**
      * @dataProvider methods
      */
+    /**
+     * @param class-string<Describer<mixed>> $expected
+     */
     #[DataProvider('methods')]
-    public function testDescriptorTrait($expected, $method, ...$args)
+    public function test_each_helper_builds_its_descriptor_with_its_retriever(string $expected, string $method, mixed ...$args): void
     {
         $mock = new class extends stdClass {
-            use Values;
-            use Relations;
+            /** @use Values<mixed> */ use Values;
+            /** @use Relations<mixed> */ use Relations;
         };
-        /** @var \Ark4ne\JsonApi\Descriptors\Describer $descriptor */
         $descriptor = Reflect::invoke($mock, $method, ...$args);
-        $this->assertInstanceOf($expected, $descriptor);
-        $this->assertNull($descriptor->retriever());
+        self::assertInstanceOf($expected, $descriptor);
+        self::assertNull($descriptor->retriever());
         $descriptor = Reflect::invoke($mock, $method, ...[...$args, 'test']);
-        $this->assertInstanceOf($expected, $descriptor);
-        $this->assertEquals('test', $descriptor->retriever());
+        self::assertInstanceOf($expected, $descriptor);
+        self::assertEquals('test', $descriptor->retriever());
         $descriptor = Reflect::invoke($mock, $method, ...[...$args, fn() => 'closure']);
-        $this->assertInstanceOf($expected, $descriptor);
-        $this->assertInstanceOf(Closure::class, $descriptor->retriever());
+        self::assertInstanceOf($expected, $descriptor);
+        self::assertInstanceOf(Closure::class, $descriptor->retriever());
+    }
+
+    #[DataProvider('methods')]
+    public function test_every_descriptor_helper_is_protected(string $expected, string $method, string ...$arguments): void
+    {
+        $trait = in_array($method, ['one', 'many'], true) ? Relations::class : Values::class;
+
+        self::assertTrue((new ReflectionMethod($trait, $method))->isProtected());
     }
 }

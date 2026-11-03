@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Filters;
 
 use Ark4ne\JsonApi\Support\Values;
@@ -7,15 +9,16 @@ use Closure;
 use Illuminate\Contracts\Auth\Access\Gate;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MissingValue;
-use Illuminate\Http\Resources\PotentiallyMissing;
 use Illuminate\Support\Collection;
 
 /**
- * @template Resource
+ * The rules a related resource must pass to be rendered in a relationship, all of them (`->filters()`).
+ *
+ * Immutable: `can()` and `when()` return a copy with the rule added.
  */
-class Filters
+final class Filters
 {
-    /** @var array<FilterRule<Resource>> */
+    /** @var list<FilterRule<mixed>> */
     protected array $rules = [];
 
     /**
@@ -29,67 +32,67 @@ class Filters
      */
     public function can(iterable|string $abilities, array $arguments = [], string $gateClass = Gate::class, ?string $guard = null): static
     {
-        $this->rules[] = new PolicyFilterRule($abilities, $arguments, $gateClass, $guard);
-        return $this;
+        return $this->with(new PolicyFilterRule($abilities, $arguments, $gateClass, $guard));
     }
 
     /**
      * Add a custom filter rule
      *
-     * @param Closure(Request, Resource): bool $callback Callback that receives (Request $request, Model $model) and returns bool
+     * @template TFiltered The related model the callback is written for (`fn(Request $request, Post $post) => …`)
+     *
+     * @param Closure(Request, TFiltered): mixed $callback Receives the request and the model, keeps the model when it
+     *                                                     returns a truthy value
      * @return static
      */
     public function when(Closure $callback): static
     {
-        $this->rules[] = new CallbackFilterRule($callback);
-        return $this;
+        return $this->with(new CallbackFilterRule($callback));
     }
 
     /**
-     * Apply all filters to the given data
+     * @param FilterRule<mixed> $rule
+     */
+    protected function with(FilterRule $rule): static
+    {
+        $filters = clone $this;
+        $filters->rules[] = $rule;
+
+        return $filters;
+    }
+
+    /**
+     * Apply all filters to the given data: the related value of a relationship, read once its condition passed.
      *
-     * @param Request $request
-     * @param null|PotentiallyMissing|Resource|iterable<array-key, Resource> $data
-     * @return mixed
+     * @param mixed $data `null`, a missing value, a model or an iterable of models
+     *
+     * @return mixed The data, the models of an iterable that pass (a `Collection` stays one), a `MissingValue` for a
+     *               model that does not
      */
     public function apply(Request $request, mixed $data): mixed
     {
-        if ($data === null) {
-            return $data;
-        }
-        if (Values::isMissing($data)) {
+        if ($data === null || Values::isMissing($data)) {
             return $data;
         }
 
-        // If it's a collection/array, filter each item
+        if ($data instanceof Collection) {
+            return $data->filter(fn(mixed $item): bool => $this->shouldInclude($request, $item));
+        }
+
         if (is_iterable($data)) {
-            $filtered = (new Collection($data))
-                ->filter(fn($item) => $this->shouldInclude($request, $item));
-
-            // Preserve the original collection type
-            if ($data instanceof Collection) {
-                return $filtered;
-            }
-            
-            return $filtered->all();
+            return array_filter(
+                is_array($data) ? $data : iterator_to_array($data),
+                fn(mixed $item): bool => $this->shouldInclude($request, $item),
+            );
         }
 
-        // Single model - check if it should be included
-        return $this->shouldInclude($request, $data)
-            ? $data
-            : new MissingValue();
+        return $this->shouldInclude($request, $data) ? $data : new MissingValue();
     }
 
     /**
-     * Check if a model should be included based on all filter rules
-     *
-     * @param Request $request
-     * @param Resource $model
-     * @return bool
+     * Whether a model passes every rule: the rules were declared for the models of the relationship.
      */
-    protected function shouldInclude(Request $request, mixed $model): bool
+    private function shouldInclude(Request $request, mixed $model): bool
     {
-        // All rules must pass
         foreach ($this->rules as $rule) {
             if (!$rule->passes($request, $model)) {
                 return false;

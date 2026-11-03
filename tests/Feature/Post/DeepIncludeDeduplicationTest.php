@@ -1,9 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\Feature\Post;
 
-use Ark4ne\JsonApi\Support\Arr;
-use DateTimeInterface;
 use Test\app\Models\Comment;
 use Test\app\Models\Post;
 use Test\app\Models\User;
@@ -27,7 +27,7 @@ use Test\Feature\FeatureTestCase;
  */
 class DeepIncludeDeduplicationTest extends FeatureTestCase
 {
-    public function testDeepIncludeDeduplication(): void
+    public function test_a_resource_reached_by_several_include_paths_is_included_once(): void
     {
         $postAuthor    = User::factory()->create(); // User A: author of the post AND one comment
         $commentAuthor = User::factory()->create(); // User B: only appears via comments
@@ -69,20 +69,23 @@ class DeepIncludeDeduplicationTest extends FeatureTestCase
         ]);
 
         $response->assertJsonPath("included.0.type", 'user');
-        $response->assertJsonPath("included.0.id", $postAuthor->id);
-        $response->assertJsonPath("included.0.relationships.comments.data.0.id", $commentByA->id);
+        $response->assertJsonPath("included.0.id", (string) $postAuthor->id);
+        $response->assertJsonPath("included.0.relationships.comments.data.0.id", (string) $commentByA->id);
 
         // Explicit sub-assertions to document intent
-        $included = $response->json('included');
+        $users = array_values(array_filter(
+            $this->includedIdentifiers($response),
+            static fn(array $identifier): bool => $identifier['type'] === 'user',
+        ));
+        $usersInIncluded = array_column($users, 'id');
 
-        $postAuthorInIncluded = collect($included)
-            ->filter(fn($item) => $item['type'] === 'user' && $item['id'] == $postAuthor->id)
-            ->count();
-        $this->assertSame(1, $postAuthorInIncluded, 'Post author must appear exactly once (deduplication)');
-
-        $usersInIncluded = collect($included)->filter(fn($item) => $item['type'] === 'user')->pluck('id')->all();
-        $this->assertCount(2, $usersInIncluded, 'There should be exactly 2 users in included');
-        $this->assertContains($postAuthor->id, $usersInIncluded, 'Post author must be included');
-        $this->assertContains($commentAuthor->id, $usersInIncluded, 'Comment author must be included');
+        self::assertCount(
+            1,
+            array_keys($usersInIncluded, (string) $postAuthor->id, true),
+            'Post author must appear exactly once (deduplication)',
+        );
+        self::assertCount(2, $usersInIncluded, 'There should be exactly 2 users in included');
+        self::assertContains((string) $postAuthor->id, $usersInIncluded, 'Post author must be included');
+        self::assertContains((string) $commentAuthor->id, $usersInIncluded, 'Comment author must be included');
     }
 }

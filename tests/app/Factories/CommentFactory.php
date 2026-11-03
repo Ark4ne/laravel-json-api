@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\app\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -7,6 +9,9 @@ use Test\app\Models\Comment;
 use Test\app\Models\Post;
 use Test\app\Models\User;
 
+/**
+ * @extends Factory<Comment>
+ */
 class CommentFactory extends Factory
 {
     protected $model = Comment::class;
@@ -16,7 +21,7 @@ class CommentFactory extends Factory
         return [
             'user_id' => User::factory(),
             'post_id' => Post::factory(),
-            'content' => $this->faker->text()
+            'content' => $this->faker->text(),
         ];
     }
 }

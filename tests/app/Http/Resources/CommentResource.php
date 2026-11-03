@@ -1,52 +1,44 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\app\Http\Resources;
 
 use Ark4ne\JsonApi\Resources\JsonApiResource;
-use DateTimeInterface;
 use Illuminate\Http\Request;
+use Test\app\Models\Comment;
 
 /**
- * @extends JsonApiResource<\Test\app\Models\Comment>
+ * @extends JsonApiResource<Comment>
  */
 class CommentResource extends JsonApiResource
 {
-    protected function toType(Request $request): string
-    {
-        return 'comment';
-    }
-
     public function toAttributes(Request $request): iterable
     {
-        return collect([
-            'content' => fn() => $this->resource->content,
-        ]);
+        return [
+            'content' => $this->string(),
+        ];
     }
 
     protected function toResourceMeta(Request $request): ?iterable
     {
-        return collect([
-            'created_at' => $this->resource->created_at->format(DateTimeInterface::ATOM),
-            'updated_at' => $this->resource->updated_at->format(DateTimeInterface::ATOM),
-        ]);
+        return [
+            $this->datetime('created_at'),
+            $this->datetime('updated_at'),
+        ];
     }
 
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'user' => $this->when(true, UserResource::relationship(fn() => $this->resource->user)
-                ->withLinks(fn() => [
-                    'self' => "https://api.example.com/comment/{$this->resource->id}/relationships/user",
-                    'related' => "https://api.example.com/comment/{$this->resource->id}/user",
-                ])
-                ->whenIncluded()->withLoad(true)),
-            'post' => PostResource::relationship(fn() => $this->resource->post)
-                ->withLinks(fn() => [
-                    'self' => "https://api.example.com/comment/{$this->resource->id}/relationships/post",
-                    'related' => "https://api.example.com/comment/{$this->resource->id}/post",
-                ])
-                ->whenIncluded()
-                ->withLoad(true),
+            'user' => $this->one()->links(
+                self: fn() => "https://api.example.com/comment/{$this->resource->id}/relationships/user",
+                related: fn() => "https://api.example.com/comment/{$this->resource->id}/user",
+            )->whenIncluded()->withLoad(true),
+            'post' => $this->one()->links(
+                self: fn() => "https://api.example.com/comment/{$this->resource->id}/relationships/post",
+                related: fn() => "https://api.example.com/comment/{$this->resource->id}/post",
+            )->whenIncluded()->withLoad(true),
         ];
     }
 }

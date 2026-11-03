@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\app\Http\Controllers;
 
 use Ark4ne\JsonApi\Resources\JsonApiCollection;
@@ -21,16 +23,25 @@ class PostController extends Controller
         return Post::class;
     }
 
+    /**
+     * @return class-string<JsonApiResource<*>>
+     */
     protected function getResourceClass(): string
     {
         return PostResource::class;
     }
 
+    /**
+     * @return JsonApiCollection<JsonApiResource<*>>
+     */
     public function index(PostRequest $request): JsonApiCollection
     {
         return $this->apiIndex($request);
     }
 
+    /**
+     * @return JsonApiResource<*>
+     */
     public function show(PostRequest $request, string $id): JsonApiResource
     {
         return $this->apiShow($request, $id);

@@ -1,26 +1,47 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ark4ne\JsonApi\Resources;
 
-use Ark4ne\JsonApi\Support\Arr;
-use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Http\Resources\Json\JsonResource;
+use Ark4ne\JsonApi\Compilation\Definitions;
+use Ark4ne\JsonApi\Context\JsonApiContext;
+use Ark4ne\JsonApi\Definition\RelatedResource;
+use Ark4ne\JsonApi\Definition\ResourceDefinition;
+use Ark4ne\JsonApi\Exceptions\DefinitionException;
+use Ark4ne\JsonApi\Loading\LoadPlanner;
+use Ark4ne\JsonApi\Rendering\Document;
+use Ark4ne\JsonApi\Rendering\DocumentBuilder;
+use Ark4ne\JsonApi\Rendering\IncludedRegistry;
+use Ark4ne\JsonApi\Rendering\RenderableResource;
+use Ark4ne\JsonApi\Rendering\ResourceObjectRenderer;
+use Ark4ne\JsonApi\Rendering\ValueResolver;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Attributes\Collects;
 use Illuminate\Http\Resources\Json\ResourceCollection;
+use Illuminate\Pagination\AbstractCursorPaginator;
+use Illuminate\Pagination\AbstractPaginator;
 
 /**
  * @template T as JsonApiResource
  */
-class JsonApiCollection extends ResourceCollection implements Resourceable
+class JsonApiCollection extends ResourceCollection
 {
-    use Concerns\Relationize,
-        Concerns\SchemaCollection,
-        Concerns\ToResponse;
+    use Concerns\Relationize;
+    use Concerns\ToResponse;
 
     /**
      * @var class-string<T>
      */
-    public $collects;
+    public $collects; // @phpstan-ignore property.phpDocType (narrows Laravel's string to the resource collected)
+
+    /**
+     * The definition of the resources this collection collects.
+     */
+    public static function definition(): ResourceDefinition
+    {
+        return Definitions::for(RelatedResource::resolve(static::class));
+    }
 
     /**
      * Create a new anonymous resource collection.
@@ -32,63 +53,91 @@ class JsonApiCollection extends ResourceCollection implements Resourceable
      */
     public function __construct($resource, ?string $collects = null)
     {
-        $this->collects = $collects ?: $this->collects;
+        $this->collects = $collects ?? $this->collects;
 
         parent::__construct($resource);
     }
 
     /**
-     * @param \Illuminate\Http\Request $request
-     * @param bool $included
+     * The resource objects of the collected resources; the whole document is built by `toResponse()`.
      *
-     * @return array<int, array{id: int|string}>
+     * @param \Illuminate\Http\Request $request
+     *
+     * @return list<array{type: string, id: string, attributes?: array<array-key, mixed>, relationships?: array<string, array{data?: array{type: string, id: string, meta?: array<array-key, mixed>}|list<array{type: string, id: string, meta?: array<array-key, mixed>}>|null, links?: array<array-key, mixed>, meta?: array<array-key, mixed>}>, links?: array<array-key, mixed>, meta?: array<array-key, mixed>}>
      */
-    public function toArray(mixed $request, bool $included = true): array
+    public function toArray(mixed $request): array
     {
-        $collection = collect($this->collection);
+        $context = $this->renderingContextOf($request);
+        $resources = $this->renderableResources($context);
+        $renderer = ResourceObjectRenderer::configured($context->configuration);
+        $included = new IncludedRegistry($renderer);
 
-        if ($collection->every(static fn($value) => $value instanceof JsonApiResource)) {
-            // @phpstan-ignore-next-line
-            $loads = array_merge(...$collection->map->requestedRelationshipsLoad($request));
+        return array_map(
+            static fn(RenderableResource $resource) => $renderer->render($resource, $context, $included)->toArray(),
+            $resources,
+        );
+    }
 
-            if (!empty($loads)) {
-                // @phpstan-ignore-next-line
-                $resources = $collection->map->resource;
+    protected function toDocument(JsonApiContext $context): Document
+    {
+        $document = (new DocumentBuilder(ResourceObjectRenderer::configured($context->configuration)))->collection($this->renderableResources($context), $context);
 
-                if ($resources->every(static fn($resource) => $resource instanceof Model)) {
-                    (new Collection($resources))->loadMissing($loads);
-                }
-            }
+        if ($this->resource instanceof AbstractPaginator || $this->resource instanceof AbstractCursorPaginator) {
+            $pagination = (new Pagination($this))->information($context->request);
+
+            $document = $document->withLinks($pagination['links'] ?? [])->withMeta($pagination['meta'] ?? []);
         }
 
-        $data = [];
-
-        $base = $this->with;
-        foreach ($this->collection as $resource) {
-            $data[] = $resource->toArray($request, $included);
-
-            if ($resource instanceof JsonResource) {
-                $with = $resource->with($request);
-
-                if (!$included) {
-                    unset($with['included']);
-                }
-
-                $base = Arr::merge($base, $with);
-            }
+        if (method_exists($this, 'toMeta')) {
+            throw DefinitionException::renamedHook(static::class, 'toMeta', 'toDocumentMeta');
         }
-        $this->with = $base;
 
-        return $data;
+        // The meta of the collection win over those of its resources.
+        return $document->withMeta(
+            (new ValueResolver())->resolve($this->toDocumentMeta($context->request) ?? [], $this->resource, $context),
+        );
     }
 
     /**
-     * @param \Illuminate\Http\Request|mixed $request
+     * Top-level meta of the document of the collection. They win over the document meta of the collected resources
+     * (`JsonApiResource::toDocumentMeta()`), merged the first resource first. `toMeta()` of 1.x, renamed: a collection
+     * still declaring `toMeta()` throws when rendered.
      *
-     * @return array<mixed>
+     * @see https://jsonapi.org/format/#document-meta
+     *
+     * @return iterable<string, mixed>|iterable<array-key, \Ark4ne\JsonApi\Descriptors\Values\Value>|null
      */
-    public function with($request): array
+    protected function toDocumentMeta(Request $request): ?iterable
     {
-        return Arr::wash($this->with);
+        return null;
+    }
+
+    /**
+     * The collected resources, the relations they render loaded once on the whole collection, by resource class.
+     *
+     * @return list<RenderableResource>
+     */
+    private function renderableResources(JsonApiContext $context): array
+    {
+        $resources = [];
+        foreach ($this->collection ?? [] as $resource) {
+            if ($resource instanceof RenderableResource) {
+                $resources[] = $resource;
+            }
+        }
+
+        $models = [];
+        foreach ($resources as $resource) {
+            if ($resource instanceof JsonApiResource) {
+                $models[$resource::class][] = $resource->renderedModel();
+            }
+        }
+
+        $planner = new LoadPlanner();
+        foreach ($models as $class => $collected) {
+            $planner->plan($class, $context)->apply($collected);
+        }
+
+        return $resources;
     }
 }

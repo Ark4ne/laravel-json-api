@@ -1,11 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\app\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Test\app\Models\Post;
 use Test\app\Models\User;
 
+/**
+ * @extends Factory<Post>
+ */
 class PostFactory extends Factory
 {
     protected $model = Post::class;

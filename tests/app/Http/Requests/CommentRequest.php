@@ -1,27 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\app\Http\Requests;
 
-use Ark4ne\JsonApi\Requests\Rules\Fields;
-use Ark4ne\JsonApi\Requests\Rules\Includes;
-use Illuminate\Foundation\Http\FormRequest;
+use Ark4ne\JsonApi\Http\JsonApiFormRequest;
 use Test\app\Http\Resources\CommentResource;
 
-class CommentRequest extends FormRequest
+class CommentRequest extends JsonApiFormRequest
 {
-    public function authorize(): bool
-    {
-        return true;
-    }
-
-    /**
-     * @return array{fields: array<mixed>, include: array<mixed>}
-     */
-    public function rules(): array
-    {
-        return [
-            'fields' => [new Fields(CommentResource::class)],
-            'include' => [new Includes(CommentResource::class)],
-        ];
-    }
+    protected string $resource = CommentResource::class;
 }

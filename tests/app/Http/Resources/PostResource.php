@@ -1,21 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\app\Http\Resources;
 
 use Ark4ne\JsonApi\Resources\JsonApiResource;
-use DateTimeInterface;
 use Illuminate\Http\Request;
+use Test\app\Models\Post;
 
 /**
- * @extends JsonApiResource<\Test\app\Models\Post>
+ * @extends JsonApiResource<Post>
  */
 class PostResource extends JsonApiResource
 {
-    protected function toType(Request $request): string
-    {
-        return 'post';
-    }
-
     public function toAttributes(Request $request): iterable
     {
         return [
@@ -28,24 +25,24 @@ class PostResource extends JsonApiResource
     protected function toResourceMeta(Request $request): ?iterable
     {
         return [
-            $this->date('created_at')->format(DateTimeInterface::ATOM),
-            $this->date('updated_at')->format(DateTimeInterface::ATOM),
+            $this->datetime('created_at'),
+            $this->datetime('updated_at'),
         ];
     }
 
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'user' => $this->one(UserResource::class)->links(fn() => [
-                'self' => "https://api.example.com/posts/{$this->resource->id}/relationships/user",
-            ])->withLoad(true),
-            'comments' => $this->many(CommentResource::class)->links(fn() => [
-                'self' => "https://api.example.com/posts/{$this->resource->id}/relationships/comments",
-                'related' => "https://api.example.com/posts/{$this->resource->id}/comments",
-            ])->meta(fn() => [
+            'user' => $this->one()->links(
+                self: fn() => "https://api.example.com/posts/{$this->resource->id}/relationships/user",
+            )->withLoad(true),
+            'comments' => $this->many()->links(
+                self: fn() => "https://api.example.com/posts/{$this->resource->id}/relationships/comments",
+                related: fn() => "https://api.example.com/posts/{$this->resource->id}/comments",
+            )->meta(fn() => [
                 'total' => $this->resource->relationLoaded('comments')
                     ? $this->resource->comments->count()
-                    : $this->resource->comments()->getQuery()->count(),
+                    : $this->resource->comments()->toBase()->count(),
             ])->withLoad('comments'),
         ];
     }

@@ -1,122 +1,111 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\Feature;
 
-use Test\app\Http\Resources\CommentResource;
-use Test\app\Models\Post;
-use Test\app\Models\User;
 use Ark4ne\JsonApi\Filters\Filters;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
-use Illuminate\Contracts\Auth\Access\Gate;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
+use Test\app\Models\Post;
+use Test\app\Models\User;
 
-class RelationshipFiltersTest extends FeatureTestCase
+final class RelationshipFiltersTest extends FeatureTestCase
 {
+    private User $user;
+
+    private Post $public;
+
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->user = User::factory()->create();
-        Post::factory([
-            'user_id' => $this->user->id,
-            'is_public' => true,
-        ])->create();
-        Post::factory([
-            'user_id' => $this->user->id,
-            'is_public' => false,
-        ])->create();
-
-        $this->postPublic = $this->user->posts()->where('is_public', true)->get();
-        $this->postPrivate = $this->user->posts()->where('is_public', false)->get();
+        $this->public = Post::factory(['user_id' => $this->user->id, 'is_public' => true])->create();
+        Post::factory(['user_id' => $this->user->id, 'is_public' => false])->create();
     }
 
-    public function test_can_filter_relationship_with_policy()
+    public function test_a_policy_filter_keeps_the_related_resources_the_user_can_view(): void
     {
-        // Create a resource with policy filter
-        $resource = new class($this->user) extends JsonApiResource {
+        Gate::define('view', static fn(?User $user, Post $post): bool => $post->is_public);
+
+        $resource = new class ($this->user) extends JsonApiResource {
             protected function toRelationships(Request $request): iterable
             {
                 return [
-                    'posts' => $this->many(PostResource::class)
+                    'posts' => $this->many(FilteredPostResource::class)
                         ->filters(fn(Filters $filters) => $filters->can('view')),
                 ];
             }
         };
 
-        // Mock the gate to only allow public posts
-        $this->mock(Gate::class, function ($mock) {
-            $mock->shouldReceive('forUser')->andReturnSelf();
-            $mock->shouldReceive('allows')
-                ->with('view', [$this->postPublic->first()])
-                ->andReturn(true);
-            $mock->shouldReceive('allows')
-                ->with('view', [$this->postPrivate->first()])
-                ->andReturn(false);
-        });
-
-        $result = $resource->toArray($this->createRequest());
-        
-        // Should only contain the public post
-        $this->assertCount($this->postPublic->count(), $result['relationships']['posts']['data']);
-        $this->assertEquals($this->postPublic->first()->id, $result['relationships']['posts']['data'][0]['id']);
+        self::assertSame([(string) $this->public->id], self::relatedIds($resource));
     }
 
-    public function test_can_filter_relationship_with_custom_callback()
+    public function test_a_callback_filter_keeps_the_related_resources_it_accepts(): void
     {
-        $resource = new class($this->user) extends JsonApiResource {
+        $resource = new class ($this->user) extends JsonApiResource {
             protected function toRelationships(Request $request): iterable
             {
                 return [
-                    'posts' => $this->many(PostResource::class)
+                    'posts' => $this->many(FilteredPostResource::class)
                         ->filters(fn(Filters $filters) => $filters->when(
-                            fn($request, $post) => $post->is_public
-                        ))
+                            static fn(Request $request, Post $post): bool => $post->is_public,
+                        )),
                 ];
             }
         };
 
-        $result = $resource->toArray($this->createRequest());
-        
-        // Should only contain the public post
-        $this->assertCount($this->postPublic->count(), $result['relationships']['posts']['data']);
-        $this->assertEquals($this->postPublic->first()->id, $result['relationships']['posts']['data'][0]['id']);
+        self::assertSame([(string) $this->public->id], self::relatedIds($resource));
     }
 
-    public function test_can_combine_multiple_filters()
+    public function test_every_filter_must_accept_a_related_resource(): void
     {
-        $resource = new class($this->user) extends JsonApiResource {
+        $resource = new class ($this->user) extends JsonApiResource {
             protected function toRelationships(Request $request): iterable
             {
                 return [
-                    'posts' => $this->many(PostResource::class)
-                        ->filters(fn(Filters $filters) => $filters
-                            ->when(fn($request, $post) => $post->is_public)
-                            ->when(fn($request, $post) => $post->id > 0)
-                        )
+                    'posts' => $this->many(FilteredPostResource::class)
+                        ->filters(
+                            fn(Filters $filters) => $filters
+                                ->when(static fn(Request $request, Post $post): bool => $post->is_public)
+                                ->when(static fn(Request $request, Post $post): bool => $post->id > 0),
+                        ),
                 ];
             }
         };
 
-        $result = $resource->toArray($this->createRequest());
-        
-        // Should only contain the public post that passes both filters
-        $this->assertCount($this->postPublic->count(), $result['relationships']['posts']['data']);
-        $this->assertEquals($this->postPublic->first()->id, $result['relationships']['posts']['data'][0]['id']);
+        self::assertSame([(string) $this->public->id], self::relatedIds($resource));
     }
 
-    protected function createRequest(): Request
+    /**
+     * The ids of the `posts` linkage of the resource object.
+     *
+     * @param JsonApiResource<User> $resource
+     *
+     * @return list<mixed>
+     */
+    private static function relatedIds(JsonApiResource $resource): array
     {
-        return Request::create('/test', 'GET');
+        $object = $resource->toArray(Request::create('/test'));
+        $posts = $object['relationships']['posts']['data'] ?? null;
+        self::assertIsArray($posts);
+
+        return array_column($posts, 'id');
     }
 }
 
-class PostResource extends JsonApiResource
+/**
+ * @extends JsonApiResource<Post>
+ */
+final class FilteredPostResource extends JsonApiResource
 {
     public function toAttributes(Request $request): iterable
     {
         return [
-            'title' => $this->title,
-            'is_public' => $this->is_public,
+            'title' => $this->string(),
+            'is_public' => $this->bool(),
         ];
     }
 }

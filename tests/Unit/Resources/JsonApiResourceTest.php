@@ -1,53 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\Unit\Resources;
 
-use Ark4ne\JsonApi\Resources\JsonApiCollection;
+use Ark4ne\JsonApi\Exceptions\RenderingException;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Http\Request;
 use Test\Support\Stub;
 use Test\TestCase;
 
-use function collect;
-
 class JsonApiResourceTest extends TestCase
 {
-    public function testBasic()
+    public function test_a_resource_without_members_renders_its_type_and_id(): void
     {
         $model = Stub::model(['id' => 1]);
-        $resource = new class($model) extends JsonApiResource {
-            public function toType(Request $request): string
-            {
-                return 'my-model';
-            }
-        };
-
-        $request = new Request();
-
-        $data = [
-            'type' => 'my-model',
-            'id' => '1',
-            'attributes' => [
-                'id' => '1',
-            ]
-        ];
-        $this->assertEquals($data, $resource->toArray($request));
-        $this->assertEquals([], $resource->with($request));
-        $this->assertEquals(
-            ['data' => $data],
-            $resource->toResponse($request)->getData(true)
-        );
-    }
-
-    public function testBasicMinimal()
-    {
-        $model = Stub::model(['id' => 1]);
-        $resource = new class($model) extends JsonApiResource {
-            public function toArray($request, bool $included = true): array
-            {
-                return parent::toArray($request, false);
-            }
-
+        $resource = new /** @extends JsonApiResource<\Illuminate\Database\Eloquent\Model> */ class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'my-model';
@@ -60,29 +28,29 @@ class JsonApiResourceTest extends TestCase
             'type' => 'my-model',
             'id' => '1',
         ];
-        $this->assertEquals($data, $resource->toArray($request));
-        $this->assertEquals([], $resource->with($request));
-        $this->assertEquals(
-            ['data' => $data],
-            $resource->toResponse($request)->getData(true)
+        self::assertEquals($data, $resource->toArray($request));
+        self::assertEquals([], $resource->with($request));
+        self::assertEquals(
+            ['jsonapi' => ['version' => '1.1'], 'data' => $data],
+            $resource->toResponse($request)->getData(true),
         );
     }
 
-    public function testWithMeta()
+    public function test_the_document_meta_is_only_in_the_document_of_the_response(): void
     {
         $model = Stub::model(['id' => 1]);
-        $resource = new class($model) extends JsonApiResource {
+        $resource = new /** @extends JsonApiResource<\Illuminate\Database\Eloquent\Model> */ class ($model) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'my-model';
             }
 
-            public function toResourceMeta(Request $request): ?iterable
+            public function toResourceMeta(Request $request): iterable
             {
-                return ['self' => $this->id];
+                return ['self' => $this->resource->getKey()];
             }
 
-            public function toMeta(Request $request): ?iterable
+            public function toDocumentMeta(Request $request): iterable
             {
                 return ['hash' => 'azerty'];
             }
@@ -93,106 +61,43 @@ class JsonApiResourceTest extends TestCase
         $data = [
             'type' => 'my-model',
             'id' => '1',
-            'attributes' => [
-                'id' => '1',
-            ],
             'meta' => [
-                'self' => '1'
-            ]
+                'self' => '1',
+            ],
         ];
-        $this->assertEquals($data, $resource->toArray($request));
-        $this->assertEquals([
-            'meta' => ['hash' => 'azerty']
-        ], $resource->with($request));
-        $this->assertEquals([
-            'data' => $data,
-            'meta' => ['hash' => 'azerty']
-        ], $resource->toResponse($request)->getData(true)
+        self::assertEquals($data, $resource->toArray($request));
+        // The document meta is not part of the resource object: only the document of the response has it.
+        self::assertEquals([], $resource->with($request));
+        self::assertEquals(
+            [
+                'jsonapi' => ['version' => '1.1'],
+                'data' => $data,
+                'meta' => ['hash' => 'azerty'],
+            ],
+            $resource->toResponse($request)->getData(true),
         );
     }
 
-    public function testWithMetaMinimal()
+    public function test_collection_collects_the_resource_class(): void
     {
-        $model = Stub::model(['id' => 1]);
-        $resource = new class($model) extends JsonApiResource {
-            public function toArray($request, bool $included = true): array
-            {
-                return parent::toArray($request, false);
-            }
-
-            public function toType(Request $request): string
-            {
-                return 'my-model';
-            }
-
-            public function toResourceMeta(Request $request): ?iterable
-            {
-                return ['self' => $this->id];
-            }
-
-            public function toMeta(Request $request): ?iterable
-            {
-                return ['hash' => 'azerty'];
-            }
-        };
-
-        $request = new Request();
-
-        $data = [
-            'type' => 'my-model',
-            'id' => '1',
-        ];
-        $this->assertEquals($data, $resource->toArray($request));
-        $this->assertEquals([
-            'meta' => ['hash' => 'azerty']
-        ], $resource->with($request));
-        $this->assertEquals([
-            'data' => $data,
-            'meta' => ['hash' => 'azerty']
-        ], $resource->toResponse($request)->getData(true)
-        );
-    }
-
-    public function testToCollection()
-    {
-        $resource = new class(null) extends JsonApiResource {
+        $resource = new class (null) extends JsonApiResource {
             public function toType(Request $request): string
             {
                 return 'my-model';
             }
         };
 
-        $collection = $resource::collection(collect(Stub::model(['id' => 1])));
+        $collection = $resource::collection(\collect(Stub::model(['id' => 1])));
 
-        $this->assertInstanceOf(JsonApiCollection::class, $collection);
-        $this->assertEquals($resource::class, $collection->collects);
-        $this->assertNull($collection->preserveKeys);
+        self::assertEquals($resource::class, $collection->collects);
     }
 
-    public function testToCollectionPreserveKeys()
+    public function test_iterable_members_render_as_nested_arrays(): void
     {
-        $resource = new class(null) extends JsonApiResource {
-            public $preserveKeys = true;
-
-            public function toType(Request $request): string
-            {
-                return 'my-model';
-            }
-        };
-
-        $collection = $resource::collection(collect(Stub::model(['id' => 1])));
-
-        $this->assertInstanceOf(JsonApiCollection::class, $collection);
-        $this->assertEquals($resource::class, $collection->collects);
-        $this->assertTrue(property_exists($collection, 'preserveKeys'));
-    }
-
-    public function testReturnArray()
-    {
-        $resource = new class(null) extends JsonApiResource {
+        $resource = new class (null) extends JsonApiResource {
             public function toIdentifier(Request $request): string
             {
-                return 1;
+                return '1';
             }
 
             public function toType(Request $request): string
@@ -207,24 +112,24 @@ class JsonApiResourceTest extends TestCase
                     'str' => 'abc',
                 ];
 
-                return collect($data)->merge([
-                    'data' => collect($data)->merge([
-                        'data' => collect($data)
-                    ])->all()
+                return \collect($data)->merge([
+                    'data' => \collect($data)->merge([
+                        'data' => \collect($data),
+                    ])->all(),
                 ]);
             }
 
             public function toLinks(Request $request): iterable
             {
                 $data = [
-                    'int' => 123,
+                    'int' => '123',
                     'str' => 'abc',
                 ];
 
-                return collect($data)->merge([
-                    'data' => collect($data)->merge([
-                        'data' => collect($data)
-                    ])->all()
+                return \collect($data)->merge([
+                    'data' => \collect($data)->merge([
+                        'data' => \collect($data),
+                    ])->all(),
                 ]);
             }
 
@@ -235,18 +140,18 @@ class JsonApiResourceTest extends TestCase
                     'str' => 'abc',
                 ];
 
-                return collect($data)->merge([
-                    'data' => collect($data)->merge([
-                        'data' => collect($data)
-                    ])->all()
+                return \collect($data)->merge([
+                    'data' => \collect($data)->merge([
+                        'data' => \collect($data),
+                    ])->all(),
                 ]);
             }
         };
 
-        $actual = $resource->toArray(new Request);
+        $actual = $resource->toArray(new Request());
 
         $expected = [
-            'id' => 1,
+            'id' => '1',
             'type' => 'my-model',
             'attributes' => [
                 'int' => 123,
@@ -257,20 +162,20 @@ class JsonApiResourceTest extends TestCase
                     'data' => [
                         'int' => 123,
                         'str' => 'abc',
-                    ]
-                ]
+                    ],
+                ],
             ],
             'links' => [
-                'int' => 123,
+                'int' => '123',
                 'str' => 'abc',
                 'data' => [
-                    'int' => 123,
+                    'int' => '123',
                     'str' => 'abc',
                     'data' => [
-                        'int' => 123,
+                        'int' => '123',
                         'str' => 'abc',
-                    ]
-                ]
+                    ],
+                ],
             ],
             'meta' => [
                 'int' => 123,
@@ -281,11 +186,31 @@ class JsonApiResourceTest extends TestCase
                     'data' => [
                         'int' => 123,
                         'str' => 'abc',
-                    ]
-                ]
-            ]
+                    ],
+                ],
+            ],
         ];
 
-        $this->assertEquals($expected, $actual);
+        self::assertEquals($expected, $actual);
+    }
+
+    public function test_attributes_without_names_throw_instead_of_rendering_a_list(): void
+    {
+        $resource = new class (Stub::model(['id' => 1])) extends JsonApiResource {
+            public function toType(Request $request): string
+            {
+                return 'my-model';
+            }
+
+            public function toAttributes(Request $request): iterable
+            {
+                return ['a', 'b'];
+            }
+        };
+
+        $this->expectException(RenderingException::class);
+        $this->expectExceptionMessage('The [attributes] of [my-model:1] must be a JSON object');
+
+        $resource->toArray(new Request());
     }
 }

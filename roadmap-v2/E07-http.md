@@ -1,0 +1,99 @@
+# E7 — Couche HTTP
+
+**Objectif.** Fournir les briques serveur que la spec attend autour des ressources (validation des paramètres,
+erreurs, négociation de contenu), en restant **optionnelles** et **dans l'esprit de Laravel**.
+
+**Dépend de :** E3, E4
+**Jalon :** M4
+
+## Périmètre (décision Q6)
+
+`sort`, `filter` et `page` restent **hors périmètre** : on ne s'écarte pas de Laravel. Le `?page=` et la sortie
+`links` / `meta` des paginators Laravel sont déjà compatibles avec la spec, qui ne fixe aucun format pour ces
+familles de paramètres. Seul point documenté : la spec exige un `400 Bad Request` quand un `sort` non supporté est
+envoyé, ce que l'application applique si elle le souhaite.
+
+## Livrables
+
+### Requêtes
+
+- [x] **E7.1** `JsonApiFormRequest` : règles `include` et `fields` préconfigurées depuis la `ResourceDefinition`
+      (`protected string $resource = PostResource::class;`)
+      > Classe de base (abstraite, ajoutée aux classes de base de l'architecture). `include` / `fields` lus dans la
+      > query string seule (un membre homonyme du corps est ignoré), `nullable` (`?include=`), puis les `rules()` de la
+      > requête : une règle de clé `include` / `fields` remplace la préconfigurée et reste `nullable`. Sans `$resource` : `DefinitionException`.
+      > Règles déplacées de `Requests\Rules` vers `Http\Rules` (couche `Http` de l'architecture, désormais contrôlée
+      > par phpat). Requêtes de `tests/app` passées sur `JsonApiFormRequest`.
+- [x] **E7.3** Corriger `Rules\Includes::BASE` (pointe sur `jsonapi.fields`) ; messages en traductions publiables
+      (`lang/`), y compris `invalid_depth` ajouté par E1.11
+      > Traductions `jsonapi::validation.{fields,includes}.*` (`lang/en/validation.php`, tag `jsonapi-lang`),
+      > traduites par `$fail(...)->translate()` de Laravel : plus de helper `trans()` ni de trait `UseTrans`. Règles
+      > `final`, sans état entre deux valeurs. Coquille corrigée : `doesn't exist`. Baseline −54 lignes.
+- [x] **E7.7** Lecture du corps d'écriture (`data.attributes`, `data.relationships`) :
+      `$request->jsonApi()->attributes()`, erreurs de validation pointant vers `/data/attributes/x`
+      > `JsonApiFormRequest::jsonApi()` → `Http\ResourceDocument` construit depuis `validated()` (décision : pas de
+      > macro, pas de corps brut) : `type`, `id` en string, attributs, linkage, `ids()`, `hasRelationship()` (un
+      > to-one vidé est envoyé), `meta`. Un membre mal formé se lit comme absent. Une relation vidée (`null`, `[]`)
+      > n'est lue que si son linkage a sa propre règle (`data.relationships.tags.data`), documenté et testé. Les erreurs sont clées par le chemin
+      > du membre (`data.attributes.title`) : leur `source.pointer` (`/data/attributes/title`) est écrit par E7.4.
+
+### Erreurs
+
+- [x] **E7.4** `ErrorRenderer` par famille d'exceptions (Chain of Responsibility, sur le modèle des
+      `ExceptionMappers` du générateur) : `ValidationException` (`source.pointer` / `source.parameter`),
+      `AuthorizationException`, `ModelNotFoundException`, `HttpException`, `Throwable`
+      > `Http\Errors\` : `ErrorRenderer` (`supports` / `render`, constante `PRIORITY`), registre `ErrorRenderers`
+      > (tri stable par priorité décroissante, ajoute le membre `jsonapi` configuré), `ErrorDocument` / `ErrorObject`.
+      > Renderers : validation (pointer si membre du corps, parameter si la query a la racine de la clé, RFC 6901),
+      > authentification `401` (ajoutée), autorisation (statut de `denyWithStatus` / `denyAsNotFound`), modèle introuvable
+      > (`404` sans la classe du modèle), `HttpException` (statut, en-têtes), `Throwable` (`500`, détail en debug
+      > seulement ; `HttpResponseException` laissée à Laravel). Les exceptions préparées par le handler de Laravel
+      > (`HttpException` dont la précédente est l'exception d'origine) sont reconnues. Chaque document testé est validé
+      > contre le JSON Schema. Revue : statut de la `ValidationException` conservé, sa réponse propre laissée à Laravel,
+      > `source.parameter` pour une requête sans corps, clés entières ; `denyAsNotFound()` sans message par défaut ;
+      > en-têtes de l'`HttpException` préparée conservés (`PreparedException`) ; UTF-8 invalide substitué.
+- [x] **E7.4b** Branchement en une ligne dans `bootstrap/app.php` :
+      `->withExceptions(fn ($e) => JsonApi::renderErrors($e))`
+      > `JsonApi::renderErrors(Exceptions $exceptions, ?Closure $when = null)` : callback `render()` du handler, actif
+      > pour `expectsJson()` ou les requêtes acceptées par `$when` ; `ErrorRenderers` résolu dans le container à chaque
+      > rendu (le provider lie ceux du package avec `jsonapi` et `app.debug`). Tests Feature de chaque famille, validés
+      > contre le JSON Schema, et de l'opt-in (sans appel, Laravel rend l'exception).
+- [x] **E7.4c** Renderers extensibles et remplaçables par l'application
+      > Clé `errors.renderers` (classes construites par le container, existence vérifiée par `Configuration`,
+      > interface vérifiée au boot pour ne pas désactiver le rendu en silence), ajoutées aux renderers du package par
+      > `ErrorRenderers::with()` : une priorité supérieure remplace le renderer du package pour ses exceptions ; lier son
+      > propre `ErrorRenderers` remplace tout.
+
+### Négociation de contenu
+
+- [x] **E7.5** Middleware `jsonapi` : `415` si le `Content-Type` porte des paramètres non autorisés, `406` si
+      l'`Accept` est incompatible, gestion de `ext` / `profile` (JSON:API 1.1)
+      > `Http\Middleware\NegotiateContent`, alias `jsonapi` posé par le provider (opt-in par route). Extensions
+      > supportées = `document.jsonapi.ext` ; profils inconnus ignorés ; `q` n'est pas un paramètre ; casse du media type
+      > ignorée, `q=0` refuse l'occurrence. Erreurs en `HttpException` avec `Vary: Accept` (rendues par
+      > `renderErrors()`), `Vary: Accept` sur toute réponse ; alias `jsonapi` de l'application conservé. Revue : le
+      > `Content-Type` porte `ext` / `profile` sur toutes les routes (`JsonApiObject::contentType()`, utilisé par
+      > `ToResponse` et `ErrorDocument`), le middleware ne le touche plus.
+
+### Pagination
+
+- [x] **E7.6** Test : les documents paginés (offset et curseur) avec la sortie Laravel inchangée valident le JSON
+      Schema JSON:API
+      > `tests/Feature/PaginationTest.php` : `paginate()`, `simplePaginate()`, `cursorPaginate()` parcourus page par
+      > page par leur lien `next` (toutes les ressources, une fois chacune), liens `first` / `last` / `prev` / `next` de
+      > la spec, `meta` de Laravel inchangé, page vide ; chaque document validé contre le JSON Schema.
+
+## Retiré
+
+- ~~E7.2 Règles `Rules\Sort` / `Rules\Page`~~ : hors périmètre (Q6)
+- ~~E7.6 Reformatage de la pagination~~ : la sortie Laravel est conservée (Q6)
+
+## Critères de sortie
+
+- [x] Toutes les réponses d'erreur des tests valident contre le JSON Schema JSON:API
+      > `FeatureTestCase` valide toute réponse `application/vnd.api+json` (erreurs de `renderErrors()` et du middleware
+      > comprises) ; les tests unitaires des renderers valident chaque document produit.
+- [x] Aucune de ces briques n'est active sans opt-in explicite
+      > `JsonApiFormRequest` (héritage), `JsonApi::renderErrors()` (appel dans `bootstrap/app.php`), middleware
+      > `jsonapi` (nommé par la route) ; testé : sans appel Laravel rend l'exception, une route sans middleware ne
+      > négocie pas.
