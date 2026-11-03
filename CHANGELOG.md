@@ -3,8 +3,7 @@
 All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
-[Semantic Versioning](https://semver.org/spec/v2.0.0.html). Versions 1.0 to 1.7 are described in the
-`CHANGELOG-1.x.md` files.
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [2.0.0] — 2026-11-03
 
@@ -308,3 +307,351 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **Breaking:** `Support\Arr`, the `Descriptors\Descriptors` trait, `Descriptors\Resolver`, `Traits\HasRelationLoad`
   and `Descriptors\Relations\RelationMissing`, unused or internal: use Laravel's `Arr`, and `withLoad()` on the
   descriptors and on `Relationship`.
+
+## [1.9.1] — 2026-03-26
+
+### Fixed
+
+- Deep includes: the included resources are deduplicated, and nested includes are filled recursively.
+
+## [1.9.0] — 2026-03-22
+
+### Added
+
+- Laravel 13 support.
+
+## [1.8.0] — 2026-03-10
+
+### Added
+
+- Octane compliance: `Support\Fields` and `Support\Includes` can be flushed between requests.
+
+## [1.7.1] — 2026-01-13
+
+### Added
+
+- PHP 8.5 in the test matrix.
+
+## [1.7.0] — 2026-01-12
+
+### Fixed
+
+- Compatibility with the JSON:API support introduced by Laravel's HTTP resources (breaking change on their side):
+  `toAttributes()` is `public`.
+
+## [1.6.3] — 2026-01-12
+
+### Changed
+
+- Laravel above 12.44 is not supported, because of compatibility issues.
+
+## [1.6.2] — 2025-12-08
+
+### Fixed
+
+- Simplified a return statement in `Relation`.
+
+## [1.6.1] — 2025-12-08
+
+### Added
+
+- **Typed arrays**: the elements of an array attribute can be typed.
+  - `of()` on the `array()` descriptor specifies the element type, as a descriptor instance or a class reference
+    (`ValueString::class`).
+  - `arrayOf()` is a shorter helper.
+  - Nested typed arrays (multi-dimensional arrays) are supported.
+  - Every conditional method works with them (`when()`, `whenNotNull()`, `whenFilled()`…).
+  - The type cast is applied to every element (strings, integers, floats, booleans…).
+- Generic types on `ValueEnum` and the value descriptors.
+
+## [1.6.0] — 2025-10-16
+
+### Changed
+
+- The validation rules implement Laravel's `ValidationRule` interface, and their error handling is improved.
+
+## [1.5.2] — 2025-10-16
+
+### Added
+
+- Relationship filters, to apply policies or any custom rule to the related resources.
+
+## [1.5.1] — 2025-05-08
+
+### Added
+
+- Laravel 12 support.
+
+## [1.5.0] — 2025-02-14
+
+### Added
+
+- Struct value type.
+
+## [1.4.6] — 2024-12-28
+
+### Changed
+
+- PHP 8.4 support.
+
+### Fixed
+
+- `applyWhen` behavior.
+
+## [1.4.5] — 2024-12-12
+
+### Changed
+
+- The condition of `applyWhen` can be a closure.
+- CI: tests run on every supported Laravel version.
+
+## [1.4.4] — 2024-08-07
+
+### Fixed
+
+- Typo in `ToResponse`: `Content-type` is now `Content-Type`.
+
+## [1.4.3] — 2024-08-06
+
+### Added
+
+- Laravel 11 support.
+
+### Removed
+
+- **Breaking:** Laravel 8 support.
+
+## [1.4.2] — 2023-11-24
+
+### Fixed
+
+- An exception was thrown when including a to-one relationship
+  ([#19](https://github.com/Ark4ne/laravel-json-api/issues/19)).
+
+## [1.4.1] — 2023-06-21
+
+### Fixed
+
+- `autoWhenHas` and `autoWhenIncluded` no longer throw an exception.
+
+## [1.4.0] — 2023-06-01
+
+### Added
+
+- Enums in values.
+- Automatic `whenHas` check on attributes.
+- Automatic `whenIncluded` on relationships.
+- A polyfill for the `unless` method.
+- `whenHas` is overridden to support non-Eloquent models.
+
+### Removed
+
+- **Breaking:** PHP 8.0 support.
+
+## [1.3.8] — 2023-03-28
+
+### Fixed
+
+- A `fields` input that is not an array is handled.
+
+## [1.3.7] — 2023-02-18
+
+### Added
+
+- Laravel 10 support.
+
+## [1.3.6] — 2023-02-04
+
+### Fixed
+
+- `JsonApiResource` and the descriptors support any array or object.
+
+## [1.3.5] — 2023-02-03
+
+### Fixed
+
+- `Descriptors\Values` accepts a mixed resource.
+
+## [1.3.4] — 2023-02-03
+
+### Fixed
+
+- `Descriptors\Values` accepts a mixed resource.
+
+## [1.3.3] — 2023-01-17
+
+### Fixed
+
+- PHPStan annotations of the descriptors.
+
+## [1.3.2] — 2023-01-16
+
+### Changed
+
+- The relationships loaded automatically are better included.
+
+## [1.3.1] — 2022-12-26
+
+### Fixed
+
+- Default value of `Relationship::whenIncluded`.
+
+## [1.3.0] — 2022-12-26
+
+### Added
+
+- Relationships are loaded automatically.
+
+## [1.2.1] — 2022-12-19
+
+### Fixed
+
+- Merging values no longer replaces concrete values with missing values.
+
+## [1.2.0] — 2022-09-27
+
+### Added
+
+- The described notation (`$this->string()`, `$this->one()`…).
+- `applyWhen`: unlike `mergeWhen`, it keeps the keys even when the condition is not met.
+
+### Changed
+
+- **Breaking:** by default, `Resources\Concerns\Identifier::toType` computes the type from the resource class instead
+  of the model class.
+
+## [1.1.10] — 2022-09-11
+
+### Added
+
+- Conditionally loaded fields.
+
+## [1.1.9] — 2022-06-09
+
+### Fixed
+
+- `JsonApiResource::toArray` no longer filters on `type` and `id`.
+
+## [1.1.8] — 2022-06-01
+
+### Added
+
+- `Skeleton`: the skeleton of a `JsonApiResource`.
+
+### Changed
+
+- `Resources\Schema::schema` and `Resources\SchemaCollection::schema` return a `Skeleton`.
+
+### Deprecated
+
+- `Support\With`, replaced by `Support\Arr`.
+
+### Fixed
+
+- `JsonApiResource::toArray` returns a true deep array.
+- `Support\Includes` when the request has an empty `include` parameter.
+
+## [1.1.7] — 2022-05-11
+
+### Fixed
+
+- Request rules: `$failures` was not initialized.
+
+## [1.1.6] — 2022-05-11
+
+### Fixed
+
+- Request rules: the type of the value is checked before asserting.
+
+## [1.1.5] — 2022-04-28
+
+### Fixed
+
+- `Relationships::mapRelationships` when the data is empty.
+
+## [1.1.4] — 2022-04-27
+
+### Changed
+
+- PHPStan level 6 compliant.
+- The schema safely instantiates its class to build the structure.
+- Relationships can be conditional.
+
+### Fixed
+
+- The schema handles the attributes correctly.
+
+## [1.1.3] — 2022-04-26
+
+### Added
+
+- `Includes::includes` returns the remaining includes of the current resource.
+
+### Fixed
+
+- `FakeModel` implements `ArrayAccess` correctly (missing return type on `offsetGet`).
+
+## [1.1.2] — 2022-04-25
+
+### Fixed
+
+- PHPStan annotations of the rules.
+
+## [1.1.1] — 2022-04-25
+
+### Fixed
+
+- The `Resource` namespace is renamed `Resources`.
+
+## [1.1.0] — 2022-04-22
+
+### Added
+
+- Request validation rules `Requests\Rules\{Includes, Fields}`.
+
+### Changed
+
+- `Support\Includes::get()` is improved, and its caching is disabled.
+
+## [1.0.2] — 2022-04-21
+
+### Fixed
+
+- `toAttributes()` returns `array<string, Closure|mixed>`.
+- The constructors are no longer `final`.
+
+## [1.0.1] — 2022-04-21
+
+### Added
+
+- Generic types on `JsonApiResource` and `JsonApiCollection`.
+
+## [1.0.0] — 2022-04-21
+
+### Added
+
+- The `Schema` trait implements `schema()` on `JsonApiResource` and `JsonApiCollection`.
+- `Relationize::relationship()` creates a relationship for a resource
+  (`PostResource::relationship(fn() => $this->posts)`).
+
+### Changed
+
+- **Breaking:** the signature of the `Relationship` constructor:
+
+  ```php
+  public function __construct(
+      protected string $resource, // class-string of the resource
+      protected Closure $value,   // MUST be a closure returning the actual value
+      protected ?Closure $links = null,
+      protected ?Closure $meta = null,
+  )
+  ```
+- **Breaking:** the constructors of `JsonApiResource` and `JsonApiCollection` cannot be overridden.
+- **Breaking:** `JsonApiResource::toAttributes` **should** return an `array<string, Closure>`, and `toRelationships`
+  **must** return an `array<string, Relationship>`.
+- **Breaking:** the second parameter of `Resourceable::toArray` defaults to `true` instead of `false`, and its
+  meaning is inverted.
+
+### Removed
+
+- **Breaking:** `Relationize::asRelationship`.
