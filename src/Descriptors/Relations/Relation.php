@@ -128,6 +128,14 @@ abstract class Relation extends Describer implements DescribesRelationship
     }
 
     /**
+     * @internal Used by the selection of the shape of a field for a revision.
+     */
+    public function readingFrom(string $source): static
+    {
+        return $this->relation === null ? $this->with('relation', $source) : $this;
+    }
+
+    /**
      * A polymorphic relationship: each related model is rendered with the resource of its class, the first class of the
      * map it is an instance of (`$this->morph()`, `$this->morphMany()`).
      *

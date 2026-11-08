@@ -294,6 +294,14 @@ abstract class Describer
     abstract public function retriever(): string|Closure|null;
 
     /**
+     * This descriptor reading `$source` when it names no source of its own: a field renamed for a revision keeps
+     * reading what the head reads.
+     *
+     * @internal Used by the selection of the shape of a field for a revision.
+     */
+    abstract public function readingFrom(string $source): static;
+
+    /**
      * @param mixed $value
      * @param int|string $key
      *

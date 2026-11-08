@@ -49,6 +49,14 @@ abstract class Value extends Describer
         return $this->withRevision($revision, $name, $value);
     }
 
+    /**
+     * @internal Used by the selection of the shape of a field for a revision.
+     */
+    public function readingFrom(string $source): static
+    {
+        return $this->attribute === null ? $this->with('attribute', $source) : $this;
+    }
+
     public function nullable(bool $nullable = true): static
     {
         return $this->with('nullable', $nullable);
