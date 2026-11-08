@@ -22,6 +22,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   on every relation descriptor: its old name, its old relation (related resource, cardinality, loads of its own).
 - `->since($revision)` and `->until($revision)` on every descriptor: the field exists from, or up to, a revision
   (inclusive).
+- `#[Definition\JsonApiSince($revision)]` and `#[Definition\JsonApiUntil($revision)]` on a resource: the type exists
+  from, or up to, a revision (inclusive), read on the class itself; `Definitions::lifetime($class)` gives its
+  `Definition\Lifetime`. A resource existing at no revision cannot be compiled.
 
 ## [2.0.0] — 2026-11-03
 

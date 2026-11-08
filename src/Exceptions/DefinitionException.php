@@ -34,6 +34,14 @@ final class DefinitionException extends LogicException implements JsonApiExcepti
     }
 
     /**
+     * A resource exists from a revision newer than the one it exists up to: it exists at no revision.
+     */
+    public static function emptyLifetime(string $class, string $since, string $until): self
+    {
+        return new self("[{$class}] exists since [{$since}] and until [{$until}], an older revision: it exists at no revision. Fix #[JsonApiSince] or #[JsonApiUntil].");
+    }
+
+    /**
      * The class is not a resource: it does not implement `DefinitionSource`.
      */
     public static function notADefinitionSource(string $class): self

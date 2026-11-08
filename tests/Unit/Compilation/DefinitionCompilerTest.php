@@ -22,6 +22,11 @@ use stdClass;
 use Test\app\Enums\State;
 use Test\app\Http\Resources\CommentResource;
 use Test\app\Http\Resources\UserResource;
+use Test\app\Revisions\ApiRevision;
+use Test\app\Revisions\EmptyLifetimeResource;
+use Test\app\Revisions\MemberResource;
+use Test\app\Revisions\TeacherChildResource;
+use Test\app\Revisions\TeacherResource;
 use Test\Unit\Compilation\Fixtures\AttributeTypedResource;
 use Test\Unit\Compilation\Fixtures\BlogPostResource;
 use Test\Unit\Compilation\Fixtures\EagerResource;
@@ -439,5 +444,44 @@ final class DefinitionCompilerTest extends TestCase
 
         self::assertSame(['comments'], array_keys($constraints));
         self::assertSame(['comments'], array_keys($constraints['comments']));
+    }
+
+    public function test_a_resource_until_a_revision_declares_it(): void
+    {
+        $lifetime = (new DefinitionCompiler(Configuration::defaults()))->lifetime(TeacherResource::class);
+
+        self::assertNull($lifetime->since);
+        self::assertSame(ApiRevision::Labels, $lifetime->until);
+    }
+
+    public function test_a_resource_since_a_revision_declares_it(): void
+    {
+        $lifetime = (new DefinitionCompiler(Configuration::defaults()))->lifetime(MemberResource::class);
+
+        self::assertSame(ApiRevision::UsersReplaceTeachers, $lifetime->since);
+        self::assertNull($lifetime->until);
+    }
+
+    public function test_a_resource_without_lifetime_exists_at_every_revision(): void
+    {
+        $lifetime = (new DefinitionCompiler(Configuration::defaults()))->lifetime(UserResource::class);
+
+        self::assertNull($lifetime->since);
+        self::assertNull($lifetime->until);
+    }
+
+    public function test_a_subclass_does_not_inherit_the_lifetime_of_its_parent(): void
+    {
+        $lifetime = (new DefinitionCompiler(Configuration::defaults()))->lifetime(TeacherChildResource::class);
+
+        self::assertNull($lifetime->until);
+    }
+
+    public function test_a_resource_with_since_after_until_cannot_be_compiled(): void
+    {
+        $this->expectException(DefinitionException::class);
+        $this->expectExceptionMessage(EmptyLifetimeResource::class);
+
+        $this->compile(EmptyLifetimeResource::class);
     }
 }

@@ -7,14 +7,19 @@ namespace Ark4ne\JsonApi\Compilation;
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Definition\AttributeDefinition;
 use Ark4ne\JsonApi\Definition\DefinitionSource;
+use Ark4ne\JsonApi\Definition\JsonApiSince;
+use Ark4ne\JsonApi\Definition\JsonApiUntil;
+use Ark4ne\JsonApi\Definition\Lifetime;
 use Ark4ne\JsonApi\Definition\RelationshipDefinition;
 use Ark4ne\JsonApi\Definition\ResourceDefinition;
+use Ark4ne\JsonApi\Definition\RevisionOrder;
 use Ark4ne\JsonApi\Descriptors\Members;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Support\Diagnostics;
 use Ark4ne\JsonApi\Support\Probe;
 use Closure;
 use Illuminate\Http\Request;
+use ReflectionClass;
 use Throwable;
 
 /**
@@ -59,11 +64,13 @@ final readonly class DefinitionCompiler
     /**
      * @param class-string<DefinitionSource> $class
      *
-     * @throws DefinitionException when the class is not a resource, or when its type cannot be read
+     * @throws DefinitionException when the class is not a resource, when its type cannot be read, or when it exists at
+     *                             no revision
      */
     public function compile(string $class): ResourceDefinition
     {
         $class = $this->source($class);
+        $this->lifetime($class);
 
         $predefined = $class::predefinedDefinition();
         if ($predefined !== null) {
@@ -137,6 +144,27 @@ final readonly class DefinitionCompiler
     public function declaredType(string $class): string
     {
         return $class::declaredType() ?? $this->configuration->typeNaming->type($class);
+    }
+
+    /**
+     * The revisions a resource exists for: its `#[JsonApiSince]` and `#[JsonApiUntil]`, read on the class itself (a
+     * subclass does not inherit them).
+     *
+     * @param class-string<DefinitionSource> $class
+     *
+     * @throws DefinitionException when it exists at no revision, or when its bounds are cases of two enums
+     */
+    public function lifetime(string $class): Lifetime
+    {
+        $reflection = new ReflectionClass($this->source($class));
+        $since = ($reflection->getAttributes(JsonApiSince::class)[0] ?? null)?->newInstance()->revision;
+        $until = ($reflection->getAttributes(JsonApiUntil::class)[0] ?? null)?->newInstance()->revision;
+
+        if ($since !== null && $until !== null && RevisionOrder::compare($since, $until) > 0) {
+            throw DefinitionException::emptyLifetime($class, $since->name, $until->name);
+        }
+
+        return new Lifetime($since, $until);
     }
 
     /**

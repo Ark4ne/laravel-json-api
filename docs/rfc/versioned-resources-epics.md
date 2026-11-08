@@ -406,8 +406,10 @@ Acceptance criteria:
   itself only, like `#[JsonApiType]` (`src/Resources/Concerns/Definable.php:70-77`): a subclass of a resource does
   not inherit its lifetime.
 - A resource with both, `since` newer than `until`: `DefinitionException`.
-- Larastan reports the attribute when its case is deleted (verified by a `tests/Types` file analysed by
-  `composer stan`).
+- Larastan reports the attribute when its case is deleted (the resources of `tests/app/Revisions` use them and are
+  analysed by `composer stan`).
+- Done: the bounds are given as a `Definition\Lifetime` (`covers(?Revision)`), compiled by
+  `DefinitionCompiler::lifetime()` and cached by `Definitions::lifetime()`.
 
 Tests: `test_a_resource_until_a_revision_declares_it`, `test_a_resource_with_since_after_until_cannot_be_compiled`.
 

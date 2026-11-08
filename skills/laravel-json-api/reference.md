@@ -120,6 +120,7 @@ Modifiers of every relationship:
 | `#[Resources\Attributes\JsonApiType('posts')]` | a resource | Its type, without `toType()` |
 | `#[Resources\Attributes\JsonApiModel(Post::class)]` | a resource | Its model, to guess the resources of its relationships (default: the naming convention) |
 | `#[Resources\Attributes\JsonApiRoutes(self: 'posts.show', relationship: …, related: …)]` | a resource | `links.self` from the route `self`; `links.self` / `links.related` of each relationship from `posts.relationships.{name}` / `posts.{name}`, or the routes given (`false` for none) |
+| `#[Definition\JsonApiSince(ApiRevision::X)]`, `#[Definition\JsonApiUntil(ApiRevision::X)]` | a resource | The resource exists from / up to the revision included, not inherited (versioned resources, in progress) |
 | `#[Illuminate\Database\Eloquent\Attributes\UseResource(UserResource::class)]` | a model | The resource of the model when a relationship is guessed |
 
 ## Configuration (`config/jsonapi.php`)

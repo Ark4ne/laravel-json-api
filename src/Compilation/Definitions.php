@@ -6,6 +6,7 @@ namespace Ark4ne\JsonApi\Compilation;
 
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Definition\DefinitionSource;
+use Ark4ne\JsonApi\Definition\Lifetime;
 use Ark4ne\JsonApi\Definition\ResourceDefinition;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Closure;
@@ -27,6 +28,9 @@ final class Definitions
 
     /** @var array<class-string<DefinitionSource>, string> */
     private static array $declaredTypes = [];
+
+    /** @var array<class-string<DefinitionSource>, Lifetime> */
+    private static array $lifetimes = [];
 
     private static ?Configuration $configuration = null;
 
@@ -125,6 +129,18 @@ final class Definitions
     }
 
     /**
+     * The revisions a resource exists for (`#[JsonApiSince]`, `#[JsonApiUntil]`).
+     *
+     * @param class-string<DefinitionSource> $class
+     *
+     * @throws DefinitionException when it exists at no revision
+     */
+    public static function lifetime(string $class): Lifetime
+    {
+        return self::$lifetimes[$class] ??= self::compiler()->lifetime($class);
+    }
+
+    /**
      * Every definition in the cache, by class.
      *
      * @return array<class-string<DefinitionSource>, ResourceDefinition>
@@ -143,6 +159,7 @@ final class Definitions
         self::$definitions = [];
         self::$constraints = [];
         self::$declaredTypes = [];
+        self::$lifetimes = [];
         self::$compiledRead = false;
     }
 

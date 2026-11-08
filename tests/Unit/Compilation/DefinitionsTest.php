@@ -12,6 +12,8 @@ use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Closure;
 use PHPUnit\Framework\TestCase;
 use stdClass;
+use Test\app\Revisions\ApiRevision;
+use Test\app\Revisions\TeacherResource;
 use Test\Unit\Compilation\Fixtures\AttributeTypedResource;
 use Test\Unit\Compilation\Fixtures\BlogPostResource;
 use Test\Unit\Compilation\Fixtures\EagerResource;
@@ -161,5 +163,13 @@ final class DefinitionsTest extends TestCase
         Definitions::configure(Configuration::fromArray(['type' => ['naming' => 'kebab-plural']]));
 
         self::assertSame('blog-posts', Definitions::declaredType(BlogPostResource::class));
+    }
+
+    public function test_the_lifetime_of_a_resource_is_kept_by_class(): void
+    {
+        $lifetime = Definitions::lifetime(TeacherResource::class);
+
+        self::assertSame(ApiRevision::Labels, $lifetime->until);
+        self::assertSame($lifetime, Definitions::lifetime(TeacherResource::class));
     }
 }
