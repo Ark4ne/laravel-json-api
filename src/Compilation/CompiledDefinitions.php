@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Compilation;
 
-use Ark4ne\JsonApi\Definition\DefinitionSource;
 use Ark4ne\JsonApi\Definition\ResourceDefinition;
 use RuntimeException;
 
 /**
  * The file of compiled definitions (`bootstrap/cache/jsonapi.php`): a PHP file returning the definitions exported with
  * `var_export()`, read through OPcache (docs/architecture.md §4).
+ *
+ * Keyed by class for the head, `class@Case` for the definition of a revision (`key()`); a file of 2.0 has heads only.
  */
 final readonly class CompiledDefinitions
 {
@@ -18,13 +19,22 @@ final readonly class CompiledDefinitions
         public string $path,
     ) {}
 
+    /**
+     * The key of a definition in the file: its class, followed by `@` and the name of its revision unless it describes
+     * the head.
+     */
+    public static function key(ResourceDefinition $definition): string
+    {
+        return $definition->revision === null ? $definition->class : "{$definition->class}@{$definition->revision->name}";
+    }
+
     public function exists(): bool
     {
         return is_file($this->path);
     }
 
     /**
-     * @return array<class-string<DefinitionSource>, ResourceDefinition>
+     * @return array<string, ResourceDefinition>
      */
     public function read(): array
     {
@@ -32,14 +42,14 @@ final readonly class CompiledDefinitions
             return [];
         }
 
-        /** @var array<class-string<DefinitionSource>, ResourceDefinition> */
+        /** @var array<string, ResourceDefinition> */
         return require $this->path;
     }
 
     /**
      * Writes the file atomically (temporary file, then rename).
      *
-     * @param array<class-string<DefinitionSource>, ResourceDefinition> $definitions
+     * @param array<string, ResourceDefinition> $definitions
      */
     public function write(array $definitions): void
     {

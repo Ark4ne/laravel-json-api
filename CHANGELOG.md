@@ -36,6 +36,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `revision-duplicate`, `revision-empty-was`, `revision-out-of-life`, `revision-name-collision`,
   `revision-reserved-name`, `revision-unsourced-value`, `revision-mixed-enums` (errors), `revision-value-gap`,
   `revision-noop` (warnings); constants of `DefinitionCompiler`.
+- `jsonapi:cache` writes the definition of every revision where the shape of a resource changes, keyed
+  `class@Case` (`CompiledDefinitions::key()`), and prints the number of resources and definitions; a compiled file
+  of 2.0 is still read.
 
 ## [2.0.0] — 2026-11-03
 

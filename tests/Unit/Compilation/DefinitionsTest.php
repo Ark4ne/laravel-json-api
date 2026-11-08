@@ -263,4 +263,24 @@ final class DefinitionsTest extends TestCase
 
         self::assertNotSame($initial, Definitions::for(ProfileResource::class, ApiRevision::Initial));
     }
+
+    public function test_a_compiled_file_without_revisions_is_still_read(): void
+    {
+        $head = ResourceDefinition::of(ProfileResource::class, 'preloaded');
+        Definitions::preload([ProfileResource::class => $head]);
+
+        self::assertSame($head, Definitions::for(ProfileResource::class));
+        // Without boundaries, as a 2.0 file: one shape.
+        self::assertSame($head, Definitions::for(ProfileResource::class, ApiRevision::Initial));
+    }
+
+    public function test_preloaded_definitions_of_revisions_are_kept_by_boundary(): void
+    {
+        $head = ResourceDefinition::of(ProfileResource::class, 'head')->boundaries(ApiRevision::Initial, ApiRevision::Labels);
+        $initial = $head->revision(ApiRevision::Initial);
+        Definitions::preload([ProfileResource::class => $head, ProfileResource::class . '@Initial' => $initial]);
+
+        self::assertSame($initial, Definitions::for(ProfileResource::class, ApiRevision::Initial));
+        self::assertSame(ApiRevision::Labels, Definitions::for(ProfileResource::class, ApiRevision::Labels)->revision);
+    }
 }

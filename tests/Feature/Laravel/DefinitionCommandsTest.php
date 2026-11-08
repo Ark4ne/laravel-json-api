@@ -12,6 +12,9 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Testing\PendingCommand;
 use Orchestra\Testbench\Attributes\DefineEnvironment;
 use Orchestra\Testbench\TestCase;
+use Test\app\Revisions\ApiRevision;
+use Test\app\Revisions\ProfileResource;
+use Test\app\Revisions\TeacherResource;
 use Test\Unit\Compilation\Fixtures\EagerResource;
 use Test\Unit\Compilation\Fixtures\FailingHookResource;
 use Test\Unit\Compilation\Fixtures\TypedResource;
@@ -39,6 +42,14 @@ final class DefinitionCommandsTest extends TestCase
     protected function usesCompilationFixtures($app): void
     {
         $app['config']->set('jsonapi.definitions.paths', [__DIR__ . '/../../Unit/Compilation/Fixtures']);
+    }
+
+    /**
+     * @param \Illuminate\Foundation\Application $app
+     */
+    protected function usesRevisionFixtures($app): void
+    {
+        $app['config']->set('jsonapi.definitions.paths', [__DIR__ . '/../../app/Revisions']);
     }
 
     protected function tearDown(): void
@@ -76,6 +87,36 @@ final class DefinitionCommandsTest extends TestCase
         $definitions = require $this->compiledPath();
         self::assertIsArray($definitions);
         self::assertSame([FoundResource::class, NestedResource::class], array_keys($definitions));
+    }
+
+    #[DefineEnvironment('usesRevisionFixtures')]
+    public function test_the_cache_command_writes_every_revision(): void
+    {
+        $this->command('jsonapi:cache')
+            ->expectsOutputToContain('definitions')
+            ->assertSuccessful();
+
+        $definitions = require $this->compiledPath();
+        self::assertIsArray($definitions);
+        self::assertArrayHasKey(ProfileResource::class, $definitions);
+        self::assertArrayHasKey(ProfileResource::class . '@Initial', $definitions);
+        self::assertArrayHasKey(ProfileResource::class . '@Labels', $definitions);
+        self::assertArrayHasKey(TeacherResource::class . '@Labels', $definitions);
+        self::assertArrayNotHasKey(ProfileResource::class . '@UsersReplaceTeachers', $definitions);
+    }
+
+    #[DefineEnvironment('usesRevisionFixtures')]
+    public function test_the_definitions_of_the_revisions_are_read_from_the_compiled_file(): void
+    {
+        $this->command('jsonapi:cache')->assertSuccessful();
+        file_put_contents(
+            $this->compiledPath(),
+            str_replace("'type' => 'profiles'", "'type' => 'from-cache'", (string) file_get_contents($this->compiledPath())),
+        );
+
+        $this->refreshApplication();
+
+        self::assertSame('from-cache', Definitions::for(ProfileResource::class, ApiRevision::Initial)->type);
     }
 
     public function test_cache_and_clear_are_run_by_optimize_and_optimize_clear(): void

@@ -64,13 +64,21 @@ final class Definitions
     }
 
     /**
-     * Fills the cache with definitions compiled beforehand.
+     * Fills the cache with definitions compiled beforehand, keyed as in the compiled file
+     * (`CompiledDefinitions::key()`): by class for the head, `class@Case` for a revision.
      *
-     * @param array<class-string<DefinitionSource>, ResourceDefinition> $definitions
+     * @param array<string, ResourceDefinition> $definitions
      */
     public static function preload(array $definitions): void
     {
-        self::$definitions = [...self::$definitions, ...$definitions];
+        foreach ($definitions as $key => $definition) {
+            $boundary = strstr($key, '@');
+            if ($boundary === false) {
+                self::$definitions[$definition->class] = $definition;
+            } else {
+                self::$revisions[$definition->class][substr($boundary, 1)] = $definition;
+            }
+        }
     }
 
     /**
