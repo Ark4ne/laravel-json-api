@@ -12,6 +12,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **Versioned resources** (in progress, `docs/rfc/versioned-resources-epics.md`): `Definition\Revision`, the contract an
   application implements with an enum whose cases, declared oldest first, are the revisions its clients are pinned on;
   `Definition\RevisionOrder` compares them (inclusive bounds, the head newer than every revision).
+- `JsonApi::useRevision($request, $revision)` sets the revision a request is rendered at, from a middleware of the
+  application (which reads its own header); `JsonApiContext::$revision` carries it to the rendering, `null` for the
+  head, read from the `jsonapi.revision` request attribute (`JsonApiContext::revisionOf()`).
 
 ## [2.0.0] — 2026-11-03
 

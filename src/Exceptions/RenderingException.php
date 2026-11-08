@@ -10,6 +10,17 @@ use UnitEnum;
 final class RenderingException extends LogicException implements JsonApiException
 {
     /**
+     * The `jsonapi.revision` attribute of a request is not a revision (`JsonApi::useRevision()` sets it).
+     */
+    public static function notARevision(mixed $value): self
+    {
+        return new self(sprintf(
+            'The revision of a request must be a case of an enum implementing Ark4ne\\JsonApi\\Definition\\Revision, [%s] given: set it with JsonApi::useRevision().',
+            get_debug_type($value),
+        ));
+    }
+
+    /**
      * A value declared not nullable (`nullable(false)`) has no value to render for `null` (a date), with
      * `describer.strict` enabled.
      */
