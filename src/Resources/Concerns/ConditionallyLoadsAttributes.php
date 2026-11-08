@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
+use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Descriptors\MergeWhenValue;
 use Ark4ne\JsonApi\Descriptors\Relations\RelationRaw;
@@ -41,7 +42,9 @@ trait ConditionallyLoadsAttributes
     }
 
     /**
-     * Retrieve a relationship if it has been present in fields.
+     * Retrieve a value if a field of the resource is requested by the sparse fieldset of its type (`fields`). The
+     * field is named as in the code: for a client on an older revision, by the name it has at that revision, the
+     * condition failing for a field that does not exist at it.
      *
      * @template K
      *
@@ -54,16 +57,18 @@ trait ConditionallyLoadsAttributes
     protected function whenInFields(Request $request, string $attribute, mixed $value)
     {
         $context = $this->renderingContext;
+        $field = $this->nameAtRevision($attribute);
 
         return $this->when(
-            $context !== null && $context->fields->requests($this->toType($request), $attribute),
+            $context !== null && $field !== null && $context->fields->requests($this->toType($request), $field),
             $value,
         );
     }
 
     /**
      * Retrieve a value if a relationship of the resource is included (`include`). Not to be confused with
-     * `whenIncluded()` of the relationships.
+     * `whenIncluded()` of the relationships. The relationship is named as in the code: for a client on an older
+     * revision, by the name it has at that revision, the condition failing for one that does not exist at it.
      *
      * @template K
      *
@@ -75,7 +80,27 @@ trait ConditionallyLoadsAttributes
      */
     protected function whenInIncludes(Request $request, string $relationship, mixed $value)
     {
-        return $this->when($this->renderingContext?->includes($relationship) ?? false, $value);
+        $name = $this->nameAtRevision($relationship);
+
+        return $this->when($name !== null && ($this->renderingContext?->includes($name) ?? false), $value);
+    }
+
+    /**
+     * The name a field of the code has at the revision of the rendering, `null` when it does not exist at it: the
+     * client writes `fields` and `include` in the names of its revision. Unchanged at the head, and for a resource
+     * declaring no revision.
+     */
+    private function nameAtRevision(string $field): ?string
+    {
+        $revision = $this->renderingContext?->revision;
+        if ($revision === null || !Definitions::isRevised(static::class)) {
+            return $field;
+        }
+
+        $definition = Definitions::for(static::class, $revision);
+
+        // A revision newer than every boundary has the shape of the head: the names of the code.
+        return $definition->revision === null ? $field : $definition->fieldNames[$field] ?? null;
     }
 
     /**

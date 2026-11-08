@@ -403,6 +403,11 @@ final readonly class DefinitionCompiler
             ->boundaries(...$boundaries);
 
         if ($boundary !== null) {
+            // What the helpers of the hooks translate (`whenInFields()`, `whenInIncludes()`): the names of the code.
+            $definition = $definition->fieldNames(
+                RevisedMembers::names($hooks['members']['toAttributes'], $boundary)
+                + RevisedMembers::names($hooks['members']['toRelationships'], $boundary),
+            );
             RevisionChecks::shape(
                 $boundary,
                 array_map(static fn(AttributeDefinition|RelationshipDefinition $field) => $field->name, [...$attributes, ...$relationships]),

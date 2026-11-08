@@ -30,6 +30,9 @@ final readonly class ResourceDefinition
      * @param Revision|null $until The newest revision the resource exists at (`#[JsonApiUntil]`), `null` for the head
      * @param list<Revision> $boundaries The revisions where the shape of the resource changes, oldest first: the shape
      *                                   of a revision is that of the oldest boundary at least as new, otherwise the head
+     * @param array<string, string> $fieldNames For a revision: the name each attribute and relationship of the code
+     *                                          (the keys of its hooks) has at it, for those existing at it; empty for
+     *                                          the head, whose names are those of the code
      */
     private function __construct(
         public string $class,
@@ -45,6 +48,7 @@ final readonly class ResourceDefinition
         public ?Revision $since = null,
         public ?Revision $until = null,
         public array $boundaries = [],
+        public array $fieldNames = [],
     ) {}
 
     /**
@@ -220,6 +224,16 @@ final readonly class ResourceDefinition
     }
 
     /**
+     * Replaces the names the fields of the code have at the revision it describes.
+     *
+     * @param array<string, string> $fieldNames
+     */
+    public function fieldNames(array $fieldNames): self
+    {
+        return $this->copy(fieldNames: $fieldNames);
+    }
+
+    /**
      * @param array<array-key, AttributeDefinition> $definitions
      *
      * @return array<string, AttributeDefinition>
@@ -246,6 +260,7 @@ final readonly class ResourceDefinition
      * @param Revision|false|null $since `null` to keep the current one, `false` for none
      * @param Revision|false|null $until `null` to keep the current one, `false` for none
      * @param list<Revision>|null $boundaries
+     * @param array<string, string>|null $fieldNames
      */
     private function copy(
         ?array $attributes = null,
@@ -259,6 +274,7 @@ final readonly class ResourceDefinition
         Revision|false|null $since = null,
         Revision|false|null $until = null,
         ?array $boundaries = null,
+        ?array $fieldNames = null,
     ): self {
         return new self(
             class: $this->class,
@@ -274,6 +290,7 @@ final readonly class ResourceDefinition
             since: $since === false ? null : $since ?? $this->since,
             until: $until === false ? null : $until ?? $this->until,
             boundaries: $boundaries ?? $this->boundaries,
+            fieldNames: $fieldNames ?? $this->fieldNames,
         );
     }
 }

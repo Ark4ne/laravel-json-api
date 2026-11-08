@@ -50,6 +50,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   or through a relationship without the `was()` to the resource of that revision, throws
   `RenderingException::notInRevision()` before anything is written; a resource `#[JsonApiUntil]` a revision is not
   rendered for the head.
+- At a revision, `whenInFields($request, 'name', …)` and `whenInIncludes($request, 'name', …)` translate the name of
+  the code to the name the field has at that revision (and fail for a field that does not exist at it); the conditions
+  reading the model (`whenHas()`, `when()`…) keep reading the head attribute. `ResourceDefinition::$fieldNames`
+  (with `fieldNames()`, an optional key of `__set_state()`) maps the names of the code to those of the revision.
 
 ## [2.0.0] — 2026-11-03
 

@@ -138,4 +138,25 @@ final class RevisedMembersTest extends TestCase
         self::assertInstanceOf(ValueString::class, $members['name']);
         self::assertSame('address', $members['name']->valueFor(new Request(), [], 'name'));
     }
+
+    public function test_the_names_map_each_field_of_the_code_to_its_name_at_the_revision(): void
+    {
+        $members = [
+            'display_name' => (new ValueString(null))->was(ApiRevision::Labels, name: 'label'),
+            'email' => new ValueString(null),
+            new MergeValue(['tag_names' => (new ValueString(null))->since(ApiRevision::UsersReplaceTeachers)]),
+            'full_name' => (new ValueString(null))->until(ApiRevision::Labels),
+            (new ValueString('title'))->was(ApiRevision::Labels, name: 'heading'),
+            'raw' => 'value',
+        ];
+
+        self::assertSame(
+            ['display_name' => 'label', 'email' => 'email', 'full_name' => 'full_name', 'title' => 'heading', 'raw' => 'raw'],
+            RevisedMembers::names($members, ApiRevision::Labels),
+        );
+        self::assertSame(
+            ['display_name' => 'display_name', 'email' => 'email', 'tag_names' => 'tag_names', 'title' => 'title', 'raw' => 'raw'],
+            RevisedMembers::names($members, null),
+        );
+    }
 }

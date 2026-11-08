@@ -147,7 +147,8 @@ final class ResourceDefinitionTest extends TestCase
         $definition = $this->definition()
             ->revision(ApiRevision::Initial)
             ->lifetime(new Lifetime(ApiRevision::Initial, ApiRevision::Labels))
-            ->boundaries(ApiRevision::Initial);
+            ->boundaries(ApiRevision::Initial)
+            ->fieldNames(['display_name' => 'name']);
 
         self::assertEquals($definition, eval('return ' . var_export($definition, true) . ';'));
         self::assertEquals($definition, unserialize(serialize($definition)));
@@ -167,5 +168,13 @@ final class ResourceDefinitionTest extends TestCase
 
         self::assertNull($definition->revision);
         self::assertSame([], $definition->boundaries);
+        self::assertSame([], $definition->fieldNames);
+    }
+
+    public function test_the_field_names_are_kept_by_the_other_replacements(): void
+    {
+        $definition = $this->definition()->fieldNames(['display_name' => 'label', 'email' => 'email'])->revision(ApiRevision::Labels);
+
+        self::assertSame(['display_name' => 'label', 'email' => 'email'], $definition->fieldNames);
     }
 }

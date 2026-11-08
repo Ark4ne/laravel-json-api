@@ -694,6 +694,11 @@ Tests: `test_when_has_on_a_renamed_field_reads_the_head_attribute`,
 `test_a_helper_naming_a_field_absent_from_the_revision_fails`,
 `test_a_sparse_field_is_rendered_when_an_old_client_requests_its_old_name`.
 
+Done: the translation table is `ResourceDefinition::$fieldNames` (head name → revision name, attributes and
+relationships existing at the revision; empty for the head), built by `RevisedMembers::names()` and so kept in the
+compiled file with the definition, rather than a separate `Definitions::names()`. The model side needed no new code:
+the head name is carried by the descriptor since US 2.5 (`standingFor()`).
+
 #### US 4.5 — Performance guard · S
 
 *As a package maintainer, I want to prove that the head costs nothing, so that versioning is not a regression for

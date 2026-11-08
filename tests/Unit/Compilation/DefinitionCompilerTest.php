@@ -508,6 +508,18 @@ final class DefinitionCompilerTest extends TestCase
         self::assertSame(['display_name', 'email', 'tag_names'], array_keys($newest->attributes));
     }
 
+    public function test_a_definition_for_a_revision_maps_the_names_of_the_code_to_its_own(): void
+    {
+        $compiler = new DefinitionCompiler(Configuration::defaults());
+
+        self::assertSame(
+            ['display_name' => 'name', 'email' => 'email', 'full_name' => 'full_name', 'remarks' => 'comments'],
+            $compiler->compile(ProfileResource::class, ApiRevision::Initial)->fieldNames,
+        );
+        // The head: the names of the code.
+        self::assertSame([], $compiler->compile(ProfileResource::class)->fieldNames);
+    }
+
     public function test_every_shape_of_a_resource_is_compiled_with_its_hooks_run_once(): void
     {
         StructResource::$reads = 0;

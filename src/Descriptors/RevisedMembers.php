@@ -70,4 +70,41 @@ final readonly class RevisedMembers
 
         return $revised;
     }
+
+    /**
+     * The name each member of the code (its key, or the attribute of an unnamed descriptor) has at `$revision`, for
+     * those existing at it; the members of a `MergeValue` too. Closures and raw values keep their key.
+     *
+     * @param iterable<array-key, mixed> $members
+     *
+     * @return array<string, string>
+     *
+     * @throws \Ark4ne\JsonApi\Exceptions\DefinitionException when the revisions are cases of two enums
+     */
+    public static function names(iterable $members, ?Revision $revision): array
+    {
+        $names = [];
+
+        foreach ($members as $key => $member) {
+            if (is_int($key) && $member instanceof MergeValue) {
+                /** @var iterable<array-key, mixed> $data */
+                $data = $member->data;
+                $names += self::names($data, $revision);
+
+                continue;
+            }
+
+            $name = $member instanceof Describer ? Describer::retrieveName($member, $key) : $key;
+            if (is_int($name)) {
+                continue;
+            }
+
+            $shape = $member instanceof Describer ? FieldHistory::at($member, $name, $revision) : [$name];
+            if ($shape !== null) {
+                $names[$name] = $shape[0];
+            }
+        }
+
+        return $names;
+    }
 }
