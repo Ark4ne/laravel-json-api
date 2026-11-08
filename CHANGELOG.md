@@ -65,6 +65,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   its revision, by their names at it, at every level; `Includes::revision()` returns it, for the tools.
 - `new Fields($resource, $revision)` validates the sparse fieldsets of a client against the types reachable at its
   revision and the names of their fields at it; `Fields::revision()` returns it, for the tools.
+- `JsonApiFormRequest` validates `include` and `fields` at the revision of the request: the middleware setting it runs
+  before the form request, resolved with the controller; the errors still name their parameter (`source.parameter`).
 
 ## [2.0.0] — 2026-11-03
 

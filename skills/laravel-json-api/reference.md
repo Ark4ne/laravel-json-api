@@ -188,12 +188,14 @@ only, in the diagnostics of the `JsonApiContext`.
 ## HTTP
 
 - `Http\JsonApiFormRequest`: `protected string $resource = PostResource::class;` validates `include` and `fields`
-  (query string only) against the definitions; your `rules()` are added, a rule keyed `include` or `fields` replaces
+  (query string only) against the definitions at the revision of the request (set by a middleware, which runs first);
+  your `rules()` are added, a rule keyed `include` or `fields` replaces
   the preset one. `$request->jsonApi()` returns a `Http\ResourceDocument` of the validated body: `type()`, `id()`,
   `attributes()`, `attribute($name)`, `hasAttribute($name)`, `relationships()`, `relationship($name)` (the linkage),
   `hasRelationship($name)`, `ids($name)`, `meta()`.
-- `Http\Rules\Includes(PostResource::class, maxDepth: 2)` and `Http\Rules\Fields(PostResource::class)` in any form
-  request. Messages: `jsonapi::validation.*`, published by `vendor:publish --tag=jsonapi-lang`.
+- `Http\Rules\Includes(PostResource::class, maxDepth: 2, revision: $revision)` and
+  `Http\Rules\Fields(PostResource::class, $revision)` in any form request (`$revision` from
+  `JsonApiContext::revisionOf($request)`, `null` for the head). Messages: `jsonapi::validation.*`, published by `vendor:publish --tag=jsonapi-lang`.
 - `Laravel\JsonApi::renderErrors($exceptions, ?Closure $when = null)` in `bootstrap/app.php`: JSON:API error
   documents for the requests expecting JSON (validation 422 with `source.pointer` / `source.parameter`, 401, 403,
   404, `HttpException`s, 500).

@@ -760,6 +760,9 @@ Acceptance criteria:
 - Error responses keep `source.parameter` (`include`, `fields[writers]`): nothing to change in
   `ValidationErrorRenderer`.
 
+Done: covered by `tests/Feature/Revisions/ValidationTest.php` (`UseApiRevision` on the route). The `Fields` rule fails
+on the whole parameter, so its errors name `fields`, as at the head, not `fields[writers]`.
+
 ---
 
 ### EV6 — Tooling and testing

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Http;
 
+use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Http\Rules\Fields;
 use Ark4ne\JsonApi\Http\Rules\Includes;
@@ -22,6 +23,10 @@ use Illuminate\Foundation\Http\FormRequest;
  * Its `rules()` hold the rest (the body, the other parameters); a rule of theirs keyed `include` or `fields` replaces
  * the preconfigured one, and stays `nullable` (`?include=` asks for no include). Both parameters are read from the query string only, as the rendering reads them: a member of
  * the body with the same name is neither validated nor returned by `validated()`.
+ *
+ * Both are validated at the revision of the request (`JsonApiContext::revisionOf()`): the names an old client includes
+ * and restricts are those of its revision. The middleware setting it (`JsonApi::useRevision()`) runs first, global or
+ * on the route: a form request is resolved, and validated, with the controller, after every middleware.
  *
  * `jsonApi()` reads the resource object of the body (`ResourceDocument`) from the validated data.
  */
@@ -75,10 +80,12 @@ abstract class JsonApiFormRequest extends FormRequest
             throw DefinitionException::formRequestWithoutResource(static::class);
         }
 
+        $revision = JsonApiContext::revisionOf($this);
+
         /** @var array<array-key, mixed> $rules */
         $rules = [
-            'include' => new Includes($this->resource),
-            'fields' => new Fields($this->resource),
+            'include' => new Includes($this->resource, revision: $revision),
+            'fields' => new Fields($this->resource, $revision),
             ...parent::validationRules(),
         ];
 
