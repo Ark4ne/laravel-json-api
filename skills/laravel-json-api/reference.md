@@ -111,6 +111,11 @@ Modifiers of every relationship:
 | `$this->when(...)`, `$this->whenHas(...)`, `$this->whenLoaded(...)` | Laravel's, on any value |
 | `$this->whenInFields(Request $request, string $attribute, mixed $value)` | A value rendered only when `fields` requests it |
 | `$this->whenInIncludes(Request $request, string $relationship, mixed $value)` | A value rendered only when `include` names the relationship |
+
+Both helpers take the name of the code; at a revision, they test the name the field has at it, and fail for a field
+that does not exist at it. A descriptor given as their value is hidden from the definition (it is missing on the
+probe), and so are its `was()`, `since()` and `until()`: for a revised field, use the descriptor conditions
+(`->whenInFields()`, `->when()`), which the definition sees.
 | `$this->mergeWhen(...)` | Avoid: rendered, but hidden from the definition (`merge-when` warning) |
 
 ## PHP attributes
@@ -169,7 +174,7 @@ only, in the diagnostics of the `JsonApiContext`.
 | `hook-failure` | error | A hook threw on the probe (an `if` on the model, a call on a relation): use the descriptors |
 | `revision-duplicate` | error | Two `was()` with one revision on a field, or `until()` / `since()` set twice |
 | `revision-empty-was` | error | A `was()` with neither `name:` nor `value:` |
-| `revision-out-of-life` | error | A `was(X)` outside the `since()` / `until()` of its field |
+| `revision-out-of-life` | error | A `was(X)` older than the `since()` of its field, or a `since()` newer than its `until()`; a warning for a `was(X)` newer than its `until()`, which applies as `was(<until>)` |
 | `revision-name-collision` | error | Two fields with one name at a revision (attributes and relationships together): bound them with `until()` / `since()` |
 | `revision-reserved-name` | error | A field named `id` or `type` at a revision |
 | `revision-unsourced-value` | error | A `value:` without source while the head reads through a closure: give it its source |

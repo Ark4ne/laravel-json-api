@@ -70,7 +70,7 @@ DB::listen(static function () use (&$queries): void {
 $render = static function () use ($app, $resource, $revision, $include): string {
     $request = Request::create('/posts', 'GET', ['include' => $include]);
     if ($revision !== null) {
-        $request->attributes->set('jsonapi.revision', $revision);
+        $request->attributes->set(Ark4ne\JsonApi\Context\JsonApiContext::REVISION, $revision);
     }
     $app->instance('request', $request);
 

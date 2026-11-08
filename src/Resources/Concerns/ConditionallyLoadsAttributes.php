@@ -87,20 +87,20 @@ trait ConditionallyLoadsAttributes
 
     /**
      * The name a field of the code has at the revision of the rendering, `null` when it does not exist at it: the
-     * client writes `fields` and `include` in the names of its revision. Unchanged at the head, and for a resource
-     * declaring no revision.
+     * client writes `fields` and `include` in the names of its revision. Unchanged for a resource declaring no
+     * revision.
      */
     private function nameAtRevision(string $field): ?string
     {
-        $revision = $this->renderingContext?->revision;
-        if ($revision === null || !Definitions::isRevised(static::class)) {
+        $context = $this->renderingContext;
+        // Outside a rendering (the probe of the compilation, which must not ask for its own definition): no condition
+        // passes anyway.
+        if ($context === null || !Definitions::isRevised(static::class)) {
             return $field;
         }
 
-        $definition = Definitions::for(static::class, $revision);
-
-        // A revision newer than every boundary has the shape of the head: the names of the code.
-        return $definition->revision === null ? $field : $definition->fieldNames[$field] ?? null;
+        // The head too: a field `until()` a revision does not exist there.
+        return Definitions::for(static::class, $context->revision)->fieldNames[$field] ?? null;
     }
 
     /**

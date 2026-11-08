@@ -142,7 +142,7 @@ trait Renderable
     {
         $this->renderingContext = $context;
 
-        return $this->toLinks($context->request) ?? [];
+        return $this->revised($this->toLinks($context->request) ?? [], $context);
     }
 
     /**

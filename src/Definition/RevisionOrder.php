@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Ark4ne\JsonApi\Definition;
 
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
+use Ark4ne\JsonApi\Support\Memo;
 
 /**
  * The order of the revisions: the declaration order of the cases of their enum, the oldest first. The head (`null`)
@@ -145,9 +146,13 @@ final readonly class RevisionOrder
      */
     private static function position(Revision $revision, ?array $cases = null): int
     {
-        $position = array_search($revision, $cases ?? self::cases($revision), true);
+        // Compared on every field of every resource rendered at a revision: the positions of an enum are read once.
+        $positions = Memo::remember(self::class, $revision::class, static fn(): array => array_flip(array_map(
+            static fn(Revision $case): string => $case->name,
+            $cases ?? self::cases($revision),
+        )));
 
-        return is_int($position) ? $position : throw DefinitionException::unknownRevision($revision::class, $revision->name);
+        return $positions[$revision->name] ?? throw DefinitionException::unknownRevision($revision::class, $revision->name);
     }
 
     /**

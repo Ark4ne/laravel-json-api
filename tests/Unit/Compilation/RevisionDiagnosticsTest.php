@@ -88,10 +88,16 @@ final class RevisionDiagnosticsTest extends TestCase
             }
         };
 
+        $diagnostics = $this->compile($resource::class)->diagnostics;
+
         self::assertSame(
             [DefinitionCompiler::REVISION_OUT_OF_LIFE, DefinitionCompiler::REVISION_OUT_OF_LIFE],
-            $this->codes($this->compile($resource::class)),
+            array_map(static fn(Diagnostic $diagnostic): string => $diagnostic->code, $diagnostics),
         );
+        // Newer than until(): it applies up to it, a warning.
+        self::assertSame(['old', DiagnosticLevel::Warning], [$diagnostics[0]->subject, $diagnostics[0]->level]);
+        self::assertStringContainsString('Write was(Initial)', $diagnostics[0]->message);
+        self::assertSame(['new', DiagnosticLevel::Error], [$diagnostics[1]->subject, $diagnostics[1]->level]);
     }
 
     public function test_two_fields_with_one_name_in_a_revision_are_reported(): void

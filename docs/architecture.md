@@ -191,7 +191,8 @@ Patterns: **Null Object** (the probe), **Builder** (descriptors build definition
 
 | Level | Where | Lifetime | Filled by |
 | --- | --- | --- | --- |
-| Memory | `Definitions`: the only static state of the package, a pure cache plus the `Configuration` and the compiled file set once at boot by the Laravel layer (`Definitions::configure()`, which compiles and reads nothing), so that `definition()` works anywhere without the container | Process | First use of a class; the compiled file is read on the first `for()` |
+| Memory | `Definitions`: the main static state of the package (with `Support\Memo`, below), a pure cache plus the `Configuration` and the compiled file set once at boot by the Laravel layer (`Definitions::configure()`, which compiles and reads nothing), so that `definition()` works anywhere without the container | Process | First use of a class; the compiled file is read on the first `for()` |
+| Memo | `Support\Memo`: pure computations that only depend on the code (the positions of the cases of a revision enum, `RevisionOrder`), never on a request, a user or the configuration; not Laravel's `once()`, which keys by a backtrace on every call | Process, flushed by `JsonApiServiceProvider` after every Octane request, task and tick | First use |
 | Compiled | `bootstrap/cache/jsonapi.php` (`var_export`, served by OPcache) | Until `jsonapi:clear` | `php artisan jsonapi:cache`, called by `php artisan optimize` |
 
 Without the compiled cache, PHP-FPM compiles each used class once per request; with it, a definition costs one
@@ -399,7 +400,7 @@ Registries order their entries by priority, never by the order of a configuratio
 | --- | --- |
 | Classes | `final` by default. Extensible base classes, listed in the architecture test: `JsonApiResource`, `JsonApiCollection`, `Descriptors\Describer` and `Descriptors\Relations\Relation` (abstract roots of the descriptors, extended by the package only), `Descriptors\Values\Value`, `Descriptors\Values\ValueDateTime` (base of `ValueDate` and `ValueTime`), `Http\JsonApiFormRequest` |
 | Traits | Only in `src/Resources/` |
-| Global state | No singleton, no mutable static property; the only static state is `Compilation\Definitions` (pure cache, configuration set once at boot) |
+| Global state | No singleton, no mutable static property; the only static state is `Compilation\Definitions` (pure cache, configuration set once at boot) and `Support\Memo` (pure memos, flushed after every Octane operation) |
 | Facades and helpers | Only in `src/Laravel/` |
 | Types | `declare(strict_types=1)`, every signature typed, PHPStan max; `mixed` only for free values, documented |
 | PHPDoc | Generics on the public API (`JsonApiResource<User>`, `Value<User>`, `Closure(User): mixed`); no redundant PHPDoc |

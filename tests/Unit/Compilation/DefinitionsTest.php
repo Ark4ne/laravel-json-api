@@ -275,6 +275,17 @@ final class DefinitionsTest extends TestCase
         self::assertSame($head, Definitions::for(ProfileResource::class, ApiRevision::Initial));
     }
 
+    public function test_every_revision_missing_from_the_compiled_file_is_compiled_at_once(): void
+    {
+        // A head written alone in the compiled file.
+        Definitions::preload([ProfileResource::class => Definitions::compile(ProfileResource::class)]);
+        $reads = ProfileResource::$reads;
+
+        self::assertSame(['name', 'email', 'full_name'], array_keys(Definitions::for(ProfileResource::class, ApiRevision::Initial)->attributes));
+        self::assertSame(['label', 'email', 'full_name'], array_keys(Definitions::for(ProfileResource::class, ApiRevision::Labels)->attributes));
+        self::assertSame($reads + 1, ProfileResource::$reads);
+    }
+
     public function test_preloaded_definitions_of_revisions_are_kept_by_boundary(): void
     {
         $head = ResourceDefinition::of(ProfileResource::class, 'head')->boundaries(ApiRevision::Initial, ApiRevision::Labels);

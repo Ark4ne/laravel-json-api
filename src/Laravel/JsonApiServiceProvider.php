@@ -18,6 +18,8 @@ use Ark4ne\JsonApi\Laravel\Commands\CheckDefinitionsCommand;
 use Ark4ne\JsonApi\Laravel\Commands\ClearDefinitionsCommand;
 use Ark4ne\JsonApi\Laravel\Commands\MakeResourceCommand;
 use Ark4ne\JsonApi\Laravel\Rendering\RouteLinksStage;
+use Ark4ne\JsonApi\Support\Memo;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
@@ -40,6 +42,8 @@ use WeakMap;
  * - Aliases the content negotiation middleware `jsonapi` (`NegotiateContent`), applied by the routes that name it,
  *   unless the application already has a `jsonapi` alias.
  * - Loads the messages of the validation rules (`jsonapi::validation.*`), published by `--tag=jsonapi-lang`.
+ * - Under Octane, flushes `Support\Memo` after every request, task and tick: nothing memoized outlives an operation.
+ *   The definitions are kept: they only depend on the code.
  */
 final class JsonApiServiceProvider extends ServiceProvider
 {
@@ -48,6 +52,15 @@ final class JsonApiServiceProvider extends ServiceProvider
     private const STUB = __DIR__ . '/../../stubs/jsonapi-resource.stub';
 
     private const LANG = __DIR__ . '/../../lang';
+
+    /**
+     * The events Octane dispatches when an operation ends, named as strings: Octane is not a dependency.
+     */
+    public const OCTANE_TERMINATED = [
+        'Laravel\\Octane\\Events\\RequestTerminated',
+        'Laravel\\Octane\\Events\\TaskTerminated',
+        'Laravel\\Octane\\Events\\TickTerminated',
+    ];
 
     public function register(): void
     {
@@ -125,6 +138,10 @@ final class JsonApiServiceProvider extends ServiceProvider
             }
         }
         Definitions::configure($configuration, $compiled);
+
+        $this->app->make(Dispatcher::class)->listen(self::OCTANE_TERMINATED, static function (): void {
+            Memo::flush();
+        });
 
         // Opt-in: applied by the routes that name it; an alias `jsonapi` of the application is kept.
         $router = $this->app->make(Router::class);

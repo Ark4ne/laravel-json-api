@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Test\Unit\Architecture;
 
 use Ark4ne\JsonApi\Compilation\Definitions;
+use Ark4ne\JsonApi\Support\Memo;
 use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -18,9 +19,10 @@ use SplFileInfo;
 final class GlobalStateTest extends TestCase
 {
     /**
-     * The only static state of the package: a pure cache plus the configuration set once at boot.
+     * The only static state of the package: the definitions (a pure cache plus the configuration set once at boot)
+     * and the pure memos, flushed after every Octane operation.
      */
-    private const ALLOWED = [Definitions::class];
+    private const ALLOWED = [Definitions::class, Memo::class];
 
     public function test_no_class_of_the_package_has_a_mutable_static_property(): void
     {

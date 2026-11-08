@@ -54,7 +54,8 @@ The resource **describes**, the definition is **compiled once**, the renderer **
 - Definitions (`src/Definition/`) are `final readonly`, serializable, built once per resource class by running its
   hooks on a `Probe`; they are the public contract read by the rules and by external tools.
 - A `JsonApiContext` (fields, include, path, configuration, diagnostics) is passed explicitly: no static state, no
-  singleton (the only static cache is `Compilation\Definitions`).
+  singleton (the only static caches are `Compilation\Definitions` and `Support\Memo`, pure memos of what only depends
+  on the code, flushed after every Octane operation).
 - Descriptors are immutable fluent builders; conditions are rules (`Closure(Request, model, attribute): bool`); value types live in a registry.
 - Classes are `final` (except the base classes listed in the architecture test); traits only in `src/Resources/`;
   `declare(strict_types=1)`; PHPStan max.

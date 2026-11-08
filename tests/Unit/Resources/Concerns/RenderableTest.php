@@ -13,6 +13,7 @@ use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Generator;
 use Illuminate\Http\Request;
 use Test\app\Revisions\ApiRevision;
+use Test\app\Revisions\OtherRevision;
 use Test\TestCase;
 
 /**
@@ -80,6 +81,39 @@ final class RenderableTest extends TestCase
         self::assertInstanceOf(MergeWhenValue::class, $members[0]);
         self::assertSame(['text'], array_keys($members[0]->data));
         self::assertSame(['label'], array_keys(Definitions::for($resource::class, ApiRevision::Initial)->attributes));
+    }
+
+    public function test_a_resource_mixing_two_enums_renders_the_head_of_its_definition(): void
+    {
+        $resource = new class (null) extends JsonApiResource {
+            public function toAttributes(Request $request): iterable
+            {
+                return [
+                    'title' => $this->string()->was(ApiRevision::Labels, name: 'label'),
+                    'body' => $this->string()->until(OtherRevision::First),
+                ];
+            }
+        };
+
+        self::assertSame(['title'], array_keys(Definitions::for($resource::class)->attributes));
+        self::assertSame(['title'], array_keys([...$resource->renderAttributes($this->context(null))]));
+    }
+
+    public function test_the_links_are_those_of_the_revision(): void
+    {
+        $resource = new class (null) extends JsonApiResource {
+            protected function toLinks(Request $request): iterable
+            {
+                return [
+                    'self' => $this->string(fn() => 'https://example.com')->was(ApiRevision::Initial, name: 'canonical'),
+                    'legacy' => $this->string(fn() => 'https://example.com/old')->until(ApiRevision::Labels),
+                ];
+            }
+        };
+
+        self::assertSame(['self'], array_keys([...$resource->renderLinks($this->context(null))]));
+        self::assertSame(['canonical', 'legacy'], array_keys([...$resource->renderLinks($this->context(ApiRevision::Initial))]));
+        self::assertSame(['canonical', 'legacy'], array_keys(Definitions::for($resource::class, ApiRevision::Initial)->links));
     }
 
     private function context(?ApiRevision $revision): JsonApiContext

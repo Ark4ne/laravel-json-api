@@ -165,14 +165,19 @@ final readonly class RevisionChecks
                 );
             }
 
-            if (
-                ($until !== null && RevisionOrder::compare($was->revision, $until) > 0)
-                || ($since !== null && RevisionOrder::compare($was->revision, $since) < 0)
-            ) {
+            if ($since !== null && RevisionOrder::compare($was->revision, $since) < 0) {
                 $diagnostics->error(
                     DefinitionCompiler::REVISION_OUT_OF_LIFE,
-                    "was({$revision}) is outside the revisions the field exists at (since() / until()): it never "
-                    . 'applies. Remove it, or fix the bounds.',
+                    "was({$revision}) is older than since({$since->name}): the field does not exist at the revisions it "
+                    . 'describes, it never applies. Remove it, or fix the bounds.',
+                    $name,
+                );
+            } elseif ($until !== null && RevisionOrder::compare($was->revision, $until) > 0) {
+                // The oldest was() at least as new as the revision applies: up to until(), this one does.
+                $diagnostics->warning(
+                    DefinitionCompiler::REVISION_OUT_OF_LIFE,
+                    "was({$revision}) is newer than until({$until->name}): it applies up to {$until->name}, as a "
+                    . "was({$until->name}) would. Write was({$until->name}).",
                     $name,
                 );
             }

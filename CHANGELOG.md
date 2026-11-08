@@ -35,7 +35,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Diagnostics of the revision declarations, reported on the head definition whichever revision shows them:
   `revision-duplicate`, `revision-empty-was`, `revision-out-of-life`, `revision-name-collision`,
   `revision-reserved-name`, `revision-unsourced-value`, `revision-mixed-enums` (errors), `revision-value-gap`,
-  `revision-noop` (warnings); constants of `DefinitionCompiler`.
+  `revision-noop` (warnings); constants of `DefinitionCompiler`. A `was()` newer than the `until()` of its field is a
+  `revision-out-of-life` warning: it applies up to `until()`.
 - `jsonapi:cache` writes the definition of every revision where the shape of a resource changes, keyed
   `class@Case` (`CompiledDefinitions::key()`), and prints the number of resources and definitions; a compiled file
   of 2.0 is still read.
@@ -53,7 +54,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - At a revision, `whenInFields($request, 'name', …)` and `whenInIncludes($request, 'name', …)` translate the name of
   the code to the name the field has at that revision (and fail for a field that does not exist at it); the conditions
   reading the model (`whenHas()`, `when()`…) keep reading the head attribute. `ResourceDefinition::$fieldNames`
-  (with `fieldNames()`, an optional key of `__set_state()`) maps the names of the code to those of the revision.
+  (with `fieldNames()`, an optional key of `__set_state()`) maps the names of the code to those of the revision (the
+  head included, for a resource declaring revisions).
+- The links of a resource are rendered at the revision of the request too.
+- `Support\Memo`: pure memos of what only depends on the code (the order of the cases of a revision enum), flushed by
+  the service provider after every Octane request, task and tick.
 - `composer benchmark` also measures resources declaring revisions, at the head, the newest and the oldest revision,
   and `--cold` an old revision against the head from the compiled file: reported, not gated.
 

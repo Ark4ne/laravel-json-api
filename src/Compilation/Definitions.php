@@ -15,7 +15,7 @@ use Closure;
 /**
  * The definitions of the resource classes, compiled once per process (docs/architecture.md §4).
  *
- * This is the only static state of the package: a pure cache, plus the configuration the Laravel layer sets once at
+ * This is the main static state of the package (with `Support\Memo`, its pure memos): a pure cache, plus the configuration the Laravel layer sets once at
  * boot. It stays static so that `PostResource::definition()` works anywhere (validation rules, tests, external tools)
  * without the container.
  */
@@ -118,7 +118,17 @@ final class Definitions
             return $head;
         }
 
-        return self::$revisions[$class][$boundary->name] ??= self::compiler()->compile($class, $boundary);
+        if (!isset(self::$revisions[$class][$boundary->name])) {
+            // Missing from the compiled file (written by 2.0, or by hand): every shape is compiled with one run of
+            // the hooks, and kept.
+            foreach (self::compiler()->compileEvery($class) as $definition) {
+                if ($definition->revision !== null) {
+                    self::$revisions[$class][$definition->revision->name] ??= $definition;
+                }
+            }
+        }
+
+        return self::$revisions[$class][$boundary->name] ?? $head;
     }
 
     /**
@@ -148,7 +158,10 @@ final class Definitions
      */
     public static function isRevised(string $class): bool
     {
-        return (self::$definitions[$class] ?? self::head($class))->boundaries !== [];
+        $head = self::$definitions[$class] ?? self::head($class);
+
+        // The names: also set when the revisions mix two enums, whose fields `until()` are left out of the head too.
+        return $head->boundaries !== [] || $head->fieldNames !== [];
     }
 
     /**

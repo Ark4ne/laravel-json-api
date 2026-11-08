@@ -699,6 +699,11 @@ relationships existing at the revision; empty for the head), built by `RevisedMe
 compiled file with the definition, rather than a separate `Definitions::names()`. The model side needed no new code:
 the head name is carried by the descriptor since US 2.5 (`standingFor()`).
 
+Review: the head has its `fieldNames` too for a resource declaring revisions (its fields `until()` a revision are
+absent), so a helper naming one fails at the head; `isRevised()` reads them, which keeps the fields `until()` out of
+the head when the declarations mix two enums. A descriptor given as the value of a helper is a `MissingValue` on the
+probe: its revisions are not seen by the compiler (documented, as in 2.0 for the definition).
+
 #### US 4.5 — Performance guard · S
 
 *As a package maintainer, I want to prove that the head costs nothing, so that versioning is not a regression for

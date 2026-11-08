@@ -516,8 +516,12 @@ final class DefinitionCompilerTest extends TestCase
             ['display_name' => 'name', 'email' => 'email', 'full_name' => 'full_name', 'remarks' => 'comments'],
             $compiler->compile(ProfileResource::class, ApiRevision::Initial)->fieldNames,
         );
-        // The head: the names of the code.
-        self::assertSame([], $compiler->compile(ProfileResource::class)->fieldNames);
+        // The head: the names of the code, without the fields until a revision.
+        self::assertSame(
+            ['display_name' => 'display_name', 'email' => 'email', 'tag_names' => 'tag_names', 'remarks' => 'remarks'],
+            $compiler->compile(ProfileResource::class)->fieldNames,
+        );
+        self::assertSame([], $compiler->compile(StructResource::class)->fieldNames);
     }
 
     public function test_every_shape_of_a_resource_is_compiled_with_its_hooks_run_once(): void

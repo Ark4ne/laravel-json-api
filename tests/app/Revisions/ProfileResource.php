@@ -20,8 +20,13 @@ use Test\app\Models\User;
 #[JsonApiType('profiles')]
 final class ProfileResource extends JsonApiResource
 {
+    /** How many times the attributes were described. */
+    public static int $reads = 0;
+
     public function toAttributes(Request $request): iterable
     {
+        self::$reads++;
+
         return [
             'display_name' => $this->string('name')
                 ->was(ApiRevision::Labels, name: 'label')

@@ -104,14 +104,7 @@ final readonly class DefinitionCompiler
      */
     public function compile(string $class, ?Revision $revision = null): ResourceDefinition
     {
-        $class = $this->source($class);
-        $lifetime = $this->lifetime($class);
-
-        $predefined = $class::predefinedDefinition();
-        if ($predefined !== null) {
-            return $this->predefined($class, $predefined, $lifetime);
-        }
-
+        // A definition written by hand is the only one: it has no boundary.
         $every = $this->compileEvery($class);
         $boundary = $every[0]->boundaryOf($revision);
         foreach ($every as $definition) {
@@ -337,8 +330,15 @@ final readonly class DefinitionCompiler
         $head = $this->build($class, $hooks, $lifetime, [], null, $findings);
         $diagnostics = new Diagnostics();
         $boundaries = RevisionChecks::fields($findings, $lifetime, $diagnostics);
+        $head = $head->boundaries(...$boundaries)->diagnostics(...$head->diagnostics, ...$diagnostics);
 
-        return [$head->boundaries(...$boundaries)->diagnostics(...$head->diagnostics, ...$diagnostics), $boundaries];
+        // A resource declaring revisions translates the names of its helpers at the head too: its fields `until()` a
+        // revision do not exist there. Set even when its boundaries are not (two enums mixed).
+        if ($findings->fields() !== []) {
+            $head = $head->fieldNames(self::fieldNames($hooks, null));
+        }
+
+        return [$head, $boundaries];
     }
 
     /**
@@ -403,11 +403,7 @@ final readonly class DefinitionCompiler
             ->boundaries(...$boundaries);
 
         if ($boundary !== null) {
-            // What the helpers of the hooks translate (`whenInFields()`, `whenInIncludes()`): the names of the code.
-            $definition = $definition->fieldNames(
-                RevisedMembers::names($hooks['members']['toAttributes'], $boundary)
-                + RevisedMembers::names($hooks['members']['toRelationships'], $boundary),
-            );
+            $definition = $definition->fieldNames(self::fieldNames($hooks, $boundary));
             RevisionChecks::shape(
                 $boundary,
                 array_map(static fn(AttributeDefinition|RelationshipDefinition $field) => $field->name, [...$attributes, ...$relationships]),
@@ -430,6 +426,20 @@ final readonly class DefinitionCompiler
         }
 
         return $definition->diagnostics(...$diagnostics);
+    }
+
+    /**
+     * What the helpers of the hooks translate (`whenInFields()`, `whenInIncludes()`): the name each attribute and
+     * relationship of the code has at `$revision`.
+     *
+     * @param array{members: array<string, array<array-key, mixed>>} $hooks
+     *
+     * @return array<string, string>
+     */
+    private static function fieldNames(array $hooks, ?Revision $revision): array
+    {
+        return RevisedMembers::names($hooks['members']['toAttributes'], $revision)
+            + RevisedMembers::names($hooks['members']['toRelationships'], $revision);
     }
 
     /**

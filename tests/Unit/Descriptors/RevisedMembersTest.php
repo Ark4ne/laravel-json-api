@@ -139,6 +139,14 @@ final class RevisedMembersTest extends TestCase
         self::assertSame('address', $members['name']->valueFor(new Request(), [], 'name'));
     }
 
+    public function test_a_was_newer_than_until_applies_up_to_until(): void
+    {
+        $members = ['title' => (new ValueString(null))->until(ApiRevision::Labels)->was(ApiRevision::UsersReplaceTeachers, name: 'old')];
+
+        self::assertSame(['old'], array_keys(RevisedMembers::apply($members, ApiRevision::Initial)));
+        self::assertSame([], RevisedMembers::apply($members, ApiRevision::UsersReplaceTeachers));
+    }
+
     public function test_the_names_map_each_field_of_the_code_to_its_name_at_the_revision(): void
     {
         $members = [

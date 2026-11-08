@@ -30,9 +30,10 @@ final readonly class ResourceDefinition
      * @param Revision|null $until The newest revision the resource exists at (`#[JsonApiUntil]`), `null` for the head
      * @param list<Revision> $boundaries The revisions where the shape of the resource changes, oldest first: the shape
      *                                   of a revision is that of the oldest boundary at least as new, otherwise the head
-     * @param array<string, string> $fieldNames For a revision: the name each attribute and relationship of the code
-     *                                          (the keys of its hooks) has at it, for those existing at it; empty for
-     *                                          the head, whose names are those of the code
+     * @param array<string, string> $fieldNames For a resource declaring revisions: the name each attribute and
+     *                                          relationship of the code (the keys of its hooks) has at the revision it
+     *                                          describes, for those existing at it (the head included, without its
+     *                                          fields `until()` a revision); empty for a resource declaring none
      */
     private function __construct(
         public string $class,

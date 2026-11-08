@@ -55,6 +55,16 @@ final class ConditionsTest extends RevisionsTestCase
         $this->renderAt(null, 'include=comments')->assertJsonPath('data.attributes.comments_included', true);
     }
 
+    public function test_a_helper_naming_a_field_until_a_revision_fails_at_the_head(): void
+    {
+        $this->renderAt(ApiRevision::Labels, 'fields[helpers]=legacy,legacy_requested')
+            ->assertJsonPath('data.attributes.legacy_requested', true);
+        $this->renderAt(null, 'fields[helpers]=legacy,legacy_requested')
+            ->assertJsonMissingPath('data.attributes.legacy_requested');
+        $this->renderAt(ApiRevision::UsersReplaceTeachers, 'fields[helpers]=legacy,legacy_requested')
+            ->assertJsonMissingPath('data.attributes.legacy_requested');
+    }
+
     /**
      * @return TestResponse<\Illuminate\Http\JsonResponse>
      */
@@ -68,6 +78,8 @@ final class ConditionsTest extends RevisionsTestCase
                     'name_requested' => $this->whenInFields($request, 'name', true),
                     'posts_included' => $this->whenInIncludes($request, 'posts', true),
                     'comments_included' => $this->whenInIncludes($request, 'comments', true),
+                    'legacy_requested' => $this->whenInFields($request, 'legacy', true),
+                    'legacy' => $this->string(fn() => 'legacy')->until(ApiRevision::Labels),
                 ];
             }
 
