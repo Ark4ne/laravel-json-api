@@ -25,6 +25,7 @@ use Test\app\Http\Resources\UserResource;
 use Test\app\Revisions\ApiRevision;
 use Test\app\Revisions\EmptyLifetimeResource;
 use Test\app\Revisions\MemberResource;
+use Test\app\Revisions\ProfileResource;
 use Test\app\Revisions\TeacherChildResource;
 use Test\app\Revisions\TeacherResource;
 use Test\Unit\Compilation\Fixtures\AttributeTypedResource;
@@ -492,5 +493,31 @@ final class DefinitionCompilerTest extends TestCase
         self::assertNull($definition->since);
         self::assertSame(ApiRevision::Labels, $definition->until);
         self::assertNull($definition->revision);
+    }
+
+    public function test_a_definition_is_compiled_for_a_revision(): void
+    {
+        $compiler = new DefinitionCompiler(Configuration::defaults());
+
+        $labels = $compiler->compile(ProfileResource::class, ApiRevision::Labels);
+        $newest = $compiler->compile(ProfileResource::class, ApiRevision::UsersReplaceTeachers);
+
+        self::assertSame(ApiRevision::Labels, $labels->revision);
+        self::assertSame(['label', 'email', 'full_name'], array_keys($labels->attributes));
+        self::assertNull($newest->revision);
+        self::assertSame(['display_name', 'email', 'tag_names'], array_keys($newest->attributes));
+    }
+
+    public function test_every_shape_of_a_resource_is_compiled_with_its_hooks_run_once(): void
+    {
+        StructResource::$reads = 0;
+        $compiler = new DefinitionCompiler(Configuration::defaults());
+
+        self::assertCount(1, $compiler->compileEvery(StructResource::class));
+        self::assertSame(2, StructResource::$reads);
+        self::assertSame(
+            [null, ApiRevision::Initial, ApiRevision::Labels],
+            array_map(static fn(ResourceDefinition $definition) => $definition->revision, $compiler->compileEvery(ProfileResource::class)),
+        );
     }
 }

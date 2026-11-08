@@ -23,7 +23,7 @@ class TeacherResource extends JsonApiResource
     public function toAttributes(Request $request): iterable
     {
         return [
-            'name' => $this->string(),
+            'name' => $this->string()->was(ApiRevision::Labels, name: 'label'),
         ];
     }
 }

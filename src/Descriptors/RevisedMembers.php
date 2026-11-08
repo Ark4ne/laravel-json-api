@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Ark4ne\JsonApi\Descriptors;
 
 use Ark4ne\JsonApi\Definition\Revision;
+use Ark4ne\JsonApi\Definition\RevisionOrder;
 use Ark4ne\JsonApi\Descriptors\Values\ValueStruct;
 use Illuminate\Http\Resources\MergeValue;
 
@@ -23,12 +24,15 @@ final readonly class RevisedMembers
     /**
      * @param iterable<array-key, mixed> $members
      * @param Revision|null $revision `null` for the head: the fields `until()` a revision are left out of it too
+     * @param Boundaries|null $boundaries Gathers the revisions where the members change: `was(X)` and `until(X)` change
+     *                                    them after `X`, `since(X)` after the revision before `X`. A struct given as
+     *                                    the `value:` of a `was()` is not read: its members declare no revision.
      *
      * @return array<array-key, mixed>
      *
      * @throws \Ark4ne\JsonApi\Exceptions\DefinitionException when the revisions are cases of two enums
      */
-    public static function apply(iterable $members, ?Revision $revision): array
+    public static function apply(iterable $members, ?Revision $revision, ?Boundaries $boundaries = null): array
     {
         $revised = [];
 
@@ -38,7 +42,7 @@ final readonly class RevisedMembers
                 $data = $member->data;
                 // A copy of the same class: the members of `mergeWhen()` stay hidden from the definition.
                 $copy = clone $member;
-                $copy->data = self::apply($data, $revision);
+                $copy->data = self::apply($data, $revision, $boundaries);
                 $revised[] = $copy;
 
                 continue;
@@ -51,13 +55,22 @@ final readonly class RevisedMembers
                 continue;
             }
 
+            if ($boundaries !== null) {
+                $since = $member->sinceRevision();
+                $boundaries->add(
+                    $member->untilRevision(),
+                    $since === null ? null : RevisionOrder::previous($since),
+                    ...array_map(static fn(FieldRevision $was): Revision => $was->revision, $member->revisions()),
+                );
+            }
+
             $shape = FieldHistory::at($member, $name, $revision);
             if ($shape === null) {
                 continue;
             }
 
             [$name, $descriptor] = $shape;
-            $revised[$name] = $descriptor instanceof ValueStruct ? $descriptor->atRevision($revision) : $descriptor;
+            $revised[$name] = $descriptor instanceof ValueStruct ? $descriptor->atRevision($revision, $boundaries) : $descriptor;
         }
 
         return $revised;

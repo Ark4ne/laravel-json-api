@@ -67,6 +67,50 @@ final readonly class RevisionOrder
     }
 
     /**
+     * The revisions each once, oldest first.
+     *
+     * @return list<Revision>
+     *
+     * @throws DefinitionException when the revisions are cases of two enums
+     */
+    public static function sorted(Revision ...$revisions): array
+    {
+        $unique = [];
+        foreach ($revisions as $revision) {
+            if (!in_array($revision, $unique, true)) {
+                $unique[] = $revision;
+            }
+        }
+        usort($unique, self::compare(...));
+
+        return $unique;
+    }
+
+    /**
+     * The boundary whose shape a revision sees: the oldest of `$boundaries` at least as new as `$revision`, `null` for
+     * the head shape. A revision newer than every boundary reads the head in one comparison.
+     *
+     * @param list<Revision> $boundaries Oldest first (`sorted()`)
+     *
+     * @throws DefinitionException when the revisions are cases of two enums
+     */
+    public static function boundaryOf(array $boundaries, ?Revision $revision): ?Revision
+    {
+        $newest = $boundaries === [] ? null : $boundaries[count($boundaries) - 1];
+        if ($revision === null || $newest === null || self::compare($revision, $newest) > 0) {
+            return null;
+        }
+
+        foreach ($boundaries as $boundary) {
+            if (self::compare($boundary, $revision) >= 0) {
+                return $boundary;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * The revision right before `$revision`, `null` for the oldest case.
      */
     public static function previous(Revision $revision): ?Revision

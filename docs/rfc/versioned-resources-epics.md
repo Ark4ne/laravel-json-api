@@ -474,7 +474,12 @@ Acceptance criteria:
   as today (`src/Compilation/Definitions.php:76-84`).
 - **Buckets**: two revisions giving the same shape of `$class` share one definition. A bucket is identified by its
   boundary, the oldest revision ≥ `R` at which a declaration of the class changes the shape (`was(X)` and `until(X)` →
-  `X`, `since(X)` → `previous(X)`, the same for `#[JsonApiSince]` / `#[JsonApiUntil]`), or the head. Cache key `class@boundary`.
+  `X`, `since(X)` → `previous(X)`), or the head. Cache key `class@boundary`. `#[JsonApiSince]` / `#[JsonApiUntil]` are
+  not boundaries: they decide whether the resource exists (`exists()`), not its shape.
+- Done: the boundaries are gathered while the members of the head are transformed (`Descriptors\Boundaries`), so a
+  struct is read once; `DefinitionCompiler::compileEvery()` gives the head then one definition per boundary, and
+  `Definitions` fills every bucket of a class at its first `for()`. `for($class)` without revision is the head, even
+  for a resource `#[JsonApiUntil]` (unchanged 2.0 behaviour); `for($class, $revision)` throws `notInRevision()`.
 - **Fast path**: `R` newer than every boundary of the class → the head definition, in one comparison.
 - `Definitions::isRevised(string $class): bool` (`@internal`): whether a hook of the class declares a revisioned
   member. Needed by the rendering of the **head** too: a field `until(X)` is written in the head hook and must be

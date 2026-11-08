@@ -13,6 +13,8 @@ use Closure;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 use Test\app\Revisions\ApiRevision;
+use Test\app\Revisions\MemberResource;
+use Test\app\Revisions\ProfileResource;
 use Test\app\Revisions\TeacherResource;
 use Test\Unit\Compilation\Fixtures\AttributeTypedResource;
 use Test\Unit\Compilation\Fixtures\BlogPostResource;
@@ -171,5 +173,94 @@ final class DefinitionsTest extends TestCase
 
         self::assertSame(ApiRevision::Labels, $lifetime->until);
         self::assertSame($lifetime, Definitions::lifetime(TeacherResource::class));
+    }
+
+    public function test_the_definition_of_a_revision_has_its_names(): void
+    {
+        $initial = Definitions::for(ProfileResource::class, ApiRevision::Initial);
+        $labels = Definitions::for(ProfileResource::class, ApiRevision::Labels);
+        $head = Definitions::for(ProfileResource::class);
+
+        self::assertSame(['name', 'email', 'full_name'], array_keys($initial->attributes));
+        self::assertSame(['comments'], array_keys($initial->relationships));
+        self::assertSame(ApiRevision::Initial, $initial->revision);
+        self::assertSame(['label', 'email', 'full_name'], array_keys($labels->attributes));
+        self::assertSame(['remarks'], array_keys($labels->relationships));
+        self::assertSame(ApiRevision::Labels, $labels->revision);
+        self::assertSame(['display_name', 'email', 'tag_names'], array_keys($head->attributes));
+        self::assertNull($head->revision);
+    }
+
+    public function test_a_renamed_field_keeps_the_source_of_the_head(): void
+    {
+        self::assertSame('name', Definitions::for(ProfileResource::class, ApiRevision::Labels)->attributes['label']->source);
+        self::assertSame('comments', Definitions::for(ProfileResource::class, ApiRevision::Initial)->relationships['comments']->source);
+    }
+
+    public function test_the_head_definition_lists_its_boundaries(): void
+    {
+        self::assertSame([ApiRevision::Initial, ApiRevision::Labels], Definitions::for(ProfileResource::class)->boundaries);
+        self::assertSame([ApiRevision::Initial, ApiRevision::Labels], Definitions::for(ProfileResource::class, ApiRevision::Initial)->boundaries);
+    }
+
+    public function test_two_revisions_with_the_same_shape_share_a_definition(): void
+    {
+        $initial = Definitions::for(TeacherResource::class, ApiRevision::Initial);
+
+        self::assertSame($initial, Definitions::for(TeacherResource::class, ApiRevision::Labels));
+        self::assertSame(ApiRevision::Labels, $initial->revision);
+        self::assertSame(['label'], array_keys($initial->attributes));
+    }
+
+    public function test_a_revision_newer_than_every_declaration_reads_the_head(): void
+    {
+        self::assertSame(
+            Definitions::for(ProfileResource::class),
+            Definitions::for(ProfileResource::class, ApiRevision::UsersReplaceTeachers),
+        );
+    }
+
+    public function test_a_resource_without_declaration_has_one_definition(): void
+    {
+        $definition = Definitions::for(BlogPostResource::class);
+
+        self::assertSame([], $definition->boundaries);
+        self::assertSame($definition, Definitions::for(BlogPostResource::class, ApiRevision::Initial));
+        self::assertFalse(Definitions::isRevised(BlogPostResource::class));
+        self::assertTrue(Definitions::isRevised(ProfileResource::class));
+    }
+
+    public function test_a_resource_since_a_revision_does_not_exist_before_it(): void
+    {
+        self::assertFalse(Definitions::exists(MemberResource::class, ApiRevision::Labels));
+        self::assertTrue(Definitions::exists(MemberResource::class, ApiRevision::UsersReplaceTeachers));
+        self::assertTrue(Definitions::exists(MemberResource::class, null));
+
+        $this->expectException(DefinitionException::class);
+        $this->expectExceptionMessage('Labels');
+
+        Definitions::for(MemberResource::class, ApiRevision::Labels);
+    }
+
+    public function test_a_resource_until_a_revision_does_not_exist_after_it(): void
+    {
+        self::assertTrue(Definitions::exists(TeacherResource::class, ApiRevision::Labels));
+        self::assertFalse(Definitions::exists(TeacherResource::class, ApiRevision::UsersReplaceTeachers));
+        self::assertFalse(Definitions::exists(TeacherResource::class, null));
+    }
+
+    public function test_load_constraints_follow_the_renamed_relationship(): void
+    {
+        self::assertSame(['remarks'], array_keys(Definitions::loadConstraints(ProfileResource::class)));
+        self::assertSame(['comments'], array_keys(Definitions::loadConstraints(ProfileResource::class, ApiRevision::Initial)));
+        self::assertSame(['remarks'], array_keys(Definitions::loadConstraints(ProfileResource::class, ApiRevision::Labels)));
+    }
+
+    public function test_flush_empties_the_definitions_of_the_revisions(): void
+    {
+        $initial = Definitions::for(ProfileResource::class, ApiRevision::Initial);
+        Definitions::flush();
+
+        self::assertNotSame($initial, Definitions::for(ProfileResource::class, ApiRevision::Initial));
     }
 }

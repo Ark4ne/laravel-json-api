@@ -139,15 +139,28 @@ final readonly class ResourceDefinition
      */
     public function boundaries(Revision ...$boundaries): self
     {
-        $unique = [];
-        foreach ($boundaries as $boundary) {
-            if (!in_array($boundary, $unique, true)) {
-                $unique[] = $boundary;
-            }
-        }
-        usort($unique, RevisionOrder::compare(...));
+        return $this->copy(boundaries: RevisionOrder::sorted(...$boundaries));
+    }
 
-        return $this->copy(boundaries: $unique);
+    /**
+     * Whether the resource exists at `$revision` (`null` for the head): within its lifetime, bounds included.
+     *
+     * @throws \Ark4ne\JsonApi\Exceptions\DefinitionException when the revisions are cases of two enums
+     */
+    public function existsAt(?Revision $revision): bool
+    {
+        return (new Lifetime($this->since, $this->until))->covers($revision);
+    }
+
+    /**
+     * The revision whose definition describes the shape of the resource at `$revision`: the oldest boundary at least as
+     * new, `null` for the head shape. A revision newer than every boundary reads the head in one comparison.
+     *
+     * @throws \Ark4ne\JsonApi\Exceptions\DefinitionException when the revisions are cases of two enums
+     */
+    public function boundaryOf(?Revision $revision): ?Revision
+    {
+        return RevisionOrder::boundaryOf($this->boundaries, $revision);
     }
 
     public function attribute(string $name): ?AttributeDefinition

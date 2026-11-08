@@ -28,6 +28,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `ResourceDefinition::$revision` (the revision a definition describes, `null` for the head), `$since` / `$until`
   (the lifetime of the resource, set by the compiler) and `$boundaries` (the revisions where its shape changes), with
   `revision()`, `lifetime()` and `boundaries()`; optional keys of `__set_state()`, so a compiled file of 2.0 is read.
+- `Definitions::for($class, $revision)`: the definition of a resource at a revision, with the names, values and
+  relationships of that revision; revisions with the same shape share one definition. `Definitions::exists($class,
+  $revision)`, `Definitions::loadConstraints($class, $revision)`, `Definitions::compile($class, $revision)`,
+  `ResourceDefinition::existsAt()` / `boundaryOf()`, `RevisionOrder::sorted()` / `boundaryOf()`.
 
 ## [2.0.0] — 2026-11-03
 

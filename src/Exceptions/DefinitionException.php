@@ -42,6 +42,14 @@ final class DefinitionException extends LogicException implements JsonApiExcepti
     }
 
     /**
+     * The definition of a resource was read at a revision it does not exist at (`#[JsonApiSince]`, `#[JsonApiUntil]`).
+     */
+    public static function notInRevision(string $class, string $revision): self
+    {
+        return new self("[{$class}] does not exist at the revision [{$revision}]: see its #[JsonApiSince] and #[JsonApiUntil].");
+    }
+
+    /**
      * The class is not a resource: it does not implement `DefinitionSource`.
      */
     public static function notADefinitionSource(string $class): self

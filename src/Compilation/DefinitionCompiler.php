@@ -5,15 +5,16 @@ declare(strict_types=1);
 namespace Ark4ne\JsonApi\Compilation;
 
 use Ark4ne\JsonApi\Configuration\Configuration;
-use Ark4ne\JsonApi\Definition\AttributeDefinition;
 use Ark4ne\JsonApi\Definition\DefinitionSource;
 use Ark4ne\JsonApi\Definition\JsonApiSince;
 use Ark4ne\JsonApi\Definition\JsonApiUntil;
 use Ark4ne\JsonApi\Definition\Lifetime;
-use Ark4ne\JsonApi\Definition\RelationshipDefinition;
 use Ark4ne\JsonApi\Definition\ResourceDefinition;
+use Ark4ne\JsonApi\Definition\Revision;
 use Ark4ne\JsonApi\Definition\RevisionOrder;
+use Ark4ne\JsonApi\Descriptors\Boundaries;
 use Ark4ne\JsonApi\Descriptors\Members;
+use Ark4ne\JsonApi\Descriptors\RevisedMembers;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Support\Diagnostics;
 use Ark4ne\JsonApi\Support\Probe;
@@ -62,61 +63,70 @@ final readonly class DefinitionCompiler
     ) {}
 
     /**
+     * The definition of a resource at a revision: the head (`null`) by default. Its `revision` is the boundary whose
+     * shape it describes (`ResourceDefinition::boundaryOf()`), `null` for the head shape.
+     *
      * @param class-string<DefinitionSource> $class
      *
      * @throws DefinitionException when the class is not a resource, when its type cannot be read, or when it exists at
      *                             no revision
      */
-    public function compile(string $class): ResourceDefinition
+    public function compile(string $class, ?Revision $revision = null): ResourceDefinition
     {
         $class = $this->source($class);
         $lifetime = $this->lifetime($class);
 
         $predefined = $class::predefinedDefinition();
         if ($predefined !== null) {
-            // The routes of `#[JsonApiRoutes]` and the lifetime of the attributes are kept unless the definition written
-            // by hand has its own.
-            $predefined = $predefined->routes === null ? $predefined->routes($class::declaredRoutes()) : $predefined;
-
-            return $predefined->since === null && $predefined->until === null
-                ? $predefined->lifetime($lifetime)
-                : $predefined;
+            return $this->predefined($class, $predefined, $lifetime);
         }
 
-        $run = $this->run($class);
-        $diagnostics = $run['diagnostics'];
+        $hooks = $this->hooks($class);
+        [$head, $boundaries] = $this->head($class, $hooks, $lifetime);
+        $boundary = RevisionOrder::boundaryOf($boundaries, $revision);
 
-        $definition = ResourceDefinition::of($class, $run['type'])
-            ->attributes(...$run['attributes'])
-            ->relationships(...$run['relationships'])
-            ->links(...$run['links'])
-            ->meta(...$run['meta'])
-            ->documentMeta(...$run['documentMeta'])
-            ->routes($class::declaredRoutes())
-            ->lifetime($lifetime);
-
-        foreach ([...array_keys($definition->attributes), ...array_keys($definition->relationships)] as $name) {
-            if (in_array($name, self::RESERVED_NAMES, true)) {
-                $diagnostics->error(
-                    self::RESERVED_NAME,
-                    "[{$name}] is reserved by JSON:API for the resource identification: rename the member.",
-                    $name,
-                );
-            }
-        }
-
-        return $definition->diagnostics(...$diagnostics);
+        return $boundary === null ? $head : $this->build($class, $hooks, $lifetime, $boundaries, $boundary);
     }
 
     /**
-     * The constraints of the eager-loads declared by a resource, by relationship name then by relation path: what the
-     * definition leaves out because closures are not serializable.
+     * The definitions of every shape of a resource, the hooks run once: the head first, then one per boundary, oldest
+     * first.
+     *
+     * @param class-string<DefinitionSource> $class
+     *
+     * @return non-empty-list<ResourceDefinition>
+     *
+     * @throws DefinitionException when the class is not a resource, when its type cannot be read, or when it exists at
+     *                             no revision
+     */
+    public function compileEvery(string $class): array
+    {
+        $class = $this->source($class);
+        $lifetime = $this->lifetime($class);
+
+        $predefined = $class::predefinedDefinition();
+        if ($predefined !== null) {
+            return [$this->predefined($class, $predefined, $lifetime)];
+        }
+
+        $hooks = $this->hooks($class);
+        [$head, $boundaries] = $this->head($class, $hooks, $lifetime);
+
+        return [
+            $head,
+            ...array_map(fn(Revision $boundary) => $this->build($class, $hooks, $lifetime, $boundaries, $boundary), $boundaries),
+        ];
+    }
+
+    /**
+     * The constraints of the eager-loads declared by a resource, by relationship name (that of `$revision`) then by
+     * relation path: what the definition leaves out because closures are not serializable.
      *
      * @param class-string<DefinitionSource> $class
      *
      * @return array<string, array<string, Closure>>
      */
-    public function loadConstraints(string $class): array
+    public function loadConstraints(string $class, ?Revision $revision = null): array
     {
         $class = $this->source($class);
 
@@ -128,7 +138,10 @@ final readonly class DefinitionCompiler
         $members = new Members($this->configuration, new Diagnostics(), $probe);
 
         try {
-            $relations = $members->relations($class::newDefinitionSource($probe)->describeRelationships(new Request()));
+            $relations = $members->relations(RevisedMembers::apply(
+                $class::newDefinitionSource($probe)->describeRelationships(new Request()),
+                $revision,
+            ));
         } catch (Throwable) {
             return [];
         }
@@ -188,26 +201,34 @@ final readonly class DefinitionCompiler
     }
 
     /**
-     * Runs every hook on a new probe.
+     * A definition written by hand (`toDefinition()`): the routes of `#[JsonApiRoutes]` and the lifetime of the
+     * attributes are kept unless it has its own. One shape: the hand-written definition has no revision.
+     *
+     * @param class-string<DefinitionSource> $class
+     */
+    private function predefined(string $class, ResourceDefinition $predefined, Lifetime $lifetime): ResourceDefinition
+    {
+        $predefined = $predefined->routes === null ? $predefined->routes($class::declaredRoutes()) : $predefined;
+
+        return $predefined->since === null && $predefined->until === null ? $predefined->lifetime($lifetime) : $predefined;
+    }
+
+    /**
+     * Runs every hook once on a new probe: the members each declares, or the message of what it threw.
      *
      * @param class-string<DefinitionSource> $class
      *
      * @return array{
+     *     probe: Probe,
      *     type: string,
-     *     attributes: list<AttributeDefinition>,
-     *     relationships: list<RelationshipDefinition>,
-     *     links: list<AttributeDefinition>,
-     *     meta: list<AttributeDefinition>,
-     *     documentMeta: list<AttributeDefinition>,
-     *     diagnostics: Diagnostics,
+     *     members: array<string, array<array-key, mixed>>,
+     *     failures: array<string, string>,
      * }
      */
-    private function run(string $class): array
+    private function hooks(string $class): array
     {
         $probe = Probe::root();
         $request = new Request();
-        $diagnostics = new Diagnostics();
-        $members = new Members($this->configuration, $diagnostics, $probe);
 
         try {
             $source = $class::newDefinitionSource($probe);
@@ -216,35 +237,118 @@ final readonly class DefinitionCompiler
             throw DefinitionException::cannotCompile($class, $e);
         }
 
-        return [
-            'type' => $type,
-            'attributes' => $this->guard(
+        $describes = [
+            'toAttributes' => static fn() => $source->describeAttributes($request),
+            'toRelationships' => static fn() => $source->describeRelationships($request),
+            'toLinks' => static fn() => $source->describeLinks($request),
+            'toResourceMeta' => static fn() => $source->describeResourceMeta($request),
+            'toDocumentMeta' => static fn() => $source->describeDocumentMeta($request),
+        ];
+
+        $members = [];
+        $failures = [];
+        foreach ($describes as $hook => $describe) {
+            try {
+                $members[$hook] = [...$describe()];
+            } catch (Throwable $e) {
+                $members[$hook] = [];
+                $failures[$hook] = $e->getMessage();
+            }
+        }
+
+        return ['probe' => $probe, 'type' => $type, 'members' => $members, 'failures' => $failures];
+    }
+
+    /**
+     * The head definition, and the revisions where the shape of the resource changes (each once, oldest first),
+     * gathered while the members of the head are transformed.
+     *
+     * @param class-string<DefinitionSource> $class
+     * @param array{
+     *     probe: Probe,
+     *     type: string,
+     *     members: array<string, array<array-key, mixed>>,
+     *     failures: array<string, string>,
+     * } $hooks
+     *
+     * @return array{ResourceDefinition, list<Revision>}
+     */
+    private function head(string $class, array $hooks, Lifetime $lifetime): array
+    {
+        $gathered = new Boundaries();
+        $head = $this->build($class, $hooks, $lifetime, [], null, $gathered);
+        $boundaries = RevisionOrder::sorted(...$gathered->all());
+
+        return [$head->boundaries(...$boundaries), $boundaries];
+    }
+
+    /**
+     * The definition of one shape of the resource, from the members of its hooks as `$boundary` sees them.
+     *
+     * @param class-string<DefinitionSource> $class
+     * @param array{
+     *     probe: Probe,
+     *     type: string,
+     *     members: array<string, array<array-key, mixed>>,
+     *     failures: array<string, string>,
+     * } $hooks
+     * @param list<Revision> $boundaries
+     * @param Boundaries|null $gathered Gathers the revisions where the members change
+     */
+    private function build(
+        string $class,
+        array $hooks,
+        Lifetime $lifetime,
+        array $boundaries,
+        ?Revision $boundary,
+        ?Boundaries $gathered = null,
+    ): ResourceDefinition {
+        $diagnostics = new Diagnostics();
+        foreach ($hooks['failures'] as $hook => $message) {
+            $this->failure($diagnostics, $hook, $message);
+        }
+
+        $members = new Members($this->configuration, $diagnostics, $hooks['probe']);
+        $at = static fn(string $hook): array => RevisedMembers::apply($hooks['members'][$hook], $boundary, $gathered);
+
+        $definition = ResourceDefinition::of($class, $hooks['type'])
+            ->attributes(...$this->guard(
                 'toAttributes',
                 $diagnostics,
-                static fn() => $members->attributes($source->describeAttributes($request), 'attributes'),
-            ),
-            'relationships' => $this->guard(
+                static fn() => $members->attributes($at('toAttributes'), 'attributes'),
+            ))
+            ->relationships(...$this->guard(
                 'toRelationships',
                 $diagnostics,
-                static fn() => $members->relationships($source->describeRelationships($request)),
-            ),
-            'links' => $this->guard(
-                'toLinks',
-                $diagnostics,
-                static fn() => $members->attributes($source->describeLinks($request)),
-            ),
-            'meta' => $this->guard(
+                static fn() => $members->relationships($at('toRelationships')),
+            ))
+            ->links(...$this->guard('toLinks', $diagnostics, static fn() => $members->attributes($at('toLinks'))))
+            ->meta(...$this->guard(
                 'toResourceMeta',
                 $diagnostics,
-                static fn() => $members->attributes($source->describeResourceMeta($request), 'resource-meta'),
-            ),
-            'documentMeta' => $this->guard(
+                static fn() => $members->attributes($at('toResourceMeta'), 'resource-meta'),
+            ))
+            ->documentMeta(...$this->guard(
                 'toDocumentMeta',
                 $diagnostics,
-                static fn() => $members->attributes($source->describeDocumentMeta($request), 'meta'),
-            ),
-            'diagnostics' => $diagnostics,
-        ];
+                static fn() => $members->attributes($at('toDocumentMeta'), 'meta'),
+            ))
+            ->routes($class::declaredRoutes())
+            ->lifetime($lifetime)
+            ->revision($boundary)
+            ->boundaries(...$boundaries);
+
+        foreach ([...array_keys($definition->attributes), ...array_keys($definition->relationships)] as $name) {
+            if (in_array($name, self::RESERVED_NAMES, true)) {
+                $diagnostics->error(
+                    self::RESERVED_NAME,
+                    "[{$name}] is reserved by JSON:API for the resource identification: rename the member.",
+                    $name,
+                );
+            }
+        }
+
+        return $definition->diagnostics(...$diagnostics);
     }
 
     /**
@@ -259,14 +363,19 @@ final readonly class DefinitionCompiler
         try {
             return $describe();
         } catch (Throwable $e) {
-            $diagnostics->error(
-                self::HOOK_FAILURE,
-                "{$hook}() threw on the probe standing for the model ({$e->getMessage()}): what it declares is missing "
-                . 'from the definition. Read the model through descriptors or closures.',
-                $hook,
-            );
+            $this->failure($diagnostics, $hook, $e->getMessage());
 
             return [];
         }
+    }
+
+    private function failure(Diagnostics $diagnostics, string $hook, string $message): void
+    {
+        $diagnostics->error(
+            self::HOOK_FAILURE,
+            "{$hook}() threw on the probe standing for the model ({$message}): what it declares is missing from the "
+            . 'definition. Read the model through descriptors or closures.',
+            $hook,
+        );
     }
 }
