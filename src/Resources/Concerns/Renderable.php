@@ -10,6 +10,7 @@ use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Descriptors\Relations\Relation;
 use Ark4ne\JsonApi\Descriptors\Relations\RelationRaw;
+use Ark4ne\JsonApi\Descriptors\RevisedMembers;
 use Ark4ne\JsonApi\Loading\LoadedRelations;
 use Ark4ne\JsonApi\Rendering\RelationshipSource;
 use Ark4ne\JsonApi\Resources\Relationship;
@@ -68,7 +69,7 @@ trait Renderable
         $this->renderingContext = $context;
 
         return $this->autoWhenHas(
-            $this->toAttributes($context->request),
+            $this->revised($this->toAttributes($context->request), $context),
             $context->configuration->autoWhenHas('attributes'),
         );
     }
@@ -82,8 +83,10 @@ trait Renderable
     {
         $this->renderingContext = $context;
 
-        $relationships = $this->autoWhenIncluded(Values::mergeValues($this->toRelationships($context->request)));
-        $definitions = Definitions::for(static::class)->relationships;
+        $relationships = $this->autoWhenIncluded(
+            Values::mergeValues($this->revised($this->toRelationships($context->request), $context)),
+        );
+        $definitions = Definitions::for(static::class, $context->revision)->relationships;
         $model = $this->resource;
 
         foreach ($relationships as $key => $relationship) {
@@ -144,7 +147,7 @@ trait Renderable
         $this->renderingContext = $context;
 
         return $this->autoWhenHas(
-            $this->toResourceMeta($context->request) ?? [],
+            $this->revised($this->toResourceMeta($context->request) ?? [], $context),
             $context->configuration->autoWhenHas('resource-meta'),
         );
     }
@@ -159,8 +162,23 @@ trait Renderable
         $this->renderingContext = $context;
 
         return $this->autoWhenHas(
-            $this->toDocumentMeta($context->request) ?? [],
+            $this->revised($this->toDocumentMeta($context->request) ?? [], $context),
             $context->configuration->autoWhenHas('meta'),
         );
+    }
+
+    /**
+     * The members of a hook as the revision of the rendering sees them (`RevisedMembers`), before anything reads a name:
+     * the sparse fieldsets and the includes are written in the names of the revision. A resource declaring no revision
+     * gives its members as they are, whatever the revision; a revised one at the head only loses its fields `until()` a
+     * revision.
+     *
+     * @param iterable<array-key, mixed> $members
+     *
+     * @return iterable<array-key, mixed>
+     */
+    private function revised(iterable $members, JsonApiContext $context): iterable
+    {
+        return Definitions::isRevised(static::class) ? RevisedMembers::apply($members, $context->revision) : $members;
     }
 }

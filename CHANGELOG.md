@@ -39,6 +39,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `jsonapi:cache` writes the definition of every revision where the shape of a resource changes, keyed
   `class@Case` (`CompiledDefinitions::key()`), and prints the number of resources and definitions; a compiled file
   of 2.0 is still read.
+- A resource is rendered at the revision of its request: its attributes, resource meta and document meta take the
+  names and values of that revision, a field `until()` a revision is left out of the head, and sparse fieldsets are
+  read in the names of the revision. A resource declaring no revision renders as in 2.0, its members untouched.
 
 ## [2.0.0] — 2026-11-03
 

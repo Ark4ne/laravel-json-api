@@ -592,6 +592,11 @@ Acceptance criteria:
 
 Tests: the reference example (§1.3) end to end; `test_the_sparse_fieldset_of_an_old_client_uses_the_old_names`.
 
+Done: the fast path is asserted on the members themselves (a generator given back unread), not with a spy. Deviation
+from the shared scenario: `users` has no `#[JsonApiSince]`, otherwise its old names would be rendered for no client;
+the resource absent from old revisions is `tests/app/Revisions/MemberResource` (US 4.4). The invariant test
+(definition names = rendered names, per revision) is `AttributesTest::test_the_document_of_a_revision_has_the_names_of_its_definition`.
+
 #### US 4.2 — Relationships and included resources at a revision · L
 
 *As an older client, I want my old relationships, include paths and resource types, so that the same person keeps
