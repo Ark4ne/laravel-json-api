@@ -463,6 +463,9 @@ Acceptance criteria:
   boundary, the oldest revision ≥ `R` at which a declaration of the class changes the shape (`was(X)` and `until(X)` →
   `X`, `since(X)` → `previous(X)`, the same for `#[JsonApiSince]` / `#[JsonApiUntil]`), or the head. Cache key `class@boundary`.
 - **Fast path**: `R` newer than every boundary of the class → the head definition, in one comparison.
+- `Definitions::isRevised(string $class): bool` (`@internal`): whether a hook of the class declares a revisioned
+  member. Needed by the rendering of the **head** too: a field `until(X)` is written in the head hook and must be
+  removed for head clients (spike M0, §5.1).
 - `DefinitionCompiler::compile($class, ?Revision $revision)` runs the hooks on the probe **once**, then applies
   `RevisedMembers` per bucket (`src/Compilation/DefinitionCompiler.php:171-214`).
 - `Definitions::loadConstraints($class, $revision)`: the constraints are keyed by the names of the revision
@@ -557,8 +560,11 @@ Acceptance criteria:
   `src/Rendering/ValueResolver.php:66-71`); `fields[users]=display_name` renders nothing for `Labels`.
 - A renamed attribute reads the head attribute (§1.4).
 - A field `until(Labels)` is rendered for `Initial` and `Labels`, never for the head.
-- **Fast path**: for the head and for a revision newer than every boundary, `RevisedMembers` does not
-  run and no `FieldHistory` is read (asserted with a spy).
+- **Fast path**: for a class without revisioned member (`Definitions::isRevised()`), `RevisedMembers` does not run,
+  whatever the revision (asserted with a spy). For a revisioned class at the head, it only removes the `until()`
+  fields (spike M0, §5.1).
+- `RevisedMembers` copies a `MergeValue` keeping its class: a `MergeWhenValue` (`mergeWhen()`) stays hidden from the
+  definition (spike M0, §5.1).
 
 Tests: the reference example (§1.3) end to end; `test_the_sparse_fieldset_of_an_old_client_uses_the_old_names`.
 
@@ -753,6 +759,10 @@ Acceptance criteria:
 
 #### US 7.2 — Guide · M
 
+The reference of the skill (`reference.md`, checked by `tests/Feature/Skill/SkillTest.php`) names every new helper
+and modifier (`was()`, `until()`, `since()`, `revision()`, `#[JsonApiSince]`, `#[JsonApiUntil]`); the suite fails
+otherwise (spike M0).
+
 README section and `laravel-json-api-docs` page:
 
 1. Declaring the enum, setting the revision in a middleware.
@@ -814,6 +824,35 @@ EV8 ── other repository, after US3.3
 
 Estimate: EV1 3 d · EV2 7 d · EV3 10 d · EV4 11 d · EV5 3 d · EV6 4 d (+3 d for US 6.3) · EV7 4 d → about **42 days**
 without US 6.3 and EV8.
+
+### 5.1 Spike M0 — results
+
+Branch `spike/versioned-resources` (commit `0dc96f2`, throwaway, never merged): `was()` / `until()` on descriptors,
+`FieldHistory`, `RevisedMembers`, the revision in `JsonApiContext`, definitions and load plans per revision (one per
+case, no buckets), wired into `DefinitionCompiler`, `Renderable` and `LoadPlanner`. Scenario:
+`tests/Feature/Revisions/SpikeTest.php`, on the models of `tests/app`.
+
+| Point | Result |
+| --- | --- |
+| Rename + sparse fieldset | ✅ `fields[users]=mail,label` renders the old names; `fields[users]=display_name` renders nothing for `Labels`. A field renamed without source (`email` → `mail`) reads the head attribute. |
+| Old nested include path | ✅ `include=writer,comments.commenter` rendered and loaded in batch: **same number of queries** as the head `include=author,comments.user`. |
+| One user, two old types | ✅ `writers:1` and `commenters:1` in `included`, linkage and `included` agree. **No change** to `RelationshipsStage`, `IncludedRegistry` or `renderType()`. |
+| Larastan on a deleted case | ✅ `classConstant.notFound` reported in an attribute argument (`#[ProbeUntil(ApiRevision::Deleted)]`) and in code. |
+| Definition = rendered shape | ✅ `Definitions::for($class, $revision)` gives the names rendered (`fields()`, relationships). |
+| Existing suite | ✅ unchanged, except `SkillTest` (the skill reference must name the new helpers → US 7.2); phpat green. |
+
+Findings carried into the stories:
+
+1. **The head runs `RevisedMembers` too**, for a class with `until()` fields: they are written in the head hook and
+   must be removed for head clients. The fast path is per class (`Definitions::isRevised()`), not per revision
+   (US 3.2, US 4.1).
+2. **`MergeValue` must be copied keeping its class**: rebuilding a plain `MergeValue` made the members of
+   `mergeWhen()` visible in the definition (caught by an existing test) (US 3.1, US 4.1).
+3. `readingFrom(string $source)` on `Value` / `Relation`, which sets the source only when the descriptor has none, is
+   enough for §1.4: the name-only `was()`, the `value:` without source and the relation of a `was()` relation all
+   read the head source (US 2.5).
+4. The sizes of EV3 and EV4 hold: the spike's wiring is ~60 lines across the compiler, the bridges and the planner;
+   the work left is the buckets, the diagnostics, structs, guards, helpers and the tooling.
 
 ---
 
