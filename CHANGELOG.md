@@ -94,6 +94,8 @@ change.
   $revision)` returns the definition of a revision compiled from the current code, for snapshot tests.
 - README "Versioned resources" and a "Revisions" section in the skill reference and its rules; a tested recipe
   "Versioned resources" in the skill.
+- README: a list of the features, API revisions among them, at the top; the comparison with Laravel's native JSON:API
+  moves to the end, as "Alongside Laravel's native JSON:API"; the CI badge reads the `ci.yml` workflow.
 - At a revision, the links of `#[JsonApiRoutes]` follow the relationships of that revision and their names; the
   default attributes leave out the foreign keys of the relationships of that revision; a polymorphic relationship
   plans only the resources of its map existing at it; `whenInFields()` / `whenInIncludes()` translate the first

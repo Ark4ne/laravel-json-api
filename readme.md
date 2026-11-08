@@ -3,26 +3,17 @@ JsonApi - Laravel Resource
 
 A Lightweight [{JSON:API}](https://jsonapi.org/) Resource for Laravel.
 
-![example branch parameter](https://github.com/Ark4ne/laravel-json-api/actions/workflows/php.yml/badge.svg)
+[![CI](https://github.com/Ark4ne/laravel-json-api/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/Ark4ne/laravel-json-api/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/Ark4ne/laravel-json-api/branch/master/graph/badge.svg?token=F7XBLAGTDP)](https://codecov.io/gh/Ark4ne/laravel-json-api)
 
-# Why this package rather than Laravel's native JSON:API?
-Laravel (12.46+, 13) ships `Illuminate\Http\Resources\JsonApi\JsonApiResource`. This package stays independent of it
-and interoperates with it: a relationship may relate native resources ([Native resources](#native-resources)), and a
-native `JsonApiRequest` is read like any request.
-
-|                                                                   | Laravel's native        | This package                                      |
-|-------------------------------------------------------------------|-------------------------|---------------------------------------------------|
-| `id` as a string, `"data": null`, primary data out of `included`  | ✅                       | ✅                                                 |
-| Attributes resolved after the sparse fieldset                     | ✅                       | ✅                                                 |
-| Relationships that are not included                               | left out                | linkage loaded in batch, or left out (`relationship.linkage`) |
-| Typed values: nullable, date format, decimal precision, enum      | ❌                       | ✅                                                 |
-| Definition of a resource, validation of `include` and `fields`    | ❌                       | ✅ (`JsonApiFormRequest`, `jsonapi:check`)         |
-| Links and meta per relationship, `whenIncluded()`, `can()`, filters | ❌                     | ✅                                                 |
-| Resources that are not Eloquent models                            | ❌ (exception)           | ✅                                                 |
-| Public contract for the tooling (OpenAPI)                         | ❌                       | ✅                                                 |
-| Error documents, content negotiation                              | ❌                       | ✅                                                 |
-| Versioned resources (dated revisions, Stripe-style)               | ❌                       | ✅ ([Versioned resources](#versioned-resources))   |
+- Concise resources: `toAttributes()`, `toRelationships()`, typed values (`$this->string()`, `$this->date()`,
+  `$this->one()`…), conditions, links and meta.
+- Sparse fieldsets, includes eager-loaded in batch, and their validation (`JsonApiFormRequest`).
+- **API revisions**: pin each client on a dated revision of your API (`Api-Version: 2026-12-01`), Stripe-style. The
+  code keeps the latest shape of each resource, the older ones are declared on the fields that changed
+  ([Versioned resources](#versioned-resources)).
+- Error documents, content negotiation, and a public definition of every resource for the tooling (`jsonapi:check`,
+  OpenAPI).
 
 # Installation
 ```shell
@@ -1167,6 +1158,9 @@ Output:
 
 # Versioned resources
 
+An **API revision** is a dated version of the public shape of your API, as at Stripe: each change that would break a
+client ships in a new revision, and each client stays on the revision it was built against until it moves on.
+
 Pin each client on a dated revision of your API (`Api-Version: 2026-12-01`) and keep only the latest shape of every
 resource in the code, the **head**. The older shapes are declared on the fields that changed; the package renders them,
 validates `include` and `fields` in their names, eager-loads their relationships and describes them
@@ -1370,3 +1364,22 @@ public function test_the_contract_of_every_revision_is_frozen(): void
 ```
 
 A change of an old revision then shows in the diff of the review; a change of the head only touches the head.
+
+# Alongside Laravel's native JSON:API
+Laravel (12.46+, 13) ships `Illuminate\Http\Resources\JsonApi\JsonApiResource`, a lean implementation of the
+specification that suits many APIs. This package stays independent of it and interoperates with it: a relationship
+may relate native resources ([Native resources](#native-resources)), and a native `JsonApiRequest` is read like any
+request. What each one covers:
+
+|                                                                   | Laravel's native        | This package                                      |
+|-------------------------------------------------------------------|-------------------------|---------------------------------------------------|
+| `id` as a string, `"data": null`, primary data out of `included`  | ✅                       | ✅                                                 |
+| Attributes resolved after the sparse fieldset                     | ✅                       | ✅                                                 |
+| Relationships that are not included                               | left out                | linkage loaded in batch, or left out (`relationship.linkage`) |
+| Typed values: nullable, date format, decimal precision, enum      | —                       | ✅                                                 |
+| Definition of a resource, validation of `include` and `fields`    | —                       | ✅ (`JsonApiFormRequest`, `jsonapi:check`)         |
+| Links and meta per relationship, `whenIncluded()`, `can()`, filters | —                      | ✅                                                 |
+| Resources that are not Eloquent models                            | Eloquent models only    | ✅                                                 |
+| Public contract for the tooling (OpenAPI)                         | —                       | ✅                                                 |
+| Error documents, content negotiation                              | —                       | ✅                                                 |
+| API revisions (versioned resources, Stripe-style)                 | —                       | ✅ ([Versioned resources](#versioned-resources))   |
