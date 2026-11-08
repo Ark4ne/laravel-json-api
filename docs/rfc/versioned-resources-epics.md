@@ -879,6 +879,10 @@ Done: README "Versioned resources" (the seven points); the skill: a "Revisions" 
   `DefinitionSource` gains a method (see §6, Q4).
 - Benchmark reference updated if the head moved within noise.
 
+Done: `CHANGELOG.md` `[2.1.0]`; nothing in `UPGRADE.md` (`DefinitionSource` gained no method, Q4). Benchmark
+reference ×0.495 → ×0.518 (`current / native`, PHP 8.5, 1000 posts), within the 10% tolerance of the gate. Not
+tagged: the tag and the release are the maintainer's.
+
 ---
 
 ### EV8 — `laravel-openapi-generator` (separate repository)
