@@ -749,6 +749,9 @@ Acceptance criteria:
 
 Tests: `test_an_old_client_may_restrict_an_old_type`, `test_an_old_client_may_not_restrict_a_new_type`.
 
+Done: from `Revisions\PostResource` at `Labels`, the types are `posts`, `writers`, `comments` and `commenters`;
+`fields[users]=label` is checked from `Revisions\UserResource`, the only one reaching `users` at `Labels`.
+
 #### US 5.3 — `JsonApiFormRequest` at a revision · S
 
 Acceptance criteria:

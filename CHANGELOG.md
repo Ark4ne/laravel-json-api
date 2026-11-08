@@ -63,6 +63,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   and `--cold` an old revision against the head from the compiled file: reported, not gated.
 - `new Includes($resource, $maxDepth, $revision)` validates the include paths of a client against the relationships of
   its revision, by their names at it, at every level; `Includes::revision()` returns it, for the tools.
+- `new Fields($resource, $revision)` validates the sparse fieldsets of a client against the types reachable at its
+  revision and the names of their fields at it; `Fields::revision()` returns it, for the tools.
 
 ## [2.0.0] — 2026-11-03
 

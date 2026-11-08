@@ -7,6 +7,7 @@ namespace Ark4ne\JsonApi\Http\Rules;
 use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Context\SparseFieldsets;
 use Ark4ne\JsonApi\Definition\RelatedResource;
+use Ark4ne\JsonApi\Definition\Revision;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Http\Resources\JsonApi\JsonApiRequest;
@@ -17,7 +18,8 @@ use Throwable;
  * of a type are its attributes, its struct members by dotted path, and its relationships. The fields of a native
  * resource (`RelationshipDefinition::$native`) are unknown: those of its type are accepted as they are. Its type is read
  * without model (`toType()`, otherwise the default of Laravel); when it cannot be, a type no definition has is
- * accepted as is.
+ * accepted as is. Given a revision, every definition is the one of that revision: a client on it restricts the types
+ * it is rendered, by the names of their fields at it.
  *
  * Its messages are the translations `jsonapi::validation.fields.*` (`vendor:publish --tag=jsonapi-lang`).
  *
@@ -27,9 +29,11 @@ final class Fields implements ValidationRule
 {
     /**
      * @param class-string<T> $resource
+     * @param Revision|null $revision The revision of the client (`JsonApiContext::revisionOf()`); the head when `null`
      */
     public function __construct(
         private readonly string $resource,
+        private readonly ?Revision $revision = null,
     ) {}
 
     /**
@@ -41,6 +45,15 @@ final class Fields implements ValidationRule
     public function resource(): string
     {
         return $this->resource;
+    }
+
+    /**
+     * The revision the values are validated against, `null` for the head: public contract, for the tools that
+     * document the rule.
+     */
+    public function revision(): ?Revision
+    {
+        return $this->revision;
     }
 
     public function validate(string $attribute, mixed $value, Closure $fail): void
@@ -105,7 +118,7 @@ final class Fields implements ValidationRule
      */
     private function fieldsByType(string $class, array $resources = [], bool &$untyped = false): array
     {
-        $definition = Definitions::for(RelatedResource::resolve($class));
+        $definition = Definitions::for(RelatedResource::resolve($class), $this->revision);
 
         if (array_key_exists($definition->type, $resources)) {
             return $resources;
