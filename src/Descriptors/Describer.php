@@ -26,6 +26,62 @@ abstract class Describer
      */
     protected array $revisions = [];
 
+    /** The oldest revision the field exists at (`since()`), `null` for every revision. */
+    protected ?Revision $since = null;
+
+    /** The newest revision the field exists at (`until()`), `null` for the head. */
+    protected ?Revision $until = null;
+
+    /**
+     * @var list<'since'|'until'> The bounds declared more than once, reported by the compilation
+     */
+    protected array $redeclaredBounds = [];
+
+    /**
+     * The field exists from `$revision` included; left out for the older revisions. Optional for an addition, required
+     * when the field takes the name of an older field of the other kind.
+     */
+    public function since(Revision $revision): static
+    {
+        return $this->withBound('since', $revision);
+    }
+
+    /**
+     * The field exists up to `$revision` included; left out for the newer revisions and for the head.
+     */
+    public function until(Revision $revision): static
+    {
+        return $this->withBound('until', $revision);
+    }
+
+    /**
+     * @internal Read by the selection of the shape of a field for a revision.
+     */
+    public function sinceRevision(): ?Revision
+    {
+        return $this->since;
+    }
+
+    /**
+     * @internal Read by the selection of the shape of a field for a revision.
+     */
+    public function untilRevision(): ?Revision
+    {
+        return $this->until;
+    }
+
+    /**
+     * The bounds (`since()`, `until()`) declared more than once on the field: the last call wins.
+     *
+     * @return list<'since'|'until'>
+     *
+     * @internal Read by the compilation, which reports them.
+     */
+    public function redeclaredBounds(): array
+    {
+        return $this->redeclaredBounds;
+    }
+
     /**
      * What the field was up to each revision (`was()`), in the order of the calls: the order of the revisions decides
      * which one applies.
@@ -37,6 +93,19 @@ abstract class Describer
     public function revisions(): array
     {
         return $this->revisions;
+    }
+
+    /**
+     * @param 'since'|'until' $bound
+     */
+    private function withBound(string $bound, Revision $revision): static
+    {
+        $previous = $bound === 'since' ? $this->since : $this->until;
+        $clone = $this->with($bound, $revision);
+
+        return $previous === null || in_array($bound, $this->redeclaredBounds, true)
+            ? $clone
+            : $clone->with('redeclaredBounds', [...$this->redeclaredBounds, $bound]);
     }
 
     /**

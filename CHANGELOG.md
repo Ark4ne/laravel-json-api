@@ -20,6 +20,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `->was($revision, name: …, value: …)` on every value descriptor (structs and their members included): what the
   attribute was up to a revision, included; stored as `Descriptors\FieldRevision`, without effect on the head. The same
   on every relation descriptor: its old name, its old relation (related resource, cardinality, loads of its own).
+- `->since($revision)` and `->until($revision)` on every descriptor: the field exists from, or up to, a revision
+  (inclusive).
 
 ## [2.0.0] — 2026-11-03
 

@@ -92,4 +92,38 @@ final class RevisionsTest extends TestCase
             $wrapped->was(ApiRevision::Initial, name: 'writer')->revisions(),
         );
     }
+
+    public function test_until_and_since_are_stored_on_a_new_descriptor(): void
+    {
+        $head = new ValueString(null);
+        $bounded = $head->since(ApiRevision::Labels)->until(ApiRevision::UsersReplaceTeachers);
+
+        self::assertNull($head->sinceRevision());
+        self::assertNull($head->untilRevision());
+        self::assertSame(ApiRevision::Labels, $bounded->sinceRevision());
+        self::assertSame(ApiRevision::UsersReplaceTeachers, $bounded->untilRevision());
+    }
+
+    public function test_until_and_since_are_available_on_relations(): void
+    {
+        $relation = (new RelationOne(UserResource::class, null))->until(ApiRevision::Labels)->since(ApiRevision::Initial);
+
+        self::assertSame(ApiRevision::Labels, $relation->untilRevision());
+        self::assertSame(ApiRevision::Initial, $relation->sinceRevision());
+    }
+
+    public function test_a_bound_declared_twice_keeps_the_last_and_is_recorded(): void
+    {
+        $bounded = (new ValueString(null))->until(ApiRevision::Initial)->until(ApiRevision::Labels)->since(ApiRevision::Initial);
+
+        self::assertSame(ApiRevision::Labels, $bounded->untilRevision());
+        self::assertSame(['until'], $bounded->redeclaredBounds());
+    }
+
+    public function test_since_keeps_the_field_in_the_head(): void
+    {
+        $head = new ValueString('title');
+
+        self::assertEquals($head->definition('title'), $head->since(ApiRevision::Labels)->definition('title'));
+    }
 }
