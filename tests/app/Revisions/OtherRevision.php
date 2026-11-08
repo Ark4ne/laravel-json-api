@@ -12,9 +12,11 @@ use Ark4ne\JsonApi\Definition\Revision;
 enum OtherRevision implements Revision
 {
     case First;
+    /** Named as a case of `ApiRevision`: `jsonapi:check --revision=Labels` reads both. */
+    case Labels;
 
     public function description(): string
     {
-        return 'First';
+        return $this->name;
     }
 }

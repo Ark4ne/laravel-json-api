@@ -20,8 +20,11 @@ use Test\Unit\Compilation\Fixtures\FailingHookResource;
 use Test\Unit\Compilation\Fixtures\TypedResource;
 use Test\Unit\Compilation\References\BoundedReferencesResource;
 use Test\Unit\Compilation\References\ForgottenWasResource;
+use Test\Unit\Compilation\References\HeadSharedErrorResource;
 use Test\Unit\Compilation\References\InvalidAtRevisionResource;
+use Test\Unit\Compilation\References\OlderSharedErrorResource;
 use Test\Unit\Compilation\References\StaleHeadResource;
+use Test\Unit\Compilation\References\TwoEnumsReferencesResource;
 use Test\Unit\Laravel\Fixtures\FoundResource;
 use Test\Unit\Laravel\Fixtures\Nested\NestedResource;
 
@@ -249,10 +252,53 @@ final class DefinitionCommandsTest extends TestCase
             ->assertFailed();
     }
 
-    public function test_check_skips_a_resource_without_the_revision(): void
+    public function test_check_skips_a_resource_absent_from_the_revision(): void
     {
-        $this->command('jsonapi:check', ['resources' => [ForgottenWasResource::class, TypedResource::class], '--revision' => 'UsersReplaceTeachers'])
+        $this->command('jsonapi:check', ['resources' => [ForgottenWasResource::class, TeacherResource::class], '--revision' => 'UsersReplaceTeachers'])
             ->expectsOutputToContain('SKIPPED')
             ->assertSuccessful();
+    }
+
+    public function test_check_at_a_revision_reports_an_error_its_shape_shares_with_the_head(): void
+    {
+        $this->command('jsonapi:check', ['resources' => [HeadSharedErrorResource::class], '--revision' => 'Initial'])
+            ->expectsOutputToContain('invalid-member (author)')
+            ->assertFailed();
+    }
+
+    public function test_check_at_a_revision_reports_an_error_its_shape_shares_with_an_older_one(): void
+    {
+        $this->command('jsonapi:check', ['resources' => [OlderSharedErrorResource::class], '--revision' => 'Labels'])
+            ->expectsOutputToContain('invalid-member (writer)')
+            ->assertFailed();
+        $this->command('jsonapi:check', ['resources' => [OlderSharedErrorResource::class], '--revision' => 'UsersReplaceTeachers'])
+            ->assertSuccessful();
+    }
+
+    public function test_check_at_a_revision_checks_a_resource_declaring_none(): void
+    {
+        $status = Artisan::call('jsonapi:check', ['resources' => [ForgottenWasResource::class, FailingHookResource::class], '--revision' => 'UsersReplaceTeachers']);
+        $output = Artisan::output();
+
+        self::assertSame(Command::FAILURE, $status);
+        self::assertStringContainsString('hook-failure', $output);
+        self::assertStringNotContainsString('SKIPPED', $output);
+    }
+
+    public function test_check_at_a_revision_reads_every_enum_having_a_case_of_that_name(): void
+    {
+        $this->command('jsonapi:check', ['resources' => [TwoEnumsReferencesResource::class], '--revision' => 'Labels'])
+            ->expectsOutputToContain('does not exist at [Labels]')
+            ->assertFailed();
+    }
+
+    #[DefineEnvironment('usesRevisionFixtures')]
+    public function test_check_compiles_each_resource_once(): void
+    {
+        ProfileResource::$reads = 0;
+
+        $this->command('jsonapi:check', ['resources' => [ProfileResource::class]])->assertSuccessful();
+
+        self::assertSame(1, ProfileResource::$reads);
     }
 }

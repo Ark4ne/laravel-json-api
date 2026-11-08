@@ -791,12 +791,20 @@ Tests: Feature `DefinitionCommandsTest` (`test_check_reports_a_relationship_to_a
 
 Done: the head already carries the diagnostics of every bucket (US 3.4); they now name their bucket in
 `Diagnostic::$revision` (the case name: `Support` cannot depend on `Definition`), printed as
-`[error] [Labels] code (subject): message`. The cross-resource check is `Compilation\RevisionReferences`, run by the
+`[error] [Labels] code (subject): message`. The cross-resource check is `Compilation\RevisionAudit`, run by the
 command rather than by the compiler (it needs the other resources): one diagnostic per relationship and related
 resource, listing the revisions it fails at, so that a forgotten `was()` does not print one line per case. The
 revisions checked are the head and every case of the enums the resource and its related resources declare with.
 `--revision` keeps the diagnostics of the bucket of that revision; a resource without that revision is `SKIPPED`, and
 no resource having it fails.
+
+Review: the diagnostics at a revision are not filtered on `Diagnostic::$revision`, which names only the oldest
+revision showing a finding (the errors a shape shares with the head or with older shapes were lost): they are those of
+the definition of its bucket, built with every check of its shape and tagged with it, plus the declaration checks of
+the head (its `revision-*` diagnostics, the checks of a shape running on the boundaries only). `RevisionAudit`
+(formerly `RevisionReferences`) holds the shapes compiled once, `diagnosticsAt()`, `shapeAt()` and the references, for
+the command and the assertions. `--revision` reads every case of that name a resource may be rendered at (that of its
+own enum first), and checks a resource declaring no revision at its head shape instead of skipping it.
 
 #### US 6.2 — `ResourceAssertions` at a revision · S
 

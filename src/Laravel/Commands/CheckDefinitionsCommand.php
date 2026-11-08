@@ -5,10 +5,9 @@ declare(strict_types=1);
 namespace Ark4ne\JsonApi\Laravel\Commands;
 
 use Ark4ne\JsonApi\Compilation\DefinitionCompiler;
-use Ark4ne\JsonApi\Compilation\RevisionReferences;
+use Ark4ne\JsonApi\Compilation\RevisionAudit;
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Definition\DefinitionSource;
-use Ark4ne\JsonApi\Definition\ResourceDefinition;
 use Ark4ne\JsonApi\Definition\Revision;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Laravel\ResourceFinder;
@@ -20,12 +19,14 @@ use Illuminate\Routing\Router;
 /**
  * Compiles the definitions of the resources at every revision and prints their diagnostics, grouped by resource, with
  * the revision whose shape shows them; then checks that their relationships reach, at every revision, resources
- * existing at it (`revision-unavailable-resource`, `RevisionReferences`).
+ * existing at it (`revision-unavailable-resource`, `RevisionAudit`).
  *
  * Fails when a definition cannot be compiled or has an error, or when the `self` route of `#[JsonApiRoutes]` does not
  * exist; with `--strict`, also on the first warning. `--revision=Labels` (the name of a case) restricts the check to
- * the shape of that revision and to its references; a resource that does not know it, or does not exist at it, is
- * skipped.
+ * the shape of that revision, its declarations and its references: every case of that name the resource may be
+ * rendered at; a resource declaring no revision is checked at its head shape, the one it has at every revision. A
+ * resource absent from that revision, or declaring its revisions with an enum without that case, is skipped; no
+ * resource knowing the revision fails.
  */
 final class CheckDefinitionsCommand extends Command
 {
@@ -49,8 +50,7 @@ final class CheckDefinitionsCommand extends Command
         $strict = (bool) $this->option('strict');
         /** @var string|null $only */
         $only = $this->option('revision');
-        $compiler = new DefinitionCompiler($configuration);
-        $references = new RevisionReferences($compiler);
+        $audit = new RevisionAudit(new DefinitionCompiler($configuration));
         $failed = false;
         $known = false;
 
@@ -60,30 +60,25 @@ final class CheckDefinitionsCommand extends Command
                     throw DefinitionException::notADefinitionSource($class);
                 }
 
-                $definition = $compiler->compile($class);
-                $diagnostics = $definition->diagnostics;
-                $at = null;
+                $definition = $audit->shapes($class)[0];
 
-                if ($only !== null) {
-                    $revision = self::find($references->revisions($class), $only);
-                    $boundary = $revision === null ? false : self::boundary($definition, $revision);
-                    if ($revision === null || $boundary === false) {
+                if ($only === null) {
+                    $diagnostics = [...$definition->diagnostics, ...$audit->check($class)];
+                } else {
+                    $revisions = self::named($audit, $class, $only);
+                    $known = $known || $revisions !== [];
+                    // Declaring no revision, it has its head shape at every one.
+                    $diagnostics = self::diagnosticsAt(
+                        $audit,
+                        $class,
+                        $revisions === [] && $audit->enum($class) === null ? [null] : $revisions,
+                    );
+                    if ($diagnostics === null) {
                         $this->components->twoColumnDetail($class, '<fg=gray;options=bold>SKIPPED</>');
 
                         continue;
                     }
-
-                    $known = true;
-                    $at = [$revision];
-                    // The diagnostics of the shape of that revision, which those of the declarations are read with
-                    // when it is the head shape.
-                    $diagnostics = array_values(array_filter(
-                        $diagnostics,
-                        static fn(Diagnostic $diagnostic): bool => $diagnostic->revision === $boundary,
-                    ));
                 }
-
-                array_push($diagnostics, ...$references->check($class, $at));
 
                 $self = $definition->routes?->self;
                 if ($self !== null && !$router->has($self)) {
@@ -131,31 +126,51 @@ final class CheckDefinitionsCommand extends Command
     }
 
     /**
-     * The name of the boundary whose shape the resource has at the revision (`null` for the head shape); `false` when
-     * it does not exist at it, or declares its revisions with another enum.
-     */
-    private static function boundary(ResourceDefinition $definition, Revision $revision): string|false|null
-    {
-        try {
-            return $definition->existsAt($revision) ? $definition->boundaryOf($revision)?->name : false;
-        } catch (DefinitionException) {
-            return false;
-        }
-    }
-
-    /**
-     * The revision named `$name` among those of a resource.
+     * The diagnostics of the resource at the revisions, and its references there, each once; `null` when it exists at
+     * none of them.
      *
+     * @param class-string<DefinitionSource> $class
      * @param list<Revision|null> $revisions
+     *
+     * @return list<Diagnostic>|null
      */
-    private static function find(array $revisions, string $name): ?Revision
+    private static function diagnosticsAt(RevisionAudit $audit, string $class, array $revisions): ?array
     {
+        $diagnostics = null;
         foreach ($revisions as $revision) {
-            if ($revision?->name === $name) {
-                return $revision;
+            $at = $audit->diagnosticsAt($class, $revision);
+            if ($at === null) {
+                continue;
+            }
+
+            $diagnostics ??= [];
+            foreach ([...$at, ...$audit->check($class, [$revision])] as $diagnostic) {
+                $diagnostics["{$diagnostic->code}|{$diagnostic->subject}|{$diagnostic->message}"] ??= $diagnostic;
             }
         }
 
-        return null;
+        return $diagnostics === null ? null : array_values($diagnostics);
+    }
+
+    /**
+     * The revisions named `$name` a resource is checked at: the case of the enum it declares with, otherwise those of
+     * every enum its related resources declare with (each is checked). None for a resource declaring revisions with an
+     * enum without that case, nor for a resource declaring none whose related resources know no such case.
+     *
+     * @param class-string<DefinitionSource> $class
+     *
+     * @return list<Revision>
+     */
+    private static function named(RevisionAudit $audit, string $class, string $name): array
+    {
+        $enum = $audit->enum($class);
+        $named = [];
+        foreach ($audit->revisions($class) as $revision) {
+            if ($revision !== null && $revision->name === $name && ($enum === null || $revision instanceof $enum)) {
+                $named[] = $revision;
+            }
+        }
+
+        return $named;
     }
 }

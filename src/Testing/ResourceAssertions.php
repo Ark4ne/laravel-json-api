@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Testing;
 
-use Ark4ne\JsonApi\Compilation\DefinitionCompiler;
 use Ark4ne\JsonApi\Compilation\Definitions;
-use Ark4ne\JsonApi\Compilation\RevisionReferences;
+use Ark4ne\JsonApi\Compilation\RevisionAudit;
 use Ark4ne\JsonApi\Definition\DefinitionSource;
 use Ark4ne\JsonApi\Definition\ResourceDefinition;
 use Ark4ne\JsonApi\Definition\Revision;
@@ -18,8 +17,8 @@ use PHPUnit\Framework\Assert;
 /**
  * Assertions for the test suites of applications: `ResourceAssertions::assertValid(PostResource::class)`.
  *
- * Every definition is compiled from the current code: a cached or compiled definition may be stale. Requires PHPUnit,
- * which the application already has in its development dependencies.
+ * Every definition is compiled from the current code, once per assertion: a cached or compiled definition may be
+ * stale. Requires PHPUnit, which the application already has in its development dependencies.
  */
 final class ResourceAssertions
 {
@@ -28,13 +27,24 @@ final class ResourceAssertions
      * The relationships must reach resources existing at the revision (`revision-unavailable-resource`).
      *
      * At the head (`null`), the diagnostics are those of the head definition, which carries those of every revision,
-     * as `jsonapi:check` prints them; at a revision, those of its shape only, and the resource must exist at it.
+     * as `jsonapi:check` prints them; at a revision, those of its shape and of the revision declarations
+     * (`RevisionAudit::diagnosticsAt()`), and the resource must exist at it.
      *
      * @param class-string<DefinitionSource> $class
      */
     public static function assertValid(string $class, bool $strict = false, ?Revision $revision = null): void
     {
-        self::assertDiagnostics($class, $strict, $revision === null ? [null] : [$revision], $revision !== null);
+        $audit = self::audit();
+
+        try {
+            $diagnostics = $revision === null
+                ? $audit->shapes($class)[0]->diagnostics
+                : $audit->diagnosticsAt($class, $revision) ?? throw self::notInRevision($class, $revision);
+        } catch (DefinitionException $e) {
+            Assert::fail($e->getMessage());
+        }
+
+        self::assertNoFailure($class, $strict, [...$diagnostics, ...$audit->check($class, [$revision])]);
     }
 
     /**
@@ -45,7 +55,15 @@ final class ResourceAssertions
      */
     public static function assertValidAtEveryRevision(string $class, bool $strict = false): void
     {
-        self::assertDiagnostics($class, $strict, null, false);
+        $audit = self::audit();
+
+        try {
+            $diagnostics = $audit->shapes($class)[0]->diagnostics;
+        } catch (DefinitionException $e) {
+            Assert::fail($e->getMessage());
+        }
+
+        self::assertNoFailure($class, $strict, [...$diagnostics, ...$audit->check($class)]);
     }
 
     /**
@@ -57,47 +75,17 @@ final class ResourceAssertions
     public static function definitionAt(string $class, Revision $revision): ResourceDefinition
     {
         try {
-            $definition = self::compiler()->compile($class, $revision);
-            if (!$definition->existsAt($revision)) {
-                throw DefinitionException::notInRevision($class, $revision::class . '::' . $revision->name);
-            }
+            return self::audit()->shapeAt($class, $revision) ?? throw self::notInRevision($class, $revision);
         } catch (DefinitionException $e) {
             Assert::fail($e->getMessage());
         }
-
-        return $definition;
     }
 
     /**
-     * @param class-string<DefinitionSource> $class
-     * @param list<Revision|null>|null $revisions The revisions whose references are checked, every one when `null`
-     * @param bool $shape Whether to keep only the diagnostics of the shape of the single revision given
+     * @param list<Diagnostic> $diagnostics
      */
-    private static function assertDiagnostics(string $class, bool $strict, ?array $revisions, bool $shape): void
+    private static function assertNoFailure(string $class, bool $strict, array $diagnostics): void
     {
-        $compiler = self::compiler();
-
-        try {
-            $definition = $compiler->compile($class);
-            $diagnostics = $definition->diagnostics;
-
-            $revision = $revisions[0] ?? null;
-            if ($shape && $revision !== null) {
-                if (!$definition->existsAt($revision)) {
-                    throw DefinitionException::notInRevision($class, $revision::class . '::' . $revision->name);
-                }
-
-                $boundary = $definition->boundaryOf($revision)?->name;
-                $diagnostics = array_filter(
-                    $diagnostics,
-                    static fn(Diagnostic $diagnostic): bool => $diagnostic->revision === $boundary,
-                );
-            }
-        } catch (DefinitionException $e) {
-            Assert::fail($e->getMessage());
-        }
-
-        $diagnostics = [...$diagnostics, ...(new RevisionReferences($compiler))->check($class, $revisions)];
         $failures = array_filter(
             $diagnostics,
             static fn(Diagnostic $diagnostic): bool => $diagnostic->level === DiagnosticLevel::Error
@@ -114,8 +102,13 @@ final class ResourceAssertions
         );
     }
 
-    private static function compiler(): DefinitionCompiler
+    private static function notInRevision(string $class, Revision $revision): DefinitionException
     {
-        return new DefinitionCompiler(Definitions::configuration());
+        return DefinitionException::notInRevision($class, $revision::class . '::' . $revision->name);
+    }
+
+    private static function audit(): RevisionAudit
+    {
+        return new RevisionAudit(Definitions::compiler());
     }
 }

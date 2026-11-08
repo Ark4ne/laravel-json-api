@@ -18,7 +18,9 @@ use Test\Unit\Compilation\Fixtures\FailingHookResource;
 use Test\Unit\Compilation\Fixtures\TypedResource;
 use Test\Unit\Compilation\References\BoundedReferencesResource;
 use Test\Unit\Compilation\References\ForgottenWasResource;
+use Test\Unit\Compilation\References\HeadSharedErrorResource;
 use Test\Unit\Compilation\References\InvalidAtRevisionResource;
+use Test\Unit\Compilation\References\OlderSharedErrorResource;
 
 final class ResourceAssertionsTest extends TestCase
 {
@@ -127,5 +129,32 @@ final class ResourceAssertionsTest extends TestCase
         $this->expectExceptionMessage(MemberResource::class);
 
         ResourceAssertions::definitionAt(MemberResource::class, ApiRevision::Labels);
+    }
+
+    public function test_a_revision_is_asserted_with_the_errors_its_shape_shares_with_the_head(): void
+    {
+        $this->expectException(AssertionFailedError::class);
+        $this->expectExceptionMessage('invalid-member (author)');
+
+        ResourceAssertions::assertValid(HeadSharedErrorResource::class, revision: ApiRevision::Initial);
+    }
+
+    public function test_a_revision_is_asserted_with_the_errors_its_shape_shares_with_an_older_one(): void
+    {
+        ResourceAssertions::assertValid(OlderSharedErrorResource::class, revision: ApiRevision::UsersReplaceTeachers);
+
+        $this->expectException(AssertionFailedError::class);
+        $this->expectExceptionMessage('invalid-member (writer)');
+
+        ResourceAssertions::assertValid(OlderSharedErrorResource::class, revision: ApiRevision::Labels);
+    }
+
+    public function test_a_resource_is_compiled_once_by_an_assertion(): void
+    {
+        ProfileResource::$reads = 0;
+
+        ResourceAssertions::assertValidAtEveryRevision(ProfileResource::class);
+
+        self::assertSame(1, ProfileResource::$reads);
     }
 }

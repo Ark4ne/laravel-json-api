@@ -86,7 +86,7 @@ final readonly class DefinitionCompiler
     /** The revisions of one resource are cases of several enums. */
     public const REVISION_MIXED_ENUMS = 'revision-mixed-enums';
 
-    /** A relationship of a resource existing at a revision reaches a resource absent from it (`RevisionReferences`). */
+    /** A relationship of a resource existing at a revision reaches a resource absent from it (`RevisionAudit`). */
     public const REVISION_UNAVAILABLE_RESOURCE = 'revision-unavailable-resource';
 
     /** The names JSON:API reserves for the resource identification. */
@@ -152,18 +152,21 @@ final readonly class DefinitionCompiler
         }
         foreach ($boundaries as $boundary) {
             $revised = $this->build($class, $hooks, $lifetime, $boundaries, $boundary, head: $names);
+            // Each with the revision whose shape shows it.
+            $revised = $revised->diagnostics(...array_map(static fn(Diagnostic $diagnostic): Diagnostic => new Diagnostic(
+                $diagnostic->level,
+                $diagnostic->code,
+                $diagnostic->message,
+                $diagnostic->subject,
+                $boundary->name,
+            ), $revised->diagnostics));
             $revisions[] = $revised;
-            // What only a revision shows is reported on the head too, which the checks read, with that revision.
+            // What only a revision shows is reported on the head too, which the checks read, with the oldest revision
+            // showing it.
             foreach ($revised->diagnostics as $diagnostic) {
                 $key = "{$diagnostic->code}|{$diagnostic->subject}|{$diagnostic->message}";
-                if (!isset($known[$key]) && !isset($diagnostics[$key])) {
-                    $diagnostics[$key] = new Diagnostic(
-                        $diagnostic->level,
-                        $diagnostic->code,
-                        $diagnostic->message,
-                        $diagnostic->subject,
-                        $boundary->name,
-                    );
+                if (!isset($known[$key])) {
+                    $diagnostics[$key] ??= $diagnostic;
                 }
             }
         }

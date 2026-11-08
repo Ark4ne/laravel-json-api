@@ -71,12 +71,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   relationship whose related resources all are absent from the revision may not be included, nor their types
   restricted; a resource validated at a revision it is absent from throws `RenderingException::notInRevision()`, as
   its rendering. Built by hand, they validate against the head unless given the revision of the request.
-- `jsonapi:check` checks every revision: the diagnostics only the shape of a revision shows are printed with it
-  (`[error] [Labels] invalid-member (author): …`, `Diagnostic::$revision`, an optional key of `__set_state()`, and
-  `Diagnostic::describe()`); they no longer carry `At the revision [X]:` in their message. It also checks the
-  references between resources (`Compilation\RevisionReferences`): a relationship reaching, at a revision, a resource
-  absent from it is a `revision-unavailable-resource` error (`DefinitionCompiler::REVISION_UNAVAILABLE_RESOURCE`).
-  `--revision=Labels` restricts the check to one revision; a resource that does not know it is skipped.
+- `jsonapi:check` checks every revision: the diagnostics of the definition of a revision name it, and those only a
+  revision shows are printed with the oldest one showing them (`[error] [Labels] invalid-member (author): …`,
+  `Diagnostic::$revision`, an optional key of `__set_state()`, and `Diagnostic::describe()`); they no longer carry
+  `At the revision [X]:` in their message. It also checks the references between resources: a relationship reaching,
+  at a revision, a resource absent from it is a `revision-unavailable-resource` error
+  (`DefinitionCompiler::REVISION_UNAVAILABLE_RESOURCE`). `--revision=Labels` restricts the check to the shape of that
+  revision (the errors it shares with the head or with other revisions included), its declarations and its
+  references, at every case of that name the resource may be rendered at; a resource declaring no revision is checked
+  at its head shape, one absent from the revision is skipped. Each resource is compiled once.
+- `Compilation\RevisionAudit`: the shapes of a resource compiled once, its diagnostics at a revision
+  (`diagnosticsAt()`), its shape there (`shapeAt()`) and its references (`check()`), read by `jsonapi:check` and
+  `ResourceAssertions`. `Definitions::compiler()` is public (internal).
 - `ResourceAssertions::assertValid($class, $strict, $revision)` asserts the shape of a revision and its references
   there (the head by default, with the diagnostics of every revision and the references at the head);
   `assertValidAtEveryRevision($class, $strict)` asserts the references at every revision; `definitionAt($class,

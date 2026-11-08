@@ -275,7 +275,12 @@ final class Definitions
         return self::$definitions[$class];
     }
 
-    private static function compiler(): DefinitionCompiler
+    /**
+     * The compiler of the configured definitions: a new one, which caches nothing.
+     *
+     * @internal For the tools of the package (`ResourceAssertions`).
+     */
+    public static function compiler(): DefinitionCompiler
     {
         return new DefinitionCompiler(self::configuration());
     }
