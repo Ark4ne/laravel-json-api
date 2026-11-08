@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Descriptors;
 
+use Ark4ne\JsonApi\Definition\Lifetime;
 use Ark4ne\JsonApi\Definition\Revision;
 use Ark4ne\JsonApi\Definition\RevisionOrder;
 use Closure;
@@ -25,6 +26,11 @@ final readonly class FieldHistory
      * replaces it entirely. The model has not changed: a descriptor without source of its own reads the head source
      * (its attribute or relation, otherwise the head name); a head read by a closure gives none (`null` source).
      *
+     * The name returned is the key the field is rendered under; the descriptor is always run with the head name as
+     * `$attribute` (model side, always the head): its conditions (`whenHas()`, `whenNotNull()`, `whenLoaded()`…) read
+     * the model as the head does. Two `was()` with the same revision: the first call wins, and the compilation reports
+     * it (`revision-duplicate`).
+     *
      * @template T
      *
      * @param Describer<T> $head
@@ -35,12 +41,7 @@ final readonly class FieldHistory
      */
     public static function at(Describer $head, string $headName, ?Revision $requested): ?array
     {
-        $since = $head->sinceRevision();
-        $until = $head->untilRevision();
-        if (
-            ($since !== null && !RevisionOrder::atLeast($requested, $since))
-            || ($until !== null && !RevisionOrder::atMost($requested, $until))
-        ) {
+        if (!(new Lifetime($head->sinceRevision(), $head->untilRevision()))->covers($requested)) {
             return null;
         }
 

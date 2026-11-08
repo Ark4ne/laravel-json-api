@@ -128,6 +128,18 @@ abstract class Relation extends Describer implements DescribesRelationship
     }
 
     /**
+     * The relation a descriptor reads: the one it names, otherwise `$attribute`.
+     *
+     * @param Describer<mixed> $describer
+     */
+    private static function sourceOf(Describer $describer, string $attribute): string
+    {
+        $relation = $describer->retriever();
+
+        return is_string($relation) ? $relation : $attribute;
+    }
+
+    /**
      * @internal Used by the selection of the shape of a field for a revision.
      */
     public function readingFrom(string $source): static
@@ -305,8 +317,13 @@ abstract class Relation extends Describer implements DescribesRelationship
     {
         $loaded = $this->linkage === Linkage::Included ? $this : $this->linkage(Linkage::Loaded);
 
-        return $loaded->when(function (Request $request, mixed $model, string $attribute) use ($relation): bool {
-            $relation ??= is_string($this->relation) ? $this->relation : $attribute;
+        return $loaded->withRule(static function (
+            Request $request,
+            mixed $model,
+            string $attribute,
+            Describer $describer,
+        ) use ($relation): bool {
+            $relation ??= self::sourceOf($describer, $attribute);
 
             return $model instanceof Model
                 ? $model->relationLoaded($relation)
@@ -323,8 +340,13 @@ abstract class Relation extends Describer implements DescribesRelationship
      */
     public function whenPivotLoaded(string $table, ?string $accessor = null): static
     {
-        return $this->when(function (Request $request, mixed $model, string $attribute) use ($table, $accessor): bool {
-            $accessor ??= is_string($this->relation) ? $this->relation : $attribute;
+        return $this->withRule(static function (
+            Request $request,
+            mixed $model,
+            string $attribute,
+            Describer $describer,
+        ) use ($table, $accessor): bool {
+            $accessor ??= self::sourceOf($describer, $attribute);
             // A pivot is a relation of an Eloquent model, which hasAttribute() does not see.
             $pivot = match (true) {
                 $model instanceof Model => $model->getAttribute($accessor),

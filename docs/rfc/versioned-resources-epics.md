@@ -427,6 +427,10 @@ Acceptance criteria:
   a closure plus a `value:` without source → `null` source, reported by US 3.4.
 - `name:` alone keeps the head descriptor; the head name stays its source.
 - The **reference example** of §1.3 is a data-provider test, case by case.
+- Done: the descriptor returned is always **run with the head name as `$attribute`** (model side → head, §1.4): the
+  renderer (US 3.1, 4.6) keys the field by the name returned, never passes it to the descriptor. Conditions receive
+  the descriptor they run on (4th argument of a rule), so that `whenNotNull()`, `whenFilled()`, `whenLoaded()` and
+  `whenPivotLoaded()` read the source of the copy `readingFrom()` returns.
 
 Tests: `test_the_head_is_used_when_no_was_applies`, `test_the_oldest_was_newer_than_the_request_applies`,
 `test_the_order_of_the_calls_does_not_matter`, `test_an_argument_left_out_takes_the_head_value`,

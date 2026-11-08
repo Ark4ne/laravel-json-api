@@ -12,6 +12,8 @@ use Ark4ne\JsonApi\Descriptors\Values\ValueInteger;
 use Ark4ne\JsonApi\Descriptors\Values\ValueString;
 use Ark4ne\JsonApi\Descriptors\Values\ValueStruct;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Test\app\Http\Resources\UserResource;
@@ -205,6 +207,35 @@ final class FieldHistoryTest extends TestCase
         $this->expectException(DefinitionException::class);
 
         FieldHistory::at((new ValueString(null))->was(ApiRevision::Labels, name: 'label'), 'display_name', OtherRevision::First);
+    }
+
+    public function test_the_conditions_of_a_renamed_field_read_the_head_source(): void
+    {
+        // Model side, always the head: the renderer gives the head name as `$attribute`.
+        $notNull = (new ValueString(null))->whenNotNull()->was(ApiRevision::Initial, name: 'label');
+        $has = (new ValueString(null))->whenHas()->was(ApiRevision::Initial, name: 'label');
+        $model = ['title' => 'Hello'];
+
+        self::assertSame('Hello', $this->at($notNull, 'title', ApiRevision::Initial)[1]->valueFor(new Request(), $model, 'title'));
+        self::assertSame('Hello', $this->at($has, 'title', ApiRevision::Initial)[1]->valueFor(new Request(), $model, 'title'));
+    }
+
+    public function test_the_conditions_of_a_value_without_source_read_the_head_source(): void
+    {
+        $head = (new ValueString('title'))->was(ApiRevision::Initial, name: 'label', value: (new ValueInteger(null))->whenNotNull());
+
+        $value = $this->at($head, 'display_name', ApiRevision::Initial)[1];
+
+        self::assertSame(5, $value->valueFor(new Request(), ['title' => 5], 'display_name'));
+    }
+
+    public function test_the_conditions_of_a_relation_without_source_read_the_head_relation(): void
+    {
+        $head = (new RelationOne(UserResource::class, 'user'))
+            ->was(ApiRevision::Initial, name: 'writer', value: (new RelationOne(TeacherResource::class, null))->whenLoaded());
+        $model = (new class extends Model {})->setRelation('user', null);
+
+        self::assertTrue($this->at($head, 'author', ApiRevision::Initial)[1]->passes(new Request(), $model, 'author'));
     }
 
     /**
