@@ -8,15 +8,29 @@ use Ark4ne\JsonApi\Support\Diagnostic;
 use Ark4ne\JsonApi\Support\Diagnostics;
 use LogicException;
 use Throwable;
+use UnitEnum;
 
 final class DefinitionException extends LogicException implements JsonApiException
 {
     /**
      * Two revisions of different enums were compared: an application declares its revisions with one enum.
+     *
+     * @param class-string<UnitEnum> $a
+     * @param class-string<UnitEnum> $b
      */
     public static function mixedRevisions(string $a, string $b): self
     {
         return new self("Revisions of two enums cannot be compared: [{$a}] and [{$b}]. Declare every revision with one enum.");
+    }
+
+    /**
+     * A revision is not one of the cases of its own enum.
+     *
+     * @param class-string<UnitEnum> $enum
+     */
+    public static function unknownRevision(string $enum, string $case): self
+    {
+        return new self("[{$enum}::{$case}] is not a case of [{$enum}]: a revision is a case of the enum declaring it.");
     }
 
     /**

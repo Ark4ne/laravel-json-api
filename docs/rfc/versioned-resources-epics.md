@@ -290,11 +290,12 @@ Acceptance criteria:
 - `Definition\Revision extends UnitEnum` with `description(): string`.
 - `Definition\RevisionOrder` (`final`, pure):
   - `compare(Revision $a, Revision $b): int`;
-  - `atMost(Revision $requested, Revision $bound): bool`;
+  - `atMost(?Revision $requested, Revision $bound): bool`, `atLeast(?Revision $requested, Revision $bound): bool` (the
+    head, `null`, is newer than every revision: the single place of that rule, `RequestedRevision` delegates to it);
   - `newest(Revision ...$revisions): ?Revision`, `oldest(…)`;
   - `previous(Revision $revision): ?Revision`.
-- Comparing cases of two enums throws `InvalidArgumentException` (package hierarchy, named constructor
-  `RevisionException::mixedRevisions()` or an addition to `DefinitionException`).
+- Comparing cases of two enums is a programming error: `DefinitionException::mixedRevisions()` (`LogicException`, as
+  every definition error).
 - A test enum `tests/app/Revisions/ApiRevision` (`Initial`, `Labels`, `UsersReplaceTeachers`).
 
 Tests: `test_revisions_are_ordered_by_the_declaration_of_their_cases`,

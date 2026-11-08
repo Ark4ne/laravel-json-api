@@ -10,7 +10,7 @@ use Ark4ne\JsonApi\Exceptions\DefinitionException;
  * The order of the revisions: the declaration order of the cases of their enum, the oldest first. The head (`null`)
  * is newer than every revision.
  */
-final class RevisionOrder
+final readonly class RevisionOrder
 {
     /**
      * Negative when `$a` is older than `$b`, zero when they are the same, positive when `$a` is newer.
@@ -53,14 +53,7 @@ final class RevisionOrder
      */
     public static function oldest(Revision ...$revisions): ?Revision
     {
-        $oldest = null;
-        foreach ($revisions as $revision) {
-            if ($oldest === null || self::compare($revision, $oldest) < 0) {
-                $oldest = $revision;
-            }
-        }
-
-        return $oldest;
+        return self::pick(-1, ...$revisions);
     }
 
     /**
@@ -70,14 +63,7 @@ final class RevisionOrder
      */
     public static function newest(Revision ...$revisions): ?Revision
     {
-        $newest = null;
-        foreach ($revisions as $revision) {
-            if ($newest === null || self::compare($revision, $newest) > 0) {
-                $newest = $revision;
-            }
-        }
-
-        return $newest;
+        return self::pick(1, ...$revisions);
     }
 
     /**
@@ -85,16 +71,47 @@ final class RevisionOrder
      */
     public static function previous(Revision $revision): ?Revision
     {
-        $previous = $revision::cases()[self::position($revision) - 1] ?? null;
+        $cases = self::cases($revision);
 
-        return $previous instanceof Revision ? $previous : null;
+        return $cases[self::position($revision, $cases) - 1] ?? null;
+    }
+
+    /**
+     * The revision the furthest in the direction `$sign` (`-1` the oldest, `1` the newest); every revision is compared,
+     * so cases of two enums always throw.
+     *
+     * @param -1|1 $sign
+     */
+    private static function pick(int $sign, Revision ...$revisions): ?Revision
+    {
+        $picked = null;
+        foreach ($revisions as $revision) {
+            if ($picked === null || self::compare($revision, $picked) * $sign > 0) {
+                $picked = $revision;
+            }
+        }
+
+        return $picked;
     }
 
     /**
      * The index of the case in the declaration of its enum.
+     *
+     * @param list<Revision>|null $cases The cases of its enum, when already read
      */
-    private static function position(Revision $revision): int
+    private static function position(Revision $revision, ?array $cases = null): int
     {
-        return (int) array_search($revision, $revision::cases(), true);
+        $position = array_search($revision, $cases ?? self::cases($revision), true);
+
+        return is_int($position) ? $position : throw DefinitionException::unknownRevision($revision::class, $revision->name);
+    }
+
+    /**
+     * @return list<Revision>
+     */
+    private static function cases(Revision $revision): array
+    {
+        /** @var list<Revision> */
+        return $revision::cases();
     }
 }
