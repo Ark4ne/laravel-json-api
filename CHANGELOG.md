@@ -44,6 +44,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   read in the names of the revision. A resource declaring no revision renders as in 2.0, its members untouched.
 - The eager loads are planned at the revision of the request: the include paths of an old client, its relationships,
   their loads and constraints and their related resources are those of its revision, loaded in batch.
+- The relationships are rendered at the revision of the request: their old names and include paths, their old related
+  resources (types) and cardinality; the same model reached as two old types is included once per type.
 
 ## [2.0.0] — 2026-11-03
 

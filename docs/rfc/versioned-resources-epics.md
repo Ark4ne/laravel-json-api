@@ -615,6 +615,10 @@ Acceptance criteria:
 Tests: `test_the_same_user_is_included_once_per_old_type`, `test_an_old_nested_include_path_is_rendered`,
 `test_a_relationship_that_was_to_one_renders_one_identifier`.
 
+Done: `renderRelationships()` was switched with the attributes (US 4.1 commit); this story adds the scenario and its
+expected documents. The same person as a writer and a commenter is reached through a collection of two posts (user 2
+writes one and comments the other).
+
 #### US 4.3 — Eager loading at a revision · M
 
 *As a package maintainer, I want the load plan of a revision, so that an old include path loads its relations in

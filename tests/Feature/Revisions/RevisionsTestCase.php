@@ -28,6 +28,9 @@ abstract class RevisionsTestCase extends FeatureTestCase
             ->middleware(UseApiRevision::class);
         $router->get('revisions/users', static fn() => UserResource::collection(User::query()->whereKey([1, 2])->get()))
             ->middleware(UseApiRevision::class);
+        // Posts of users 1 and 2: user 2 writes the second and comments the first.
+        $router->get('revisions/posts', static fn() => PostResource::collection(Post::query()->whereKey([1, 4])->get()))
+            ->middleware(UseApiRevision::class);
         $router->get('revisions/posts/{id}', static fn(string $id) => PostResource::make(Post::query()->findOrFail($id)))
             ->middleware(UseApiRevision::class);
     }

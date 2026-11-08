@@ -12,7 +12,8 @@ use Test\app\Revisions\ApiRevision;
 
 /**
  * The users of the revisions scenario (docs/rfc/versioned-resources-epics.md EV4): `display_name` ← `label` (`Labels`)
- * ← `name` (`Initial`), `born_at` a date-time ← a date (`Initial`), `full_name` until `Labels`.
+ * ← `name` (`Initial`), `born_at` a date-time ← a date (`Initial`), `full_name` until `Labels`; `posts` ← `post`, its first
+ * post (`Initial`).
  *
  * @extends JsonApiResource<User>
  */
@@ -37,7 +38,13 @@ final class UserResource extends JsonApiResource
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'posts' => $this->many(PostResource::class)->whenIncluded(),
+            'posts' => $this->many(PostResource::class)->whenIncluded()->was(
+                ApiRevision::Initial,
+                name: 'post',
+                value: $this->one(PostResource::class, fn() => $this->resource->posts->first())
+                    ->withLoad('posts')
+                    ->whenIncluded(),
+            ),
             'comments' => $this->many(CommentResource::class)->whenIncluded(),
         ];
     }
