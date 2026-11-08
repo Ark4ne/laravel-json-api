@@ -99,6 +99,7 @@ Modifiers of every relationship:
 | `->linkage(Linkage $linkage)` | `Configuration\Linkage::Always`, `Loaded` or `Included` for this relationship |
 | `->filters(Closure $filters)` | Renders only the related resources passing the rules: `fn(Filters $filters) => $filters->can('view')->when(fn(Request $request, Comment $comment) => …)` (immutable: return the result; a callback may return any truthy value) |
 | `->can(iterable\|string $abilities, array $arguments = [], string $gateClass = Gate::class, ?string $guard = null)` | Rendered only when the user has the abilities on the model |
+| `->was(Revision $revision, ?string $name = null, ?Relation $value = null)` | What the relationship was up to `$revision` included: its name, its relation (resource, cardinality, loads: its own) (versioned resources, in progress) |
 | `->when(...)`, `->unless(...)` | As for values |
 
 ## Conditional helpers of a resource

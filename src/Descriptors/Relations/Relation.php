@@ -11,6 +11,7 @@ use Ark4ne\JsonApi\Definition\DescribesRelationship;
 use Ark4ne\JsonApi\Definition\LoadDefinition;
 use Ark4ne\JsonApi\Definition\RelatedResource;
 use Ark4ne\JsonApi\Definition\RelationshipDefinition;
+use Ark4ne\JsonApi\Definition\Revision;
 use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Filters\Filters;
@@ -110,6 +111,20 @@ abstract class Relation extends Describer implements DescribesRelationship
     public function retriever(): string|Closure|null
     {
         return $this->relation;
+    }
+
+    /**
+     * The relationship as it was up to `$revision` included: its name, its relation, or both; what is left out is the
+     * head's. The relation given is complete: its related resource, its cardinality (`one` ↔ `many`), its loads,
+     * filters, links and meta are its own, nothing is taken from the head. Only one `was()` applies to a revision: the
+     * one with the oldest revision at least as new.
+     *
+     * @param string|null $name The name it had; the head name if `null`
+     * @param Relation<T>|null $value The relation it had; reads the head relation when it names none
+     */
+    public function was(Revision $revision, ?string $name = null, ?Relation $value = null): static
+    {
+        return $this->withRevision($revision, $name, $value);
     }
 
     /**

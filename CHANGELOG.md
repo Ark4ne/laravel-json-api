@@ -18,7 +18,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `$this->requestedRevision()` in a resource, `RequestedRevision::of($request)` or `JsonApi::revision($request)`
   elsewhere: guards for a change of meaning without change of shape (`atMost()`, `atLeast()`, `is()`, `isHead()`).
 - `->was($revision, name: …, value: …)` on every value descriptor (structs and their members included): what the
-  attribute was up to a revision, included; stored as `Descriptors\FieldRevision`, without effect on the head.
+  attribute was up to a revision, included; stored as `Descriptors\FieldRevision`, without effect on the head. The same
+  on every relation descriptor: its old name, its old relation (related resource, cardinality, loads of its own).
 
 ## [2.0.0] — 2026-11-03
 

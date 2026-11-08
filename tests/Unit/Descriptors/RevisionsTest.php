@@ -5,12 +5,17 @@ declare(strict_types=1);
 namespace Test\Unit\Descriptors;
 
 use Ark4ne\JsonApi\Descriptors\FieldRevision;
+use Ark4ne\JsonApi\Descriptors\Relations\RelationMany;
+use Ark4ne\JsonApi\Descriptors\Relations\RelationOne;
+use Ark4ne\JsonApi\Descriptors\Relations\RelationRaw;
 use Ark4ne\JsonApi\Descriptors\Values\ValueInteger;
 use Ark4ne\JsonApi\Descriptors\Values\ValueString;
 use Ark4ne\JsonApi\Descriptors\Values\ValueStruct;
 use Illuminate\Http\Request;
-use PHPUnit\Framework\TestCase;
+use Test\app\Http\Resources\CommentResource;
+use Test\app\Http\Resources\UserResource;
 use Test\app\Revisions\ApiRevision;
+use Test\TestCase;
 
 /**
  * The revision declarations of the descriptors (`was()`, `until()`, `since()`): stored, never applied to the head.
@@ -58,5 +63,33 @@ final class RevisionsTest extends TestCase
 
         self::assertSame($old, $revised->revisions()[0]->value);
         self::assertNull($revised->revisions()[0]->name);
+    }
+
+    public function test_was_on_a_relation_keeps_its_own_load(): void
+    {
+        $old = (new RelationOne(UserResource::class, null))->withLoad('posts');
+        $head = (new RelationOne(UserResource::class, 'user'))->withLoad('comments');
+        $revised = $head->was(ApiRevision::Labels, name: 'writer', value: $old);
+
+        self::assertEquals([new FieldRevision(ApiRevision::Labels, 'writer', $old)], $revised->revisions());
+        self::assertEquals($head->definition('author'), $revised->definition('author'));
+    }
+
+    public function test_was_on_a_to_many_relationship_accepts_a_to_one_relation(): void
+    {
+        $old = new RelationOne(CommentResource::class, null);
+        $revised = (new RelationMany(CommentResource::class, null))->was(ApiRevision::Initial, name: 'last_comment', value: $old);
+
+        self::assertSame($old, $revised->revisions()[0]->value);
+    }
+
+    public function test_was_is_available_on_a_relationship_wrapped_for_apply_when(): void
+    {
+        $wrapped = RelationRaw::wrap(UserResource::class, static fn() => UserResource::relationship(static fn() => null));
+
+        self::assertEquals(
+            [new FieldRevision(ApiRevision::Initial, 'writer')],
+            $wrapped->was(ApiRevision::Initial, name: 'writer')->revisions(),
+        );
     }
 }
