@@ -530,6 +530,9 @@ fixture resource at every revision.
 - A revision newer than every boundary of a resource reads the head definition, in one comparison.
 - With the compiled file, an old revision costs one OPcache read, as the head does. The head of a resource declaring
   revisions still transforms its members (its fields `until()` a revision are written in the head hook).
+- Without it, the first `for()` of a resource declaring revisions compiles all its shapes, the head included: the head
+  definition carries the diagnostics of every revision, and the hooks run once for all. A cold worker pays it once
+  per resource; `jsonapi:cache` removes it.
 
 ### Diagnostics
 

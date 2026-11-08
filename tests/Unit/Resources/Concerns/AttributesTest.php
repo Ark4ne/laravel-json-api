@@ -4,15 +4,19 @@ declare(strict_types=1);
 
 namespace Test\Unit\Resources\Concerns;
 
+use Ark4ne\JsonApi\Context\JsonApiContext;
+use Ark4ne\JsonApi\Resources\Attributes\JsonApiType;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use ArrayIterator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
+use Illuminate\Testing\TestResponse;
 use stdClass;
 use Test\app\Http\Resources\CommentResource;
 use Test\app\Http\Resources\UserResource;
 use Test\app\Models\Post;
 use Test\app\Models\User;
+use Test\app\Revisions\ApiRevision;
 use Test\Support\Reflect;
 use Test\TestCase;
 
@@ -158,6 +162,28 @@ final class AttributesTest extends TestCase
         $resource = new DefaultAttributesPostResource($post);
 
         self::assertSame(['title' => 'Hello'], $resource->toArray(new Request())['attributes'] ?? null);
+    }
+
+    public function test_the_default_attributes_leave_out_the_foreign_keys_of_the_relationships_of_the_revision(): void
+    {
+        $post = (new Post())->forceFill(['id' => 7, 'title' => 'Hello', 'user_id' => 3]);
+        $post->setRelation('user', null);
+        $resource = new #[JsonApiType('post')] class ($post) extends JsonApiResource {
+            protected function toRelationships(Request $request): iterable
+            {
+                return ['user' => $this->one(UserResource::class)->until(ApiRevision::Initial)];
+            }
+        };
+
+        $at = static function (?ApiRevision $revision) use ($resource): mixed {
+            $request = new Request();
+            $request->attributes->set(JsonApiContext::REVISION, $revision);
+
+            return TestResponse::fromBaseResponse($resource->toResponse($request))->json('data.attributes');
+        };
+
+        self::assertSame(['title' => 'Hello'], $at(ApiRevision::Initial));
+        self::assertSame(['title' => 'Hello', 'user_id' => 3], $at(null));
     }
 
     public function test_the_default_attributes_of_an_array_leave_out_id_and_type(): void

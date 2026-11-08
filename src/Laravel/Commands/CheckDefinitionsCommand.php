@@ -145,7 +145,7 @@ final class CheckDefinitionsCommand extends Command
 
             $diagnostics ??= [];
             foreach ([...$at, ...$audit->check($class, [$revision])] as $diagnostic) {
-                $diagnostics["{$diagnostic->code}|{$diagnostic->subject}|{$diagnostic->message}"] ??= $diagnostic;
+                $diagnostics[$diagnostic->key()] ??= $diagnostic;
             }
         }
 

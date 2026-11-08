@@ -65,6 +65,25 @@ final class ConditionsTest extends RevisionsTestCase
             ->assertJsonMissingPath('data.attributes.legacy_requested');
     }
 
+    public function test_a_helper_naming_a_struct_path_translates_its_first_segment(): void
+    {
+        $this->renderAt(null, 'fields[helpers]=address.city,city_requested')
+            ->assertJsonPath('data.attributes.city_requested', true);
+        $this->renderAt(ApiRevision::Labels, 'fields[helpers]=location.city,city_requested')
+            ->assertJsonPath('data.attributes.city_requested', true);
+        $this->renderAt(null, 'include=posts.comments')->assertJsonPath('data.attributes.post_comments_included', true);
+        $this->renderAt(ApiRevision::Labels, 'include=articles.comments')
+            ->assertJsonPath('data.attributes.post_comments_included', true);
+    }
+
+    public function test_a_helper_naming_a_name_no_revision_declares_keeps_it(): void
+    {
+        $this->renderAt(null, 'fields[helpers]=undeclared,undeclared_requested')
+            ->assertJsonPath('data.attributes.undeclared_requested', true);
+        $this->renderAt(ApiRevision::Labels, 'fields[helpers]=undeclared,undeclared_requested')
+            ->assertJsonPath('data.attributes.undeclared_requested', true);
+    }
+
     /**
      * @return TestResponse<\Illuminate\Http\JsonResponse>
      */
@@ -80,6 +99,11 @@ final class ConditionsTest extends RevisionsTestCase
                     'comments_included' => $this->whenInIncludes($request, 'comments', true),
                     'legacy_requested' => $this->whenInFields($request, 'legacy', true),
                     'legacy' => $this->string(fn() => 'legacy')->until(ApiRevision::Labels),
+                    'address' => $this->struct(fn() => ['city' => $this->string(fn() => 'Paris')])
+                        ->was(ApiRevision::Labels, name: 'location'),
+                    'city_requested' => $this->whenInFields($request, 'address.city', true),
+                    'undeclared_requested' => $this->whenInFields($request, 'undeclared', true),
+                    'post_comments_included' => $this->whenInIncludes($request, 'posts.comments', true),
                 ];
             }
 

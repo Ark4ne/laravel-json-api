@@ -10,6 +10,7 @@ use Ark4ne\JsonApi\Definition\Lifetime;
 use Ark4ne\JsonApi\Definition\ResourceDefinition;
 use Ark4ne\JsonApi\Definition\Revision;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
+use Ark4ne\JsonApi\Support\RevisionLabel;
 use Closure;
 
 /**
@@ -99,7 +100,7 @@ final class Definitions
         }
 
         // Read once per class and revision: the rendering asks for each resource.
-        return self::$shapes[$class][$revision::class . '::' . $revision->name] ??= self::shape($class, $head, $revision);
+        return self::$shapes[$class][RevisionLabel::of($revision)] ??= self::shape($class, $head, $revision);
     }
 
     /**
@@ -110,7 +111,7 @@ final class Definitions
     private static function shape(string $class, ResourceDefinition $head, Revision $revision): ResourceDefinition
     {
         if (!$head->existsAt($revision)) {
-            throw DefinitionException::notInRevision($class, $revision::class . '::' . $revision->name);
+            throw DefinitionException::notInRevision($class, $revision);
         }
 
         $boundary = $head->boundaryOf($revision);
@@ -189,10 +190,9 @@ final class Definitions
      */
     public static function loadConstraints(string $class, ?Revision $revision = null): array
     {
-        $boundary = $revision === null ? null : self::for($class, $revision)->revision;
-        $key = $boundary === null ? $class : $class . '@' . $boundary->name;
+        $definition = self::for($class, $revision);
 
-        return self::$constraints[$key] ??= self::compiler()->loadConstraints($class, $boundary);
+        return self::$constraints[CompiledDefinitions::key($definition)] ??= self::compiler()->loadConstraints($class, $definition->revision);
     }
 
     /**

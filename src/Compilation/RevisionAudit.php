@@ -91,14 +91,7 @@ final class RevisionAudit
             return null;
         }
 
-        $boundary = $head->boundaryOf($revision);
-        foreach ($shapes as $shape) {
-            if ($shape->revision === $boundary) {
-                return $shape;
-            }
-        }
-
-        return $head;
+        return DefinitionCompiler::shapeOf($shapes, $revision);
     }
 
     /**
@@ -135,7 +128,7 @@ final class RevisionAudit
             ...array_filter($head, static fn(Diagnostic $diagnostic): bool => str_starts_with($diagnostic->code, 'revision-')),
             ...$shape->diagnostics,
         ] as $diagnostic) {
-            $diagnostics["{$diagnostic->code}|{$diagnostic->subject}|{$diagnostic->message}"] ??= $diagnostic;
+            $diagnostics[$diagnostic->key()] ??= $diagnostic;
         }
 
         return array_values($diagnostics);

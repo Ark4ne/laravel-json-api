@@ -89,11 +89,17 @@ final readonly class LoadPlanner
             }
 
             $reach = $relationship->source !== null ? [$relationship->source] : $relationship->load->roots();
-            // The related models of a polymorphic relationship are planned by class, with the resource of their class.
+            // The related models of a polymorphic relationship are planned by class, with the resource of their class;
+            // a resource of its map absent from the revision renders no model, as the rules let it (`Includes`).
             $plans = [];
             if ($relationship->isPolymorphic()) {
                 foreach (array_unique($relationship->morphs) as $related) {
-                    $plan = $this->plan(RelatedResource::resolve($related), $context->withPath($name));
+                    $resource = RelatedResource::resolve($related);
+                    if (!Definitions::exists($resource, $context->revision)) {
+                        continue;
+                    }
+
+                    $plan = $this->plan($resource, $context->withPath($name));
                     $plans[] = new LoadPlan($plan->relations, $plan->sources, $plan->nested, $relationship->morphs, $related);
                 }
             } elseif (!$relationship->isNative()) {

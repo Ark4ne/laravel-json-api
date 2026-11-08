@@ -87,8 +87,9 @@ trait ConditionallyLoadsAttributes
 
     /**
      * The name a field of the code has at the revision of the rendering, `null` when it does not exist at it: the
-     * client writes `fields` and `include` in the names of its revision. Unchanged for a resource declaring no
-     * revision.
+     * client writes `fields` and `include` in the names of its revision. Of a dotted path (a struct member, a nested
+     * include), the first segment is translated. A name no shape of the resource declares (a field of `toLinks()`)
+     * is kept. Unchanged for a resource declaring no revision.
      */
     private function nameAtRevision(string $field): ?string
     {
@@ -99,8 +100,38 @@ trait ConditionallyLoadsAttributes
             return $field;
         }
 
+        $segments = explode('.', $field, 2);
+        $first = $segments[0];
+        $rest = $segments[1] ?? null;
         // The head too: a field `until()` a revision does not exist there.
-        return Definitions::for(static::class, $context->revision)->fieldNames[$field] ?? null;
+        $names = Definitions::for(static::class, $context->revision)->fieldNames;
+
+        if (isset($names[$first])) {
+            return $rest === null ? $names[$first] : "{$names[$first]}.{$rest}";
+        }
+
+        return self::declaresField($first) ? null : $field;
+    }
+
+    /**
+     * Whether a shape of the resource, the head or one of its revisions, has the field of the code `$field`.
+     */
+    private static function declaresField(string $field): bool
+    {
+        $head = Definitions::for(static::class);
+
+        foreach ([null, ...$head->boundaries] as $boundary) {
+            if ($boundary !== null && !Definitions::exists(static::class, $boundary)) {
+                continue;
+            }
+
+            $definition = $boundary === null ? $head : Definitions::for(static::class, $boundary);
+            if (isset($definition->fieldNames[$field])) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

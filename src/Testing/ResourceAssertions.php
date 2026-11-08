@@ -104,7 +104,7 @@ final class ResourceAssertions
 
     private static function notInRevision(string $class, Revision $revision): DefinitionException
     {
-        return DefinitionException::notInRevision($class, $revision::class . '::' . $revision->name);
+        return DefinitionException::notInRevision($class, $revision);
     }
 
     private static function audit(): RevisionAudit

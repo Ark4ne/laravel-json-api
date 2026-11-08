@@ -883,6 +883,14 @@ Done: `CHANGELOG.md` `[2.1.0]`; nothing in `UPGRADE.md` (`DefinitionSource` gain
 reference ×0.495 → ×0.518 (`current / native`, PHP 8.5, 1000 posts), within the 10% tolerance of the gate. Not
 tagged: the tag and the release are the maintainer's.
 
+Review: what still read the head at a revision now reads the revision: `RouteLinksStage` (routes cached by shape), the
+foreign keys left out of the default attributes, the morph map of the `LoadPlanner` (resources absent from the
+revision skipped, as the rules), the `JsonApiContext` of the container (built again when the revision changes);
+`whenInFields()` / `whenInIncludes()` translate the first segment of a dotted path and keep a name no shape declares;
+the automatic `whenHas()` checks the head attribute. `Diagnostic::key()`, `Support\RevisionLabel` and
+`DefinitionCompiler::shapeOf()` replace their copies. Kept: the first `for()` compiles every shape
+(`docs/architecture.md` §18, "Fast path").
+
 ---
 
 ### EV8 — `laravel-openapi-generator` (separate repository)

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Exceptions;
 
+use Ark4ne\JsonApi\Support\RevisionLabel;
 use LogicException;
 use UnitEnum;
 
@@ -28,7 +29,7 @@ final class RenderingException extends LogicException implements JsonApiExceptio
      */
     public static function notInRevision(string $class, ?UnitEnum $revision): self
     {
-        $revision = $revision === null ? 'head' : $revision::class . '::' . $revision->name;
+        $revision = RevisionLabel::of($revision);
 
         return new self(
             "[{$class}] does not exist at the revision [{$revision}]: see its #[JsonApiSince] and #[JsonApiUntil], and give "

@@ -102,21 +102,39 @@ final readonly class DefinitionCompiler
      *
      * @param class-string<DefinitionSource> $class
      *
-     * @throws DefinitionException when the class is not a resource, when its type cannot be read, or when it exists at
-     *                             no revision
+     * @throws DefinitionException when the class is not a resource, when its type cannot be read, when it exists at
+     *                             no revision, or when it does not exist at `$revision` (a revision given)
      */
     public function compile(string $class, ?Revision $revision = null): ResourceDefinition
     {
+        return self::shapeOf($this->compileEvery($class), $revision);
+    }
+
+    /**
+     * Of the shapes of a resource (`compileEvery()`, the head first), the one describing it at `$revision`: that of
+     * its boundary (`ResourceDefinition::boundaryOf()`). Without revision, the head, even for a resource
+     * `#[JsonApiUntil]`, as `Definitions::for()`.
+     *
+     * @param non-empty-list<ResourceDefinition> $shapes
+     *
+     * @throws DefinitionException when the resource does not exist at `$revision`
+     */
+    public static function shapeOf(array $shapes, ?Revision $revision): ResourceDefinition
+    {
+        $head = $shapes[0];
+        if ($revision !== null && !$head->existsAt($revision)) {
+            throw DefinitionException::notInRevision($head->class, $revision);
+        }
+
         // A definition written by hand is the only one: it has no boundary.
-        $every = $this->compileEvery($class);
-        $boundary = $every[0]->boundaryOf($revision);
-        foreach ($every as $definition) {
-            if ($definition->revision === $boundary) {
-                return $definition;
+        $boundary = $head->boundaryOf($revision);
+        foreach ($shapes as $shape) {
+            if ($shape->revision === $boundary) {
+                return $shape;
             }
         }
 
-        return $every[0];
+        return $head;
     }
 
     /**
@@ -148,7 +166,7 @@ final readonly class DefinitionCompiler
         $diagnostics = [];
         $known = [];
         foreach ($head->diagnostics as $diagnostic) {
-            $known["{$diagnostic->code}|{$diagnostic->subject}|{$diagnostic->message}"] = true;
+            $known[$diagnostic->key()] = true;
         }
         foreach ($boundaries as $boundary) {
             $revised = $this->build($class, $hooks, $lifetime, $boundaries, $boundary, head: $names);
@@ -164,7 +182,7 @@ final readonly class DefinitionCompiler
             // What only a revision shows is reported on the head too, which the checks read, with the oldest revision
             // showing it.
             foreach ($revised->diagnostics as $diagnostic) {
-                $key = "{$diagnostic->code}|{$diagnostic->subject}|{$diagnostic->message}";
+                $key = $diagnostic->key();
                 if (!isset($known[$key])) {
                     $diagnostics[$key] ??= $diagnostic;
                 }

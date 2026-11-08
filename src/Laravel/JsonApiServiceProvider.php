@@ -109,8 +109,8 @@ final class JsonApiServiceProvider extends ServiceProvider
                 ->with(...$renderers);
         });
 
-        // One context per request object, built on first use: a new request (HTTP, Octane, test) gets its own, and the
-        // weak map lets the old ones go with their request.
+        // One context per request object and revision, built on first use: a new request (HTTP, Octane, test) gets its
+        // own, and the weak map lets the old ones go with their request.
         /** @var WeakMap<Request, JsonApiContext> $contexts */
         $contexts = new WeakMap();
         $this->app->bind(JsonApiContext::class, static function (Application $app) use ($contexts): JsonApiContext {
@@ -119,7 +119,13 @@ final class JsonApiServiceProvider extends ServiceProvider
             /** @var Configuration $configuration */
             $configuration = $app->make(Configuration::class);
 
-            return $contexts[$request] ??= JsonApiContext::fromRequest($request, $configuration);
+            $context = $contexts[$request] ?? null;
+
+            // Built again when the revision of the request was set after (`JsonApi::useRevision()` in a middleware
+            // running after the first resolution).
+            return $context !== null && $context->revision === JsonApiContext::revisionOf($request)
+                ? $context
+                : $contexts[$request] = JsonApiContext::fromRequest($request, $configuration);
         });
     }
 

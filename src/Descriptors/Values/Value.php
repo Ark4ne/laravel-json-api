@@ -163,7 +163,8 @@ abstract class Value extends Describer
         if (
             ($this->autoWhenHas ?? false)
             && !($retriever instanceof Closure)
-            && !((is_array($model) || is_object($model)) && Values::hasAttribute($model, $retriever ?? $attribute))
+            // The attribute `resolveFor()` reads: at a revision, the head one, whatever name the field is rendered under.
+            && !((is_array($model) || is_object($model)) && Values::hasAttribute($model, $retriever ?? $this->headName ?? $attribute))
         ) {
             return false;
         }

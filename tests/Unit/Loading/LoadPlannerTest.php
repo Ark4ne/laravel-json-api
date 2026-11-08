@@ -15,6 +15,7 @@ use Test\app\Http\Resources\Revisions\PostResource;
 use Test\app\Http\Resources\Revisions\UserResource as RevisedUserResource;
 use Test\app\Revisions\ApiRevision;
 use Test\TestCase;
+use Test\Unit\Http\Rules\Fixtures\LifetimeHolderResource;
 use Test\Unit\Loading\Fixtures\DeltaResource;
 use Test\Unit\Rendering\Fixtures\Contexts;
 use Test\Unit\Resources\Fixtures\AlphaResource;
@@ -179,5 +180,14 @@ class LoadPlannerTest extends TestCase
         self::assertSame(['author' => null], $head->relations);
         self::assertSame(['post'], array_keys($initial->relations));
         self::assertInstanceOf(Closure::class, $initial->relations['post']);
+    }
+
+    public function test_a_polymorphic_relationship_plans_only_the_resources_existing_at_the_revision(): void
+    {
+        $initial = (new LoadPlanner())->plan(LifetimeHolderResource::class, Contexts::at(ApiRevision::Initial, 'include=people'));
+        $head = (new LoadPlanner())->plan(LifetimeHolderResource::class, Contexts::at(null, 'include=people'));
+
+        self::assertSame([], $initial->relations);
+        self::assertSame([], $head->relations);
     }
 }

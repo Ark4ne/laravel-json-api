@@ -536,4 +536,14 @@ final class DefinitionCompilerTest extends TestCase
             array_map(static fn(ResourceDefinition $definition) => $definition->revision, $compiler->compileEvery(ProfileResource::class)),
         );
     }
+
+    public function test_a_resource_compiled_at_a_revision_it_does_not_exist_at_throws(): void
+    {
+        $compiler = new DefinitionCompiler(Configuration::defaults());
+
+        self::assertSame(TeacherResource::class, $compiler->compile(TeacherResource::class)->class);
+
+        $this->expectException(DefinitionException::class);
+        $compiler->compile(TeacherResource::class, ApiRevision::UsersReplaceTeachers);
+    }
 }

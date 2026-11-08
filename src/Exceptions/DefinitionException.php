@@ -6,6 +6,7 @@ namespace Ark4ne\JsonApi\Exceptions;
 
 use Ark4ne\JsonApi\Support\Diagnostic;
 use Ark4ne\JsonApi\Support\Diagnostics;
+use Ark4ne\JsonApi\Support\RevisionLabel;
 use LogicException;
 use Throwable;
 use UnitEnum;
@@ -44,9 +45,12 @@ final class DefinitionException extends LogicException implements JsonApiExcepti
     /**
      * The definition of a resource was read at a revision it does not exist at (`#[JsonApiSince]`, `#[JsonApiUntil]`).
      */
-    public static function notInRevision(string $class, string $revision): self
+    public static function notInRevision(string $class, ?UnitEnum $revision): self
     {
-        return new self("[{$class}] does not exist at the revision [{$revision}]: see its #[JsonApiSince] and #[JsonApiUntil].");
+        return new self(
+            "[{$class}] does not exist at the revision [" . RevisionLabel::of($revision) . ']: see its #[JsonApiSince] and '
+            . '#[JsonApiUntil].',
+        );
     }
 
     /**

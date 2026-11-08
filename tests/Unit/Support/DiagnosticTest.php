@@ -27,6 +27,16 @@ final class DiagnosticTest extends TestCase
         );
     }
 
+    public function test_the_key_of_a_diagnostic_ignores_its_level_and_its_revision(): void
+    {
+        $head = new Diagnostic(DiagnosticLevel::Error, 'invalid-member', 'Cannot be described.', 'author');
+        $initial = new Diagnostic(DiagnosticLevel::Warning, 'invalid-member', 'Cannot be described.', 'author', 'Initial');
+        $other = new Diagnostic(DiagnosticLevel::Error, 'invalid-member', 'Cannot be described.', 'writer');
+
+        self::assertSame($head->key(), $initial->key());
+        self::assertNotSame($head->key(), $other->key());
+    }
+
     public function test_a_diagnostic_exported_without_revision_is_read(): void
     {
         $diagnostic = Diagnostic::__set_state([

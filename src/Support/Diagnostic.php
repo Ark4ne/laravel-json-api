@@ -41,6 +41,15 @@ final readonly class Diagnostic
     }
 
     /**
+     * What identifies the finding whatever revision shows it: its code, subject and message, to deduplicate the
+     * diagnostics of several shapes.
+     */
+    public function key(): string
+    {
+        return "{$this->code}|{$this->subject}|{$this->message}";
+    }
+
+    /**
      * The finding on one line, as `jsonapi:check` and `ResourceAssertions` print it:
      * `[error] [Labels] code (subject): message`.
      */

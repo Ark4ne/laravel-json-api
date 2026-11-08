@@ -230,6 +230,15 @@ final class ValueTest extends TestCase
         );
     }
 
+    public function test_an_automatic_when_has_at_a_revision_checks_the_head_attribute_it_reads(): void
+    {
+        // The value of a `was()` without source, for a head read by a closure, rendered under its old name `label`.
+        $value = (new ValueString(null))->autoWhenHas()->standingFor('display_name', static fn() => 'computed');
+
+        self::assertSame('Ada', $value->valueFor(new Request(), ['display_name' => 'Ada'], 'label'));
+        self::assertInstanceOf(MissingValue::class, $value->valueFor(new Request(), ['label' => 'Ada'], 'label'));
+    }
+
     public function test_when_in_fields_leaves_the_decision_to_the_renderer(): void
     {
         $value = (new ValueString(null))->whenInFields();

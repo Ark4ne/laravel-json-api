@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Laravel\Rendering;
 
+use Ark4ne\JsonApi\Compilation\CompiledDefinitions;
+use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Configuration\SparseRelationships;
 use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Definition\ResourceDefinition;
@@ -25,7 +27,8 @@ use Illuminate\Routing\Router;
  * - `links.self` and `links.related` of its relationships, when their route exists: those rendered, and those left out
  *   for having neither data, links nor meta (`relationship.linkage`), unless conditional or not allowed by `fields`.
  *
- * The links the resource declares win, even `null`. Put before the stages of `rendering.stages` by the service
+ * At a revision, the relationships of that revision, by their names at it. The links the resource declares win, even
+ * `null`. Put before the stages of `rendering.stages` by the service
  * provider.
  */
 final class RouteLinksStage implements Stage
@@ -34,7 +37,7 @@ final class RouteLinksStage implements Stage
 
     private readonly Router $router;
 
-    /** @var array<string, array<string, array{self: string|null, related: string|null}>> The existing routes of the relationships, by resource class */
+    /** @var array<string, array<string, array{self: string|null, related: string|null}>> The existing routes of the relationships, by resource class and shape (`CompiledDefinitions::key()`) */
     private array $routes = [];
 
     public function __construct(?UrlGenerator $urls = null, ?Router $router = null)
@@ -49,7 +52,8 @@ final class RouteLinksStage implements Stage
         JsonApiContext $context,
         IncludedRegistry $included,
     ): ResourceObject {
-        $definition = $resource instanceof JsonApiResource ? $resource::definition() : null;
+        // The relationships of the revision of the rendering, by their names at it.
+        $definition = $resource instanceof JsonApiResource ? Definitions::for($resource::class, $context->revision) : null;
         $routes = $definition?->routes;
 
         if ($definition === null || $routes === null) {
@@ -110,14 +114,15 @@ final class RouteLinksStage implements Stage
     }
 
     /**
-     * The routes of the relationships of a resource class that exist, computed once per class.
+     * The routes of the relationships of a resource class that exist, computed once per class and shape.
      *
      * @return array<string, array{self: string|null, related: string|null}>
      */
     private function existingRoutes(ResourceDefinition $definition, RouteNames $routes): array
     {
-        if (isset($this->routes[$definition->class])) {
-            return $this->routes[$definition->class];
+        $key = CompiledDefinitions::key($definition);
+        if (isset($this->routes[$key])) {
+            return $this->routes[$key];
         }
 
         $existing = [];
@@ -130,7 +135,7 @@ final class RouteLinksStage implements Stage
             ];
         }
 
-        return $this->routes[$definition->class] = array_filter(
+        return $this->routes[$key] = array_filter(
             $existing,
             static fn(array $routes): bool => $routes['self'] !== null || $routes['related'] !== null,
         );

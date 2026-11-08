@@ -93,6 +93,14 @@ change.
   `assertValidAtEveryRevision($class, $strict)` asserts the references at every revision; `definitionAt($class,
   $revision)` returns the definition of a revision compiled from the current code, for snapshot tests.
 - README "Versioned resources" and a "Revisions" section in the skill reference and its rules.
+- At a revision, the links of `#[JsonApiRoutes]` follow the relationships of that revision and their names; the
+  default attributes leave out the foreign keys of the relationships of that revision; a polymorphic relationship
+  plans only the resources of its map existing at it; `whenInFields()` / `whenInIncludes()` translate the first
+  segment of a dotted path and keep a name no shape declares; an automatic `whenHas()` checks the head attribute. The
+  `JsonApiContext` of the container sees a revision set after its first resolution.
+- `Diagnostic::key()`, `Support\RevisionLabel`; `DefinitionException::notInRevision()` takes the revision;
+  `DefinitionCompiler::compile($class, $revision)` throws for a revision the resource does not exist at
+  (`DefinitionCompiler::shapeOf()`, shared with `RevisionAudit`).
 
 ## [2.0.0] — 2026-11-03
 
