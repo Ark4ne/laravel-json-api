@@ -93,7 +93,7 @@ final class Definitions
      */
     public static function for(string $class, ?Revision $revision = null): ResourceDefinition
     {
-        $head = self::head($class);
+        $head = self::$definitions[$class] ?? self::head($class);
         if ($revision === null) {
             return $head;
         }
@@ -130,7 +130,10 @@ final class Definitions
      */
     public static function exists(string $class, ?Revision $revision): bool
     {
-        return self::head($class)->existsAt($revision);
+        // Asked for every resource rendered: a resource without lifetime answers without comparing revisions.
+        $head = self::$definitions[$class] ?? self::head($class);
+
+        return ($head->since === null && $head->until === null) || $head->existsAt($revision);
     }
 
     /**
@@ -145,7 +148,7 @@ final class Definitions
      */
     public static function isRevised(string $class): bool
     {
-        return self::head($class)->boundaries !== [];
+        return (self::$definitions[$class] ?? self::head($class))->boundaries !== [];
     }
 
     /**

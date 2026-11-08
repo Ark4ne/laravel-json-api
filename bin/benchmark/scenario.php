@@ -5,7 +5,11 @@ declare(strict_types=1);
 /**
  * Renders one collection of posts with 3 includes, in its own process, and prints the measures as JSON.
  *
- * Usage: php bin/benchmark/scenario.php <package|native> <root of the package to load> <iterations> <posts>
+ * Usage: php bin/benchmark/scenario.php <package|native|revised> <root of the package to load> <iterations> <posts>
+ *        [head|newest|oldest]
+ *
+ * `revised` renders the resources of `Revised/` (this package only) at the revision given: the head, the newest case
+ * (rendered as the head) or the oldest one (renamed members, old include paths).
  *
  * Run by `composer benchmark` (bin/benchmark.php); `root` is this repository, or the 1.9 copy built by the runner.
  */
@@ -19,6 +23,11 @@ $implementation = $arguments[1] ?? 'package';
 $root = $arguments[2] ?? dirname(__DIR__, 2);
 $iterations = max(1, (int) ($arguments[3] ?? 10));
 $posts = max(1, (int) ($arguments[4] ?? 1000));
+$revision = match ($arguments[5] ?? 'head') {
+    'newest' => 'Newest',
+    'oldest' => 'Oldest',
+    default => null,
+};
 
 require "{$root}/vendor/autoload.php";
 require __DIR__ . '/database.php';
@@ -45,15 +54,24 @@ $app['config']->set('database.connections.benchmark', ['driver' => 'sqlite', 'da
 
 benchmark_database($posts);
 
-$resource = $implementation === 'native' ? Benchmark\Native\PostResource::class : Benchmark\Package\PostResource::class;
+$resource = match ($implementation) {
+    'native' => Benchmark\Native\PostResource::class,
+    'revised' => Benchmark\Revised\PostResource::class,
+    default => Benchmark\Package\PostResource::class,
+};
+$revision = $implementation === 'revised' && $revision !== null ? constant("Benchmark\\Revised\\Revision::{$revision}") : null;
+$include = $implementation === 'revised' ? Benchmark\Revised\Revision::include($revision) : 'user,comments,comments.user';
 
 $queries = 0;
 DB::listen(static function () use (&$queries): void {
     $queries++;
 });
 
-$render = static function () use ($app, $resource): string {
-    $request = Request::create('/posts', 'GET', ['include' => 'user,comments,comments.user']);
+$render = static function () use ($app, $resource, $revision, $include): string {
+    $request = Request::create('/posts', 'GET', ['include' => $include]);
+    if ($revision !== null) {
+        $request->attributes->set('jsonapi.revision', $revision);
+    }
     $app->instance('request', $request);
 
     return (string) $resource::collection(Benchmark\Models\Post::query()->get())->toResponse($request)->getContent();

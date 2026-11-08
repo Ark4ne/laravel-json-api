@@ -709,6 +709,12 @@ Acceptance criteria:
 - A revisioned scenario is added to `bin/benchmark/`: head, newest case and oldest case measured, reported, not gated.
 - `composer benchmark -- --cold`: with compiled definitions, an old revision costs the same as the head.
 
+Done (PHP 8.5, 1000 posts): `current / native` ×0.515 for a reference of ×0.495 (tolerance 10%). The checks of EV4
+cost ~5% before `Definitions::exists()` / `isRevised()` / `for()` read the cache directly (no `Lifetime` allocated for a
+resource without lifetime): ~1% left. Resources declaring revisions (`bin/benchmark/Revised/`): head ×1.12, newest ×1.15,
+oldest ×1.20 of the same document without revisions — the members are transformed for every resource rendered.
+`--cold`, compiled file: oldest / head ×1.0 on the first rendering.
+
 ---
 
 ### EV5 — HTTP validation per revision

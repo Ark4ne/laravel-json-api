@@ -54,6 +54,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   the code to the name the field has at that revision (and fail for a field that does not exist at it); the conditions
   reading the model (`whenHas()`, `when()`…) keep reading the head attribute. `ResourceDefinition::$fieldNames`
   (with `fieldNames()`, an optional key of `__set_state()`) maps the names of the code to those of the revision.
+- `composer benchmark` also measures resources declaring revisions, at the head, the newest and the oldest revision,
+  and `--cold` an old revision against the head from the compiled file: reported, not gated.
 
 ## [2.0.0] — 2026-11-03
 
