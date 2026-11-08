@@ -21,6 +21,22 @@ final class RenderingException extends LogicException implements JsonApiExceptio
     }
 
     /**
+     * A resource is rendered at a revision it does not exist at (`#[JsonApiSince]`, `#[JsonApiUntil]`): as the primary
+     * data, or reached through a relationship lacking the `was()` to the resource of that revision.
+     *
+     * @param UnitEnum|null $revision The revision, `null` for the head
+     */
+    public static function notInRevision(string $class, ?UnitEnum $revision): self
+    {
+        $revision = $revision === null ? 'head' : $revision::class . '::' . $revision->name;
+
+        return new self(
+            "[{$class}] does not exist at the revision [{$revision}]: see its #[JsonApiSince] and #[JsonApiUntil], and give "
+            . 'the relationships reaching it a was() to the resource of that revision.',
+        );
+    }
+
+    /**
      * A value declared not nullable (`nullable(false)`) has no value to render for `null` (a date), with
      * `describer.strict` enabled.
      */

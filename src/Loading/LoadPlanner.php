@@ -10,6 +10,7 @@ use Ark4ne\JsonApi\Configuration\SparseRelationships;
 use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Definition\DefinitionSource;
 use Ark4ne\JsonApi\Definition\RelatedResource;
+use Ark4ne\JsonApi\Exceptions\RenderingException;
 
 /**
  * Computes from the definitions and the context which Eloquent relations to load before rendering (docs/architecture.md
@@ -33,9 +34,15 @@ final readonly class LoadPlanner
      * diagnostic. Planned at the revision of the context: its relationships, its loads, its related resources.
      *
      * @param class-string<DefinitionSource> $class
+     *
+     * @throws RenderingException when a resource planned does not exist at the revision of the context
      */
     public function plan(string $class, JsonApiContext $context): LoadPlan
     {
+        if (!Definitions::exists($class, $context->revision)) {
+            throw RenderingException::notInRevision($class, $context->revision);
+        }
+
         // The names, relations and related resources of the revision: the include paths are written in its names.
         $definition = Definitions::for($class, $context->revision);
         $constraints = Definitions::loadConstraints($class, $context->revision);

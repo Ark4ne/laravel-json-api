@@ -647,6 +647,11 @@ Acceptance criteria:
 Tests: `test_rendering_a_resource_before_its_since_throws`,
 `test_a_relationship_without_was_to_a_new_resource_throws_for_an_old_client`.
 
+Done: checked when a resource is identified (`Renderable::renderType()`, so linkage and included alike) and when it is
+planned (`LoadPlanner`), at the head too: a resource `#[JsonApiUntil(X)]` is not rendered for a client on the head.
+The check is one cached lookup and two `null` tests for a class without lifetime. `notInRevision()` takes the case
+itself (a `UnitEnum`), the exceptions knowing nothing of `Definition`.
+
 #### US 4.6 — Conditions and field helpers follow the revision · M
 
 *As an application developer, I want the conditions of my fields and the helpers `whenInFields()` /

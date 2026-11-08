@@ -46,6 +46,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   their loads and constraints and their related resources are those of its revision, loaded in batch.
 - The relationships are rendered at the revision of the request: their old names and include paths, their old related
   resources (types) and cardinality; the same model reached as two old types is included once per type.
+- Rendering a resource at a revision it does not exist at (`#[JsonApiSince]`, `#[JsonApiUntil]`), as the primary data
+  or through a relationship without the `was()` to the resource of that revision, throws
+  `RenderingException::notInRevision()` before anything is written; a resource `#[JsonApiUntil]` a revision is not
+  rendered for the head.
 
 ## [2.0.0] — 2026-11-03
 

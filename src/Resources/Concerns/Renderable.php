@@ -11,6 +11,7 @@ use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Descriptors\Relations\Relation;
 use Ark4ne\JsonApi\Descriptors\Relations\RelationRaw;
 use Ark4ne\JsonApi\Descriptors\RevisedMembers;
+use Ark4ne\JsonApi\Exceptions\RenderingException;
 use Ark4ne\JsonApi\Loading\LoadedRelations;
 use Ark4ne\JsonApi\Rendering\RelationshipSource;
 use Ark4ne\JsonApi\Resources\Relationship;
@@ -32,11 +33,18 @@ trait Renderable
     protected ?JsonApiContext $renderingContext = null;
 
     /**
-     * @internal
+     * @internal Identifies the resource first, as the primary data or reached through a relationship: a resource that
+     *           does not exist at the revision of the rendering is never written.
+     *
+     * @throws RenderingException when the resource does not exist at the revision of the rendering
      */
     public function renderType(JsonApiContext $context): string
     {
         $this->renderingContext = $context;
+
+        if (!Definitions::exists(static::class, $context->revision)) {
+            throw RenderingException::notInRevision(static::class, $context->revision);
+        }
 
         return $this->toType($context->request);
     }
