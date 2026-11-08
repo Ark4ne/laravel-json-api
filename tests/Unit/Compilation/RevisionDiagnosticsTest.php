@@ -50,6 +50,8 @@ final class RevisionDiagnosticsTest extends TestCase
         self::assertSame(DiagnosticLevel::Error, $diagnostic->level);
         self::assertSame('title', $diagnostic->subject);
         self::assertStringContainsString('Labels', $diagnostic->message);
+        // Read on the declarations, not on the shape of a revision.
+        self::assertNull($diagnostic->revision);
     }
 
     public function test_a_bound_set_twice_is_reported(): void
@@ -116,6 +118,7 @@ final class RevisionDiagnosticsTest extends TestCase
 
         self::assertSame('name', $diagnostic->subject);
         self::assertStringContainsString('Initial', $diagnostic->message);
+        self::assertSame('Initial', $diagnostic->revision);
     }
 
     public function test_reusing_the_name_of_a_removed_relationship_needs_since(): void
@@ -295,7 +298,8 @@ final class RevisionDiagnosticsTest extends TestCase
         $diagnostic = $this->only($resource::class, DefinitionCompiler::INVALID_MEMBER);
 
         self::assertSame(DiagnosticLevel::Error, $diagnostic->level);
-        self::assertStringContainsString('Initial', $diagnostic->message);
+        self::assertSame('Initial', $diagnostic->revision);
+        self::assertStringNotContainsString('At the revision', $diagnostic->message);
     }
 
     public function test_the_head_compiled_for_a_revision_has_the_diagnostics_of_every_revision(): void

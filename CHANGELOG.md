@@ -71,6 +71,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   relationship whose related resources all are absent from the revision may not be included, nor their types
   restricted; a resource validated at a revision it is absent from throws `RenderingException::notInRevision()`, as
   its rendering. Built by hand, they validate against the head unless given the revision of the request.
+- `jsonapi:check` checks every revision: the diagnostics only the shape of a revision shows are printed with it
+  (`[error] [Labels] invalid-member (author): …`, `Diagnostic::$revision`, an optional key of `__set_state()`, and
+  `Diagnostic::describe()`); they no longer carry `At the revision [X]:` in their message. It also checks the
+  references between resources (`Compilation\RevisionReferences`): a relationship reaching, at a revision, a resource
+  absent from it is a `revision-unavailable-resource` error (`DefinitionCompiler::REVISION_UNAVAILABLE_RESOURCE`).
+  `--revision=Labels` restricts the check to one revision; a resource that does not know it is skipped.
 
 ## [2.0.0] — 2026-11-03
 

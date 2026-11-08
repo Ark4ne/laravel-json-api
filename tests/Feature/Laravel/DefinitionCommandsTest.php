@@ -18,6 +18,10 @@ use Test\app\Revisions\TeacherResource;
 use Test\Unit\Compilation\Fixtures\EagerResource;
 use Test\Unit\Compilation\Fixtures\FailingHookResource;
 use Test\Unit\Compilation\Fixtures\TypedResource;
+use Test\Unit\Compilation\References\BoundedReferencesResource;
+use Test\Unit\Compilation\References\ForgottenWasResource;
+use Test\Unit\Compilation\References\InvalidAtRevisionResource;
+use Test\Unit\Compilation\References\StaleHeadResource;
 use Test\Unit\Laravel\Fixtures\FoundResource;
 use Test\Unit\Laravel\Fixtures\Nested\NestedResource;
 
@@ -199,6 +203,56 @@ final class DefinitionCommandsTest extends TestCase
         $this->command('jsonapi:check')
             ->expectsOutputToContain(FoundResource::class)
             ->expectsOutputToContain(NestedResource::class)
+            ->assertSuccessful();
+    }
+
+    public function test_check_reports_a_relationship_to_a_resource_absent_from_a_revision(): void
+    {
+        $status = Artisan::call('jsonapi:check', ['resources' => [ForgottenWasResource::class, StaleHeadResource::class]]);
+        $output = Artisan::output();
+
+        self::assertSame(Command::FAILURE, $status);
+        self::assertStringContainsString('[error] revision-unavailable-resource (members)', $output);
+        self::assertStringContainsString('does not exist at [Initial, Labels]', $output);
+        self::assertStringContainsString('[error] revision-unavailable-resource (teacher)', $output);
+        self::assertStringContainsString('does not exist at [head, UsersReplaceTeachers]', $output);
+
+        $this->command('jsonapi:check', ['resources' => [BoundedReferencesResource::class]])->assertSuccessful();
+    }
+
+    public function test_check_prints_the_revision_of_a_diagnostic(): void
+    {
+        $status = Artisan::call('jsonapi:check', ['resources' => [InvalidAtRevisionResource::class]]);
+
+        self::assertSame(Command::FAILURE, $status);
+        self::assertStringContainsString('[error] [Initial] invalid-member (author)', Artisan::output());
+    }
+
+    public function test_check_may_be_restricted_to_one_revision(): void
+    {
+        $this->command('jsonapi:check', ['resources' => [ForgottenWasResource::class], '--revision' => 'UsersReplaceTeachers'])
+            ->assertSuccessful();
+        $this->command('jsonapi:check', ['resources' => [ForgottenWasResource::class], '--revision' => 'Labels'])
+            ->expectsOutputToContain('does not exist at [Labels]')
+            ->assertFailed();
+        // The diagnostics of the other revisions are left out.
+        $this->command('jsonapi:check', ['resources' => [InvalidAtRevisionResource::class], '--revision' => 'Labels'])
+            ->assertSuccessful();
+        $this->command('jsonapi:check', ['resources' => [InvalidAtRevisionResource::class], '--revision' => 'Initial'])
+            ->assertFailed();
+    }
+
+    public function test_check_fails_on_a_revision_no_resource_knows(): void
+    {
+        $this->command('jsonapi:check', ['resources' => [ForgottenWasResource::class, TypedResource::class], '--revision' => 'Unknown'])
+            ->expectsOutputToContain('[Unknown]')
+            ->assertFailed();
+    }
+
+    public function test_check_skips_a_resource_without_the_revision(): void
+    {
+        $this->command('jsonapi:check', ['resources' => [ForgottenWasResource::class, TypedResource::class], '--revision' => 'UsersReplaceTeachers'])
+            ->expectsOutputToContain('SKIPPED')
             ->assertSuccessful();
     }
 }

@@ -86,6 +86,9 @@ final readonly class DefinitionCompiler
     /** The revisions of one resource are cases of several enums. */
     public const REVISION_MIXED_ENUMS = 'revision-mixed-enums';
 
+    /** A relationship of a resource existing at a revision reaches a resource absent from it (`RevisionReferences`). */
+    public const REVISION_UNAVAILABLE_RESOURCE = 'revision-unavailable-resource';
+
     /** The names JSON:API reserves for the resource identification. */
     public const RESERVED_NAMES = ['id', 'type'];
 
@@ -150,18 +153,17 @@ final readonly class DefinitionCompiler
         foreach ($boundaries as $boundary) {
             $revised = $this->build($class, $hooks, $lifetime, $boundaries, $boundary, head: $names);
             $revisions[] = $revised;
-            // What only a revision shows is reported on the head too, which the checks read.
+            // What only a revision shows is reported on the head too, which the checks read, with that revision.
             foreach ($revised->diagnostics as $diagnostic) {
                 $key = "{$diagnostic->code}|{$diagnostic->subject}|{$diagnostic->message}";
                 if (!isset($known[$key]) && !isset($diagnostics[$key])) {
-                    $diagnostics[$key] = str_starts_with($diagnostic->code, 'revision-')
-                        ? $diagnostic
-                        : new Diagnostic(
-                            $diagnostic->level,
-                            $diagnostic->code,
-                            "At the revision [{$boundary->name}]: {$diagnostic->message}",
-                            $diagnostic->subject,
-                        );
+                    $diagnostics[$key] = new Diagnostic(
+                        $diagnostic->level,
+                        $diagnostic->code,
+                        $diagnostic->message,
+                        $diagnostic->subject,
+                        $boundary->name,
+                    );
                 }
             }
         }

@@ -154,7 +154,7 @@ Validated at boot: a wrong value throws `Exceptions\InvalidConfigurationExceptio
 | Command | Effect |
 | --- | --- |
 | `php artisan make:jsonapi-resource PostResource [--model=Post] [--force]` | Writes a resource from the casts, fillable attributes and relations of the model (`vendor:publish --tag=jsonapi-stubs` for its stub) |
-| `php artisan jsonapi:check [resources…] [--strict]` | Prints the diagnostics of the definitions; fails on an error (on a warning too with `--strict`) |
+| `php artisan jsonapi:check [resources…] [--strict] [--revision=Case]` | Prints the diagnostics of the definitions at every revision (`[error] [Labels] code (subject): …`) and of the references between resources; fails on an error (on a warning too with `--strict`); `--revision` checks one revision only |
 | `php artisan jsonapi:cache` | Compiles every definition into `bootstrap/cache/jsonapi.php` (run by `php artisan optimize`) |
 | `php artisan jsonapi:clear` | Removes the compiled definitions (run by `optimize:clear`) |
 
@@ -181,6 +181,7 @@ only, in the diagnostics of the `JsonApiContext`.
 | `revision-value-gap` | warning | An older `was()` without the value (or name) a newer one gives: its clients get the head's |
 | `revision-noop` | warning | `since()` / `#[JsonApiSince]` naming the oldest revision |
 | `revision-mixed-enums` | error | Revisions of one resource from several enums |
+| `revision-unavailable-resource` | error | A relationship reaches, at a revision, a resource absent from it (`#[JsonApiSince]` without `was()` for the older revisions, a head relationship to a `#[JsonApiUntil]` resource): read by `jsonapi:check`, not by the compiler |
 | `missing-route` | error | The `self` route of `#[JsonApiRoutes]` does not exist |
 | `load-conflict` | warning | Two relationships load the same relation with different `withLoad()` constraints |
 | `filter-on-unloaded` | warning | `->filters()` on a relation that is not loaded, read resource by resource: let it load |
