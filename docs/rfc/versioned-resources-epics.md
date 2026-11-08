@@ -456,12 +456,13 @@ Acceptance criteria:
   `MergeValue` of `applyWhen()`, recursively; `RelationRaw`; struct members (the struct closure is wrapped so that its
   members are transformed when it is read, `src/Descriptors/Values/ValueStruct.php:68-74`); closures and raw values
   (unchanged, they have no history).
-- `$revision === null`: returns `$members` as they are (same instance).
+- `$revision === null` (the head): the fields `until()` a revision are left out too, so the members are always
+  transformed; the fast path is the caller's (`Definitions::isRevised()`, US 3.2).
 - Applies to `toAttributes()`, `toRelationships()`, `toResourceMeta()`, `toDocumentMeta()` (resources and
   collections).
 
 Tests: one per member kind, plus the **invariant test**: for every fixture resource and every revision, the names of
-the definition equal the names of the rendered document with an empty fieldset.
+the definition equal the names of the rendered document with an empty fieldset (written with the rendering, US 4.1).
 
 #### US 3.2 — Compiling a definition for a revision · L
 

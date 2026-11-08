@@ -6,9 +6,11 @@ namespace Ark4ne\JsonApi\Descriptors\Values;
 
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Definition\AttributeDefinition;
+use Ark4ne\JsonApi\Definition\Revision;
 use Ark4ne\JsonApi\Definition\ValueType;
 use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Descriptors\Members;
+use Ark4ne\JsonApi\Descriptors\RevisedMembers;
 use Ark4ne\JsonApi\Support\Diagnostics;
 use Ark4ne\JsonApi\Support\Values;
 use Closure;
@@ -71,6 +73,22 @@ final class ValueStruct extends Value
         $members = $this->attribute;
 
         return $members($subject, $name);
+    }
+
+    /**
+     * This struct with its members as `$revision` sees them, transformed when the struct reads them.
+     *
+     * @internal Used by `RevisedMembers`.
+     */
+    public function atRevision(?Revision $revision): static
+    {
+        /** @var Closure(mixed, string): iterable<array-key, mixed> $members */
+        $members = $this->attribute;
+
+        return $this->with('attribute', static fn(mixed $model, string $name): array => RevisedMembers::apply(
+            $members($model, $name),
+            $revision,
+        ));
     }
 
     public function definition(
