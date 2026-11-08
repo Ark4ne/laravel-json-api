@@ -7,6 +7,7 @@ namespace Test\Unit\Compilation;
 use Ark4ne\JsonApi\Compilation\CompiledDefinitions;
 use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Configuration\Configuration;
+use Ark4ne\JsonApi\Definition\Lifetime;
 use Ark4ne\JsonApi\Definition\ResourceDefinition;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Closure;
@@ -167,12 +168,12 @@ final class DefinitionsTest extends TestCase
         self::assertSame('blog-posts', Definitions::declaredType(BlogPostResource::class));
     }
 
-    public function test_the_lifetime_of_a_resource_is_kept_by_class(): void
+    public function test_the_lifetime_of_a_resource_is_read_from_its_attributes(): void
     {
         $lifetime = Definitions::lifetime(TeacherResource::class);
 
         self::assertSame(ApiRevision::Labels, $lifetime->until);
-        self::assertSame($lifetime, Definitions::lifetime(TeacherResource::class));
+        self::assertEquals($lifetime, Definitions::lifetime(TeacherResource::class));
     }
 
     public function test_the_definition_of_a_revision_has_its_names(): void
@@ -282,5 +283,14 @@ final class DefinitionsTest extends TestCase
 
         self::assertSame($initial, Definitions::for(ProfileResource::class, ApiRevision::Initial));
         self::assertSame(ApiRevision::Labels, Definitions::for(ProfileResource::class, ApiRevision::Labels)->revision);
+    }
+
+    public function test_the_lifetime_of_a_resource_is_that_of_its_definition(): void
+    {
+        $definition = ResourceDefinition::of(TypedResource::class, 'typed')->lifetime(new Lifetime(until: ApiRevision::Labels));
+        Definitions::preload([TypedResource::class => $definition]);
+
+        self::assertSame(ApiRevision::Labels, Definitions::lifetime(TypedResource::class)->until);
+        self::assertFalse(Definitions::exists(TypedResource::class, null));
     }
 }

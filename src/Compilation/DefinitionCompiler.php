@@ -18,6 +18,7 @@ use Ark4ne\JsonApi\Descriptors\Members;
 use Ark4ne\JsonApi\Descriptors\RevisedMembers;
 use Ark4ne\JsonApi\Descriptors\RevisionFindings;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
+use Ark4ne\JsonApi\Support\Diagnostic;
 use Ark4ne\JsonApi\Support\Diagnostics;
 use Ark4ne\JsonApi\Support\Probe;
 use Closure;
@@ -85,7 +86,8 @@ final readonly class DefinitionCompiler
     /** The revisions of one resource are cases of several enums. */
     public const REVISION_MIXED_ENUMS = 'revision-mixed-enums';
 
-    private const RESERVED_NAMES = ['id', 'type'];
+    /** The names JSON:API reserves for the resource identification. */
+    public const RESERVED_NAMES = ['id', 'type'];
 
     public function __construct(
         private Configuration $configuration,
@@ -110,18 +112,15 @@ final readonly class DefinitionCompiler
             return $this->predefined($class, $predefined, $lifetime);
         }
 
-        if ($revision === null) {
-            return $this->compileEvery($class)[0];
+        $every = $this->compileEvery($class);
+        $boundary = $every[0]->boundaryOf($revision);
+        foreach ($every as $definition) {
+            if ($definition->revision === $boundary) {
+                return $definition;
+            }
         }
 
-        $hooks = $this->hooks($class);
-        [$head, $boundaries] = $this->head($class, $hooks, $lifetime);
-        $boundary = RevisionOrder::boundaryOf($boundaries, $revision);
-
-        return $boundary === null ? $head : $this->build($class, $hooks, $lifetime, $boundaries, $boundary, head: [
-            ...array_keys($head->attributes),
-            ...array_keys($head->relationships),
-        ]);
+        return $every[0];
     }
 
     /**
@@ -151,13 +150,25 @@ final readonly class DefinitionCompiler
 
         $revisions = [];
         $diagnostics = [];
+        $known = [];
+        foreach ($head->diagnostics as $diagnostic) {
+            $known["{$diagnostic->code}|{$diagnostic->subject}|{$diagnostic->message}"] = true;
+        }
         foreach ($boundaries as $boundary) {
             $revised = $this->build($class, $hooks, $lifetime, $boundaries, $boundary, head: $names);
             $revisions[] = $revised;
             // What only a revision shows is reported on the head too, which the checks read.
             foreach ($revised->diagnostics as $diagnostic) {
-                if (str_starts_with($diagnostic->code, 'revision-')) {
-                    $diagnostics["{$diagnostic->code}|{$diagnostic->subject}|{$diagnostic->message}"] = $diagnostic;
+                $key = "{$diagnostic->code}|{$diagnostic->subject}|{$diagnostic->message}";
+                if (!isset($known[$key]) && !isset($diagnostics[$key])) {
+                    $diagnostics[$key] = str_starts_with($diagnostic->code, 'revision-')
+                        ? $diagnostic
+                        : new Diagnostic(
+                            $diagnostic->level,
+                            $diagnostic->code,
+                            "At the revision [{$boundary->name}]: {$diagnostic->message}",
+                            $diagnostic->subject,
+                        );
                 }
             }
         }

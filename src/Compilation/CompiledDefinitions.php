@@ -28,6 +28,16 @@ final readonly class CompiledDefinitions
         return $definition->revision === null ? $definition->class : "{$definition->class}@{$definition->revision->name}";
     }
 
+    /**
+     * The name of the revision of a key of the file, `null` for a head (`key()`).
+     */
+    public static function boundaryOf(string $key): ?string
+    {
+        $boundary = strstr($key, '@');
+
+        return $boundary === false ? null : substr($boundary, 1);
+    }
+
     public function exists(): bool
     {
         return is_file($this->path);

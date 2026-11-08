@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace Test\Unit\Descriptors;
 
+use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Descriptors\FieldHistory;
 use Ark4ne\JsonApi\Descriptors\Relations\RelationMany;
 use Ark4ne\JsonApi\Descriptors\Relations\RelationOne;
+use Ark4ne\JsonApi\Descriptors\Values\ValueDateTime;
 use Ark4ne\JsonApi\Descriptors\Values\ValueInteger;
 use Ark4ne\JsonApi\Descriptors\Values\ValueString;
 use Ark4ne\JsonApi\Descriptors\Values\ValueStruct;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
+use Ark4ne\JsonApi\Exceptions\RenderingException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -254,6 +257,17 @@ final class FieldHistoryTest extends TestCase
 
         self::assertInstanceOf(RelationOne::class, $relation);
         self::assertTrue($relation->passes(new Request(), $model, 'writer'));
+    }
+
+    public function test_a_renamed_field_names_its_rendered_name_in_its_errors(): void
+    {
+        $head = (new ValueDateTime('birth_date'))->nullable(false)->was(ApiRevision::Initial, name: 'born_on');
+        $field = $this->at($head, 'birth_date', ApiRevision::Initial)[1];
+
+        $this->expectException(RenderingException::class);
+        $this->expectExceptionMessage('born_on');
+
+        $field->valueFor(new Request(), ['birth_date' => null], 'born_on', Configuration::fromArray(['describer' => ['strict' => true]]));
     }
 
     /**

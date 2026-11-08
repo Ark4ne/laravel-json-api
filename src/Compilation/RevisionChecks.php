@@ -101,7 +101,7 @@ final readonly class RevisionChecks
         }
 
         foreach (array_keys($counts) as $name) {
-            if (in_array($name, ['id', 'type'], true) && !in_array($name, $head, true)) {
+            if (in_array($name, DefinitionCompiler::RESERVED_NAMES, true) && !in_array($name, $head, true)) {
                 $diagnostics->error(
                     DefinitionCompiler::REVISION_RESERVED_NAME,
                     "[{$name}] is reserved by JSON:API for the resource identification, and a field takes it at the "
@@ -131,6 +131,15 @@ final readonly class RevisionChecks
             $diagnostics->warning(
                 DefinitionCompiler::REVISION_NOOP,
                 "since({$since->name}) names the oldest revision: it hides the field from none. Remove it.",
+                $name,
+            );
+        }
+
+        if ($since !== null && $until !== null && RevisionOrder::compare($since, $until) > 0) {
+            $diagnostics->error(
+                DefinitionCompiler::REVISION_OUT_OF_LIFE,
+                "since({$since->name}) is newer than until({$until->name}): the field exists at no revision. Fix the "
+                . 'bounds, or remove the field.',
                 $name,
             );
         }

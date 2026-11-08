@@ -64,7 +64,8 @@ final class ValueStruct extends Value
     }
 
     /**
-     * The members the struct declares, read on a subject standing for the model.
+     * The members the struct declares, read on a subject standing for the model; the closure receives the head name of a
+     * struct standing for it at a revision, as when rendered.
      *
      * @return iterable<array-key, mixed>
      */
@@ -73,7 +74,7 @@ final class ValueStruct extends Value
         /** @var Closure(mixed, string): iterable<array-key, mixed> $members */
         $members = $this->attribute;
 
-        return $members($subject, $name);
+        return $members($subject, $this->headName ?? $name);
     }
 
     /**

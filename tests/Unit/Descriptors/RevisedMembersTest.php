@@ -123,4 +123,19 @@ final class RevisedMembersTest extends TestCase
         self::assertSame(['writer', 'owner'], array_keys(RevisedMembers::apply($members, ApiRevision::Initial)));
         self::assertSame(['author'], array_keys(RevisedMembers::apply($members, null)));
     }
+
+    public function test_a_renamed_struct_reads_its_members_with_the_head_name(): void
+    {
+        $struct = (new ValueStruct(static fn(mixed $model, string $name): array => ['name' => new ValueString(static fn() => $name)]))
+            ->was(ApiRevision::Initial, name: 'old_address');
+
+        $revised = RevisedMembers::apply(['address' => $struct], ApiRevision::Initial)['old_address'];
+
+        self::assertInstanceOf(ValueStruct::class, $revised);
+        self::assertSame(['name' => 'address'], $revised->valueFor(new Request(), [], 'old_address'));
+        // Compiled as rendered: the closure receives the head name.
+        $members = [...$revised->members(null, 'old_address')];
+        self::assertInstanceOf(ValueString::class, $members['name']);
+        self::assertSame('address', $members['name']->valueFor(new Request(), [], 'name'));
+    }
 }

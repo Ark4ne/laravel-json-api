@@ -134,6 +134,8 @@ abstract class Value extends Describer
         ?Configuration $configuration = null,
     ): mixed {
         $configuration ??= Configuration::defaults();
+        // The model is read as the head reads it; the errors name what the client sees.
+        $rendered = $field;
         $field = $this->headName ?? $field;
 
         if ($this->attribute instanceof Closure) {
@@ -150,7 +152,7 @@ abstract class Value extends Describer
 
         // Not nullable, but no value stands for null (a date): an error to see in strict mode, `null` otherwise.
         return $value === null && $resolved === null && $configuration->strict
-            ? throw RenderingException::nullNotNullable($field)
+            ? throw RenderingException::nullNotNullable($rendered)
             : $resolved;
     }
 

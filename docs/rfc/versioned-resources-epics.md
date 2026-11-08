@@ -537,7 +537,8 @@ field; the message names the revision and the fix.
 
 Done: the checks live in `Compilation\RevisionChecks`; the fields are seen by `RevisedMembers` (`RevisionFindings`)
 while it transforms the head, the names of each revision on its shape. What a revision shows is reported on the head
-definition too (deduplicated), since `jsonapi:check` and `assertValid()` read the head. With mixed enums the resource
+definition too (deduplicated), since `jsonapi:check` and `assertValid()` read the head: the `revision-*` codes as
+they are, any other one (`invalid-member`, `hook-failure`…) prefixed with the revision it shows at. With mixed enums the resource
 has no boundary: one shape, the head.
 
 Tests: one per code, plus `test_reusing_the_name_of_a_removed_relationship_needs_since` (case 10).

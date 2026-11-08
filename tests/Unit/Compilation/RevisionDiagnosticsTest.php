@@ -14,6 +14,7 @@ use Ark4ne\JsonApi\Support\Diagnostic;
 use Ark4ne\JsonApi\Support\DiagnosticLevel;
 use Illuminate\Http\Request;
 use PHPUnit\Framework\TestCase;
+use stdClass;
 use Test\app\Http\Resources\CommentResource;
 use Test\app\Http\Resources\UserResource;
 use Test\app\Revisions\ApiRevision;
@@ -259,5 +260,50 @@ final class RevisionDiagnosticsTest extends TestCase
     private function codes(ResourceDefinition $definition): array
     {
         return array_map(static fn(Diagnostic $diagnostic): string => $diagnostic->code, $definition->diagnostics);
+    }
+
+    public function test_a_field_since_a_revision_newer_than_its_until_is_reported(): void
+    {
+        $resource = new class (null) extends JsonApiResource {
+            public function toAttributes(Request $request): iterable
+            {
+                return ['title' => $this->string()->since(ApiRevision::Labels)->until(ApiRevision::Initial)];
+            }
+        };
+
+        self::assertSame('title', $this->only($resource::class, DefinitionCompiler::REVISION_OUT_OF_LIFE)->subject);
+    }
+
+    public function test_an_error_shown_only_by_a_revision_is_reported_on_the_head(): void
+    {
+        $resource = new class (null) extends JsonApiResource {
+            protected function toRelationships(Request $request): iterable
+            {
+                return [
+                    'author' => $this->one(UserResource::class)
+                        ->was(ApiRevision::Initial, value: $this->one(stdClass::class)),
+                ];
+            }
+        };
+
+        $diagnostic = $this->only($resource::class, DefinitionCompiler::INVALID_MEMBER);
+
+        self::assertSame(DiagnosticLevel::Error, $diagnostic->level);
+        self::assertStringContainsString('Initial', $diagnostic->message);
+    }
+
+    public function test_the_head_compiled_for_a_revision_has_the_diagnostics_of_every_revision(): void
+    {
+        $resource = new class (null) extends JsonApiResource {
+            public function toAttributes(Request $request): iterable
+            {
+                return ['identifier' => $this->string()->was(ApiRevision::Initial, name: 'id')];
+            }
+        };
+        /** @var class-string<DefinitionSource> $class */
+        $class = $resource::class;
+        $compiler = new DefinitionCompiler(Configuration::defaults());
+
+        self::assertEquals($compiler->compile($class), $compiler->compile($class, ApiRevision::Labels));
     }
 }

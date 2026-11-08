@@ -33,8 +33,8 @@ final class Definitions
     /** @var array<class-string<DefinitionSource>, string> */
     private static array $declaredTypes = [];
 
-    /** @var array<class-string<DefinitionSource>, Lifetime> */
-    private static array $lifetimes = [];
+    /** @var array<class-string<DefinitionSource>, array<string, ResourceDefinition>> By class, then revision */
+    private static array $shapes = [];
 
     private static ?Configuration $configuration = null;
 
@@ -72,11 +72,11 @@ final class Definitions
     public static function preload(array $definitions): void
     {
         foreach ($definitions as $key => $definition) {
-            $boundary = strstr($key, '@');
-            if ($boundary === false) {
+            $boundary = CompiledDefinitions::boundaryOf($key);
+            if ($boundary === null) {
                 self::$definitions[$definition->class] = $definition;
             } else {
-                self::$revisions[$definition->class][substr($boundary, 1)] = $definition;
+                self::$revisions[$definition->class][$boundary] = $definition;
             }
         }
     }
@@ -89,7 +89,7 @@ final class Definitions
      * @param class-string<DefinitionSource> $class
      *
      * @throws DefinitionException when the class is not a resource or cannot be compiled, or when it does not exist at
-     *                             `$revision`
+     *                             `$revision` (a revision given: without one, the head, as in 2.0)
      */
     public static function for(string $class, ?Revision $revision = null): ResourceDefinition
     {
@@ -98,6 +98,17 @@ final class Definitions
             return $head;
         }
 
+        // Read once per class and revision: the rendering asks for each resource.
+        return self::$shapes[$class][$revision::class . '::' . $revision->name] ??= self::shape($class, $head, $revision);
+    }
+
+    /**
+     * @param class-string<DefinitionSource> $class
+     *
+     * @throws DefinitionException when the resource does not exist at `$revision`
+     */
+    private static function shape(string $class, ResourceDefinition $head, Revision $revision): ResourceDefinition
+    {
         if (!$head->existsAt($revision)) {
             throw DefinitionException::notInRevision($class, $revision::class . '::' . $revision->name);
         }
@@ -182,15 +193,18 @@ final class Definitions
     }
 
     /**
-     * The revisions a resource exists for (`#[JsonApiSince]`, `#[JsonApiUntil]`).
+     * The revisions a resource exists for: those of its definition (`#[JsonApiSince]`, `#[JsonApiUntil]`, or its own
+     * when written by hand).
      *
      * @param class-string<DefinitionSource> $class
      *
-     * @throws DefinitionException when it exists at no revision
+     * @throws DefinitionException when the class is not a resource or cannot be compiled
      */
     public static function lifetime(string $class): Lifetime
     {
-        return self::$lifetimes[$class] ??= self::compiler()->lifetime($class);
+        $head = self::head($class);
+
+        return new Lifetime($head->since, $head->until);
     }
 
     /**
@@ -213,7 +227,7 @@ final class Definitions
         self::$revisions = [];
         self::$constraints = [];
         self::$declaredTypes = [];
-        self::$lifetimes = [];
+        self::$shapes = [];
         self::$compiledRead = false;
     }
 
