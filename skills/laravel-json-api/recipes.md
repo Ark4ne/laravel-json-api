@@ -444,6 +444,143 @@ final readonly class PaymentRequiredErrorRenderer implements ErrorRenderer
 }
 ```
 
+## Versioned resources
+
+Clients are pinned on a dated revision (`Api-Version: 2026-09-01`); the code holds the latest shape only, the head.
+Here the revision `Authors` renamed `name` to `title`, replaced the `writers` type by `authors`, removed
+`legacy_code` and shortened the summary. Every older shape is declared on the field that changed, with
+`was(<the revision that was the newest until then>)`.
+
+```php
+namespace App\Recipes\Library;
+
+use Ark4ne\JsonApi\Definition\JsonApiSince;
+use Ark4ne\JsonApi\Definition\JsonApiUntil;
+use Ark4ne\JsonApi\Definition\Revision;
+use Ark4ne\JsonApi\Laravel\JsonApi;
+use Ark4ne\JsonApi\Resources\Attributes\JsonApiType;
+use Ark4ne\JsonApi\Resources\JsonApiResource;
+use Closure;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\Response;
+
+/** The revisions clients can be pinned on, the oldest first. */
+enum LibraryRevision: string implements Revision
+{
+    case Initial = '2026-09-01';
+    case Authors = '2027-01-15';
+
+    public function description(): string
+    {
+        return match ($this) {
+            self::Initial => 'First published revision',
+            self::Authors => 'Books have a title and authors',
+        };
+    }
+}
+
+/** The application reads its own header; no header is the head. */
+final class UseLibraryRevision
+{
+    /**
+     * @param Closure(Request): Response $next
+     */
+    public function handle(Request $request, Closure $next): Response
+    {
+        $header = $request->header('Api-Version');
+
+        JsonApi::useRevision($request, is_string($header) ? LibraryRevision::tryFrom($header) : null);
+
+        return $next($request);
+    }
+}
+
+final class Author extends Model
+{
+    protected $guarded = [];
+}
+
+final class Book extends Model
+{
+    protected $guarded = [];
+
+    /**
+     * @return BelongsTo<Author, $this>
+     */
+    public function author(): BelongsTo
+    {
+        return $this->belongsTo(Author::class);
+    }
+}
+
+/**
+ * The new type, absent from the older revisions.
+ *
+ * @extends JsonApiResource<Author>
+ */
+#[JsonApiType('authors')]
+#[JsonApiSince(LibraryRevision::Authors)]
+final class AuthorResource extends JsonApiResource
+{
+    public function toAttributes(Request $request): iterable
+    {
+        return ['display_name' => $this->string('name')];
+    }
+}
+
+/**
+ * The old type, kept as it was for the older revisions.
+ *
+ * @extends JsonApiResource<Author>
+ */
+#[JsonApiType('writers')]
+#[JsonApiUntil(LibraryRevision::Initial)]
+final class WriterResource extends JsonApiResource
+{
+    public function toAttributes(Request $request): iterable
+    {
+        return ['name' => $this->string()];
+    }
+}
+
+/**
+ * @extends JsonApiResource<Book>
+ */
+#[JsonApiType('books')]
+final class BookResource extends JsonApiResource
+{
+    public function toAttributes(Request $request): iterable
+    {
+        return [
+            // Renamed: the old name, the head descriptor.
+            'title' => $this->string()->was(LibraryRevision::Initial, name: 'name'),
+            // A change of meaning without change of shape: a guard.
+            'summary' => $this->string(fn() => $this->requestedRevision()->atMost(LibraryRevision::Initial)
+                ? $this->resource->summary
+                : Str::limit((string) $this->resource->summary, 20)),
+            // Revisions
+            'legacy_code' => $this->string()->until(LibraryRevision::Initial),
+        ];
+    }
+
+    protected function toRelationships(Request $request): iterable
+    {
+        return [
+            // Renamed, to the old type: the value reads the same relation, `author`.
+            'author' => $this->one(AuthorResource::class)
+                ->was(LibraryRevision::Initial, name: 'writer', value: $this->one(WriterResource::class)),
+        ];
+    }
+}
+```
+
+Checked like any resource: `php artisan jsonapi:check` checks every revision, and a relationship reaching a resource
+absent from one (`revision-unavailable-resource`). To retire `Initial`: delete the case, run `composer stan`, delete
+every reported line and `WriterResource`, run `php artisan jsonapi:check`.
+
 ## Checking resources in tests
 
 ```php skip

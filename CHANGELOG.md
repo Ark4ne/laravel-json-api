@@ -92,7 +92,8 @@ change.
   there (the head by default, with the diagnostics of every revision and the references at the head);
   `assertValidAtEveryRevision($class, $strict)` asserts the references at every revision; `definitionAt($class,
   $revision)` returns the definition of a revision compiled from the current code, for snapshot tests.
-- README "Versioned resources" and a "Revisions" section in the skill reference and its rules.
+- README "Versioned resources" and a "Revisions" section in the skill reference and its rules; a tested recipe
+  "Versioned resources" in the skill.
 - At a revision, the links of `#[JsonApiRoutes]` follow the relationships of that revision and their names; the
   default attributes leave out the foreign keys of the relationships of that revision; a polymorphic relationship
   plans only the resources of its map existing at it; `whenInFields()` / `whenInIncludes()` translate the first
