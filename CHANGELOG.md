@@ -5,6 +5,14 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Versioned resources** (in progress, `docs/rfc/versioned-resources-epics.md`): `Definition\Revision`, the contract an
+  application implements with an enum whose cases, declared oldest first, are the revisions its clients are pinned on;
+  `Definition\RevisionOrder` compares them (inclusive bounds, the head newer than every revision).
+
 ## [2.0.0] — 2026-11-03
 
 ### Added

@@ -12,6 +12,14 @@ use Throwable;
 final class DefinitionException extends LogicException implements JsonApiException
 {
     /**
+     * Two revisions of different enums were compared: an application declares its revisions with one enum.
+     */
+    public static function mixedRevisions(string $a, string $b): self
+    {
+        return new self("Revisions of two enums cannot be compared: [{$a}] and [{$b}]. Declare every revision with one enum.");
+    }
+
+    /**
      * The class is not a resource: it does not implement `DefinitionSource`.
      */
     public static function notADefinitionSource(string $class): self
