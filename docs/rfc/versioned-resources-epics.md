@@ -847,6 +847,9 @@ Acceptance criteria:
 - §11: no new extension point (the contract is an interface implemented by an enum).
 - The study `docs/rfc/versioned-resources.md` is marked "decided, see the plan".
 
+Done: `docs/architecture.md` §18 (model, central invariant, buckets, fast path, diagnostics); §1, §2, §3 (semver of
+the additive properties, public contract), §6, §11 and §12 name the revisions.
+
 #### US 7.2 — Guide · M
 
 The reference of the skill (`reference.md`, checked by `tests/Feature/Skill/SkillTest.php`) names every new helper

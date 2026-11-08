@@ -6,7 +6,7 @@
 > (families A, B, C, G; `type:` of `was()`; any type depending on the revision or on the include path). The study is
 > kept as the record of the options explored.
 >
-> Status: **exploration**, nothing implemented. Target: a minor, non-breaking 2.x release.
+> Status: **decided, see the plan** (implemented in 2.1). Target: a minor, non-breaking 2.x release.
 > Scope: how a resource declares the shapes it had in earlier revisions of an API, so that the package renders them
 > and describes them (definitions, validation, OpenAPI) from the code of the latest shape only.
 
