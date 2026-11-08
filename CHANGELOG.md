@@ -25,6 +25,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `#[Definition\JsonApiSince($revision)]` and `#[Definition\JsonApiUntil($revision)]` on a resource: the type exists
   from, or up to, a revision (inclusive), read on the class itself; `Definitions::lifetime($class)` gives its
   `Definition\Lifetime`. A resource existing at no revision cannot be compiled.
+- `ResourceDefinition::$revision` (the revision a definition describes, `null` for the head), `$since` / `$until`
+  (the lifetime of the resource, set by the compiler) and `$boundaries` (the revisions where its shape changes), with
+  `revision()`, `lifetime()` and `boundaries()`; optional keys of `__set_state()`, so a compiled file of 2.0 is read.
 
 ## [2.0.0] — 2026-11-03
 

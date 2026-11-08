@@ -70,12 +70,17 @@ final readonly class DefinitionCompiler
     public function compile(string $class): ResourceDefinition
     {
         $class = $this->source($class);
-        $this->lifetime($class);
+        $lifetime = $this->lifetime($class);
 
         $predefined = $class::predefinedDefinition();
         if ($predefined !== null) {
-            // The routes of `#[JsonApiRoutes]` are kept unless the definition written by hand has its own.
-            return $predefined->routes === null ? $predefined->routes($class::declaredRoutes()) : $predefined;
+            // The routes of `#[JsonApiRoutes]` and the lifetime of the attributes are kept unless the definition written
+            // by hand has its own.
+            $predefined = $predefined->routes === null ? $predefined->routes($class::declaredRoutes()) : $predefined;
+
+            return $predefined->since === null && $predefined->until === null
+                ? $predefined->lifetime($lifetime)
+                : $predefined;
         }
 
         $run = $this->run($class);
@@ -87,7 +92,8 @@ final readonly class DefinitionCompiler
             ->links(...$run['links'])
             ->meta(...$run['meta'])
             ->documentMeta(...$run['documentMeta'])
-            ->routes($class::declaredRoutes());
+            ->routes($class::declaredRoutes())
+            ->lifetime($lifetime);
 
         foreach ([...array_keys($definition->attributes), ...array_keys($definition->relationships)] as $name) {
             if (in_array($name, self::RESERVED_NAMES, true)) {

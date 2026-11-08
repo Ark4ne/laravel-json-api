@@ -24,6 +24,12 @@ final readonly class ResourceDefinition
      *                                                         (`toDocumentMeta()`)
      * @param list<Diagnostic> $diagnostics Findings of the compilation
      * @param RouteNames|null $routes The routes its links are generated with (`#[JsonApiRoutes]`)
+     * @param Revision|null $revision The revision it describes, `null` for the head: the oldest of the revisions sharing
+     *                                its shape
+     * @param Revision|null $since The oldest revision the resource exists at (`#[JsonApiSince]`), `null` for every one
+     * @param Revision|null $until The newest revision the resource exists at (`#[JsonApiUntil]`), `null` for the head
+     * @param list<Revision> $boundaries The revisions where the shape of the resource changes, oldest first: the shape
+     *                                   of a revision is that of the oldest boundary at least as new, otherwise the head
      */
     private function __construct(
         public string $class,
@@ -35,6 +41,10 @@ final readonly class ResourceDefinition
         public array $documentMeta = [],
         public array $diagnostics = [],
         public ?RouteNames $routes = null,
+        public ?Revision $revision = null,
+        public ?Revision $since = null,
+        public ?Revision $until = null,
+        public array $boundaries = [],
     ) {}
 
     /**
@@ -106,6 +116,40 @@ final readonly class ResourceDefinition
         return $this->copy(routes: $routes ?? false);
     }
 
+    /**
+     * Replaces the revision it describes, `null` for the head.
+     */
+    public function revision(?Revision $revision): self
+    {
+        return $this->copy(revision: $revision ?? false);
+    }
+
+    /**
+     * Replaces the revisions the resource exists for.
+     */
+    public function lifetime(Lifetime $lifetime): self
+    {
+        return $this->copy(since: $lifetime->since ?? false, until: $lifetime->until ?? false);
+    }
+
+    /**
+     * Replaces the revisions where its shape changes: each once, oldest first.
+     *
+     * @throws \Ark4ne\JsonApi\Exceptions\DefinitionException when the revisions are cases of two enums
+     */
+    public function boundaries(Revision ...$boundaries): self
+    {
+        $unique = [];
+        foreach ($boundaries as $boundary) {
+            if (!in_array($boundary, $unique, true)) {
+                $unique[] = $boundary;
+            }
+        }
+        usort($unique, RevisionOrder::compare(...));
+
+        return $this->copy(boundaries: $unique);
+    }
+
     public function attribute(string $name): ?AttributeDefinition
     {
         return $this->attributes[$name] ?? null;
@@ -151,6 +195,10 @@ final readonly class ResourceDefinition
      *     documentMeta?: array<string, AttributeDefinition>,
      *     diagnostics: list<Diagnostic>,
      *     routes?: RouteNames|null,
+     *     revision?: Revision|null,
+     *     since?: Revision|null,
+     *     until?: Revision|null,
+     *     boundaries?: list<Revision>,
      * } $properties
      */
     public static function __set_state(array $properties): self
@@ -181,6 +229,10 @@ final readonly class ResourceDefinition
      * @param array<string, AttributeDefinition>|null $documentMeta
      * @param list<Diagnostic>|null $diagnostics
      * @param RouteNames|false|null $routes `null` to keep the current ones, `false` for none
+     * @param Revision|false|null $revision `null` to keep the current one, `false` for the head
+     * @param Revision|false|null $since `null` to keep the current one, `false` for none
+     * @param Revision|false|null $until `null` to keep the current one, `false` for none
+     * @param list<Revision>|null $boundaries
      */
     private function copy(
         ?array $attributes = null,
@@ -190,6 +242,10 @@ final readonly class ResourceDefinition
         ?array $documentMeta = null,
         ?array $diagnostics = null,
         RouteNames|false|null $routes = null,
+        Revision|false|null $revision = null,
+        Revision|false|null $since = null,
+        Revision|false|null $until = null,
+        ?array $boundaries = null,
     ): self {
         return new self(
             class: $this->class,
@@ -201,6 +257,10 @@ final readonly class ResourceDefinition
             documentMeta: $documentMeta ?? $this->documentMeta,
             diagnostics: $diagnostics ?? $this->diagnostics,
             routes: $routes === false ? null : $routes ?? $this->routes,
+            revision: $revision === false ? null : $revision ?? $this->revision,
+            since: $since === false ? null : $since ?? $this->since,
+            until: $until === false ? null : $until ?? $this->until,
+            boundaries: $boundaries ?? $this->boundaries,
         );
     }
 }

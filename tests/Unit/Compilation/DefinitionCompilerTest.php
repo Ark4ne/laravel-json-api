@@ -484,4 +484,13 @@ final class DefinitionCompilerTest extends TestCase
 
         $this->compile(EmptyLifetimeResource::class);
     }
+
+    public function test_the_definition_names_the_lifetime_of_the_resource(): void
+    {
+        $definition = $this->compile(TeacherResource::class);
+
+        self::assertNull($definition->since);
+        self::assertSame(ApiRevision::Labels, $definition->until);
+        self::assertNull($definition->revision);
+    }
 }
