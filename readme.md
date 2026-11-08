@@ -1256,7 +1256,9 @@ changes in a new revision, write **`was(<the revision that was the newest until 
 - **The model has one version.** A `value:` without source reads the source of the head field (here `price_cents`
   for `amount` too), and the conditions reading the model (`whenHas()`, `when()`…) read the head attribute. A head
   field computed by a closure needs a `value:` with its own source. `whenInFields()` and `whenInIncludes()` follow the
-  names of the revision, which the client writes.
+  names of the revision, which the client writes (every relationship of a nested include path).
+- The links of `#[JsonApiRoutes]` follow the relationships of the revision and their names: an old client gets
+  `posts.relationships.writer`, never a relationship its revision does not have.
 - The same on a relationship: its old name, include path and fields, its old related resource and cardinality.
 
 ```php

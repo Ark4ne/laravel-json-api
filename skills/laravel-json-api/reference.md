@@ -113,8 +113,9 @@ Modifiers of every relationship:
 | `$this->whenInIncludes(Request $request, string $relationship, mixed $value)` | A value rendered only when `include` names the relationship |
 | `$this->mergeWhen(...)` | Avoid: rendered, but hidden from the definition (`merge-when` warning), its `was()` / `since()` / `until()` may not apply |
 
-Both helpers take the name of the code; at a revision, they test the name the field has at it, and fail for a field
-that does not exist at it. A descriptor given as their value is hidden from the definition (it is missing on the
+Both helpers take the name of the code; at a revision, they test the name the field has at it (every relationship of a
+nested include path, the first segment of a struct path), and fail for a field that does not exist at it; a name no
+field declares is kept as it is. A descriptor given as their value is hidden from the definition (it is missing on the
 probe), and so are its `was()`, `since()` and `until()`: for a revised field, use the descriptor conditions
 (`->whenInFields()`, `->when()`), which the definition sees.
 
@@ -142,6 +143,7 @@ declared on the fields that changed. Bounds are inclusive.
 | `#[Definition\JsonApiSince(X)]`, `#[Definition\JsonApiUntil(X)]` | A new type is a new resource; every relationship reaching it needs a `was()` to the old one |
 | `$this->requestedRevision()` | Guards of a change of meaning: `->atMost(X)`, `->atLeast(X)`, `->is(X)`, `->isHead()`; outside a resource `JsonApi::revision($request)` or `RequestedRevision::of($request)` |
 | `Definitions::for(PostResource::class, X)`, `Definitions::exists(PostResource::class, X)` | The definition at a revision (names, values, relationships of `X`), whether the resource exists at it |
+| `#[Resources\Attributes\JsonApiRoutes(…)]` at a revision | The links of the relationships of that revision, by their names at it (`posts.relationships.writer`); a relationship absent from it gets none |
 
 - A `value:` without source reads the head source; a head field computed by a closure needs a `value:` with its own
   source (`revision-unsourced-value`). Model conditions read the head; `whenInFields()` / `whenInIncludes()` the
@@ -202,7 +204,7 @@ only, in the diagnostics of the `JsonApiContext`.
 | `revision-value-gap` | warning | An older `was()` without the value (or name) a newer one gives: its clients get the head's |
 | `revision-noop` | warning | `since()` / `#[JsonApiSince]` naming the oldest revision |
 | `revision-mixed-enums` | error | Revisions of one resource from several enums |
-| `revision-unavailable-resource` | error | A relationship reaches, at a revision, a resource absent from it (`#[JsonApiSince]` without `was()` for the older revisions, a head relationship to a `#[JsonApiUntil]` resource): read by `jsonapi:check`, not by the compiler |
+| `revision-unavailable-resource` | error | A relationship reaches, at a revision, a resource absent from it (`#[JsonApiSince]` without `was()` for the older revisions, a head relationship to a `#[JsonApiUntil]` resource, a resource of a morph map included): read by `jsonapi:check`, not by the compiler |
 | `missing-route` | error | The `self` route of `#[JsonApiRoutes]` does not exist |
 | `load-conflict` | warning | Two relationships load the same relation with different `withLoad()` constraints |
 | `filter-on-unloaded` | warning | `->filters()` on a relation that is not loaded, read resource by resource: let it load |

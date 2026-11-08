@@ -228,7 +228,8 @@ OPcache read.
 ## 6. Context
 
 `JsonApiContext` is created once per request object by the `Laravel` layer and passed **explicitly**. `include` and
-`fields` are read from the query string only.
+`fields` are read from the query string only. A revision set after the first resolution (`JsonApi::useRevision()` in
+a later middleware) moves the context of the container to it (`withRevision()`), its diagnostics kept.
 
 | Member | Content |
 | --- | --- |
