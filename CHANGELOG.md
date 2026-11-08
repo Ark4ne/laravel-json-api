@@ -15,6 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `JsonApi::useRevision($request, $revision)` sets the revision a request is rendered at, from a middleware of the
   application (which reads its own header); `JsonApiContext::$revision` carries it to the rendering, `null` for the
   head, read from the `jsonapi.revision` request attribute (`JsonApiContext::revisionOf()`).
+- `$this->requestedRevision()` in a resource, `RequestedRevision::of($request)` or `JsonApi::revision($request)`
+  elsewhere: guards for a change of meaning without change of shape (`atMost()`, `atLeast()`, `is()`, `isHead()`).
 
 ## [2.0.0] — 2026-11-03
 

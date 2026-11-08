@@ -196,13 +196,15 @@ The same person reached as a `teacher` and as an `author` gets two entries in `i
 A change of meaning has no shape to declare. The resource reads the revision of its rendering:
 
 ```php
-'sessions' => $this->many(LessonSessionResource::class, fn() => $this->revision()->atMost(ApiRevision::Labels)
+'sessions' => $this->many(LessonSessionResource::class, fn() => $this->requestedRevision()->atMost(ApiRevision::Labels)
     ? $this->resource->sessions
     : $this->resource->sessions->where('user_id', $request->user()?->id)),
 ```
 
-`$this->revision()` returns a `RequestedRevision`: `atMost(X)`, `atLeast(X)`, `is(X)`, `isHead()`. Outside a resource
-(`with()`, `additional()`, a controller), `JsonApi::revision($request)` gives the same object.
+`$this->requestedRevision()` returns a `RequestedRevision`: `atMost(X)`, `atLeast(X)`, `is(X)`, `isHead()`. It is not
+named `revision()`: a resource forwards unknown calls to its model (`DelegatesToResource::__call()`), and a model may
+have a `revision()` of its own — taking that name would break it. Outside a resource (`with()`, `additional()`, a
+collection, a controller), `RequestedRevision::of($request)` or `JsonApi::revision($request)` gives the same object.
 
 ### 1.8 Use cases
 
@@ -219,7 +221,7 @@ A change of meaning has no shape to declare. The resource reads the revision of 
 | 9 | Cardinality changed | `->was(X, name: 'teacher', value: $this->one(…, fn() => …->first()))` | 2.2, 4.2 |
 | 10 | Relationship ↔ attribute | `until()` on one, `since()` on the other | 2.3, 3.4 |
 | 11 | Resource meta changed | `was()` / `until()` on the descriptors of `toResourceMeta()` | 3.1, 4.1 |
-| 12 | Meaning changed | guard `$this->revision()->atMost(X)` | 1.3 |
+| 12 | Meaning changed | guard `$this->requestedRevision()->atMost(X)` | 1.3 |
 | 13 | Top-level meta / links | `was()` in `toDocumentMeta()`; `JsonApi::revision($request)` in `with()` / `additional()` | 1.2, 3.1 |
 | 14 | Several successive revisions | several `was()`, one applies (§1.3) | 2.5 |
 | 15 | Additions | nothing; `since()` for an exact documentation | 2.3 |
@@ -243,7 +245,7 @@ A change of meaning has no shape to declare. The resource reads the revision of 
 | Context | `RequestedRevision` | `JsonApiContext` (+ `revision`, `revisionOf()`) |
 | Loading | — | `LoadPlanner` |
 | Rendering | — | `RenderingException::notInRevision()` |
-| Resources | `Concerns\Revisions` (`revision()`) | `Concerns\Renderable`, `Concerns\ConditionallyLoadsAttributes` (helpers translated, US 4.6) |
+| Resources | `Concerns\Revisions` (`requestedRevision()`) | `Concerns\Renderable`, `Concerns\ConditionallyLoadsAttributes` (helpers translated, US 4.6) |
 | Http | — | `Rules\Includes`, `Rules\Fields`, `JsonApiFormRequest` |
 | Laravel | — | `JsonApi` (`useRevision()`, `revision()`), `CheckDefinitionsCommand`, `CacheDefinitionsCommand` |
 | Testing | — | `ResourceAssertions` |
@@ -330,10 +332,12 @@ old behaviour of a field whose meaning changed (case 12).*
 Acceptance criteria:
 - `Context\RequestedRevision` (`final readonly`): `atMost(Revision)`, `atLeast(Revision)`, `is(Revision)`, `isHead()`.
   A `null` revision is the head: `atMost()` is false, `atLeast()` true.
-- `Resources\Concerns\Revisions::revision(): RequestedRevision` reads `renderingContext`
+- `Resources\Concerns\Revisions::requestedRevision(): RequestedRevision` reads `renderingContext`
   (`src/Resources/Concerns/Renderable.php:31`), as `whenInFields()` does (`ConditionallyLoadsAttributes.php:56`).
-- On the probe (compilation), `revision()` answers for the revision being compiled.
-- `JsonApiCollection` gets the same helper for `toDocumentMeta()`.
+- On the probe (compilation), `requestedRevision()` answers the head until US 3.2 compiles per revision: it then
+  answers for the revision being compiled.
+- A collection (`toDocumentMeta($request)`), `with()` and `additional()` use `RequestedRevision::of($request)`: no
+  helper on `JsonApiCollection`.
 
 Tests: `test_a_guard_keeps_the_old_relationship_content_for_an_old_revision`,
 `test_a_guard_renders_the_head_content_without_revision`.
@@ -761,7 +765,7 @@ Acceptance criteria:
 #### US 7.2 — Guide · M
 
 The reference of the skill (`reference.md`, checked by `tests/Feature/Skill/SkillTest.php`) names every new helper
-and modifier (`was()`, `until()`, `since()`, `revision()`, `#[JsonApiSince]`, `#[JsonApiUntil]`); the suite fails
+and modifier (`was()`, `until()`, `since()`, `requestedRevision()`, `#[JsonApiSince]`, `#[JsonApiUntil]`); the suite fails
 otherwise (spike M0).
 
 README section and `laravel-json-api-docs` page:
