@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
-- **Versioned resources** (in progress, `docs/rfc/versioned-resources-epics.md`): `Definition\Revision`, the contract an
+- **Versioned resources** (README, "Versioned resources"; `docs/architecture.md` §18): `Definition\Revision`, the contract an
   application implements with an enum whose cases, declared oldest first, are the revisions its clients are pinned on;
   `Definition\RevisionOrder` compares them (inclusive bounds, the head newer than every revision).
 - `JsonApi::useRevision($request, $revision)` sets the revision a request is rendered at, from a middleware of the
@@ -87,6 +87,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   there (the head by default, with the diagnostics of every revision and the references at the head);
   `assertValidAtEveryRevision($class, $strict)` asserts the references at every revision; `definitionAt($class,
   $revision)` returns the definition of a revision compiled from the current code, for snapshot tests.
+- README "Versioned resources" and a "Revisions" section in the skill reference and its rules.
 
 ## [2.0.0] — 2026-11-03
 

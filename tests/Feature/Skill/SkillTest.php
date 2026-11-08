@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Test\Feature\Skill;
 
+use Ark4ne\JsonApi\Context\RequestedRevision;
 use Ark4ne\JsonApi\Definition\ValueType;
 use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Descriptors\Relations;
 use Ark4ne\JsonApi\Descriptors\Relations\Relation;
 use Ark4ne\JsonApi\Descriptors\Values;
+use Ark4ne\JsonApi\Resources\Concerns\Revisions;
 use Ark4ne\JsonApi\Resources\JsonApiCollection;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Contracts\Support\Responsable;
@@ -96,6 +98,25 @@ final class SkillTest extends SkillTestCase
 
         foreach ($attributes as $file) {
             self::assertStringContainsString('#[Resources\Attributes\\' . basename($file, '.php') . '(', $reference, $file);
+        }
+    }
+
+    public function test_the_reference_names_every_entry_point_of_the_revisions(): void
+    {
+        $reference = self::read('reference.md');
+
+        foreach ((new ReflectionClass(Revisions::class))->getMethods() as $method) {
+            self::assertStringContainsString("\$this->{$method->name}()", $reference, "helper {$method->name}()");
+        }
+
+        foreach ((new ReflectionClass(RequestedRevision::class))->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
+            if (!$method->isConstructor()) {
+                self::assertMatchesRegularExpression("/[`:>]{$method->name}\\(/", $reference, "RequestedRevision::{$method->name}()");
+            }
+        }
+
+        foreach (['JsonApi::useRevision(', 'JsonApi::revision(', 'Definition\\Revision', 'Definitions::for('] as $name) {
+            self::assertStringContainsString($name, $reference, $name);
         }
     }
 

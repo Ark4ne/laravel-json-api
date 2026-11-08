@@ -868,6 +868,11 @@ README section and `laravel-json-api-docs` page:
 7. **Contract test in the application**: snapshot the definitions (or the generated OpenAPI) of each supported
    revision, compare on every change. The only net for `revision-value-gap` cases the warning misses.
 
+Done: README "Versioned resources" (the seven points); the skill: a "Revisions" section of `reference.md`, a rule of
+`SKILL.md`, and `SkillTest::test_the_reference_names_every_entry_point_of_the_revisions` (the helpers of the
+`Revisions` concern, the guards of `RequestedRevision`, `JsonApi::useRevision()` / `revision()`). The page of
+`laravel-json-api-docs` is not written: that site is a 1.x draft outside version control.
+
 #### US 7.3 — Release 2.1.0 · S
 
 - `CHANGELOG.md` `[2.1.0]` "Added: versioned resources"; nothing in `UPGRADE.md` (no breaking change), unless

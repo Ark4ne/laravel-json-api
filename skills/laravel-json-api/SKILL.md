@@ -66,6 +66,10 @@ php artisan make:jsonapi-resource PostResource --model=Post                     
     `Testing\ResourceAssertions::assertValid(PostResource::class)` does the same in a test.
 11. **Type the model.** `@extends JsonApiResource<Post>` types `$this->resource` and the closures of the descriptors
     for PHPStan and the IDE; hooks need no `@return`.
+12. **Change the head, declare the past.** In a versioned API, edit the field to its new shape and add
+    `->was(<the revision that was the newest until now>, name: …, value: …)`; never an `if` on the revision for a
+    change of shape (`$this->requestedRevision()` is for a change of meaning only). A new type is a new resource
+    (`#[Definition\JsonApiSince]`, the old one `#[Definition\JsonApiUntil]`). See `reference.md`, "Revisions".
 
 ## Workflow to add a resource
 

@@ -66,7 +66,7 @@ Modifiers of every value (each returns a copy):
 | `->whenHas(?string $field = null)` | Left out when the model has no such attribute |
 | `->whenAppended()` | Rendered only when the attribute is appended to the model |
 | `->whenInFields()` | Left out unless `fields[type]` names it explicitly (sparse) |
-| `->was(Revision $revision, ?string $name = null, ?Value $value = null)` | What the attribute was up to `$revision` included (versioned resources, in progress) |
+| `->was(Revision $revision, ?string $name = null, ?Value $value = null)` | What the attribute was up to `$revision` included |
 | `->since(Revision $revision)`, `->until(Revision $revision)` | The field (value or relationship) exists from / up to `$revision` included |
 
 ## Relation helpers
@@ -100,7 +100,7 @@ Modifiers of every relationship:
 | `->linkage(Linkage $linkage)` | `Configuration\Linkage::Always`, `Loaded` or `Included` for this relationship |
 | `->filters(Closure $filters)` | Renders only the related resources passing the rules: `fn(Filters $filters) => $filters->can('view')->when(fn(Request $request, Comment $comment) => …)` (immutable: return the result; a callback may return any truthy value) |
 | `->can(iterable\|string $abilities, array $arguments = [], string $gateClass = Gate::class, ?string $guard = null)` | Rendered only when the user has the abilities on the model |
-| `->was(Revision $revision, ?string $name = null, ?Relation $value = null)` | What the relationship was up to `$revision` included: its name, its relation (resource, cardinality, loads: its own) (versioned resources, in progress) |
+| `->was(Revision $revision, ?string $name = null, ?Relation $value = null)` | What the relationship was up to `$revision` included: its name, its relation (resource, cardinality, loads: its own) |
 | `->when(...)`, `->unless(...)` | As for values |
 
 ## Conditional helpers of a resource
@@ -111,12 +111,12 @@ Modifiers of every relationship:
 | `$this->when(...)`, `$this->whenHas(...)`, `$this->whenLoaded(...)` | Laravel's, on any value |
 | `$this->whenInFields(Request $request, string $attribute, mixed $value)` | A value rendered only when `fields` requests it |
 | `$this->whenInIncludes(Request $request, string $relationship, mixed $value)` | A value rendered only when `include` names the relationship |
+| `$this->mergeWhen(...)` | Avoid: rendered, but hidden from the definition (`merge-when` warning) |
 
 Both helpers take the name of the code; at a revision, they test the name the field has at it, and fail for a field
 that does not exist at it. A descriptor given as their value is hidden from the definition (it is missing on the
 probe), and so are its `was()`, `since()` and `until()`: for a revised field, use the descriptor conditions
 (`->whenInFields()`, `->when()`), which the definition sees.
-| `$this->mergeWhen(...)` | Avoid: rendered, but hidden from the definition (`merge-when` warning) |
 
 ## PHP attributes
 
@@ -125,8 +125,29 @@ probe), and so are its `was()`, `since()` and `until()`: for a revised field, us
 | `#[Resources\Attributes\JsonApiType('posts')]` | a resource | Its type, without `toType()` |
 | `#[Resources\Attributes\JsonApiModel(Post::class)]` | a resource | Its model, to guess the resources of its relationships (default: the naming convention) |
 | `#[Resources\Attributes\JsonApiRoutes(self: 'posts.show', relationship: …, related: …)]` | a resource | `links.self` from the route `self`; `links.self` / `links.related` of each relationship from `posts.relationships.{name}` / `posts.{name}`, or the routes given (`false` for none) |
-| `#[Definition\JsonApiSince(ApiRevision::X)]`, `#[Definition\JsonApiUntil(ApiRevision::X)]` | a resource | The resource exists from / up to the revision included, not inherited (versioned resources, in progress) |
+| `#[Definition\JsonApiSince(ApiRevision::X)]`, `#[Definition\JsonApiUntil(ApiRevision::X)]` | a resource | The resource exists from / up to the revision included, not inherited |
 | `#[Illuminate\Database\Eloquent\Attributes\UseResource(UserResource::class)]` | a model | The resource of the model when a relationship is guessed |
+
+## Revisions
+
+Versioned resources (README, "Versioned resources"): the code holds the latest shape, the head; older shapes are
+declared on the fields that changed. Bounds are inclusive.
+
+| Entry point | Effect |
+| --- | --- |
+| `enum ApiRevision: string implements Definition\Revision` | The revisions, cases declared oldest first, with `description()` |
+| `JsonApi::useRevision(Request $request, ?Revision $revision)` | In a middleware of the application: the revision of the request (`null`, the head), read by its rendering and its `JsonApiFormRequest` |
+| `->was(X, name: …, value: …)` | The whole field up to `X`; write `was(<the newest revision until now>)`; an argument left out is the head's; one `was()` applies, the oldest at or after the client's |
+| `->until(X)`, `->since(X)` | A field removed after `X` (kept at the end of the hook, under `// Revisions`), added at `X` |
+| `#[Definition\JsonApiSince(X)]`, `#[Definition\JsonApiUntil(X)]` | A new type is a new resource; every relationship reaching it needs a `was()` to the old one |
+| `$this->requestedRevision()` | Guards of a change of meaning: `->atMost(X)`, `->atLeast(X)`, `->is(X)`, `->isHead()`; outside a resource `JsonApi::revision($request)` or `RequestedRevision::of($request)` |
+| `Definitions::for(PostResource::class, X)`, `Definitions::exists(PostResource::class, X)` | The definition at a revision (names, values, relationships of `X`), whether the resource exists at it |
+
+- A `value:` without source reads the head source; a head field computed by a closure needs a `value:` with its own
+  source (`revision-unsourced-value`). Model conditions read the head; `whenInFields()` / `whenInIncludes()` the
+  names of the revision.
+- Retiring the oldest revision: delete its case, run `composer stan`, delete every reported line and every resource
+  `#[JsonApiUntil]` it, run `php artisan jsonapi:check`.
 
 ## Configuration (`config/jsonapi.php`)
 
