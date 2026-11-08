@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Ark4ne\JsonApi\Descriptors;
 
 use Ark4ne\JsonApi\Configuration\Configuration;
+use Ark4ne\JsonApi\Definition\Revision;
 use Ark4ne\JsonApi\Support\Values;
 use Closure;
 use Illuminate\Http\Request;
@@ -19,6 +20,34 @@ abstract class Describer
      * @var array<Closure(Request, T, string): bool>
      */
     protected array $rules = [];
+
+    /**
+     * @var list<FieldRevision<T>> What the field was up to some revisions (`was()`), in the order of the calls
+     */
+    protected array $revisions = [];
+
+    /**
+     * What the field was up to each revision (`was()`), in the order of the calls: the order of the revisions decides
+     * which one applies.
+     *
+     * @return list<FieldRevision<T>>
+     *
+     * @internal Read by the selection of the shape of a field for a revision.
+     */
+    public function revisions(): array
+    {
+        return $this->revisions;
+    }
+
+    /**
+     * A copy of this descriptor with one more `was()`.
+     *
+     * @param Describer<T>|null $value
+     */
+    protected function withRevision(Revision $revision, ?string $name, ?Describer $value): static
+    {
+        return $this->with('revisions', [...$this->revisions, new FieldRevision($revision, $name, $value)]);
+    }
 
     /**
      * Renders the member only when the condition holds: a closure receives the request, the model and the name of the

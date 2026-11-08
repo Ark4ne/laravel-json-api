@@ -66,6 +66,7 @@ Modifiers of every value (each returns a copy):
 | `->whenHas(?string $field = null)` | Left out when the model has no such attribute |
 | `->whenAppended()` | Rendered only when the attribute is appended to the model |
 | `->whenInFields()` | Left out unless `fields[type]` names it explicitly (sparse) |
+| `->was(Revision $revision, ?string $name = null, ?Value $value = null)` | What the attribute was up to `$revision` included (versioned resources, in progress) |
 
 ## Relation helpers
 

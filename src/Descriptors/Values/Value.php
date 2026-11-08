@@ -6,6 +6,7 @@ namespace Ark4ne\JsonApi\Descriptors\Values;
 
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Definition\AttributeDefinition;
+use Ark4ne\JsonApi\Definition\Revision;
 use Ark4ne\JsonApi\Definition\ValueType;
 use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Exceptions\RenderingException;
@@ -34,6 +35,18 @@ abstract class Value extends Describer
     public function retriever(): string|Closure|null
     {
         return $this->attribute;
+    }
+
+    /**
+     * The attribute as it was up to `$revision` included: its name, its value, or both; what is left out is the head's.
+     * Only one `was()` applies to a revision: the one with the oldest revision at least as new.
+     *
+     * @param string|null $name The name it had; the head name if `null`
+     * @param Value<T>|null $value The value it had, of any type; reads the head source when it names none
+     */
+    public function was(Revision $revision, ?string $name = null, ?Value $value = null): static
+    {
+        return $this->withRevision($revision, $name, $value);
     }
 
     public function nullable(bool $nullable = true): static
