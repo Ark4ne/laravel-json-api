@@ -76,6 +76,15 @@ final class ConditionsTest extends RevisionsTestCase
             ->assertJsonPath('data.attributes.post_comments_included', true);
     }
 
+    public function test_the_when_in_includes_helper_translates_every_relationship_of_a_nested_path(): void
+    {
+        $this->renderAt(null, 'include=posts.user')->assertJsonPath('data.attributes.post_user_included', true);
+        $this->renderAt(ApiRevision::Labels, 'include=articles.writer')
+            ->assertJsonPath('data.attributes.post_user_included', true);
+        $this->renderAt(ApiRevision::Labels, 'include=articles.user')
+            ->assertJsonMissingPath('data.attributes.post_user_included');
+    }
+
     public function test_a_helper_naming_a_name_no_revision_declares_keeps_it(): void
     {
         $this->renderAt(null, 'fields[helpers]=undeclared,undeclared_requested')
@@ -104,6 +113,7 @@ final class ConditionsTest extends RevisionsTestCase
                     'city_requested' => $this->whenInFields($request, 'address.city', true),
                     'undeclared_requested' => $this->whenInFields($request, 'undeclared', true),
                     'post_comments_included' => $this->whenInIncludes($request, 'posts.comments', true),
+                    'post_user_included' => $this->whenInIncludes($request, 'posts.user', true),
                 ];
             }
 

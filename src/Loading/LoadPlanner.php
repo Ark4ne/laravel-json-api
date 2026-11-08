@@ -89,8 +89,9 @@ final readonly class LoadPlanner
             }
 
             $reach = $relationship->source !== null ? [$relationship->source] : $relationship->load->roots();
-            // The related models of a polymorphic relationship are planned by class, with the resource of their class;
-            // a resource of its map absent from the revision renders no model, as the rules let it (`Includes`).
+            // The related models of a polymorphic relationship are planned by class, with the resource of their class.
+            // A resource of its map absent from the revision is not planned: a model of it throws when rendered
+            // (`RenderingException::notInRevision()`, reported by `jsonapi:check`), not when planned.
             $plans = [];
             if ($relationship->isPolymorphic()) {
                 foreach (array_unique($relationship->morphs) as $related) {

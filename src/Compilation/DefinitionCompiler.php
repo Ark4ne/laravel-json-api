@@ -352,6 +352,12 @@ final readonly class DefinitionCompiler
         $findings = new RevisionFindings();
         $head = $this->build($class, $hooks, $lifetime, [], null, $findings);
         $diagnostics = new Diagnostics();
+        // The structs the head does not read declare revisions too (the members of a struct `until()` a revision).
+        $this->guard('toAttributes', $diagnostics, static function () use ($findings, $hooks): array {
+            RevisedMembers::seeUnread($findings->fields(), $hooks['probe'], $findings);
+
+            return [];
+        });
         $boundaries = RevisionChecks::fields($findings, $lifetime, $diagnostics);
         $head = $head->boundaries(...$boundaries)->diagnostics(...$head->diagnostics, ...$diagnostics);
 

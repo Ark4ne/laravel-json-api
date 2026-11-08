@@ -44,7 +44,7 @@ change.
   `revision-out-of-life` warning: it applies up to `until()`.
 - `jsonapi:cache` writes the definition of every revision where the shape of a resource changes, keyed
   `class@Case` (`CompiledDefinitions::key()`), and prints the number of resources and definitions; a compiled file
-  of 2.0 is still read.
+  of 2.0 is still read while the code is unchanged (run `jsonapi:cache` again on deploy, as for any change).
 - A resource is rendered at the revision of its request: its attributes, resource meta and document meta take the
   names and values of that revision, a field `until()` a revision is left out of the head, and sparse fieldsets are
   read in the names of the revision. A resource declaring no revision renders as in 2.0, its members untouched.
@@ -100,7 +100,10 @@ change.
   `JsonApiContext` of the container sees a revision set after its first resolution.
 - `Diagnostic::key()`, `Support\RevisionLabel`; `DefinitionException::notInRevision()` takes the revision;
   `DefinitionCompiler::compile($class, $revision)` throws for a revision the resource does not exist at
-  (`DefinitionCompiler::shapeOf()`, shared with `RevisionAudit`).
+  (`DefinitionCompiler::shapeOf()`, shared with `RevisionAudit` and `Definitions`).
+- The members of a struct the head does not read (a struct `until()` a revision, the struct value of a `was()`)
+  declare their revisions too. `whenInIncludes()` translates every relationship of a nested path. The `JsonApiContext`
+  of the container keeps its diagnostics when moved to a revision set later (`JsonApiContext::withRevision()`).
 
 ## [2.0.0] — 2026-11-03
 

@@ -72,6 +72,58 @@ final readonly class RevisedMembers
     }
 
     /**
+     * The structs the head never reads, for `$findings` to see the revisions of their members: a struct `until()` a
+     * revision, and the struct values of the `was()` of the fields seen. Their members, at every depth, are seen as
+     * those of the head are.
+     *
+     * @param list<array{string, Describer<mixed>}> $fields The fields seen at the head (`RevisionFindings::fields()`)
+     * @param mixed $model What the struct closures receive: the probe of the compilation
+     */
+    public static function seeUnread(array $fields, mixed $model, RevisionFindings $findings): void
+    {
+        foreach ($fields as [$name, $field]) {
+            $structs = $field instanceof ValueStruct && $field->untilRevision() !== null ? [$field] : [];
+            foreach ($field->revisions() as $revision) {
+                if ($revision->value instanceof ValueStruct) {
+                    $structs[] = $revision->value;
+                }
+            }
+
+            foreach ($structs as $struct) {
+                self::see($struct->members($model, $name), $model, $findings);
+            }
+        }
+    }
+
+    /**
+     * @param iterable<array-key, mixed> $members
+     */
+    private static function see(iterable $members, mixed $model, RevisionFindings $findings): void
+    {
+        foreach ($members as $key => $member) {
+            if ($member instanceof MergeValue) {
+                /** @var iterable<array-key, mixed> $data */
+                $data = $member->data;
+                self::see($data, $model, $findings);
+
+                continue;
+            }
+
+            $name = $member instanceof Describer ? Describer::retrieveName($member, $key) : $key;
+            if (!$member instanceof Describer || is_int($name)) {
+                continue;
+            }
+
+            $findings->field($name, $member);
+            foreach ([$member, ...array_map(static fn(FieldRevision $revision) => $revision->value, $member->revisions())] as $shape) {
+                if ($shape instanceof ValueStruct) {
+                    self::see($shape->members($model, $name), $model, $findings);
+                }
+            }
+        }
+    }
+
+    /**
      * The name each member of the code (its key, or the attribute of an unnamed descriptor) has at `$revision`, for
      * those existing at it; the members of a `MergeValue` too. Closures and raw values keep their key.
      *

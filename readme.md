@@ -381,7 +381,8 @@ Hence a few rules:
   requested; a value read eagerly (`'name' => $this->name`) has an unknown type.
 - **Group conditional members with `applyWhen()`.** The members of `mergeWhen()` and `mergeUnless()` are missing
   from the definition whatever the condition, with a `merge-when` warning: they are rendered, but cannot be requested
-  by `fields` nor included, and their relations are not eager-loaded.
+  by `fields` nor included, and their relations are not eager-loaded. Their `was()`, `since()` and `until()` may not
+  apply either.
 
 `php artisan jsonapi:check` reports what breaks these rules (`--strict` fails on warnings too), and
 `php artisan jsonapi:cache` (run by `php artisan optimize`) compiles every definition for production.
@@ -1303,7 +1304,8 @@ final class TeacherResource extends JsonApiResource { /* the old resource, as it
 Every relationship reaching the new resource needs a `was()` to the old one for the older revisions (the
 `instructor` above). Rendering a resource at a revision it does not exist at throws
 `RenderingException::notInRevision()`, and `php artisan jsonapi:check` reports a relationship that would do so
-(`revision-unavailable-resource`). The same model reached as two old types is included once per type.
+(`revision-unavailable-resource`), a resource of a morph map included. The same model reached as two old types is
+included once per type.
 
 ## Guards
 

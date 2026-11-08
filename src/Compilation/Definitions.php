@@ -37,6 +37,9 @@ final class Definitions
     /** @var array<class-string<DefinitionSource>, array<string, ResourceDefinition>> By class, then revision */
     private static array $shapes = [];
 
+    /** @var array<class-string<DefinitionSource>, array<string, true>> The fields of the code of a resource, by class */
+    private static array $fieldsOfTheCode = [];
+
     private static ?Configuration $configuration = null;
 
     private static ?CompiledDefinitions $compiled = null;
@@ -110,18 +113,11 @@ final class Definitions
      */
     private static function shape(string $class, ResourceDefinition $head, Revision $revision): ResourceDefinition
     {
-        if (!$head->existsAt($revision)) {
-            throw DefinitionException::notInRevision($class, $revision);
-        }
-
-        $boundary = $head->boundaryOf($revision);
-        if ($boundary === null) {
-            return $head;
-        }
-
-        if (!isset(self::$revisions[$class][$boundary->name])) {
-            // Missing from the compiled file (written by 2.0, or by hand): every shape is compiled with one run of
-            // the hooks, and kept.
+        $boundary = $head->existsAt($revision) ? $head->boundaryOf($revision) : null;
+        if ($boundary !== null && !isset(self::$revisions[$class][$boundary->name])) {
+            // A boundary of the head missing from the compiled file (a file written by hand): every shape is compiled
+            // with one run of the hooks, and kept. A file written from older code is stale, revisions or not, as for
+            // any change of the code: `jsonapi:cache` writes it again.
             foreach (self::compiler()->compileEvery($class) as $definition) {
                 if ($definition->revision !== null) {
                     self::$revisions[$class][$definition->revision->name] ??= $definition;
@@ -129,7 +125,34 @@ final class Definitions
             }
         }
 
-        return self::$revisions[$class][$boundary->name] ?? $head;
+        return DefinitionCompiler::shapeOf([$head, ...array_values(self::$revisions[$class] ?? [])], $revision);
+    }
+
+    /**
+     * Whether a shape of the resource, the head or one of its revisions, has the attribute or relationship of the code
+     * `$field`: what a helper of a resource declaring revisions may name. Computed once per class.
+     *
+     * @internal Read by the helpers of the resources (`whenInFields()`, `whenInIncludes()`).
+     *
+     * @param class-string<DefinitionSource> $class
+     *
+     * @throws DefinitionException when the class is not a resource or cannot be compiled
+     */
+    public static function declaresField(string $class, string $field): bool
+    {
+        if (!isset(self::$fieldsOfTheCode[$class])) {
+            $head = self::for($class);
+            $fields = $head->fieldNames;
+            foreach ($head->boundaries as $boundary) {
+                if (self::exists($class, $boundary)) {
+                    $fields += self::for($class, $boundary)->fieldNames;
+                }
+            }
+
+            self::$fieldsOfTheCode[$class] = array_fill_keys(array_keys($fields), true);
+        }
+
+        return isset(self::$fieldsOfTheCode[$class][$field]);
     }
 
     /**
@@ -244,6 +267,7 @@ final class Definitions
         self::$constraints = [];
         self::$declaredTypes = [];
         self::$shapes = [];
+        self::$fieldsOfTheCode = [];
         self::$compiledRead = false;
     }
 

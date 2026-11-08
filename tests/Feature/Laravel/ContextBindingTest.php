@@ -62,6 +62,7 @@ final class ContextBindingTest extends TestCase
         self::assertNull($head->revision);
         self::assertSame(ApiRevision::Labels, $labels->revision);
         self::assertSame(['posts'], $labels->include->paths());
+        self::assertSame($head->diagnostics, $labels->diagnostics);
         self::assertSame($labels, app(JsonApiContext::class));
     }
 

@@ -119,6 +119,19 @@ final class JsonApiContextTest extends TestCase
         self::assertSame(ApiRevision::Initial, $context->withInclude(IncludeTree::parse('posts'))->revision);
     }
 
+    public function test_a_context_at_another_revision_keeps_the_rest_and_shares_the_diagnostics(): void
+    {
+        $context = JsonApiContext::fromRequest(new Request(['include' => 'posts']), Configuration::defaults())->withPath('posts');
+
+        $labels = $context->withRevision(ApiRevision::Labels);
+
+        self::assertNull($context->revision);
+        self::assertSame(ApiRevision::Labels, $labels->revision);
+        self::assertSame($context->diagnostics, $labels->diagnostics);
+        self::assertSame($context->include, $labels->include);
+        self::assertSame('posts', $labels->path);
+    }
+
     public function test_a_revision_attribute_that_is_not_a_revision_throws(): void
     {
         $request = new Request();

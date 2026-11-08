@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
 use Ark4ne\JsonApi\Compilation\Definitions;
+use Ark4ne\JsonApi\Definition\RelatedResource;
+use Ark4ne\JsonApi\Definition\Revision;
 use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Descriptors\MergeWhenValue;
 use Ark4ne\JsonApi\Descriptors\Relations\RelationRaw;
@@ -80,15 +82,15 @@ trait ConditionallyLoadsAttributes
      */
     protected function whenInIncludes(Request $request, string $relationship, mixed $value)
     {
-        $name = $this->nameAtRevision($relationship);
+        $name = $this->includeAtRevision($relationship);
 
         return $this->when($name !== null && ($this->renderingContext?->includes($name) ?? false), $value);
     }
 
     /**
      * The name a field of the code has at the revision of the rendering, `null` when it does not exist at it: the
-     * client writes `fields` and `include` in the names of its revision. Of a dotted path (a struct member, a nested
-     * include), the first segment is translated. A name no shape of the resource declares (a field of `toLinks()`)
+     * client writes `fields` and `include` in the names of its revision. Of a dotted path, the first segment is
+     * translated (a struct member keeps its name). A name no shape of the resource declares (a field of `toLinks()`)
      * is kept. Unchanged for a resource declaring no revision.
      */
     private function nameAtRevision(string $field): ?string
@@ -96,42 +98,67 @@ trait ConditionallyLoadsAttributes
         $context = $this->renderingContext;
         // Outside a rendering (the probe of the compilation, which must not ask for its own definition): no condition
         // passes anyway.
-        if ($context === null || !Definitions::isRevised(static::class)) {
+        if ($context === null) {
             return $field;
         }
 
         $segments = explode('.', $field, 2);
-        $first = $segments[0];
-        $rest = $segments[1] ?? null;
-        // The head too: a field `until()` a revision does not exist there.
-        $names = Definitions::for(static::class, $context->revision)->fieldNames;
+        $first = self::fieldAtRevision(static::class, $segments[0], $context->revision);
 
-        if (isset($names[$first])) {
-            return $rest === null ? $names[$first] : "{$names[$first]}.{$rest}";
-        }
-
-        return self::declaresField($first) ? null : $field;
+        return $first === null || !isset($segments[1]) ? $first : "{$first}.{$segments[1]}";
     }
 
     /**
-     * Whether a shape of the resource, the head or one of its revisions, has the field of the code `$field`.
+     * The include path of the code `$path` at the revision of the rendering: each relationship by its name at that
+     * revision, following the related resource of each one; `null` when one does not exist at it. Past a polymorphic
+     * or native relationship, the rest of the path is kept.
      */
-    private static function declaresField(string $field): bool
+    private function includeAtRevision(string $path): ?string
     {
-        $head = Definitions::for(static::class);
+        $context = $this->renderingContext;
+        if ($context === null) {
+            return $path;
+        }
 
-        foreach ([null, ...$head->boundaries] as $boundary) {
-            if ($boundary !== null && !Definitions::exists(static::class, $boundary)) {
-                continue;
+        $class = static::class;
+        $translated = [];
+        $segments = explode('.', $path);
+        foreach ($segments as $index => $segment) {
+            $name = self::fieldAtRevision($class, $segment, $context->revision);
+            if ($name === null) {
+                return null;
             }
 
-            $definition = $boundary === null ? $head : Definitions::for(static::class, $boundary);
-            if (isset($definition->fieldNames[$field])) {
-                return true;
+            $translated[] = $name;
+            $relationship = Definitions::for($class, $context->revision)->relationships[$name] ?? null;
+            if ($relationship === null || $relationship->isNative() || count(array_unique($relationship->related)) !== 1) {
+                return implode('.', [...$translated, ...array_slice($segments, $index + 1)]);
+            }
+
+            $class = RelatedResource::resolve($relationship->related[0]);
+            if (!Definitions::exists($class, $context->revision)) {
+                return null;
             }
         }
 
-        return false;
+        return implode('.', $translated);
+    }
+
+    /**
+     * The name the field of the code `$field` of `$class` has at `$revision`, `null` when it does not exist at it; a
+     * name no shape declares, or a resource declaring no revision, keeps it.
+     *
+     * @param class-string<\Ark4ne\JsonApi\Definition\DefinitionSource> $class
+     */
+    private static function fieldAtRevision(string $class, string $field, ?Revision $revision): ?string
+    {
+        if (!Definitions::isRevised($class)) {
+            return $field;
+        }
+
+        // The head too: a field `until()` a revision does not exist there.
+        return Definitions::for($class, $revision)->fieldNames[$field]
+            ?? (Definitions::declaresField($class, $field) ? null : $field);
     }
 
     /**

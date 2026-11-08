@@ -119,13 +119,12 @@ final class JsonApiServiceProvider extends ServiceProvider
             /** @var Configuration $configuration */
             $configuration = $app->make(Configuration::class);
 
-            $context = $contexts[$request] ?? null;
+            $context = $contexts[$request] ??= JsonApiContext::fromRequest($request, $configuration);
+            $revision = JsonApiContext::revisionOf($request);
 
-            // Built again when the revision of the request was set after (`JsonApi::useRevision()` in a middleware
-            // running after the first resolution).
-            return $context !== null && $context->revision === JsonApiContext::revisionOf($request)
-                ? $context
-                : $contexts[$request] = JsonApiContext::fromRequest($request, $configuration);
+            // Moved to the revision set after the first resolution (`JsonApi::useRevision()` in a later middleware),
+            // its diagnostics kept.
+            return $context->revision === $revision ? $context : $contexts[$request] = $context->withRevision($revision);
         });
     }
 

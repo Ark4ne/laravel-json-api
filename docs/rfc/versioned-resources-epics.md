@@ -891,6 +891,14 @@ the automatic `whenHas()` checks the head attribute. `Diagnostic::key()`, `Suppo
 `DefinitionCompiler::shapeOf()` replace their copies. Kept: the first `for()` compiles every shape
 (`docs/architecture.md` §18, "Fast path").
 
+Second review: the members of a struct the head does not read are seen for the boundaries
+(`RevisedMembers::seeUnread()`); `whenInIncludes()` translates a nested path relationship by relationship;
+`Definitions::declaresField()` memoizes the fields of the code; `Definitions::shape()` uses `shapeOf()`; the container
+context keeps its diagnostics (`withRevision()`); messages of `revision-unsourced-value` and `merge-when` fixed. Kept:
+a model of a morph resource absent from the revision throws when rendered (US 4.4, reported by `jsonapi:check`), the
+`was()` of a `mergeWhen()` (hidden from the definition, documented), a stale compiled file (as for any change of the
+code).
+
 ---
 
 ### EV8 — `laravel-openapi-generator` (separate repository)

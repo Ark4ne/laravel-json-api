@@ -186,7 +186,7 @@ final readonly class RevisionChecks
                 $diagnostics->error(
                     DefinitionCompiler::REVISION_UNSOURCED_VALUE,
                     "The value of was({$revision}) names no source, and the head reads through a closure: it would read "
-                    . 'the model by the old name. Give the value its own source.',
+                    . 'the attribute of the head name, which the closure stands for. Give the value its own source.',
                     $name,
                 );
             }

@@ -111,7 +111,7 @@ Modifiers of every relationship:
 | `$this->when(...)`, `$this->whenHas(...)`, `$this->whenLoaded(...)` | Laravel's, on any value |
 | `$this->whenInFields(Request $request, string $attribute, mixed $value)` | A value rendered only when `fields` requests it |
 | `$this->whenInIncludes(Request $request, string $relationship, mixed $value)` | A value rendered only when `include` names the relationship |
-| `$this->mergeWhen(...)` | Avoid: rendered, but hidden from the definition (`merge-when` warning) |
+| `$this->mergeWhen(...)` | Avoid: rendered, but hidden from the definition (`merge-when` warning), its `was()` / `since()` / `until()` may not apply |
 
 Both helpers take the name of the code; at a revision, they test the name the field has at it, and fail for a field
 that does not exist at it. A descriptor given as their value is hidden from the definition (it is missing on the

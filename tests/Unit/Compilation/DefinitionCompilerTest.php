@@ -546,4 +546,28 @@ final class DefinitionCompilerTest extends TestCase
         $this->expectException(DefinitionException::class);
         $compiler->compile(TeacherResource::class, ApiRevision::UsersReplaceTeachers);
     }
+
+    public function test_the_members_of_a_struct_absent_from_the_head_declare_their_revisions(): void
+    {
+        $resource = new class (null) extends JsonApiResource {
+            public function toAttributes(Request $request): iterable
+            {
+                return [
+                    'address' => $this->struct(fn() => [
+                        'zip' => $this->string()->was(ApiRevision::Initial, name: 'postcode'),
+                    ])->until(ApiRevision::Labels),
+                    'place' => $this->string()->was(ApiRevision::Labels, value: $this->struct(fn() => [
+                        'city' => $this->string()->was(ApiRevision::Initial, name: 'town'),
+                    ])),
+                ];
+            }
+        };
+        $compiler = new DefinitionCompiler(Configuration::defaults());
+
+        self::assertSame([ApiRevision::Initial, ApiRevision::Labels], $compiler->compile($resource::class)->boundaries);
+        $initial = $compiler->compile($resource::class, ApiRevision::Initial);
+        self::assertSame(['postcode'], array_keys($initial->attributes['address']->children));
+        self::assertSame(['town'], array_keys($initial->attributes['place']->children));
+        self::assertSame(['zip'], array_keys($compiler->compile($resource::class, ApiRevision::Labels)->attributes['address']->children));
+    }
 }

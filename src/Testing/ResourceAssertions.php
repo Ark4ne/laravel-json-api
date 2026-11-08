@@ -39,7 +39,7 @@ final class ResourceAssertions
         try {
             $diagnostics = $revision === null
                 ? $audit->shapes($class)[0]->diagnostics
-                : $audit->diagnosticsAt($class, $revision) ?? throw self::notInRevision($class, $revision);
+                : $audit->diagnosticsAt($class, $revision) ?? throw DefinitionException::notInRevision($class, $revision);
         } catch (DefinitionException $e) {
             Assert::fail($e->getMessage());
         }
@@ -75,7 +75,7 @@ final class ResourceAssertions
     public static function definitionAt(string $class, Revision $revision): ResourceDefinition
     {
         try {
-            return self::audit()->shapeAt($class, $revision) ?? throw self::notInRevision($class, $revision);
+            return self::audit()->shapeAt($class, $revision) ?? throw DefinitionException::notInRevision($class, $revision);
         } catch (DefinitionException $e) {
             Assert::fail($e->getMessage());
         }
@@ -100,11 +100,6 @@ final class ResourceAssertions
                 $failures,
             )),
         );
-    }
-
-    private static function notInRevision(string $class, Revision $revision): DefinitionException
-    {
-        return DefinitionException::notInRevision($class, $revision);
     }
 
     private static function audit(): RevisionAudit

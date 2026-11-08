@@ -84,6 +84,23 @@ final readonly class JsonApiContext
     }
 
     /**
+     * The same context at another revision: the request set its revision after the context was built
+     * (`JsonApi::useRevision()`). The diagnostics are shared.
+     */
+    public function withRevision(?Revision $revision): self
+    {
+        return new self(
+            $this->request,
+            $this->configuration,
+            $this->include,
+            $this->fields,
+            $this->diagnostics,
+            $this->path,
+            $revision,
+        );
+    }
+
+    /**
      * The context of the resources reached through a relationship of the current ones.
      */
     public function withPath(string $relationship): self
