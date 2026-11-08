@@ -736,6 +736,9 @@ Acceptance criteria:
 
 Tests: `test_an_old_client_may_include_an_old_relationship`, `test_an_old_client_may_not_include_a_new_relationship`.
 
+Done: the fixture is `Revisions\PostResource` (`writer` and `comments.commenter` up to `Labels`, `user` and
+`comments.user` for the head).
+
 #### US 5.2 — `Fields` rule at a revision · S
 
 Acceptance criteria:

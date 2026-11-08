@@ -10,8 +10,10 @@ use Ark4ne\JsonApi\Http\Rules\Includes;
 use Illuminate\Support\Facades\Validator;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Test\app\Http\Resources\NativePostResource;
+use Test\app\Http\Resources\Revisions\PostResource as RevisedPostResource;
 use Test\app\Http\Resources\UserCollection;
 use Test\app\Http\Resources\UserResource;
+use Test\app\Revisions\ApiRevision;
 use Test\TestCase;
 use Test\Unit\Resources\Fixtures\AlphaResource;
 
@@ -147,5 +149,32 @@ class IncludesTest extends TestCase
             'The selected include is invalid.',
             '"user" doesn\'t have relationship "unknown".',
         ], $validator->errors()->get('include'));
+    }
+
+    public function test_an_old_client_may_include_an_old_relationship(): void
+    {
+        $rule = new Includes(RevisedPostResource::class, revision: ApiRevision::Labels);
+
+        self::assertSame([], self::ruleErrors('include', $rule, 'writer,comments.commenter'));
+        self::assertSame([
+            'The selected :attribute is invalid.',
+            '"posts" doesn\'t have relationship "writer".',
+        ], self::ruleErrors('include', new Includes(RevisedPostResource::class), 'writer'));
+    }
+
+    public function test_an_old_client_may_not_include_a_new_relationship(): void
+    {
+        self::assertSame([], self::ruleErrors('include', new Includes(RevisedPostResource::class), 'user.posts,comments.user'));
+        self::assertSame([
+            'The selected :attribute is invalid.',
+            '"posts" doesn\'t have relationship "user".',
+            '"comments" doesn\'t have relationship "user".',
+        ], self::ruleErrors('include', new Includes(RevisedPostResource::class, revision: ApiRevision::Labels), 'user,comments.user'));
+    }
+
+    public function test_the_rule_tells_the_revision_it_validates_against(): void
+    {
+        self::assertNull((new Includes(UserResource::class))->revision());
+        self::assertSame(ApiRevision::Labels, (new Includes(UserResource::class, revision: ApiRevision::Labels))->revision());
     }
 }

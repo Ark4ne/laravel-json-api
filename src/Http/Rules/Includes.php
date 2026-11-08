@@ -7,12 +7,14 @@ namespace Ark4ne\JsonApi\Http\Rules;
 use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Context\IncludeTree;
 use Ark4ne\JsonApi\Definition\RelatedResource;
+use Ark4ne\JsonApi\Definition\Revision;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 
 /**
  * Validates an include path against the relationships declared by the definitions of the resources it goes through.
- * Nothing is included under a relationship to native resources (`RelationshipDefinition::$native`).
+ * Nothing is included under a relationship to native resources (`RelationshipDefinition::$native`). Given a revision,
+ * every definition is the one of that revision: a client on it includes the relationships it renders, by their names.
  *
  * Its messages are the translations `jsonapi::validation.includes.*` (`vendor:publish --tag=jsonapi-lang`).
  *
@@ -24,10 +26,12 @@ final class Includes implements ValidationRule
      * @param class-string<T> $resource
      * @param positive-int|null $maxDepth Deepest include path accepted; the configured one (`include.max-depth`) when
      *                                    `null`
+     * @param Revision|null $revision The revision of the client (`JsonApiContext::revisionOf()`); the head when `null`
      */
     public function __construct(
         private readonly string $resource,
         private readonly ?int $maxDepth = null,
+        private readonly ?Revision $revision = null,
     ) {}
 
     /**
@@ -39,6 +43,15 @@ final class Includes implements ValidationRule
     public function resource(): string
     {
         return $this->resource;
+    }
+
+    /**
+     * The revision the values are validated against, `null` for the head: public contract, for the tools that
+     * document the rule.
+     */
+    public function revision(): ?Revision
+    {
+        return $this->revision;
     }
 
     public function validate(string $attribute, mixed $value, Closure $fail): void
@@ -90,7 +103,7 @@ final class Includes implements ValidationRule
         array &$tooDeep,
     ): void {
         $definitions = array_map(
-            static fn(string $class) => Definitions::for(RelatedResource::resolve($class)),
+            fn(string $class) => Definitions::for(RelatedResource::resolve($class), $this->revision),
             $classes,
         );
 
