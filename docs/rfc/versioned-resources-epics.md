@@ -809,6 +809,10 @@ Acceptance criteria:
   the class, cross-resource diagnostic included.
 - `ResourceAssertions::definitionAt(string $class, Revision $revision): ResourceDefinition` (for snapshot tests).
 
+Done: `assertValid()` at the head keeps its 2.0 meaning (the head diagnostics, those of every revision included) and
+adds the references at the head; at a revision, it fails when the resource is absent from it. `definitionAt()` fails
+the same way rather than returning the head.
+
 #### US 6.3 — Changelog of the revisions · M (optional, after 2.1.0 if needed)
 
 *As an API owner, I want the changes of each revision listed from the code, so that the changelog of the API never

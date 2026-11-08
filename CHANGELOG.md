@@ -77,6 +77,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   references between resources (`Compilation\RevisionReferences`): a relationship reaching, at a revision, a resource
   absent from it is a `revision-unavailable-resource` error (`DefinitionCompiler::REVISION_UNAVAILABLE_RESOURCE`).
   `--revision=Labels` restricts the check to one revision; a resource that does not know it is skipped.
+- `ResourceAssertions::assertValid($class, $strict, $revision)` asserts the shape of a revision and its references
+  there (the head by default, with the diagnostics of every revision and the references at the head);
+  `assertValidAtEveryRevision($class, $strict)` asserts the references at every revision; `definitionAt($class,
+  $revision)` returns the definition of a revision compiled from the current code, for snapshot tests.
 
 ## [2.0.0] — 2026-11-03
 
