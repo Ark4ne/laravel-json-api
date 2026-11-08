@@ -5,16 +5,18 @@ declare(strict_types=1);
 namespace Ark4ne\JsonApi\Compilation;
 
 use Ark4ne\JsonApi\Configuration\Configuration;
+use Ark4ne\JsonApi\Definition\AttributeDefinition;
 use Ark4ne\JsonApi\Definition\DefinitionSource;
 use Ark4ne\JsonApi\Definition\JsonApiSince;
 use Ark4ne\JsonApi\Definition\JsonApiUntil;
 use Ark4ne\JsonApi\Definition\Lifetime;
+use Ark4ne\JsonApi\Definition\RelationshipDefinition;
 use Ark4ne\JsonApi\Definition\ResourceDefinition;
 use Ark4ne\JsonApi\Definition\Revision;
 use Ark4ne\JsonApi\Definition\RevisionOrder;
-use Ark4ne\JsonApi\Descriptors\Boundaries;
 use Ark4ne\JsonApi\Descriptors\Members;
 use Ark4ne\JsonApi\Descriptors\RevisedMembers;
+use Ark4ne\JsonApi\Descriptors\RevisionFindings;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Support\Diagnostics;
 use Ark4ne\JsonApi\Support\Probe;
@@ -56,6 +58,33 @@ final readonly class DefinitionCompiler
     /** A member cannot be described; the definition misses it, the other members are kept. */
     public const INVALID_MEMBER = Members::INVALID_MEMBER;
 
+    /** Two `was()` with the same revision on a field, or `until()` / `since()` set twice. */
+    public const REVISION_DUPLICATE = 'revision-duplicate';
+
+    /** A `was()` with neither `name:` nor `value:`. */
+    public const REVISION_EMPTY_WAS = 'revision-empty-was';
+
+    /** A `was()` outside the revisions its field exists at (`since()`, `until()`). */
+    public const REVISION_OUT_OF_LIFE = 'revision-out-of-life';
+
+    /** Two fields with the same name at one revision, attributes and relationships together. */
+    public const REVISION_NAME_COLLISION = 'revision-name-collision';
+
+    /** A field named `id` or `type` at one revision. */
+    public const REVISION_RESERVED_NAME = 'revision-reserved-name';
+
+    /** The `value:` of a `was()` names no source, and the head reads through a closure. */
+    public const REVISION_UNSOURCED_VALUE = 'revision-unsourced-value';
+
+    /** An older `was()` without the value (or the name) a newer one gives: its clients get the head's. */
+    public const REVISION_VALUE_GAP = 'revision-value-gap';
+
+    /** `since()` or `#[JsonApiSince]` names the oldest revision: it hides nothing. */
+    public const REVISION_NOOP = 'revision-noop';
+
+    /** The revisions of one resource are cases of several enums. */
+    public const REVISION_MIXED_ENUMS = 'revision-mixed-enums';
+
     private const RESERVED_NAMES = ['id', 'type'];
 
     public function __construct(
@@ -81,11 +110,18 @@ final readonly class DefinitionCompiler
             return $this->predefined($class, $predefined, $lifetime);
         }
 
+        if ($revision === null) {
+            return $this->compileEvery($class)[0];
+        }
+
         $hooks = $this->hooks($class);
         [$head, $boundaries] = $this->head($class, $hooks, $lifetime);
         $boundary = RevisionOrder::boundaryOf($boundaries, $revision);
 
-        return $boundary === null ? $head : $this->build($class, $hooks, $lifetime, $boundaries, $boundary);
+        return $boundary === null ? $head : $this->build($class, $hooks, $lifetime, $boundaries, $boundary, head: [
+            ...array_keys($head->attributes),
+            ...array_keys($head->relationships),
+        ]);
     }
 
     /**
@@ -111,11 +147,22 @@ final readonly class DefinitionCompiler
 
         $hooks = $this->hooks($class);
         [$head, $boundaries] = $this->head($class, $hooks, $lifetime);
+        $names = [...array_keys($head->attributes), ...array_keys($head->relationships)];
 
-        return [
-            $head,
-            ...array_map(fn(Revision $boundary) => $this->build($class, $hooks, $lifetime, $boundaries, $boundary), $boundaries),
-        ];
+        $revisions = [];
+        $diagnostics = [];
+        foreach ($boundaries as $boundary) {
+            $revised = $this->build($class, $hooks, $lifetime, $boundaries, $boundary, head: $names);
+            $revisions[] = $revised;
+            // What only a revision shows is reported on the head too, which the checks read.
+            foreach ($revised->diagnostics as $diagnostic) {
+                if (str_starts_with($diagnostic->code, 'revision-')) {
+                    $diagnostics["{$diagnostic->code}|{$diagnostic->subject}|{$diagnostic->message}"] = $diagnostic;
+                }
+            }
+        }
+
+        return [$head->diagnostics(...$head->diagnostics, ...array_values($diagnostics)), ...$revisions];
     }
 
     /**
@@ -275,11 +322,12 @@ final readonly class DefinitionCompiler
      */
     private function head(string $class, array $hooks, Lifetime $lifetime): array
     {
-        $gathered = new Boundaries();
-        $head = $this->build($class, $hooks, $lifetime, [], null, $gathered);
-        $boundaries = RevisionOrder::sorted(...$gathered->all());
+        $findings = new RevisionFindings();
+        $head = $this->build($class, $hooks, $lifetime, [], null, $findings);
+        $diagnostics = new Diagnostics();
+        $boundaries = RevisionChecks::fields($findings, $lifetime, $diagnostics);
 
-        return [$head->boundaries(...$boundaries), $boundaries];
+        return [$head->boundaries(...$boundaries)->diagnostics(...$head->diagnostics, ...$diagnostics), $boundaries];
     }
 
     /**
@@ -293,7 +341,8 @@ final readonly class DefinitionCompiler
      *     failures: array<string, string>,
      * } $hooks
      * @param list<Revision> $boundaries
-     * @param Boundaries|null $gathered Gathers the revisions where the members change
+     * @param RevisionFindings $findings Sees the fields declaring a revision and the names taken twice
+     * @param list<string> $head The names of the fields of the head, for the shape of a revision
      */
     private function build(
         string $class,
@@ -301,7 +350,8 @@ final readonly class DefinitionCompiler
         Lifetime $lifetime,
         array $boundaries,
         ?Revision $boundary,
-        ?Boundaries $gathered = null,
+        RevisionFindings $findings = new RevisionFindings(),
+        array $head = [],
     ): ResourceDefinition {
         $diagnostics = new Diagnostics();
         foreach ($hooks['failures'] as $hook => $message) {
@@ -309,19 +359,22 @@ final readonly class DefinitionCompiler
         }
 
         $members = new Members($this->configuration, $diagnostics, $hooks['probe']);
-        $at = static fn(string $hook): array => RevisedMembers::apply($hooks['members'][$hook], $boundary, $gathered);
+        $at = static fn(string $hook): array => RevisedMembers::apply($hooks['members'][$hook], $boundary, $findings);
+
+        $attributes = $this->guard(
+            'toAttributes',
+            $diagnostics,
+            static fn() => $members->attributes($at('toAttributes'), 'attributes'),
+        );
+        $relationships = $this->guard(
+            'toRelationships',
+            $diagnostics,
+            static fn() => $members->relationships($at('toRelationships')),
+        );
 
         $definition = ResourceDefinition::of($class, $hooks['type'])
-            ->attributes(...$this->guard(
-                'toAttributes',
-                $diagnostics,
-                static fn() => $members->attributes($at('toAttributes'), 'attributes'),
-            ))
-            ->relationships(...$this->guard(
-                'toRelationships',
-                $diagnostics,
-                static fn() => $members->relationships($at('toRelationships')),
-            ))
+            ->attributes(...$attributes)
+            ->relationships(...$relationships)
             ->links(...$this->guard('toLinks', $diagnostics, static fn() => $members->attributes($at('toLinks'))))
             ->meta(...$this->guard(
                 'toResourceMeta',
@@ -337,6 +390,18 @@ final readonly class DefinitionCompiler
             ->lifetime($lifetime)
             ->revision($boundary)
             ->boundaries(...$boundaries);
+
+        if ($boundary !== null) {
+            RevisionChecks::shape(
+                $boundary,
+                array_map(static fn(AttributeDefinition|RelationshipDefinition $field) => $field->name, [...$attributes, ...$relationships]),
+                $head,
+                $findings,
+                $diagnostics,
+            );
+
+            return $definition->diagnostics(...$diagnostics);
+        }
 
         foreach ([...array_keys($definition->attributes), ...array_keys($definition->relationships)] as $name) {
             if (in_array($name, self::RESERVED_NAMES, true)) {

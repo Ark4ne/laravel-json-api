@@ -535,6 +535,11 @@ Tests: `test_the_definition_names_its_revision`, `test_the_boundaries_list_the_d
 Acceptance criteria: each code is a public constant of `DefinitionCompiler` (like `RESERVED_NAME`); the subject is the
 field; the message names the revision and the fix.
 
+Done: the checks live in `Compilation\RevisionChecks`; the fields are seen by `RevisedMembers` (`RevisionFindings`)
+while it transforms the head, the names of each revision on its shape. What a revision shows is reported on the head
+definition too (deduplicated), since `jsonapi:check` and `assertValid()` read the head. With mixed enums the resource
+has no boundary: one shape, the head.
+
 Tests: one per code, plus `test_reusing_the_name_of_a_removed_relationship_needs_since` (case 10).
 
 #### US 3.5 — Compiled cache per revision · S

@@ -8,10 +8,10 @@ use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Definition\AttributeDefinition;
 use Ark4ne\JsonApi\Definition\Revision;
 use Ark4ne\JsonApi\Definition\ValueType;
-use Ark4ne\JsonApi\Descriptors\Boundaries;
 use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Descriptors\Members;
 use Ark4ne\JsonApi\Descriptors\RevisedMembers;
+use Ark4ne\JsonApi\Descriptors\RevisionFindings;
 use Ark4ne\JsonApi\Support\Diagnostics;
 use Ark4ne\JsonApi\Support\Values;
 use Closure;
@@ -81,7 +81,7 @@ final class ValueStruct extends Value
      *
      * @internal Used by `RevisedMembers`.
      */
-    public function atRevision(?Revision $revision, ?Boundaries $boundaries = null): static
+    public function atRevision(?Revision $revision, ?RevisionFindings $findings = null): static
     {
         /** @var Closure(mixed, string): iterable<array-key, mixed> $members */
         $members = $this->attribute;
@@ -89,7 +89,7 @@ final class ValueStruct extends Value
         return $this->with('attribute', static fn(mixed $model, string $name): array => RevisedMembers::apply(
             $members($model, $name),
             $revision,
-            $boundaries,
+            $findings,
         ));
     }
 

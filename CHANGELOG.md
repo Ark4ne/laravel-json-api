@@ -32,6 +32,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   relationships of that revision; revisions with the same shape share one definition. `Definitions::exists($class,
   $revision)`, `Definitions::loadConstraints($class, $revision)`, `Definitions::compile($class, $revision)`,
   `ResourceDefinition::existsAt()` / `boundaryOf()`, `RevisionOrder::sorted()` / `boundaryOf()`.
+- Diagnostics of the revision declarations, reported on the head definition whichever revision shows them:
+  `revision-duplicate`, `revision-empty-was`, `revision-out-of-life`, `revision-name-collision`,
+  `revision-reserved-name`, `revision-unsourced-value`, `revision-mixed-enums` (errors), `revision-value-gap`,
+  `revision-noop` (warnings); constants of `DefinitionCompiler`.
 
 ## [2.0.0] — 2026-11-03
 

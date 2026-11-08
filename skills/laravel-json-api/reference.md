@@ -167,6 +167,15 @@ only, in the diagnostics of the `JsonApiContext`.
 | `reserved-name` | error | A member named `id` or `type` |
 | `invalid-member` | error | A member that throws on the probe, or a relationship to a class that is not a resource |
 | `hook-failure` | error | A hook threw on the probe (an `if` on the model, a call on a relation): use the descriptors |
+| `revision-duplicate` | error | Two `was()` with one revision on a field, or `until()` / `since()` set twice |
+| `revision-empty-was` | error | A `was()` with neither `name:` nor `value:` |
+| `revision-out-of-life` | error | A `was(X)` outside the `since()` / `until()` of its field |
+| `revision-name-collision` | error | Two fields with one name at a revision (attributes and relationships together): bound them with `until()` / `since()` |
+| `revision-reserved-name` | error | A field named `id` or `type` at a revision |
+| `revision-unsourced-value` | error | A `value:` without source while the head reads through a closure: give it its source |
+| `revision-value-gap` | warning | An older `was()` without the value (or name) a newer one gives: its clients get the head's |
+| `revision-noop` | warning | `since()` / `#[JsonApiSince]` naming the oldest revision |
+| `revision-mixed-enums` | error | Revisions of one resource from several enums |
 | `missing-route` | error | The `self` route of `#[JsonApiRoutes]` does not exist |
 | `load-conflict` | warning | Two relationships load the same relation with different `withLoad()` constraints |
 | `filter-on-unloaded` | warning | `->filters()` on a relation that is not loaded, read resource by resource: let it load |
