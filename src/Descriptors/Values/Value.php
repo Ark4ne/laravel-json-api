@@ -49,10 +49,7 @@ abstract class Value extends Describer
         return $this->withRevision($revision, $name, $value);
     }
 
-    /**
-     * @internal Used by the selection of the shape of a field for a revision.
-     */
-    public function readingFrom(string $source): static
+    protected function readingFrom(string $source): static
     {
         return $this->attribute === null ? $this->with('attribute', $source) : $this;
     }
@@ -137,6 +134,7 @@ abstract class Value extends Describer
         ?Configuration $configuration = null,
     ): mixed {
         $configuration ??= Configuration::defaults();
+        $field = $this->headName ?? $field;
 
         if ($this->attribute instanceof Closure) {
             $value = ($this->attribute)($model, $field);

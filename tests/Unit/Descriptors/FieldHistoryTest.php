@@ -211,13 +211,13 @@ final class FieldHistoryTest extends TestCase
 
     public function test_the_conditions_of_a_renamed_field_read_the_head_source(): void
     {
-        // Model side, always the head: the renderer gives the head name as `$attribute`.
+        // Model side, always the head: rendered as `label`, read as `title`.
         $notNull = (new ValueString(null))->whenNotNull()->was(ApiRevision::Initial, name: 'label');
         $has = (new ValueString(null))->whenHas()->was(ApiRevision::Initial, name: 'label');
         $model = ['title' => 'Hello'];
 
-        self::assertSame('Hello', $this->at($notNull, 'title', ApiRevision::Initial)[1]->valueFor(new Request(), $model, 'title'));
-        self::assertSame('Hello', $this->at($has, 'title', ApiRevision::Initial)[1]->valueFor(new Request(), $model, 'title'));
+        self::assertSame('Hello', $this->at($notNull, 'title', ApiRevision::Initial)[1]->valueFor(new Request(), $model, 'label'));
+        self::assertSame('Hello', $this->at($has, 'title', ApiRevision::Initial)[1]->valueFor(new Request(), $model, 'label'));
     }
 
     public function test_the_conditions_of_a_value_without_source_read_the_head_source(): void
@@ -226,7 +226,7 @@ final class FieldHistoryTest extends TestCase
 
         $value = $this->at($head, 'display_name', ApiRevision::Initial)[1];
 
-        self::assertSame(5, $value->valueFor(new Request(), ['title' => 5], 'display_name'));
+        self::assertSame(5, $value->valueFor(new Request(), ['title' => 5], 'label'));
     }
 
     public function test_the_conditions_of_a_relation_without_source_read_the_head_relation(): void
@@ -235,7 +235,25 @@ final class FieldHistoryTest extends TestCase
             ->was(ApiRevision::Initial, name: 'writer', value: (new RelationOne(TeacherResource::class, null))->whenLoaded());
         $model = (new class extends Model {})->setRelation('user', null);
 
-        self::assertTrue($this->at($head, 'author', ApiRevision::Initial)[1]->passes(new Request(), $model, 'author'));
+        self::assertTrue($this->at($head, 'author', ApiRevision::Initial)[1]->passes(new Request(), $model, 'writer'));
+    }
+
+    public function test_a_renamed_field_read_by_a_closure_receives_the_head_name(): void
+    {
+        $head = (new ValueString(static fn(mixed $model, string $field): string => $field))->was(ApiRevision::Initial, name: 'label');
+
+        self::assertSame('title', $this->at($head, 'title', ApiRevision::Initial)[1]->valueFor(new Request(), [], 'label'));
+    }
+
+    public function test_a_renamed_relation_reads_and_checks_the_head_relation(): void
+    {
+        $head = (new RelationOne(UserResource::class, null))->whenLoaded()->was(ApiRevision::Initial, name: 'writer');
+        $model = (new class extends Model {})->setRelation('author', null);
+
+        $relation = $this->at($head, 'author', ApiRevision::Initial)[1];
+
+        self::assertInstanceOf(RelationOne::class, $relation);
+        self::assertTrue($relation->passes(new Request(), $model, 'writer'));
     }
 
     /**

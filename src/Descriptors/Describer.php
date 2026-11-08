@@ -27,6 +27,13 @@ abstract class Describer
      */
     protected array $revisions = [];
 
+    /**
+     * The name of the head field this descriptor stands for at a revision (`standingFor()`), `null` for the head itself:
+     * the `$attribute` its conditions, its source and its closures receive, whatever name it is rendered under (model
+     * side, always the head).
+     */
+    protected ?string $headName = null;
+
     /** The oldest revision the field exists at (`since()`), `null` for every revision. */
     protected ?Revision $since = null;
 
@@ -107,6 +114,20 @@ abstract class Describer
         return $previous === null || in_array($bound, $this->redeclaredBounds, true)
             ? $clone
             : $clone->with('redeclaredBounds', [...$this->redeclaredBounds, $bound]);
+    }
+
+    /**
+     * This descriptor standing for the head field `$headName` at a revision: run with the head name as `$attribute`
+     * whatever name it is rendered under, reading the head source when it names none of its own. A head read by a
+     * closure gives no source.
+     *
+     * @internal Used by the selection of the shape of a field for a revision.
+     */
+    public function standingFor(string $headName, string|Closure $headSource): static
+    {
+        $descriptor = is_string($headSource) ? $this->readingFrom($headSource) : $this;
+
+        return $descriptor->with('headName', $headName);
     }
 
     /**
@@ -215,6 +236,8 @@ abstract class Describer
      */
     protected function check(Request $request, mixed $model, string $attribute): bool
     {
+        $attribute = $this->headName ?? $attribute;
+
         foreach ($this->rules as $rule) {
             if (!$rule($request, $model, $attribute, $this)) {
                 return false;
@@ -300,12 +323,9 @@ abstract class Describer
     abstract public function retriever(): string|Closure|null;
 
     /**
-     * This descriptor reading `$source` when it names no source of its own: a field renamed for a revision keeps
-     * reading what the head reads.
-     *
-     * @internal Used by the selection of the shape of a field for a revision.
+     * This descriptor reading `$source` when it names no source of its own (`standingFor()`).
      */
-    abstract public function readingFrom(string $source): static;
+    abstract protected function readingFrom(string $source): static;
 
     /**
      * @param mixed $value

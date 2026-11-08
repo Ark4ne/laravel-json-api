@@ -139,10 +139,7 @@ abstract class Relation extends Describer implements DescribesRelationship
         return is_string($relation) ? $relation : $attribute;
     }
 
-    /**
-     * @internal Used by the selection of the shape of a field for a revision.
-     */
-    public function readingFrom(string $source): static
+    protected function readingFrom(string $source): static
     {
         return $this->relation === null ? $this->with('relation', $source) : $this;
     }
@@ -375,6 +372,7 @@ abstract class Relation extends Describer implements DescribesRelationship
         string $attribute,
         ?Configuration $configuration = null,
     ): DeclaredRelationship {
+        $attribute = $this->headName ?? $attribute;
         $retriever = $this->retriever();
 
         if ($retriever instanceof Closure) {
