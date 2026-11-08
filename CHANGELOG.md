@@ -67,6 +67,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   revision and the names of their fields at it; `Fields::revision()` returns it, for the tools.
 - `JsonApiFormRequest` validates `include` and `fields` at the revision of the request: the middleware setting it runs
   before the form request, resolved with the controller; the errors still name their parameter (`source.parameter`).
+- Both rules read the lifetime of the resources (`#[JsonApiSince]`, `#[JsonApiUntil]`), at the head too: a
+  relationship whose related resources all are absent from the revision may not be included, nor their types
+  restricted; a resource validated at a revision it is absent from throws `RenderingException::notInRevision()`, as
+  its rendering. Built by hand, they validate against the head unless given the revision of the request.
 
 ## [2.0.0] — 2026-11-03
 

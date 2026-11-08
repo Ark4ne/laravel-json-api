@@ -313,7 +313,7 @@ Acceptance criteria:
   `withInclude()` and `withPath()` (`src/Context/JsonApiContext.php:22-73`).
 - `JsonApiContext::REVISION = 'jsonapi.revision'`: the request attribute. `fromRequest()` reads it (`:34-43`).
 - `JsonApiContext::revisionOf(Request): ?Revision` (Context layer, readable by Http). A value that is not a
-  `Revision` throws `InvalidArgumentException`.
+  `Revision` throws `RenderingException::notARevision()`.
 - `JsonApi::useRevision(Request $request, ?Revision $revision): void` and `JsonApi::revision(Request): RequestedRevision`
   (Laravel layer, delegating to the Context).
 - Resources pick it up without the container (`src/Resources/Concerns/ToResponse.php:65-75`), as the container
@@ -762,6 +762,12 @@ Acceptance criteria:
 
 Done: covered by `tests/Feature/Revisions/ValidationTest.php` (`UseApiRevision` on the route). The `Fields` rule fails
 on the whole parameter, so its errors name `fields`, as at the head, not `fields[writers]`.
+
+Review: both rules read the lifetime of the resources, the head included. A relationship whose related resources are
+all absent from the revision may not be included, and their types are not reachable by `fields`; a polymorphic one is
+included when one of them exists. A resource validated at a revision it is absent from throws
+`RenderingException::notInRevision()`, as its rendering. Built by hand, the rules validate against the head unless
+given the revision.
 
 ---
 

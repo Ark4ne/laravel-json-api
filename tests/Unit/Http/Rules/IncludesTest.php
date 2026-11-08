@@ -6,6 +6,7 @@ namespace Test\Unit\Http\Rules;
 
 use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Configuration\Configuration;
+use Ark4ne\JsonApi\Exceptions\RenderingException;
 use Ark4ne\JsonApi\Http\Rules\Includes;
 use Illuminate\Support\Facades\Validator;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -14,7 +15,10 @@ use Test\app\Http\Resources\Revisions\PostResource as RevisedPostResource;
 use Test\app\Http\Resources\UserCollection;
 use Test\app\Http\Resources\UserResource;
 use Test\app\Revisions\ApiRevision;
+use Test\app\Revisions\MemberResource;
+use Test\app\Revisions\TeacherResource;
 use Test\TestCase;
+use Test\Unit\Http\Rules\Fixtures\LifetimeHolderResource;
 use Test\Unit\Resources\Fixtures\AlphaResource;
 
 class IncludesTest extends TestCase
@@ -176,5 +180,40 @@ class IncludesTest extends TestCase
     {
         self::assertNull((new Includes(UserResource::class))->revision());
         self::assertSame(ApiRevision::Labels, (new Includes(UserResource::class, revision: ApiRevision::Labels))->revision());
+    }
+
+    public function test_a_relationship_to_a_resource_absent_from_the_revision_may_not_be_included(): void
+    {
+        self::assertSame([
+            'The selected :attribute is invalid.',
+            '"holders" doesn\'t have relationship "members".',
+        ], self::ruleErrors('include', new Includes(LifetimeHolderResource::class, revision: ApiRevision::Initial), 'members,teachers'));
+        // The head is checked too: `teachers` is gone from it.
+        self::assertSame([
+            'The selected :attribute is invalid.',
+            '"holders" doesn\'t have relationship "teachers".',
+        ], self::ruleErrors('include', new Includes(LifetimeHolderResource::class), 'members,teachers'));
+    }
+
+    public function test_a_polymorphic_relationship_may_be_included_when_one_of_its_resources_exists_at_the_revision(): void
+    {
+        self::assertSame([], self::ruleErrors('include', new Includes(LifetimeHolderResource::class, revision: ApiRevision::Initial), 'people'));
+        self::assertSame([], self::ruleErrors('include', new Includes(LifetimeHolderResource::class), 'people'));
+    }
+
+    public function test_a_resource_absent_from_the_revision_is_not_validated(): void
+    {
+        $this->expectException(RenderingException::class);
+        $this->expectExceptionMessage(MemberResource::class . '] does not exist at the revision [' . ApiRevision::class . '::Initial]');
+
+        self::ruleErrors('include', new Includes(MemberResource::class, revision: ApiRevision::Initial), 'anything');
+    }
+
+    public function test_a_resource_absent_from_the_head_is_not_validated(): void
+    {
+        $this->expectException(RenderingException::class);
+        $this->expectExceptionMessage(TeacherResource::class . '] does not exist at the revision [head]');
+
+        self::ruleErrors('include', new Includes(TeacherResource::class), 'anything');
     }
 }

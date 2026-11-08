@@ -195,7 +195,9 @@ only, in the diagnostics of the `JsonApiContext`.
   `hasRelationship($name)`, `ids($name)`, `meta()`.
 - `Http\Rules\Includes(PostResource::class, maxDepth: 2, revision: $revision)` and
   `Http\Rules\Fields(PostResource::class, $revision)` in any form request (`$revision` from
-  `JsonApiContext::revisionOf($request)`, `null` for the head). Messages: `jsonapi::validation.*`, published by `vendor:publish --tag=jsonapi-lang`.
+  `JsonApiContext::revisionOf($request)`; without it, the head, whatever the revision of the request). A relationship
+  to a resource absent from the revision may not be included, nor its type restricted; a resource absent from it
+  throws `RenderingException::notInRevision()`, as its rendering. Messages: `jsonapi::validation.*`, published by `vendor:publish --tag=jsonapi-lang`.
 - `Laravel\JsonApi::renderErrors($exceptions, ?Closure $when = null)` in `bootstrap/app.php`: JSON:API error
   documents for the requests expecting JSON (validation 422 with `source.pointer` / `source.parameter`, 401, 403,
   404, `HttpException`s, 500).

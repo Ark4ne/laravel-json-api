@@ -217,6 +217,7 @@ final readonly class ResourceDefinition
      *     since?: Revision|null,
      *     until?: Revision|null,
      *     boundaries?: list<Revision>,
+     *     fieldNames?: array<string, string>,
      * } $properties
      */
     public static function __set_state(array $properties): self

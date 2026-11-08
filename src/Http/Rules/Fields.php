@@ -8,6 +8,7 @@ use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Context\SparseFieldsets;
 use Ark4ne\JsonApi\Definition\RelatedResource;
 use Ark4ne\JsonApi\Definition\Revision;
+use Ark4ne\JsonApi\Exceptions\RenderingException;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Http\Resources\JsonApi\JsonApiRequest;
@@ -19,7 +20,12 @@ use Throwable;
  * resource (`RelationshipDefinition::$native`) are unknown: those of its type are accepted as they are. Its type is read
  * without model (`toType()`, otherwise the default of Laravel); when it cannot be, a type no definition has is
  * accepted as is. Given a revision, every definition is the one of that revision: a client on it restricts the types
- * it is rendered, by the names of their fields at it.
+ * it is rendered, by the names of their fields at it. The type of a related resource absent from the revision
+ * (`#[JsonApiSince]`, `#[JsonApiUntil]`, the head included) is not reachable; a resource validated at a revision it is
+ * absent from throws, as its rendering.
+ *
+ * Built by hand, outside `JsonApiFormRequest`, the rule validates against the head unless given the revision of the
+ * request (`JsonApiContext::revisionOf($request)`).
  *
  * Its messages are the translations `jsonapi::validation.fields.*` (`vendor:publish --tag=jsonapi-lang`).
  *
@@ -56,8 +62,16 @@ final class Fields implements ValidationRule
         return $this->revision;
     }
 
+    /**
+     * @throws RenderingException when the resource does not exist at the revision
+     */
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
+        $resource = RelatedResource::resolve($this->resource);
+        if (!Definitions::exists($resource, $this->revision)) {
+            throw RenderingException::notInRevision($resource, $this->revision);
+        }
+
         if (!is_array($value) || array_filter($value, static fn($fields) => $fields !== null && !is_string($fields)) !== []) {
             $fail('jsonapi::validation.fields.invalid')->translate();
 
@@ -137,7 +151,10 @@ final class Fields implements ValidationRule
             }
 
             foreach ($relationship->related as $related) {
-                $resources = $this->fieldsByType($related, $resources, $untyped);
+                // Not rendered at the revision: its type is not reachable.
+                if (Definitions::exists(RelatedResource::resolve($related), $this->revision)) {
+                    $resources = $this->fieldsByType($related, $resources, $untyped);
+                }
             }
         }
 
