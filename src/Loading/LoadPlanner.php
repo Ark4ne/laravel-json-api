@@ -30,14 +30,15 @@ final readonly class LoadPlanner
      * - otherwise, nothing.
      *
      * Two relationships loading the same path with different constraints share the first one, with a `load-conflict`
-     * diagnostic.
+     * diagnostic. Planned at the revision of the context: its relationships, its loads, its related resources.
      *
      * @param class-string<DefinitionSource> $class
      */
     public function plan(string $class, JsonApiContext $context): LoadPlan
     {
-        $definition = Definitions::for($class);
-        $constraints = Definitions::loadConstraints($class);
+        // The names, relations and related resources of the revision: the include paths are written in its names.
+        $definition = Definitions::for($class, $context->revision);
+        $constraints = Definitions::loadConstraints($class, $context->revision);
         $filter = $context->configuration->sparseRelationships === SparseRelationships::Filter;
 
         $relations = [];

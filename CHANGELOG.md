@@ -42,6 +42,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - A resource is rendered at the revision of its request: its attributes, resource meta and document meta take the
   names and values of that revision, a field `until()` a revision is left out of the head, and sparse fieldsets are
   read in the names of the revision. A resource declaring no revision renders as in 2.0, its members untouched.
+- The eager loads are planned at the revision of the request: the include paths of an old client, its relationships,
+  their loads and constraints and their related resources are those of its revision, loaded in batch.
 
 ## [2.0.0] — 2026-11-03
 
