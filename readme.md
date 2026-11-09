@@ -1348,17 +1348,30 @@ names of its revision, which the controller reads. A declaration that cannot app
 `since()` newer than the `until()`, a `was()` outside them or at the `until()` (the head rules would never apply), the
 same `was()` twice, revisions of two enums.
 
-Any other form request resolves them itself:
+Any other form request uses the trait `Http\Concerns\ResolvesRevisedRules`, which resolves them at the revision of
+the request:
 
 ```php
-use Ark4ne\JsonApi\Context\JsonApiContext;
+use Ark4ne\JsonApi\Http\Concerns\ResolvesRevisedRules;
 use Ark4ne\JsonApi\Http\Rules\Revised;
+use Illuminate\Foundation\Http\FormRequest;
 
-protected function validationRules(): array
+class ProfileUpdateRequest extends FormRequest
 {
-    return Revised::resolve(parent::validationRules(), JsonApiContext::revisionOf($this));
+    use ResolvesRevisedRules;
+
+    public function rules(): array
+    {
+        return [
+            'label' => Revised::rules('required|string')->since(ApiRevision::Labels),
+            'name' => Revised::rules('required|string')->until(ApiRevision::Initial),
+        ];
+    }
 }
 ```
+
+The trait implements `validationRules()` with `Revised::resolve(parent::validationRules(),
+JsonApiContext::revisionOf($this))`, which a form request overriding `validationRules()` already can call itself.
 
 A `Revised` is the whole value of its key, never one rule of a list (`Revised::rules(['bail', 'string'])`). A key left
 out of a revision leaves out its members too: `tags` absent leaves out `tags.*`.

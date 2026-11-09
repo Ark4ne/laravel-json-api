@@ -165,7 +165,8 @@ What a tool (`laravel-openapi-generator`, `jsonapi:check`…) may read without r
 - `Http\Rules\Includes::resource()` and `Http\Rules\Fields::resource()`, the resource a rule validates against, and
   their `revision()`, the revision it validates at;
 - `Http\Rules\Revised` (`head()`, `lifetime()`, `history()`, `existsAt()`, `at()`, `resolve()`) and
-  `Http\Rules\RulesRevision`, the rules of a key of a form request across the revisions.
+  `Http\Rules\RulesRevision`, the rules of a key of a form request across the revisions; `Http\Concerns\ResolvesRevisedRules`,
+  the trait resolving them in a plain form request.
 
 What the definition leaves to the runtime:
 
@@ -414,7 +415,7 @@ from the request and from the declarations, never registered.
 | Topic | Rule |
 | --- | --- |
 | Classes | `final` by default. Extensible base classes, listed in the architecture test: `JsonApiResource`, `JsonApiCollection`, `Descriptors\Describer` and `Descriptors\Relations\Relation` (abstract roots of the descriptors, extended by the package only), `Descriptors\Values\Value`, `Descriptors\Values\ValueDateTime` (base of `ValueDate` and `ValueTime`), `Http\JsonApiFormRequest` |
-| Traits | Only in `src/Resources/` |
+| Traits | Used only in `src/Resources/`; `Http\Concerns\ResolvesRevisedRules` is declared for the form requests of the application, used by no class of the package |
 | Global state | No singleton, no mutable static property; the only static state is `Compilation\Definitions` (pure cache, configuration set once at boot) and `Support\Memo` (pure memos, flushed after every Octane operation) |
 | Facades and helpers | Only in `src/Laravel/` |
 | Types | `declare(strict_types=1)`, every signature typed, PHPStan max; `mixed` only for free values, documented |
@@ -548,7 +549,8 @@ resources (`revision-unavailable-resource`): what `jsonapi:check` and `ResourceA
 
 The rules of a body are the application's: `Http\Rules\Revised` declares the history of the rules of one key
 (`was()`, `since()`, `until()`, bounds included) and `JsonApiFormRequest::validationRules()` resolves them at the
-revision of the request (`Revised::resolve()`), a key absent from it left out with the rules of its members. A
+revision of the request (`Revised::resolve()`), a key absent from it left out with the rules of its members; a plain
+form request does the same with the trait `Http\Concerns\ResolvesRevisedRules`. A
 `Revised` is the whole value of its key, never one rule of a list. It checks its declarations when
 they are made and throws a `DefinitionException`: there is no compilation to report them. The body is not translated
 to the names of the head, nor the pointers of its errors to those of the revision.
