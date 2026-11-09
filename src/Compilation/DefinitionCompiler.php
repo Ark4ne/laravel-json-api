@@ -13,7 +13,6 @@ use Ark4ne\JsonApi\Definition\Lifetime;
 use Ark4ne\JsonApi\Definition\RelationshipDefinition;
 use Ark4ne\JsonApi\Definition\ResourceDefinition;
 use Ark4ne\JsonApi\Definition\Revision;
-use Ark4ne\JsonApi\Definition\RevisionOrder;
 use Ark4ne\JsonApi\Descriptors\Members;
 use Ark4ne\JsonApi\Descriptors\RevisedMembers;
 use Ark4ne\JsonApi\Descriptors\RevisionFindings;
@@ -253,11 +252,12 @@ final readonly class DefinitionCompiler
         $since = ($reflection->getAttributes(JsonApiSince::class)[0] ?? null)?->newInstance()->revision;
         $until = ($reflection->getAttributes(JsonApiUntil::class)[0] ?? null)?->newInstance()->revision;
 
-        if ($since !== null && $until !== null && RevisionOrder::compare($since, $until) > 0) {
+        $lifetime = new Lifetime($since, $until);
+        if ($since !== null && $until !== null && $lifetime->isEmpty()) {
             throw DefinitionException::emptyLifetime($class, $since->name, $until->name);
         }
 
-        return new Lifetime($since, $until);
+        return $lifetime;
     }
 
     /**

@@ -36,4 +36,14 @@ final class LifetimeTest extends TestCase
     {
         self::assertSame($covers, $lifetime->covers($revision));
     }
+
+    public function test_a_lifetime_is_empty_when_its_since_is_newer_than_its_until(): void
+    {
+        self::assertTrue((new Lifetime(ApiRevision::Labels, ApiRevision::Initial))->isEmpty());
+        self::assertFalse((new Lifetime(ApiRevision::Labels, ApiRevision::Labels))->isEmpty());
+        self::assertFalse((new Lifetime(ApiRevision::Initial, ApiRevision::Labels))->isEmpty());
+        self::assertFalse((new Lifetime(ApiRevision::Labels))->isEmpty());
+        self::assertFalse((new Lifetime(until: ApiRevision::Initial))->isEmpty());
+        self::assertFalse((new Lifetime())->isEmpty());
+    }
 }

@@ -18,7 +18,8 @@ use Ark4ne\JsonApi\Http\Rules\Revised;
  * }
  * ```
  *
- * A `JsonApiFormRequest` needs it not: it resolves them itself. The package uses no trait outside `src/Resources/`;
+ * A form request defining its own `validationRules()` hides this one (PHP gives the class precedence): it calls
+ * `Revised::resolve()` itself. A `JsonApiFormRequest` needs it not: it resolves them itself. The package uses no trait outside `src/Resources/`;
  * this one is for the form requests of the application.
  *
  * @phpstan-require-extends \Illuminate\Foundation\Http\FormRequest

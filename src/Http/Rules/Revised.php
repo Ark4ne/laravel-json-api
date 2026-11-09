@@ -25,12 +25,13 @@ use Ark4ne\JsonApi\Exceptions\DefinitionException;
  * }
  * ```
  *
- * A `JsonApiFormRequest` resolves them at the revision of the request (`JsonApiContext::revisionOf()`); any other
- * form request calls `Revised::resolve()`. Bounds are included, as `was()`, `since()` and `until()` of the
- * descriptors.
+ * A `JsonApiFormRequest` resolves them at the revision of the request (`JsonApiContext::revisionOf()`); a plain
+ * form request uses the trait `Http\Concerns\UseRevisedRules`; any other code calls `Revised::resolve()`. Bounds are
+ * included, as `was()`, `since()` and `until()` of the descriptors.
  *
- * A `Revised` is the whole value of its key, never one rule of a list. A key left out of a revision leaves out its
- * members too (`tags` leaves out `tags.*`).
+ * A `Revised` is the whole value of its key, never one rule of a list nor of another `Revised`. A key left out of a
+ * revision leaves out the plain rules of its members too (`tags` leaves out `tags.*`); a member that is a `Revised`
+ * follows its own lifetime.
  *
  * Public contract, for the tools that document the rules: `head()`, `lifetime()`, `history()`, `existsAt()`, `at()`,
  * `resolve()`.
@@ -51,15 +52,15 @@ final readonly class Revised
      */
     public static function rules(mixed $head): self
     {
-        return new self($head, new Lifetime(), []);
+        return new self(self::plain($head), new Lifetime(), []);
     }
 
     /**
      * The rules of the key up to `$revision`, included. At a revision, the `was()` with the oldest revision at least as
      * new as it applies, whatever the order of the calls; none for the head.
      *
-     * @throws DefinitionException when `$revision` is already declared, is outside the lifetime of the key, is its
-     *                             `until()` (the head rules would never apply), or is a case of another enum than the
+     * @throws DefinitionException when `$revision` is already declared or outside the lifetime of the key, when
+     *                             `$rules` hold a `Revised`, or when `$revision` is a case of another enum than the
      *                             other revisions
      */
     public function was(Revision $revision, mixed $rules): self
@@ -70,7 +71,7 @@ final readonly class Revised
             }
         }
 
-        $history = [...$this->history, new RulesRevision($revision, $rules)];
+        $history = [...$this->history, new RulesRevision($revision, self::plain($rules))];
         usort($history, static fn(RulesRevision $a, RulesRevision $b): int => RevisionOrder::compare($a->revision, $b->revision));
 
         return self::checked($this->head, $this->lifetime, $history);
@@ -167,24 +168,18 @@ final readonly class Revised
     public static function resolve(array $rules, ?Revision $revision): array
     {
         $resolved = [];
+        $revised = [];
         $absent = [];
         foreach ($rules as $key => $rule) {
             if ($rule instanceof self) {
+                $revised[$key] = true;
                 if ($rule->existsAt($revision)) {
                     $resolved[$key] = $rule->rulesAt($revision);
                 } else {
                     $absent[] = "{$key}.";
                 }
             } else {
-                if (is_array($rule)) {
-                    foreach ($rule as $item) {
-                        if ($item instanceof self) {
-                            throw DefinitionException::nestedRevisedRules((string) $key);
-                        }
-                    }
-                }
-
-                $resolved[$key] = $rule;
+                $resolved[$key] = self::plain($rule, (string) $key);
             }
         }
 
@@ -192,7 +187,11 @@ final readonly class Revised
             return $resolved;
         }
 
-        return array_filter($resolved, static function (int|string $key) use ($absent): bool {
+        // The plain rules of the members of an absent key are left out; a member declared with a Revised is not.
+        return array_filter($resolved, static function (int|string $key) use ($absent, $revised): bool {
+            if (isset($revised[$key])) {
+                return true;
+            }
             foreach ($absent as $prefix) {
                 if (str_starts_with((string) $key, $prefix)) {
                     return false;
@@ -220,26 +219,36 @@ final readonly class Revised
     }
 
     /**
+     * The rules of one key, checked: never a `Revised`, alone or in a list.
+     *
+     * @throws DefinitionException when the rules hold a `Revised`
+     */
+    private static function plain(mixed $rules, ?string $key = null): mixed
+    {
+        foreach (is_array($rules) ? $rules : [$rules] as $rule) {
+            if ($rule instanceof self) {
+                throw DefinitionException::nestedRevisedRules($key);
+            }
+        }
+
+        return $rules;
+    }
+
+    /**
      * @param list<RulesRevision> $history Oldest first
      *
-     * @throws DefinitionException when the lifetime is empty, a `was()` is outside it or at its `until()`, or the
-     *                             revisions are cases of two enums
+     * @throws DefinitionException when the lifetime is empty, a `was()` is outside it, or the revisions are cases of
+     *                             two enums
      */
     private static function checked(mixed $head, Lifetime $lifetime, array $history): self
     {
-        if (
-            $lifetime->since !== null && $lifetime->until !== null
-            && RevisionOrder::compare($lifetime->since, $lifetime->until) > 0
-        ) {
+        if ($lifetime->since !== null && $lifetime->until !== null && $lifetime->isEmpty()) {
             throw DefinitionException::emptyRulesLifetime($lifetime->since, $lifetime->until);
         }
 
         foreach ($history as $declared) {
             if (!$lifetime->covers($declared->revision)) {
                 throw DefinitionException::rulesRevisionOutsideLifetime($declared->revision);
-            }
-            if ($lifetime->until !== null && RevisionOrder::compare($declared->revision, $lifetime->until) === 0) {
-                throw DefinitionException::rulesRevisionHidesHead($declared->revision);
             }
         }
 

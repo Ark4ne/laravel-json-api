@@ -208,20 +208,36 @@ final class RevisedTest extends TestCase
         self::assertSame('string', $rules->at(ApiRevision::Labels));
     }
 
-    public function test_a_was_at_the_until_throws_as_the_head_would_never_apply(): void
+    public function test_a_was_at_the_until_is_accepted_as_on_a_field(): void
     {
-        $this->expectException(DefinitionException::class);
-        $this->expectExceptionMessage('declare was(' . ApiRevision::class . '::Initial) at their until()');
+        $rules = Revised::rules('max:255')->until(ApiRevision::Labels)->was(ApiRevision::Labels, rules: 'max:80');
 
-        Revised::rules('max:255')->until(ApiRevision::Initial)->was(ApiRevision::Initial, rules: 'max:80');
+        self::assertSame('max:80', $rules->at(ApiRevision::Initial));
+        self::assertSame('max:80', $rules->at(ApiRevision::Labels));
+        self::assertSame('max:255', $rules->head());
     }
 
-    public function test_an_until_declared_at_a_was_throws(): void
+    public function test_a_revised_in_the_head_rules_throws(): void
     {
         $this->expectException(DefinitionException::class);
-        $this->expectExceptionMessage('at their until()');
+        $this->expectExceptionMessage('hold a Revised in a list');
 
-        Revised::rules('max:255')->was(ApiRevision::Labels, rules: 'max:80')->until(ApiRevision::Labels);
+        Revised::rules(['required', Revised::rules('string')]);
+    }
+
+    public function test_a_revised_in_the_rules_of_a_was_throws(): void
+    {
+        $this->expectException(DefinitionException::class);
+        $this->expectExceptionMessage('hold a Revised in a list');
+
+        Revised::rules('string')->was(ApiRevision::Initial, rules: ['required', Revised::rules('string')]);
+    }
+
+    public function test_a_revised_as_the_rules_of_a_was_throws(): void
+    {
+        $this->expectException(DefinitionException::class);
+
+        Revised::rules('string')->was(ApiRevision::Initial, rules: Revised::rules('integer'));
     }
 
     public function test_a_revision_newer_than_every_was_reads_the_head(): void
@@ -300,6 +316,17 @@ final class RevisedTest extends TestCase
 
         self::assertSame(['data.attributes.tagsCount' => 'integer'], Revised::resolve($rules, ApiRevision::Initial));
         self::assertSame($rules['data.attributes.tags.*'], Revised::resolve($rules, ApiRevision::Labels)['data.attributes.tags.*']);
+    }
+
+    public function test_resolve_keeps_a_revised_member_existing_at_the_revision_of_an_absent_key(): void
+    {
+        $rules = [
+            'data.attributes' => Revised::rules('array')->until(ApiRevision::Initial),
+            'data.attributes.title' => Revised::rules('required')->since(ApiRevision::Labels),
+            'data.attributes.name' => 'string',
+        ];
+
+        self::assertSame(['data.attributes.title' => 'required'], Revised::resolve($rules, ApiRevision::Labels));
     }
 
     public function test_resolve_rejects_a_revised_in_a_list_of_rules(): void

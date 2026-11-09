@@ -30,7 +30,8 @@ use Illuminate\Foundation\Http\FormRequest;
  * on the route: a form request is resolved, and validated, with the controller, after every middleware.
  *
  * The rules of `rules()` that change across the revisions are declared with `Rules\Revised`; they are resolved at the
- * revision of the request too (`Revised::resolve()`), a key absent from it is left out.
+ * revision of the request too (`Revised::resolve()`), a key absent from it is left out. A `Revised` keyed `include` or
+ * `fields` absent from the revision leaves the preconfigured rule: the query is always validated.
  *
  * `jsonApi()` reads the resource object of the body (`ResourceDocument`) from the validated data.
  */

@@ -16,6 +16,16 @@ final readonly class Lifetime
     ) {}
 
     /**
+     * Whether it covers no revision: its `since` is newer than its `until`.
+     *
+     * @throws \Ark4ne\JsonApi\Exceptions\DefinitionException when the revisions are cases of two enums
+     */
+    public function isEmpty(): bool
+    {
+        return $this->since !== null && $this->until !== null && RevisionOrder::compare($this->since, $this->until) > 0;
+    }
+
+    /**
      * Whether the resource exists at `$revision` (`null` for the head).
      *
      * @throws \Ark4ne\JsonApi\Exceptions\DefinitionException when the revisions are cases of two enums

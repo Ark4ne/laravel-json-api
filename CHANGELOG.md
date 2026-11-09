@@ -96,13 +96,14 @@ change.
   "Versioned resources" in the skill.
 - `Http\Rules\Revised`: the validation rules of one key of a form request across the revisions,
   `Revised::rules($head)->was(X, rules: …)->since(X)->until(X)`, bounds included. `JsonApiFormRequest` resolves them
-  at the revision of the request and leaves out a key absent from it, with the rules of its members (`tags.*`); a plain
+  at the revision of the request and leaves out a key absent from it, with the plain rules of its members (`tags.*`); a plain
   `FormRequest` uses the trait `Http\Concerns\UseRevisedRules`, any other code calls
   `Revised::resolve($rules, $revision)`. Public for the tools: `head()`, `lifetime()`, `history()` (a list of
   `Http\Rules\RulesRevision`, oldest first), `existsAt()`, `at()`. A declaration that cannot apply throws a
-  `DefinitionException` (`emptyRulesLifetime()`, `duplicateRulesRevision()`, `rulesRevisionOutsideLifetime()`,
-  `rulesRevisionHidesHead()` for a `was()` at the `until()`), and so does a `Revised` in a list of rules
-  (`nestedRevisedRules()`): it is the whole value of its key. README
+  `DefinitionException` (`emptyRulesLifetime()`, `duplicateRulesRevision()`, `rulesRevisionOutsideLifetime()`), and
+  so does a `Revised` in a list of rules or in the rules of another `Revised` (`nestedRevisedRules()`): it is the whole
+  value of its key. A member declared with its own `Revised` follows its own lifetime. `Definition\Lifetime::isEmpty()`
+  holds the check of an empty lifetime once. README
   "Write requests across revisions" under "Versioned resources", a tested recipe "Write request across revisions" in the skill.
 - README: a list of the features, API revisions among them, at the top; the comparison with Laravel's native JSON:API
   moves to the end, as "Alongside Laravel's native JSON:API"; the CI badge reads the `ci.yml` workflow.

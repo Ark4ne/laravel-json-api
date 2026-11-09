@@ -135,7 +135,7 @@ final readonly class RevisionChecks
             );
         }
 
-        if ($since !== null && $until !== null && RevisionOrder::compare($since, $until) > 0) {
+        if ($since !== null && $until !== null && (new Lifetime($since, $until))->isEmpty()) {
             $diagnostics->error(
                 DefinitionCompiler::REVISION_OUT_OF_LIFE,
                 "since({$since->name}) is newer than until({$until->name}): the field exists at no revision. Fix the "

@@ -1371,10 +1371,13 @@ class ProfileUpdateRequest extends FormRequest
 ```
 
 The trait implements `validationRules()` with `Revised::resolve(parent::validationRules(),
-JsonApiContext::revisionOf($this))`, which a form request overriding `validationRules()` already can call itself.
+JsonApiContext::revisionOf($this))`. A form request defining its own `validationRules()` hides the method of the trait
+(PHP gives the class precedence): call `Revised::resolve()` there instead.
 
-A `Revised` is the whole value of its key, never one rule of a list (`Revised::rules(['bail', 'string'])`). A key left
-out of a revision leaves out its members too: `tags` absent leaves out `tags.*`.
+A `Revised` is the whole value of its key: `Revised::rules(['bail', 'string'])`, never `['bail', Revised::rules('string')]`
+(it throws). A key left out of a revision leaves out the plain rules of its members too: `tags` absent leaves out
+`tags.*`; a member declared with its own `Revised` follows its own lifetime. A `Revised` keyed `include` or `fields`
+replaces the preconfigured rule where it exists; where it does not, the preconfigured rule validates.
 
 Tools read the history without a request: `head()`, `lifetime()` (`since`, `until`), `history()` (each `was()` as a
 `RulesRevision`, oldest first), and `at($revision)` / `existsAt($revision)`.

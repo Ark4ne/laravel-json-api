@@ -75,25 +75,13 @@ final class DefinitionException extends LogicException implements JsonApiExcepti
     }
 
     /**
-     * Validation rules declare what they were up to their last revision (`Revised::was()` at `until()`): the head rules
-     * would apply at no revision.
+     * A `Revised` is one rule of a list, or the rules of another `Revised`: it is the whole value of its key.
      */
-    public static function rulesRevisionHidesHead(UnitEnum $revision): self
+    public static function nestedRevisedRules(?string $key = null): self
     {
         return new self(
-            'Revised rules declare was(' . RevisionLabel::of($revision) . ') at their until(): the head rules would never '
-            . 'apply. Write these rules as the head and remove the was().',
-        );
-    }
-
-    /**
-     * A `Revised` is one rule of a list: it is the whole value of its key.
-     */
-    public static function nestedRevisedRules(string $key): self
-    {
-        return new self(
-            "The rules of [{$key}] hold a Revised in a list: a Revised is the whole value of its key, "
-            . "Revised::rules([...]) holds the list.",
+            ($key === null ? 'Revised rules' : "The rules of [{$key}]")
+            . ' hold a Revised in a list: a Revised is the whole value of its key, Revised::rules([...]) holds the list.',
         );
     }
 
