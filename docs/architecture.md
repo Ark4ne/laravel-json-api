@@ -163,7 +163,9 @@ What a tool (`laravel-openapi-generator`, `jsonapi:check`…) may read without r
 - the cases of `ValueType`: a new case is a major version, so a tool may match them exhaustively; a custom value type
   declares one of them;
 - `Http\Rules\Includes::resource()` and `Http\Rules\Fields::resource()`, the resource a rule validates against, and
-  their `revision()`, the revision it validates at.
+  their `revision()`, the revision it validates at;
+- `Http\Rules\Revised` (`head()`, `lifetime()`, `history()`, `existsAt()`, `at()`, `resolve()`) and
+  `Http\Rules\RulesRevision`, the rules of a key of a form request across the revisions.
 
 What the definition leaves to the runtime:
 
@@ -542,4 +544,10 @@ definition (`revision-*`, constants of `DefinitionCompiler`), whose diagnostics 
 `Compilation\RevisionAudit` gives the diagnostics of a resource at a revision and checks the references between
 resources (`revision-unavailable-resource`): what `jsonapi:check` and `ResourceAssertions` read.
 
-Out of scope: request bodies (the attributes a `JsonApiFormRequest` validates in `data`) stay the application's.
+### Request bodies
+
+The rules of a body are the application's: `Http\Rules\Revised` declares the history of the rules of one key
+(`was()`, `since()`, `until()`, bounds included) and `JsonApiFormRequest::validationRules()` resolves them at the
+revision of the request (`Revised::resolve()`), a key absent from it left out. A `Revised` checks its declarations when
+they are made and throws a `DefinitionException`: there is no compilation to report them. The body is not translated
+to the names of the head, nor the pointers of its errors to those of the revision.

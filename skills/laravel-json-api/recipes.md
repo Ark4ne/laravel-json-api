@@ -581,6 +581,52 @@ Checked like any resource: `php artisan jsonapi:check` checks every revision, an
 absent from one (`revision-unavailable-resource`). To retire `Initial`: delete the case, run `composer stan`, delete
 every reported line and `WriterResource`, run `php artisan jsonapi:check`.
 
+## Write request across revisions
+
+The body a client sends changes with its revision too. Each key whose rules changed declares its history with
+`Revised`, as a field does; the `JsonApiFormRequest` resolves it at the revision of the request, set by the
+middleware of the recipe above. Here `Authors` renamed `name` to `title` and capped the summary. The body is not
+translated: an old client still sends `name`, which the controller reads.
+
+```php
+namespace App\Recipes\Library;
+
+use Ark4ne\JsonApi\Http\JsonApiFormRequest;
+use Ark4ne\JsonApi\Http\Rules\Revised;
+
+final class BookStoreRequest extends JsonApiFormRequest
+{
+    protected string $resource = BookResource::class;
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function rules(): array
+    {
+        return [
+            'data.type' => ['required', 'in:books'],
+            'data.attributes.title' => Revised::rules(['required', 'string'])->since(LibraryRevision::Authors),
+            'data.attributes.summary' => Revised::rules(['nullable', 'string', 'max:500'])
+                ->was(LibraryRevision::Initial, rules: ['nullable', 'string']),
+            // Revisions
+            'data.attributes.name' => Revised::rules(['required', 'string'])->until(LibraryRevision::Initial),
+        ];
+    }
+
+    /** The title, under its name at the revision of the client. */
+    public function title(): string
+    {
+        $document = $this->jsonApi();
+
+        return (string) ($document->attribute('title') ?? $document->attribute('name'));
+    }
+}
+```
+
+`Revised::rules($head)`, then `->was(X, rules: …)` (the rules up to `X`, included), `->since(X)`, `->until(X)`. A
+plain `FormRequest` resolves them itself: `Revised::resolve(parent::validationRules(), JsonApiContext::revisionOf($this))`
+in its `validationRules()`.
+
 ## Checking resources in tests
 
 ```php skip

@@ -120,7 +120,7 @@ final class SkillTest extends SkillTestCase
             }
         }
 
-        foreach (['JsonApi::useRevision(', 'JsonApi::revision(', 'Definition\\Revision', 'Definitions::for('] as $name) {
+        foreach (['JsonApi::useRevision(', 'JsonApi::revision(', 'Definition\\Revision', 'Definitions::for(', 'Revised::rules(', 'Revised::resolve('] as $name) {
             self::assertStringContainsString($name, $reference, $name);
         }
     }
@@ -293,6 +293,33 @@ final class SkillTest extends SkillTestCase
             'data.attributes',
             ['name' => 'Notes on the Analytical Engine', 'summary' => 'The first published algorithm, with its notes.', 'legacy_code' => 'AE-1843'],
         );
+    }
+
+    public function test_the_write_request_across_revisions_recipe(): void
+    {
+        self::runRecipe('recipes.md', 'Versioned resources');
+        self::runRecipe('recipes.md', 'Write request across revisions');
+
+        Route::post('recipes/books', static function (): array {
+            $request = self::formRequest('App\Recipes\Library\BookStoreRequest');
+            self::assertTrue(method_exists($request, 'title'));
+
+            return ['title' => $request->title(), 'attributes' => $request->jsonApi()->attributes()];
+        })->middleware('App\Recipes\Library\UseLibraryRevision');
+
+        $long = str_repeat('a', 501);
+        $this->postJson('recipes/books', ['data' => ['type' => 'books', 'attributes' => ['title' => 'Notes', 'summary' => 'Short']]])
+            ->assertOk()->assertExactJson(['title' => 'Notes', 'attributes' => ['title' => 'Notes', 'summary' => 'Short']]);
+        $this->postJson('recipes/books', ['data' => ['type' => 'books', 'attributes' => ['name' => 'Notes', 'summary' => $long]]])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['data.attributes.title', 'data.attributes.summary']);
+
+        $initial = ['Api-Version' => '2026-09-01'];
+        $this->postJson('recipes/books', ['data' => ['type' => 'books', 'attributes' => ['name' => 'Notes', 'summary' => $long]]], $initial)
+            ->assertOk()->assertExactJson(['title' => 'Notes', 'attributes' => ['summary' => $long, 'name' => 'Notes']]);
+        $this->postJson('recipes/books', ['data' => ['type' => 'books', 'attributes' => ['title' => 'Notes']]], $initial)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['data.attributes.name']);
     }
 
     /**

@@ -1316,6 +1316,48 @@ A change of meaning has no shape to declare: read the revision of the rendering.
 `$this->requestedRevision()` gives `atMost()`, `atLeast()`, `is()` and `isHead()`; outside a resource (`with()`,
 `additional()`, a controller), `JsonApi::revision($request)`.
 
+## Write requests
+
+The rules of a body change with the revision too. Declare the history of each key that changed with
+`Http\Rules\Revised`, the head written plainly, bounds included:
+
+```php
+use Ark4ne\JsonApi\Http\Rules\Revised;
+
+class PostStoreRequest extends JsonApiFormRequest
+{
+    protected string $resource = PostResource::class;
+
+    public function rules(): array
+    {
+        return [
+            'data.attributes.title' => Revised::rules('required|string|max:255')
+                ->was(ApiRevision::Initial, rules: 'required|string|max:80'),  // up to Initial, included
+            'data.attributes.label' => Revised::rules('required|string')->since(ApiRevision::Labels),
+            // Revisions
+            'data.attributes.name' => Revised::rules('required|string')->until(ApiRevision::Initial),
+        ];
+    }
+}
+```
+
+A `JsonApiFormRequest` resolves them at the revision of the request: a key absent from it is left out, its member
+neither validated nor returned by `validated()` and `jsonApi()`. The body is not translated: an old client sends the
+names of its revision, which the controller reads. A declaration that cannot apply throws a `DefinitionException`: a
+`since()` newer than the `until()`, a `was()` outside them, the same `was()` twice, revisions of two enums.
+
+Any other form request resolves them itself:
+
+```php
+protected function validationRules(): array
+{
+    return Revised::resolve(parent::validationRules(), JsonApiContext::revisionOf($this));
+}
+```
+
+Tools read the history without a request: `head()`, `lifetime()` (`since`, `until`), `history()` (each `was()` as a
+`RulesRevision`, oldest first), and `at($revision)` / `existsAt($revision)`.
+
 ## Checking the revisions
 
 `php artisan jsonapi:check` checks every revision: the declarations (`revision-*` diagnostics), the shape of each

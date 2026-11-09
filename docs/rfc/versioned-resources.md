@@ -1086,8 +1086,11 @@ Non-breaking checklist:
 1. **Request bodies.** Should `JsonApiFormRequest` map the body of an old client to the head (renamed attributes)?
    The same `renamed()` declarations could be inverted on `data.attributes`, but required/nullable changes differ
    between input and output. Proposal: out of scope for the first iteration; the application validates per revision.
+   **Resolved for the rules (2.1):** `Http\Rules\Revised` declares the history of the rules of each key (`was(X,
+   rules:)`, `since()`, `until()`) and `JsonApiFormRequest` resolves them at the revision of the request. The rules
+   are not derived from the resource (input is not output), and the body is not translated: still open, with Q2.
 2. **Error pointers.** If the body is mapped to head names, `ValidationErrorRenderer` (`:57-71`) must map
-   `source.pointer` back to the old names. Tied to question 1.
+   `source.pointer` back to the old names. Tied to question 1. **Still open:** nothing is mapped in 2.1.
 3. **Primary resources under an old type** (`GET /teachers/1`): `->as('teachers')` on the resource instance, or left to
    the application with a subclass?
 4. **Struct members.** Should `renamed(from: 'price.amount', to: 'balance.amount')` reach inside structs, or is

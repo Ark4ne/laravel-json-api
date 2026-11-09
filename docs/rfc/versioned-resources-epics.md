@@ -899,6 +899,11 @@ a model of a morph resource absent from the revision throws when rendered (US 4.
 `was()` of a `mergeWhen()` (hidden from the definition, documented), a stale compiled file (as for any change of the
 code).
 
+Request bodies (asked by EV8, added before the tag): `Http\Rules\Revised` gives the rules of one key of a form request
+across the revisions (`was(X, rules:)`, `since()`, `until()`), resolved by `JsonApiFormRequest` at the revision of the
+request, by `Revised::resolve()` elsewhere; `head()`, `lifetime()`, `history()` are public for the generator. RFC §8
+Q1 resolved for the rules; the translation of the body and of the error pointers (Q2) stays open.
+
 ---
 
 ### EV8 — `laravel-openapi-generator` (separate repository)

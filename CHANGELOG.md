@@ -94,6 +94,13 @@ change.
   $revision)` returns the definition of a revision compiled from the current code, for snapshot tests.
 - README "Versioned resources" and a "Revisions" section in the skill reference and its rules; a tested recipe
   "Versioned resources" in the skill.
+- `Http\Rules\Revised`: the validation rules of one key of a form request across the revisions,
+  `Revised::rules($head)->was(X, rules: …)->since(X)->until(X)`, bounds included. `JsonApiFormRequest` resolves them
+  at the revision of the request and leaves out a key absent from it; any other form request calls
+  `Revised::resolve($rules, $revision)`. Public for the tools: `head()`, `lifetime()`, `history()` (a list of
+  `Http\Rules\RulesRevision`, oldest first), `existsAt()`, `at()`. A declaration that cannot apply throws a
+  `DefinitionException` (`emptyRulesLifetime()`, `duplicateRulesRevision()`, `rulesRevisionOutsideLifetime()`). README
+  "Write requests" under "Versioned resources", a tested recipe "Write request across revisions" in the skill.
 - README: a list of the features, API revisions among them, at the top; the comparison with Laravel's native JSON:API
   moves to the end, as "Alongside Laravel's native JSON:API"; the CI badge reads the `ci.yml` workflow.
 - At a revision, the links of `#[JsonApiRoutes]` follow the relationships of that revision and their names; the

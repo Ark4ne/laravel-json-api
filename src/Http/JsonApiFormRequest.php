@@ -8,6 +8,7 @@ use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Http\Rules\Fields;
 use Ark4ne\JsonApi\Http\Rules\Includes;
+use Ark4ne\JsonApi\Http\Rules\Revised;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -27,6 +28,9 @@ use Illuminate\Foundation\Http\FormRequest;
  * Both are validated at the revision of the request (`JsonApiContext::revisionOf()`): the names an old client includes
  * and restricts are those of its revision. The middleware setting it (`JsonApi::useRevision()`) runs first, global or
  * on the route: a form request is resolved, and validated, with the controller, after every middleware.
+ *
+ * The rules of `rules()` that change across the revisions are declared with `Rules\Revised`; they are resolved at the
+ * revision of the request too (`Revised::resolve()`), a key absent from it is left out.
  *
  * `jsonApi()` reads the resource object of the body (`ResourceDocument`) from the validated data.
  */
@@ -82,11 +86,13 @@ abstract class JsonApiFormRequest extends FormRequest
 
         $revision = JsonApiContext::revisionOf($this);
 
-        /** @var array<array-key, mixed> $rules */
+        /** @var array<array-key, mixed> $own */
+        $own = parent::validationRules();
+
         $rules = [
             'include' => new Includes($this->resource, revision: $revision),
             'fields' => new Fields($this->resource, $revision),
-            ...parent::validationRules(),
+            ...Revised::resolve($own, $revision),
         ];
 
         foreach (self::PARAMETERS as $parameter) {

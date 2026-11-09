@@ -17,7 +17,7 @@ Files of this skill:
   configuration keys, the commands, the HTTP layer and the extension points.
 - [recipes.md](recipes.md): complete, tested examples (a blog with includes and fieldsets, validation of the query and
   of a write request, a value type of the application, a polymorphic relationship, a collection with document meta,
-  errors and content negotiation, versioned resources, checking resources in tests).
+  errors and content negotiation, versioned resources, write request across revisions, checking resources in tests).
 
 The source is the final authority: `vendor/ark4ne/laravel-json-api/src/` (`Descriptors/` for the helpers,
 `config/jsonapi.php` for the configuration, documented key by key) and its `readme.md`.

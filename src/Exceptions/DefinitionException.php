@@ -43,6 +43,38 @@ final class DefinitionException extends LogicException implements JsonApiExcepti
     }
 
     /**
+     * Validation rules exist from a revision newer than the one they exist up to (`Revised::since()`, `until()`): they
+     * exist at no revision.
+     */
+    public static function emptyRulesLifetime(UnitEnum $since, UnitEnum $until): self
+    {
+        return new self(
+            'Revised rules exist since [' . RevisionLabel::of($since) . '] and until [' . RevisionLabel::of($until)
+            . '], an older revision: they exist at no revision. Fix since() or until().',
+        );
+    }
+
+    /**
+     * Validation rules declare twice what they were up to the same revision (`Revised::was()`).
+     */
+    public static function duplicateRulesRevision(UnitEnum $revision): self
+    {
+        return new self('Revised rules declare was(' . RevisionLabel::of($revision) . ') twice: keep one.');
+    }
+
+    /**
+     * Validation rules declare what they were up to a revision outside their lifetime (`Revised::was()` older than
+     * `since()` or newer than `until()`): it would never apply as declared.
+     */
+    public static function rulesRevisionOutsideLifetime(UnitEnum $revision): self
+    {
+        return new self(
+            'Revised rules declare was(' . RevisionLabel::of($revision) . ') outside their lifetime: a was() is between '
+            . 'since() and until(), bounds included.',
+        );
+    }
+
+    /**
      * The definition of a resource was read at a revision it does not exist at (`#[JsonApiSince]`, `#[JsonApiUntil]`).
      */
     public static function notInRevision(string $class, ?UnitEnum $revision): self
