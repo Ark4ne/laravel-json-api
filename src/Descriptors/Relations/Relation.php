@@ -11,6 +11,7 @@ use Ark4ne\JsonApi\Definition\DescribesRelationship;
 use Ark4ne\JsonApi\Definition\LoadDefinition;
 use Ark4ne\JsonApi\Definition\RelatedResource;
 use Ark4ne\JsonApi\Definition\RelationshipDefinition;
+use Ark4ne\JsonApi\Definition\Revision;
 use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Filters\Filters;
@@ -110,6 +111,37 @@ abstract class Relation extends Describer implements DescribesRelationship
     public function retriever(): string|Closure|null
     {
         return $this->relation;
+    }
+
+    /**
+     * The relationship as it was up to `$revision` included: its name, its relation, or both; what is left out is the
+     * head's. The relation given is complete: its related resource, its cardinality (`one` ↔ `many`), its loads,
+     * filters, links and meta are its own, nothing is taken from the head. Only one `was()` applies to a revision: the
+     * one with the oldest revision at least as new.
+     *
+     * @param string|null $name The name it had; the head name if `null`
+     * @param Relation<T>|null $value The relation it had; reads the head relation when it names none
+     */
+    public function was(Revision $revision, ?string $name = null, ?Relation $value = null): static
+    {
+        return $this->withRevision($revision, $name, $value);
+    }
+
+    /**
+     * The relation a descriptor reads: the one it names, otherwise `$attribute`.
+     *
+     * @param Describer<mixed> $describer
+     */
+    private static function sourceOf(Describer $describer, string $attribute): string
+    {
+        $relation = $describer->retriever();
+
+        return is_string($relation) ? $relation : $attribute;
+    }
+
+    protected function readingFrom(string $source): static
+    {
+        return $this->relation === null ? $this->with('relation', $source) : $this;
     }
 
     /**
@@ -282,8 +314,13 @@ abstract class Relation extends Describer implements DescribesRelationship
     {
         $loaded = $this->linkage === Linkage::Included ? $this : $this->linkage(Linkage::Loaded);
 
-        return $loaded->when(function (Request $request, mixed $model, string $attribute) use ($relation): bool {
-            $relation ??= is_string($this->relation) ? $this->relation : $attribute;
+        return $loaded->withRule(static function (
+            Request $request,
+            mixed $model,
+            string $attribute,
+            Describer $describer,
+        ) use ($relation): bool {
+            $relation ??= self::sourceOf($describer, $attribute);
 
             return $model instanceof Model
                 ? $model->relationLoaded($relation)
@@ -300,8 +337,13 @@ abstract class Relation extends Describer implements DescribesRelationship
      */
     public function whenPivotLoaded(string $table, ?string $accessor = null): static
     {
-        return $this->when(function (Request $request, mixed $model, string $attribute) use ($table, $accessor): bool {
-            $accessor ??= is_string($this->relation) ? $this->relation : $attribute;
+        return $this->withRule(static function (
+            Request $request,
+            mixed $model,
+            string $attribute,
+            Describer $describer,
+        ) use ($table, $accessor): bool {
+            $accessor ??= self::sourceOf($describer, $attribute);
             // A pivot is a relation of an Eloquent model, which hasAttribute() does not see.
             $pivot = match (true) {
                 $model instanceof Model => $model->getAttribute($accessor),
@@ -330,6 +372,7 @@ abstract class Relation extends Describer implements DescribesRelationship
         string $attribute,
         ?Configuration $configuration = null,
     ): DeclaredRelationship {
+        $attribute = $this->headName ?? $attribute;
         $retriever = $this->retriever();
 
         if ($retriever instanceof Closure) {

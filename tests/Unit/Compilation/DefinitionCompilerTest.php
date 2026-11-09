@@ -22,9 +22,15 @@ use stdClass;
 use Test\app\Enums\State;
 use Test\app\Http\Resources\CommentResource;
 use Test\app\Http\Resources\UserResource;
+use Test\app\Revisions\ApiRevision;
+use Test\app\Revisions\MemberResource;
+use Test\app\Revisions\ProfileResource;
+use Test\app\Revisions\TeacherChildResource;
+use Test\app\Revisions\TeacherResource;
 use Test\Unit\Compilation\Fixtures\AttributeTypedResource;
 use Test\Unit\Compilation\Fixtures\BlogPostResource;
 use Test\Unit\Compilation\Fixtures\EagerResource;
+use Test\Unit\Compilation\Fixtures\EmptyLifetimeResource;
 use Test\Unit\Compilation\Fixtures\FailingHookResource;
 use Test\Unit\Compilation\Fixtures\InvalidMemberResource;
 use Test\Unit\Compilation\Fixtures\MergeWhenResource;
@@ -439,5 +445,129 @@ final class DefinitionCompilerTest extends TestCase
 
         self::assertSame(['comments'], array_keys($constraints));
         self::assertSame(['comments'], array_keys($constraints['comments']));
+    }
+
+    public function test_a_resource_until_a_revision_declares_it(): void
+    {
+        $lifetime = (new DefinitionCompiler(Configuration::defaults()))->lifetime(TeacherResource::class);
+
+        self::assertNull($lifetime->since);
+        self::assertSame(ApiRevision::Labels, $lifetime->until);
+    }
+
+    public function test_a_resource_since_a_revision_declares_it(): void
+    {
+        $lifetime = (new DefinitionCompiler(Configuration::defaults()))->lifetime(MemberResource::class);
+
+        self::assertSame(ApiRevision::UsersReplaceTeachers, $lifetime->since);
+        self::assertNull($lifetime->until);
+    }
+
+    public function test_a_resource_without_lifetime_exists_at_every_revision(): void
+    {
+        $lifetime = (new DefinitionCompiler(Configuration::defaults()))->lifetime(UserResource::class);
+
+        self::assertNull($lifetime->since);
+        self::assertNull($lifetime->until);
+    }
+
+    public function test_a_subclass_does_not_inherit_the_lifetime_of_its_parent(): void
+    {
+        $lifetime = (new DefinitionCompiler(Configuration::defaults()))->lifetime(TeacherChildResource::class);
+
+        self::assertNull($lifetime->until);
+    }
+
+    public function test_a_resource_with_since_after_until_cannot_be_compiled(): void
+    {
+        $this->expectException(DefinitionException::class);
+        $this->expectExceptionMessage(EmptyLifetimeResource::class);
+
+        $this->compile(EmptyLifetimeResource::class);
+    }
+
+    public function test_the_definition_names_the_lifetime_of_the_resource(): void
+    {
+        $definition = $this->compile(TeacherResource::class);
+
+        self::assertNull($definition->since);
+        self::assertSame(ApiRevision::Labels, $definition->until);
+        self::assertNull($definition->revision);
+    }
+
+    public function test_a_definition_is_compiled_for_a_revision(): void
+    {
+        $compiler = new DefinitionCompiler(Configuration::defaults());
+
+        $labels = $compiler->compile(ProfileResource::class, ApiRevision::Labels);
+        $newest = $compiler->compile(ProfileResource::class, ApiRevision::UsersReplaceTeachers);
+
+        self::assertSame(ApiRevision::Labels, $labels->revision);
+        self::assertSame(['label', 'email', 'full_name'], array_keys($labels->attributes));
+        self::assertNull($newest->revision);
+        self::assertSame(['display_name', 'email', 'tag_names'], array_keys($newest->attributes));
+    }
+
+    public function test_a_definition_for_a_revision_maps_the_names_of_the_code_to_its_own(): void
+    {
+        $compiler = new DefinitionCompiler(Configuration::defaults());
+
+        self::assertSame(
+            ['display_name' => 'name', 'email' => 'email', 'full_name' => 'full_name', 'remarks' => 'comments'],
+            $compiler->compile(ProfileResource::class, ApiRevision::Initial)->fieldNames,
+        );
+        // The head: the names of the code, without the fields until a revision.
+        self::assertSame(
+            ['display_name' => 'display_name', 'email' => 'email', 'tag_names' => 'tag_names', 'remarks' => 'remarks'],
+            $compiler->compile(ProfileResource::class)->fieldNames,
+        );
+        self::assertSame([], $compiler->compile(StructResource::class)->fieldNames);
+    }
+
+    public function test_every_shape_of_a_resource_is_compiled_with_its_hooks_run_once(): void
+    {
+        StructResource::$reads = 0;
+        $compiler = new DefinitionCompiler(Configuration::defaults());
+
+        self::assertCount(1, $compiler->compileEvery(StructResource::class));
+        self::assertSame(2, StructResource::$reads);
+        self::assertSame(
+            [null, ApiRevision::Initial, ApiRevision::Labels],
+            array_map(static fn(ResourceDefinition $definition) => $definition->revision, $compiler->compileEvery(ProfileResource::class)),
+        );
+    }
+
+    public function test_a_resource_compiled_at_a_revision_it_does_not_exist_at_throws(): void
+    {
+        $compiler = new DefinitionCompiler(Configuration::defaults());
+
+        self::assertSame(TeacherResource::class, $compiler->compile(TeacherResource::class)->class);
+
+        $this->expectException(DefinitionException::class);
+        $compiler->compile(TeacherResource::class, ApiRevision::UsersReplaceTeachers);
+    }
+
+    public function test_the_members_of_a_struct_absent_from_the_head_declare_their_revisions(): void
+    {
+        $resource = new class (null) extends JsonApiResource {
+            public function toAttributes(Request $request): iterable
+            {
+                return [
+                    'address' => $this->struct(fn() => [
+                        'zip' => $this->string()->was(ApiRevision::Initial, name: 'postcode'),
+                    ])->until(ApiRevision::Labels),
+                    'place' => $this->string()->was(ApiRevision::Labels, value: $this->struct(fn() => [
+                        'city' => $this->string()->was(ApiRevision::Initial, name: 'town'),
+                    ])),
+                ];
+            }
+        };
+        $compiler = new DefinitionCompiler(Configuration::defaults());
+
+        self::assertSame([ApiRevision::Initial, ApiRevision::Labels], $compiler->compile($resource::class)->boundaries);
+        $initial = $compiler->compile($resource::class, ApiRevision::Initial);
+        self::assertSame(['postcode'], array_keys($initial->attributes['address']->children));
+        self::assertSame(['town'], array_keys($initial->attributes['place']->children));
+        self::assertSame(['zip'], array_keys($compiler->compile($resource::class, ApiRevision::Labels)->attributes['address']->children));
     }
 }

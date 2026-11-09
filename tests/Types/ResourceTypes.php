@@ -10,6 +10,7 @@ use Test\app\Http\Resources\CommentResource;
 use Test\app\Http\Resources\PostResource;
 use Test\app\Http\Resources\UserResource;
 use Test\app\Models\Post;
+use Test\app\Revisions\ApiRevision;
 
 use function PHPStan\Testing\assertType;
 
@@ -28,6 +29,8 @@ final class ResourceTypes extends JsonApiResource
         assertType('Ark4ne\JsonApi\Descriptors\Values\ValueInteger<Test\app\Models\Post>', $this->integer('id'));
         assertType('Ark4ne\JsonApi\Descriptors\Values\ValueDate<Test\app\Models\Post>', $this->date('created_at'));
         assertType('Ark4ne\JsonApi\Descriptors\Values\ValueDateTime<Test\app\Models\Post>', $this->datetime('created_at'));
+        // A `was()` keeps the descriptor, whatever the type of the value it had.
+        assertType('Ark4ne\JsonApi\Descriptors\Values\ValueString<Test\app\Models\Post>', $this->string()->was(ApiRevision::Labels, value: $this->integer()));
 
         return [
             'struct' => $this->struct(static function ($post): array {

@@ -7,12 +7,20 @@ namespace Ark4ne\JsonApi\Http\Rules;
 use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Context\IncludeTree;
 use Ark4ne\JsonApi\Definition\RelatedResource;
+use Ark4ne\JsonApi\Definition\Revision;
+use Ark4ne\JsonApi\Exceptions\RenderingException;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 
 /**
  * Validates an include path against the relationships declared by the definitions of the resources it goes through.
- * Nothing is included under a relationship to native resources (`RelationshipDefinition::$native`).
+ * Nothing is included under a relationship to native resources (`RelationshipDefinition::$native`). Given a revision,
+ * every definition is the one of that revision: a client on it includes the relationships it renders, by their names.
+ * A relationship whose related resources all are absent from the revision (`#[JsonApiSince]`, `#[JsonApiUntil]`, the
+ * head included) may not be included; a resource validated at a revision it is absent from throws, as its rendering.
+ *
+ * Built by hand, outside `JsonApiFormRequest`, the rule validates against the head unless given the revision of the
+ * request (`JsonApiContext::revisionOf($request)`).
  *
  * Its messages are the translations `jsonapi::validation.includes.*` (`vendor:publish --tag=jsonapi-lang`).
  *
@@ -24,10 +32,12 @@ final class Includes implements ValidationRule
      * @param class-string<T> $resource
      * @param positive-int|null $maxDepth Deepest include path accepted; the configured one (`include.max-depth`) when
      *                                    `null`
+     * @param Revision|null $revision The revision of the client (`JsonApiContext::revisionOf()`); the head when `null`
      */
     public function __construct(
         private readonly string $resource,
         private readonly ?int $maxDepth = null,
+        private readonly ?Revision $revision = null,
     ) {}
 
     /**
@@ -41,8 +51,25 @@ final class Includes implements ValidationRule
         return $this->resource;
     }
 
+    /**
+     * The revision the values are validated against, `null` for the head: public contract, for the tools that
+     * document the rule.
+     */
+    public function revision(): ?Revision
+    {
+        return $this->revision;
+    }
+
+    /**
+     * @throws RenderingException when the resource does not exist at the revision
+     */
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
+        $resource = RelatedResource::resolve($this->resource);
+        if (!Definitions::exists($resource, $this->revision)) {
+            throw RenderingException::notInRevision($resource, $this->revision);
+        }
+
         if (!is_string($value)) {
             $fail('jsonapi::validation.includes.invalid')->translate();
 
@@ -90,7 +117,7 @@ final class Includes implements ValidationRule
         array &$tooDeep,
     ): void {
         $definitions = array_map(
-            static fn(string $class) => Definitions::for(RelatedResource::resolve($class)),
+            fn(string $class) => Definitions::for(RelatedResource::resolve($class), $this->revision),
             $classes,
         );
 
@@ -104,6 +131,11 @@ final class Includes implements ValidationRule
                 $related = [...$related, ...$relationship->related ?? []];
                 $native = $native || ($relationship?->isNative() ?? false);
             }
+            // The related resources rendered at the revision: none, and the relationship may not be included.
+            $related = array_filter(
+                $related,
+                fn(string $class): bool => Definitions::exists(RelatedResource::resolve($class), $this->revision),
+            );
 
             if ($maxDepth !== null && substr_count($child, '.') >= $maxDepth) {
                 $tooDeep[] = $child;

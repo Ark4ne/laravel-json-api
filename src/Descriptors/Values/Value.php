@@ -6,6 +6,7 @@ namespace Ark4ne\JsonApi\Descriptors\Values;
 
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Definition\AttributeDefinition;
+use Ark4ne\JsonApi\Definition\Revision;
 use Ark4ne\JsonApi\Definition\ValueType;
 use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Exceptions\RenderingException;
@@ -34,6 +35,23 @@ abstract class Value extends Describer
     public function retriever(): string|Closure|null
     {
         return $this->attribute;
+    }
+
+    /**
+     * The attribute as it was up to `$revision` included: its name, its value, or both; what is left out is the head's.
+     * Only one `was()` applies to a revision: the one with the oldest revision at least as new.
+     *
+     * @param string|null $name The name it had; the head name if `null`
+     * @param Value<T>|null $value The value it had, of any type; reads the head source when it names none
+     */
+    public function was(Revision $revision, ?string $name = null, ?Value $value = null): static
+    {
+        return $this->withRevision($revision, $name, $value);
+    }
+
+    protected function readingFrom(string $source): static
+    {
+        return $this->attribute === null ? $this->with('attribute', $source) : $this;
     }
 
     public function nullable(bool $nullable = true): static
@@ -116,6 +134,9 @@ abstract class Value extends Describer
         ?Configuration $configuration = null,
     ): mixed {
         $configuration ??= Configuration::defaults();
+        // The model is read as the head reads it; the errors name what the client sees.
+        $rendered = $field;
+        $field = $this->headName ?? $field;
 
         if ($this->attribute instanceof Closure) {
             $value = ($this->attribute)($model, $field);
@@ -131,7 +152,7 @@ abstract class Value extends Describer
 
         // Not nullable, but no value stands for null (a date): an error to see in strict mode, `null` otherwise.
         return $value === null && $resolved === null && $configuration->strict
-            ? throw RenderingException::nullNotNullable($field)
+            ? throw RenderingException::nullNotNullable($rendered)
             : $resolved;
     }
 
@@ -142,7 +163,8 @@ abstract class Value extends Describer
         if (
             ($this->autoWhenHas ?? false)
             && !($retriever instanceof Closure)
-            && !((is_array($model) || is_object($model)) && Values::hasAttribute($model, $retriever ?? $attribute))
+            // The attribute `resolveFor()` reads: at a revision, the head one, whatever name the field is rendered under.
+            && !((is_array($model) || is_object($model)) && Values::hasAttribute($model, $retriever ?? $this->headName ?? $attribute))
         ) {
             return false;
         }

@@ -42,7 +42,7 @@ Resource class ───► │ Probe ──► toAttributes / toRelationships /
                     │        └─► descriptors ──► definitions          │        (public, immutable)
                     └─────────────────────────────────────────────────┘
                                                                               │
-Request ──► JsonApiContext (fields, include, configuration) ──────────────────┤
+Request ──► JsonApiContext (fields, include, revision, configuration) ────────┤
                                                                               ▼
 Resource / Collection ──► LoadPlanner ──► DocumentBuilder ──► ResourceObjectRenderer (stages) ──► Document ──► JsonResponse
                           (eager-load)          │                    │
@@ -54,7 +54,8 @@ Resource / Collection ──► LoadPlanner ──► DocumentBuilder ──► 
    descriptors it returns produce a `ResourceDefinition`: names, value types, conditions, relationships, cardinalities,
    load plans. The definition is kept in memory and can be compiled to `bootstrap/cache/jsonapi.php`.
 2. **Context.** One `JsonApiContext` per request holds the parsed `fields` and `include`, the current include path,
-   the `Configuration` and the `Diagnostics`. It is passed explicitly; nothing reads a static stack.
+   the revision of the request (§18), the `Configuration` and the `Diagnostics`. It is passed explicitly; nothing
+   reads a static stack.
 3. **Loading.** Before rendering, the `LoadPlanner` computes from the definitions and the requested includes which
    relations must be eager-loaded, and loads them once on the whole root collection, level by level.
 4. **Rendering.** The `DocumentBuilder` asks the `ResourceObjectRenderer` for each primary resource object. The
@@ -74,7 +75,7 @@ Support ← Configuration ← Definition ← Descriptors ← Compilation ← Con
 | --- | --- | --- |
 | Support | `src/Support/` | Building blocks without internal dependency: `Arr`, `Values`, `Probe`, `Diagnostics` |
 | Configuration | `src/Configuration/` | `Configuration`: typed, validated, readonly view of `config/jsonapi.php` |
-| Definition | `src/Definition/` | Public immutable model: `ResourceDefinition`, `AttributeDefinition`, `RelationshipDefinition`, `ValueType`, `Cardinality`; the `DefinitionSource` contract |
+| Definition | `src/Definition/` | Public immutable model: `ResourceDefinition`, `AttributeDefinition`, `RelationshipDefinition`, `ValueType`, `Cardinality`; the `DefinitionSource` and `Revision` contracts, `RevisionOrder`, `#[JsonApiSince]` / `#[JsonApiUntil]` |
 | Descriptors | `src/Descriptors/` | Fluent immutable builders (`ValueString`, `RelationMany`…), their conditions and the value type registry |
 | Compilation | `src/Compilation/` | `Definitions` (repository and memory cache), `DefinitionCompiler` (probe run), `CompiledDefinitions` (file cache) |
 | Context | `src/Context/` | `JsonApiContext`, `IncludeTree`, `SparseFieldsets` |
@@ -127,7 +128,7 @@ final readonly class AttributeDefinition
 
 | Object | Content |
 | --- | --- |
-| `ResourceDefinition` | Resource class, `type`, attributes, relationships, declared links and meta of the resource object, top-level meta of the document (`documentMeta`, `toDocumentMeta()`), the routes of its links (`routes`, `RouteNames` of `#[JsonApiRoutes]`), diagnostics of its compilation |
+| `ResourceDefinition` | Resource class, `type`, attributes, relationships, declared links and meta of the resource object, top-level meta of the document (`documentMeta`, `toDocumentMeta()`), the routes of its links (`routes`, `RouteNames` of `#[JsonApiRoutes]`), the revision it describes (`revision`, `null` for the head), the lifetime of the resource (`since`, `until`, `#[JsonApiSince]` / `#[JsonApiUntil]`) the revisions where its shape changes (`boundaries`) and, for a revision, the name each field of the code has at it (`fieldNames`), diagnostics of its compilation |
 | `AttributeDefinition` | Name, dotted path inside structs, `ValueType`, nullable, format, enum class, item type, children (structs), conditional, sparse (`whenInFields`: out unless requested) |
 | `RelationshipDefinition` | Name, related resource classes (`related`: one, given or guessed from the model when compiled (`$this->one('user')`, `GuessedResource`), or those of `morphs`, the resource class of each model class of a polymorphic relationship; none for native resources, whose class is `native`), `Cardinality::One` / `Many`, `LoadDefinition`, `linkage`, declared links (and the names of those declared by name, `namedLinks`) and meta, conditional, source |
 | `LoadDefinition` | Relation paths eager-loaded when the relationship is included, and those loaded with a constraint closure |
@@ -144,18 +145,28 @@ Rules:
    `Definitions::for()`. Cycles (`post.author.posts`) cost nothing.
 4. **Defaults resolved at compilation.** A descriptor without explicit nullability or date format stores "unset"; the
    compiler resolves it from the `Configuration`, so a definition is always complete.
-5. **Semver.** The definition model is the public API of the package for the tools: a change is a major version.
+5. **Semver.** The definition model is the public API of the package for the tools: removing or changing a public
+   property or method is a major version. An **additive** public property is a minor one, provided it has a default
+   and is an optional key of `__set_state()`, so that a compiled file of the previous minor is still read (the
+   revision properties of `ResourceDefinition` in 2.1). The cases of `ValueType` stay major (below).
 
 ### The public contract for the tools
 
 What a tool (`laravel-openapi-generator`, `jsonapi:check`…) may read without reflection, under semver:
 
 - every public property and method of `Definition\*`, except the `@internal` methods of `DefinitionSource`;
-- `Compilation\Definitions::for()` (cached) and `::compile()` (from the current code), `JsonApiResource::definition()`
-  and `JsonApiCollection::definition()` (that of the resource it collects);
+- `Compilation\Definitions::for()` (cached) and `::compile()` (from the current code), with or without a revision,
+  `::exists()` and `::lifetime()` (whether a resource exists at a revision), `JsonApiResource::definition()` and
+  `JsonApiCollection::definition()` (that of the resource it collects);
+- `Definition\Revision`, `Definition\RevisionOrder` and the cases of the application enum a definition names
+  (`revision`, `since`, `until`, `boundaries`);
 - the cases of `ValueType`: a new case is a major version, so a tool may match them exhaustively; a custom value type
   declares one of them;
-- `Http\Rules\Includes::resource()` and `Http\Rules\Fields::resource()`, the resource a rule validates against.
+- `Http\Rules\Includes::resource()` and `Http\Rules\Fields::resource()`, the resource a rule validates against, and
+  their `revision()`, the revision it validates at;
+- `Http\Rules\Revised` (`head()`, `lifetime()`, `history()`, `existsAt()`, `at()`, `resolve()`) and
+  `Http\Rules\RulesRevision`, the rules of a key of a form request across the revisions; `Http\Concerns\UseRevisedRules`,
+  the trait resolving them in a plain form request.
 
 What the definition leaves to the runtime:
 
@@ -191,7 +202,8 @@ Patterns: **Null Object** (the probe), **Builder** (descriptors build definition
 
 | Level | Where | Lifetime | Filled by |
 | --- | --- | --- | --- |
-| Memory | `Definitions`: the only static state of the package, a pure cache plus the `Configuration` and the compiled file set once at boot by the Laravel layer (`Definitions::configure()`, which compiles and reads nothing), so that `definition()` works anywhere without the container | Process | First use of a class; the compiled file is read on the first `for()` |
+| Memory | `Definitions`: the main static state of the package (with `Support\Memo`, below), a pure cache plus the `Configuration` and the compiled file set once at boot by the Laravel layer (`Definitions::configure()`, which compiles and reads nothing), so that `definition()` works anywhere without the container | Process | First use of a class; the compiled file is read on the first `for()` |
+| Memo | `Support\Memo`: pure computations that only depend on the code (the positions of the cases of a revision enum, `RevisionOrder`), never on a request, a user or the configuration; not Laravel's `once()`, which keys by a backtrace on every call | Process, flushed by `JsonApiServiceProvider` after every Octane request, task and tick | First use |
 | Compiled | `bootstrap/cache/jsonapi.php` (`var_export`, served by OPcache) | Until `jsonapi:clear` | `php artisan jsonapi:cache`, called by `php artisan optimize` |
 
 Without the compiled cache, PHP-FPM compiles each used class once per request; with it, a definition costs one
@@ -219,13 +231,15 @@ OPcache read.
 ## 6. Context
 
 `JsonApiContext` is created once per request object by the `Laravel` layer and passed **explicitly**. `include` and
-`fields` are read from the query string only.
+`fields` are read from the query string only. A revision set after the first resolution (`JsonApi::useRevision()` in
+a later middleware) moves the context of the container to it (`withRevision()`), its diagnostics kept.
 
 | Member | Content |
 | --- | --- |
 | `fields` | `SparseFieldsets`: parsed `fields[type]`, `null` when a type is not restricted |
 | `include` | `IncludeTree`: parsed `include`, with the configured maximum depth |
 | `path` | The current include path; `withPath('posts')` returns a new context (no push / pop on a static stack) |
+| `revision` | The `Revision` the request is rendered and validated at, `null` for the head (§18) |
 | `configuration` | The `Configuration` |
 | `diagnostics` | The `Diagnostics` of the request (debug only) |
 
@@ -376,11 +390,14 @@ the application handles them as it would in any Laravel API.
 
 Registries order their entries by priority, never by the order of a configuration array.
 
+Revisions add no extension point: `Definition\Revision` is a contract the application implements with an enum, read
+from the request and from the declarations, never registered.
+
 ## 12. Diagnostics and errors
 
 - **Notification pattern:** `Diagnostics` collects warnings and errors (eager attribute, `mergeWhen`, member that
   cannot be described, reserved name, filter on an unloaded relation…) instead of stopping. `jsonapi:check` prints them; `--strict` fails on
-  the first warning.
+  the first warning. A diagnostic only a revision shows names it (`Diagnostic::$revision`, §18).
 - **Exceptions** only for programming and configuration errors. Every exception implements
   `Exceptions\JsonApiException`, extends the matching SPL exception and is built through named constructors
   (`InvalidConfigurationException::forKey('relationship.linkage', …)`).
@@ -398,8 +415,8 @@ Registries order their entries by priority, never by the order of a configuratio
 | Topic | Rule |
 | --- | --- |
 | Classes | `final` by default. Extensible base classes, listed in the architecture test: `JsonApiResource`, `JsonApiCollection`, `Descriptors\Describer` and `Descriptors\Relations\Relation` (abstract roots of the descriptors, extended by the package only), `Descriptors\Values\Value`, `Descriptors\Values\ValueDateTime` (base of `ValueDate` and `ValueTime`), `Http\JsonApiFormRequest` |
-| Traits | Only in `src/Resources/` |
-| Global state | No singleton, no mutable static property; the only static state is `Compilation\Definitions` (pure cache, configuration set once at boot) |
+| Traits | Used only in `src/Resources/`; `Http\Concerns\UseRevisedRules` is declared for the form requests of the application, used by no class of the package |
+| Global state | No singleton, no mutable static property; the only static state is `Compilation\Definitions` (pure cache, configuration set once at boot) and `Support\Memo` (pure memos, flushed after every Octane operation) |
 | Facades and helpers | Only in `src/Laravel/` |
 | Types | `declare(strict_types=1)`, every signature typed, PHPStan max; `mixed` only for free values, documented |
 | PHPDoc | Generics on the public API (`JsonApiResource<User>`, `Value<User>`, `Closure(User): mixed`); no redundant PHPDoc |
@@ -461,3 +478,79 @@ Registries order their entries by priority, never by the order of a configuratio
 | Coverage ≥ 90 % (`bin/coverage-check.php`) | Tested lines |
 | Infection (MSI ≥ 80 %) | Test quality |
 | CI matrix | PHP 8.3 / 8.4 / 8.5 × Laravel 12 / 13, lowest and stable dependencies |
+
+## 18. Revisions
+
+An application pins each client on a dated revision of its API (Stripe-style). The code holds the latest shape only,
+the **head**; the older shapes are declared on the fields that changed. Decisions and plan:
+[`rfc/versioned-resources-epics.md`](rfc/versioned-resources-epics.md).
+
+### Model
+
+- **A revision is an enum case.** The application implements `Definition\Revision` with an enum whose cases are
+  declared oldest first: their order is the order of the revisions (`RevisionOrder`, memoized by `Support\Memo`).
+  The package never knows that enum, a header or a date format: a middleware of the application maps its header to a
+  case (`JsonApi::useRevision($request, $case)`), carried by `JsonApiContext::$revision`. `null` is the head; the
+  newest case renders the head shape.
+- **Inclusive bounds.** `was(X)`, `until(X)` and `#[JsonApiUntil(X)]` hold up to `X` included, `since(X)` and
+  `#[JsonApiSince(X)]` from `X` included. Retiring the oldest revision is deleting its case: PHPStan then reports
+  exactly the declarations that served only it.
+- **One `was()` applies**: the one with the oldest revision at or after the requested one, otherwise the head. It
+  describes the whole field; an argument left out is the head's, never a newer `was()`'s.
+- **The model has one version.** A `value:` without source reads the source of the head field (`revision-unsourced-
+  value` when the head reads through a closure). The conditions reading the model (`whenHas()`, `when()`…) receive the
+  head source; those reading the request (`whenInFields()`, `whenInIncludes()`) the names of the revision, which the
+  client writes.
+- **Frozen types and kinds.** A resource never changes type: a new type is a new resource (`#[JsonApiSince]`), the old
+  one is kept (`#[JsonApiUntil]`) and reached through a `was()` on each relationship. A field never changes kind
+  (attribute ↔ relationship is an `until()` plus a `since()`); names are unique revision by revision.
+- **Guards** for a change of meaning without change of shape: `$this->requestedRevision()->atMost(X)`.
+
+### Central invariant
+
+One pure function, `Descriptors\RevisedMembers::apply($members, $revision)`, turns the members of a hook (the head)
+into those of a revision, each through the `FieldHistory` of its descriptor, lazily and in order. The compiler applies
+it to the members the probe returned, the renderer to those of the resource: **definition and document agree by
+construction**, and everything downstream (sparse fieldsets, include paths, eager loading, `included`, the validation
+rules, the tools) works on the transformed members as it does on the head. An invariant test checks it on every
+fixture resource at every revision.
+
+### Buckets
+
+- Two revisions giving the same shape of a resource share one definition. A bucket is identified by its **boundary**:
+  the oldest revision at or after the requested one where a declaration of the class changes the shape (`was(X)` and
+  `until(X)` → `X`, `since(X)` → the case before `X`), or the head. `ResourceDefinition::$boundaries` lists them.
+- `DefinitionCompiler::compileEvery()` runs the hooks on the probe **once**, then gives the head and one definition per
+  boundary; `Definitions` fills every bucket of a class at its first `for()`, and `jsonapi:cache` writes them under
+  `class@Case`.
+- The lifetime of a resource (`#[JsonApiSince]`, `#[JsonApiUntil]`, `Definitions::exists()`) is not a boundary: it
+  decides whether the resource exists, not its shape. Rendering a resource, validating against it or reading its
+  definition at a revision it is absent from throws `notInRevision()`.
+
+### Fast path
+
+- A resource declaring no revision (`Definitions::isRevised()`) renders as in 2.0: its members are not transformed and
+  it has one definition.
+- A revision newer than every boundary of a resource reads the head definition, in one comparison.
+- With the compiled file, an old revision costs one OPcache read, as the head does. The head of a resource declaring
+  revisions still transforms its members (its fields `until()` a revision are written in the head hook).
+- Without it, the first `for()` of a resource declaring revisions compiles all its shapes, the head included: the head
+  definition carries the diagnostics of every revision, and the hooks run once for all. A cold worker pays it once
+  per resource; `jsonapi:cache` removes it.
+
+### Diagnostics
+
+`Compilation\RevisionChecks` checks the declarations on the head and the names of each shape on its boundary
+definition (`revision-*`, constants of `DefinitionCompiler`), whose diagnostics name their revision.
+`Compilation\RevisionAudit` gives the diagnostics of a resource at a revision and checks the references between
+resources (`revision-unavailable-resource`): what `jsonapi:check` and `ResourceAssertions` read.
+
+### Request bodies
+
+The rules of a body are the application's: `Http\Rules\Revised` declares the history of the rules of one key
+(`was()`, `since()`, `until()`, bounds included) and `JsonApiFormRequest::validationRules()` resolves them at the
+revision of the request (`Revised::resolve()`), a key absent from it left out with the rules of its members; a plain
+form request does the same with the trait `Http\Concerns\UseRevisedRules`. A
+`Revised` is the whole value of its key, never one rule of a list. It checks its declarations when
+they are made and throws a `DefinitionException`: there is no compilation to report them. The body is not translated
+to the names of the head, nor the pointers of its errors to those of the revision.

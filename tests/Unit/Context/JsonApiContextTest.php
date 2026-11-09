@@ -7,8 +7,10 @@ namespace Test\Unit\Context;
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Context\IncludeTree;
 use Ark4ne\JsonApi\Context\JsonApiContext;
+use Ark4ne\JsonApi\Exceptions\RenderingException;
 use Illuminate\Http\Request;
 use PHPUnit\Framework\TestCase;
+use Test\app\Revisions\ApiRevision;
 
 final class JsonApiContextTest extends TestCase
 {
@@ -89,5 +91,55 @@ final class JsonApiContextTest extends TestCase
         self::assertSame('author', $included->path);
         self::assertTrue($included->includes('comments'));
         self::assertSame($context->diagnostics, $included->diagnostics);
+    }
+
+    public function test_the_context_reads_the_revision_of_the_request(): void
+    {
+        $request = new Request();
+        $request->attributes->set(JsonApiContext::REVISION, ApiRevision::Labels);
+
+        self::assertSame(ApiRevision::Labels, JsonApiContext::revisionOf($request));
+        self::assertSame(ApiRevision::Labels, JsonApiContext::fromRequest($request, Configuration::defaults())->revision);
+    }
+
+    public function test_a_request_without_revision_renders_the_head(): void
+    {
+        $context = JsonApiContext::fromRequest(new Request(), Configuration::defaults());
+
+        self::assertNull($context->revision);
+    }
+
+    public function test_entering_a_relationship_or_adding_includes_keeps_the_revision(): void
+    {
+        $request = new Request();
+        $request->attributes->set(JsonApiContext::REVISION, ApiRevision::Initial);
+        $context = JsonApiContext::fromRequest($request, Configuration::defaults());
+
+        self::assertSame(ApiRevision::Initial, $context->withPath('posts')->revision);
+        self::assertSame(ApiRevision::Initial, $context->withInclude(IncludeTree::parse('posts'))->revision);
+    }
+
+    public function test_a_context_at_another_revision_keeps_the_rest_and_shares_the_diagnostics(): void
+    {
+        $context = JsonApiContext::fromRequest(new Request(['include' => 'posts']), Configuration::defaults())->withPath('posts');
+
+        $labels = $context->withRevision(ApiRevision::Labels);
+
+        self::assertNull($context->revision);
+        self::assertSame(ApiRevision::Labels, $labels->revision);
+        self::assertSame($context->diagnostics, $labels->diagnostics);
+        self::assertSame($context->include, $labels->include);
+        self::assertSame('posts', $labels->path);
+    }
+
+    public function test_a_revision_attribute_that_is_not_a_revision_throws(): void
+    {
+        $request = new Request();
+        $request->attributes->set(JsonApiContext::REVISION, '2026-12-01');
+
+        $this->expectException(RenderingException::class);
+        $this->expectExceptionMessage('JsonApi::useRevision()');
+
+        JsonApiContext::revisionOf($request);
     }
 }

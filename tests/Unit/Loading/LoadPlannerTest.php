@@ -8,9 +8,14 @@ use Ark4ne\JsonApi\Loading\LoadPlan;
 use Ark4ne\JsonApi\Loading\LoadPlanner;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Ark4ne\JsonApi\Support\Diagnostic;
+use Closure;
 use Illuminate\Http\Request;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Test\app\Http\Resources\Revisions\PostResource;
+use Test\app\Http\Resources\Revisions\UserResource as RevisedUserResource;
+use Test\app\Revisions\ApiRevision;
 use Test\TestCase;
+use Test\Unit\Http\Rules\Fixtures\LifetimeHolderResource;
 use Test\Unit\Loading\Fixtures\DeltaResource;
 use Test\Unit\Rendering\Fixtures\Contexts;
 use Test\Unit\Resources\Fixtures\AlphaResource;
@@ -139,5 +144,50 @@ class LoadPlannerTest extends TestCase
             ),
             $plan,
         );
+    }
+
+    public function test_an_old_include_loads_its_relations_in_batch(): void
+    {
+        $head = (new LoadPlanner())->plan(PostResource::class, Contexts::at(null, 'include=comments.user'));
+        $labels = (new LoadPlanner())->plan(PostResource::class, Contexts::at(ApiRevision::Labels, 'include=comments.commenter'));
+
+        $comments = new LoadPlan(['user' => null], ['user']);
+        $expected = new LoadPlan(['user' => null, 'comments' => null], ['user', 'comments'], ['comments' => [$comments]]);
+        self::assertEquals($expected, $head);
+        self::assertEquals($expected, $labels);
+    }
+
+    public function test_a_was_relation_loads_its_own_constraint(): void
+    {
+        $resource = new class (null) extends JsonApiResource {
+            protected function toRelationships(Request $request): iterable
+            {
+                return [
+                    'author' => $this->one(RevisedUserResource::class)->whenIncluded()->was(
+                        ApiRevision::Initial,
+                        name: 'writer',
+                        value: $this->one(RevisedUserResource::class, 'post')
+                            ->whenIncluded()
+                            ->withLoad(['post' => static fn($query) => $query]),
+                    ),
+                ];
+            }
+        };
+
+        $head = (new LoadPlanner())->plan($resource::class, Contexts::at(null, 'include=author'));
+        $initial = (new LoadPlanner())->plan($resource::class, Contexts::at(ApiRevision::Initial, 'include=writer'));
+
+        self::assertSame(['author' => null], $head->relations);
+        self::assertSame(['post'], array_keys($initial->relations));
+        self::assertInstanceOf(Closure::class, $initial->relations['post']);
+    }
+
+    public function test_a_polymorphic_relationship_plans_only_the_resources_existing_at_the_revision(): void
+    {
+        $initial = (new LoadPlanner())->plan(LifetimeHolderResource::class, Contexts::at(ApiRevision::Initial, 'include=people'));
+        $head = (new LoadPlanner())->plan(LifetimeHolderResource::class, Contexts::at(null, 'include=people'));
+
+        self::assertSame([], $initial->relations);
+        self::assertSame([], $head->relations);
     }
 }

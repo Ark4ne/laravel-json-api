@@ -3,25 +3,17 @@ JsonApi - Laravel Resource
 
 A Lightweight [{JSON:API}](https://jsonapi.org/) Resource for Laravel.
 
-![example branch parameter](https://github.com/Ark4ne/laravel-json-api/actions/workflows/php.yml/badge.svg)
+[![CI](https://github.com/Ark4ne/laravel-json-api/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/Ark4ne/laravel-json-api/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/Ark4ne/laravel-json-api/branch/master/graph/badge.svg?token=F7XBLAGTDP)](https://codecov.io/gh/Ark4ne/laravel-json-api)
 
-# Why this package rather than Laravel's native JSON:API?
-Laravel (12.46+, 13) ships `Illuminate\Http\Resources\JsonApi\JsonApiResource`. This package stays independent of it
-and interoperates with it: a relationship may relate native resources ([Native resources](#native-resources)), and a
-native `JsonApiRequest` is read like any request.
-
-|                                                                   | Laravel's native        | This package                                      |
-|-------------------------------------------------------------------|-------------------------|---------------------------------------------------|
-| `id` as a string, `"data": null`, primary data out of `included`  | ✅                       | ✅                                                 |
-| Attributes resolved after the sparse fieldset                     | ✅                       | ✅                                                 |
-| Relationships that are not included                               | left out                | linkage loaded in batch, or left out (`relationship.linkage`) |
-| Typed values: nullable, date format, decimal precision, enum      | ❌                       | ✅                                                 |
-| Definition of a resource, validation of `include` and `fields`    | ❌                       | ✅ (`JsonApiFormRequest`, `jsonapi:check`)         |
-| Links and meta per relationship, `whenIncluded()`, `can()`, filters | ❌                     | ✅                                                 |
-| Resources that are not Eloquent models                            | ❌ (exception)           | ✅                                                 |
-| Public contract for the tooling (OpenAPI)                         | ❌                       | ✅                                                 |
-| Error documents, content negotiation                              | ❌                       | ✅                                                 |
+- Concise resources: `toAttributes()`, `toRelationships()`, typed values (`$this->string()`, `$this->date()`,
+  `$this->one()`…), conditions, links and meta.
+- Sparse fieldsets, includes eager-loaded in batch, and their validation (`JsonApiFormRequest`).
+- **API revisions**: pin each client on a dated revision of your API (`Api-Version: 2026-12-01`), Stripe-style. The
+  code keeps the latest shape of each resource, the older ones are declared on the fields that changed, and the
+  rules of the request bodies on the keys that changed ([Versioned resources](#versioned-resources)).
+- Error documents, content negotiation, and a public definition of every resource for the tooling (`jsonapi:check`,
+  OpenAPI).
 
 # Installation
 ```shell
@@ -97,7 +89,8 @@ class PostStoreRequest extends JsonApiFormRequest
 `jsonApi()` reads the resource object of the body from the validated data: a member without rule is missing from it.
 To read a relationship cleared (`'data' => null`, or `[]` for a to-many one), give its linkage a rule of its own
 (`data.relationships.tags.data`): the rules of its identifiers alone (`data.relationships.tags.data.*.id`) leave it out
-of the validated data. The validation errors are keyed by the path of the member (`data.attributes.title`).
+of the validated data. The validation errors are keyed by the path of the member (`data.attributes.title`). Rules
+that change with the revision of the client: [Write requests across revisions](#write-requests-across-revisions).
 
 ```php
 class PostStoreRequest extends JsonApiFormRequest
@@ -380,7 +373,8 @@ Hence a few rules:
   requested; a value read eagerly (`'name' => $this->name`) has an unknown type.
 - **Group conditional members with `applyWhen()`.** The members of `mergeWhen()` and `mergeUnless()` are missing
   from the definition whatever the condition, with a `merge-when` warning: they are rendered, but cannot be requested
-  by `fields` nor included, and their relations are not eager-loaded.
+  by `fields` nor included, and their relations are not eager-loaded. Their `was()`, `since()` and `until()` may not
+  apply either.
 
 `php artisan jsonapi:check` reports what breaks these rules (`--strict` fails on warnings too), and
 `php artisan jsonapi:cache` (run by `php artisan optimize`) compiles every definition for production.
@@ -1162,3 +1156,296 @@ Output:
     "scores": [95, 87, 92, 78]
 }
 ```
+
+# Versioned resources
+
+An **API revision** is a dated version of the public shape of your API, as at Stripe: each change that would break a
+client ships in a new revision, and each client stays on the revision it was built against until it moves on.
+
+Pin each client on a dated revision of your API (`Api-Version: 2026-12-01`) and keep only the latest shape of every
+resource in the code, the **head**. The older shapes are declared on the fields that changed; the package renders them,
+validates `include` and `fields` in their names, eager-loads their relationships and describes them
+(`Definitions::for($class, $revision)`, `jsonapi:check`).
+
+## Declaring the revisions
+
+The revisions are the cases of an enum of the application implementing `Ark4ne\JsonApi\Definition\Revision`,
+**declared from the oldest to the newest**: their order is the order of the revisions. Keep in it the revisions your
+clients can be pinned on, the oldest supported one first.
+
+```php
+use Ark4ne\JsonApi\Definition\Revision;
+
+enum ApiRevision: string implements Revision
+{
+    case Initial = '2026-09-01';
+    case Labels = '2026-12-01';
+    case UsersReplaceTeachers = '2027-01-15';
+
+    public function description(): string
+    {
+        return match ($this) {
+            self::Initial => 'First published revision',
+            self::Labels => 'Names become labels',
+            self::UsersReplaceTeachers => 'Users replace teachers',
+        };
+    }
+}
+```
+
+The package reads no header: a middleware of the application maps its own header to a case, and refuses the retired
+revisions itself. No revision (`null`) is the head; the newest case renders the head too.
+
+```php
+use Ark4ne\JsonApi\Laravel\JsonApi;
+
+final class UseApiRevision
+{
+    public function handle(Request $request, Closure $next): Response
+    {
+        $header = $request->header('Api-Version');
+
+        JsonApi::useRevision($request, is_string($header) ? ApiRevision::tryFrom($header) : null);
+
+        return $next($request);
+    }
+}
+```
+
+Every rendering of that request, its `JsonApiFormRequest` (`include` and `fields`, validated in the names of the
+revision) and the guards below then use the revision. A form request is resolved with the controller, after every
+middleware: the revision is always set first.
+
+## Changing a field
+
+`->was($revision, name: …, value: …)` describes the whole field **as it was up to `$revision` included**. When a field
+changes in a new revision, write **`was(<the revision that was the newest until now>)`**:
+
+```php
+// Initial → Labels → UsersReplaceTeachers (head)
+'display_name' => $this->string('name')
+    ->was(ApiRevision::Labels, name: 'label')
+    ->was(ApiRevision::Initial, name: 'name'),
+```
+
+| Client | Field rendered |
+| --- | --- |
+| head, `UsersReplaceTeachers` | `display_name` |
+| `Labels` | `label` |
+| `Initial` | `name` |
+
+- One `was()` applies: the one with the oldest revision at or after that of the client, in the order of the revisions
+  (never of the calls); otherwise the head.
+- An argument left out takes the value **of the head**, never that of a newer `was()`: repeat what differs from the
+  head. `name:` alone keeps the head descriptor (type, conditions) under the old name; `value:` replaces it entirely.
+
+```php
+'price' => $this->struct(fn() => [
+    'amount' => $this->integer('price_cents'),
+    'currency' => $this->string('currency'),
+])
+    ->was(ApiRevision::Labels, value: $this->integer('price_cents'))                  // Labels: integer cents
+    ->was(ApiRevision::Initial, name: 'amount', value: $this->integer('price_cents')), // Initial: renamed, value repeated
+```
+
+- **The model has one version.** A `value:` without source reads the source of the head field (here `price_cents`
+  for `amount` too), and the conditions reading the model (`whenHas()`, `when()`…) read the head attribute. A head
+  field computed by a closure needs a `value:` with its own source. `whenInFields()` and `whenInIncludes()` follow the
+  names of the revision, which the client writes (every relationship of a nested include path).
+- The links of `#[JsonApiRoutes]` follow the relationships of the revision and their names: an old client gets
+  `posts.relationships.writer`, never a relationship its revision does not have.
+- The same on a relationship: its old name, include path and fields, its old related resource and cardinality.
+
+```php
+'instructor' => $this->one(UserResource::class)
+    ->was(ApiRevision::Labels, name: 'teacher', value: $this->one(TeacherResource::class)),
+```
+
+## Removing, adding, reusing a name
+
+```php
+// Revisions
+'full_name' => $this->string(fn() => "{$this->first_name} {$this->last_name}")
+    ->until(ApiRevision::Labels),          // removed in UsersReplaceTeachers
+'tag_names' => $this->array(fn() => $this->tags->pluck('name')->all())->of($this->string())
+    ->since(ApiRevision::UsersReplaceTeachers), // added in UsersReplaceTeachers
+```
+
+- `until($revision)` (an attribute, a relationship or a meta member): the field exists up to `$revision` included. It
+  stays in the head hook until that revision is retired; keep these fields at the end of the hook, under a
+  `// Revisions` comment.
+- `since($revision)`: the field exists from `$revision` included. An addition breaks no client, so `since()` is
+  optional; write it for an exact documentation of each revision, and when a field reuses the name of an older field.
+- A field never changes kind: an attribute that becomes a relationship is an `until()` on one and a `since()` on the
+  other. Attributes and relationships share one name space, checked revision by revision: a name may be reused by a
+  field of the other kind if they coexist in no revision.
+
+## A new type
+
+A resource never changes type: a new type is a new resource, absent from the older revisions, and the old resource is
+kept as it was for them.
+
+```php
+use Ark4ne\JsonApi\Definition\JsonApiSince;
+use Ark4ne\JsonApi\Definition\JsonApiUntil;
+
+#[JsonApiType('users')]
+#[JsonApiSince(ApiRevision::UsersReplaceTeachers)]
+final class UserResource extends JsonApiResource { /* … */ }
+
+#[JsonApiType('teachers')]
+#[JsonApiUntil(ApiRevision::Labels)]
+final class TeacherResource extends JsonApiResource { /* the old resource, as it was */ }
+```
+
+Every relationship reaching the new resource needs a `was()` to the old one for the older revisions (the
+`instructor` above). Rendering a resource at a revision it does not exist at throws
+`RenderingException::notInRevision()`, and `php artisan jsonapi:check` reports a relationship that would do so
+(`revision-unavailable-resource`), a resource of a morph map included. The same model reached as two old types is
+included once per type.
+
+## Guards
+
+A change of meaning has no shape to declare: read the revision of the rendering.
+
+```php
+'sessions' => $this->many(LessonSessionResource::class, fn() => $this->requestedRevision()->atMost(ApiRevision::Labels)
+    ? $this->resource->sessions
+    : $this->resource->sessions->where('user_id', $request->user()?->id)),
+```
+
+`$this->requestedRevision()` gives `atMost()`, `atLeast()`, `is()` and `isHead()`; outside a resource (`with()`,
+`additional()`, a controller), `JsonApi::revision($request)`.
+
+## Write requests across revisions
+
+The rules of a body change with the revision too. Declare the history of each key that changed with
+`Http\Rules\Revised`, the head written plainly, bounds included:
+
+```php
+use Ark4ne\JsonApi\Http\Rules\Revised;
+
+class PostStoreRequest extends JsonApiFormRequest
+{
+    protected string $resource = PostResource::class;
+
+    public function rules(): array
+    {
+        return [
+            'data.attributes.title' => Revised::rules('required|string|max:255')
+                ->was(ApiRevision::Initial, rules: 'required|string|max:80'),  // up to Initial, included
+            'data.attributes.label' => Revised::rules('required|string')->since(ApiRevision::Labels),
+            // Revisions
+            'data.attributes.name' => Revised::rules('required|string')->until(ApiRevision::Initial),
+        ];
+    }
+}
+```
+
+A `JsonApiFormRequest` resolves them at the revision of the request: a key absent from it is left out, its member
+neither validated nor returned by `validated()` and `jsonApi()`. The body is not translated: an old client sends the
+names of its revision, which the controller reads. A declaration that cannot apply throws a `DefinitionException`: a
+`since()` newer than the `until()`, a `was()` outside them or at the `until()` (the head rules would never apply), the
+same `was()` twice, revisions of two enums.
+
+Any other form request uses the trait `Http\Concerns\UseRevisedRules`, which resolves them at the revision of
+the request:
+
+```php
+use Ark4ne\JsonApi\Http\Concerns\UseRevisedRules;
+use Ark4ne\JsonApi\Http\Rules\Revised;
+use Illuminate\Foundation\Http\FormRequest;
+
+class ProfileUpdateRequest extends FormRequest
+{
+    use UseRevisedRules;
+
+    public function rules(): array
+    {
+        return [
+            'label' => Revised::rules('required|string')->since(ApiRevision::Labels),
+            'name' => Revised::rules('required|string')->until(ApiRevision::Initial),
+        ];
+    }
+}
+```
+
+The trait implements `validationRules()` with `Revised::resolve(parent::validationRules(),
+JsonApiContext::revisionOf($this))`. A form request defining its own `validationRules()` hides the method of the trait
+(PHP gives the class precedence): call `Revised::resolve()` there instead.
+
+A `Revised` is the whole value of its key: `Revised::rules(['bail', 'string'])`, never `['bail', Revised::rules('string')]`
+(it throws). A key left out of a revision leaves out the plain rules of its members too: `tags` absent leaves out
+`tags.*`; a member declared with its own `Revised` follows its own lifetime. A `Revised` keyed `include` or `fields`
+replaces the preconfigured rule where it exists; where it does not, the preconfigured rule validates.
+
+Tools read the history without a request: `head()`, `lifetime()` (`since`, `until`), `history()` (each `was()` as a
+`RulesRevision`, oldest first), and `at($revision)` / `existsAt($revision)`.
+
+## Checking the revisions
+
+`php artisan jsonapi:check` checks every revision: the declarations (`revision-*` diagnostics), the shape of each
+revision and the references between resources; `--revision=Labels` checks one. In the test suite:
+
+```php
+ResourceAssertions::assertValidAtEveryRevision(UserResource::class);
+ResourceAssertions::assertValid(UserResource::class, revision: ApiRevision::Labels);
+```
+
+`php artisan jsonapi:cache` compiles every revision: an old client costs one OPcache read, as the head does. A resource
+declaring no revision renders as before.
+
+## Retiring a revision
+
+Bounds are inclusive so that retiring the oldest revision is mechanical:
+
+1. Delete its case from the enum (`Initial`).
+2. Run `composer stan` (Larastan): it reports every declaration that served only its clients, `was(Initial)`,
+   `until(Initial)`, `#[JsonApiUntil(Initial)]`.
+3. Delete every reported line, and every resource `#[JsonApiUntil(Initial)]`.
+4. Run `php artisan jsonapi:check`: a `since()` naming the new oldest case is reported (`revision-noop`), delete it.
+
+## A contract test in the application
+
+`jsonapi:check` cannot see every mistake: an older `was()` that forgets to repeat a value a newer one gives serves the
+head's to its clients, and the `revision-value-gap` warning misses some cases. Freeze the definitions (or the generated
+OpenAPI) of each supported revision and compare them on every change:
+
+```php
+public function test_the_contract_of_every_revision_is_frozen(): void
+{
+    foreach (ApiRevision::cases() as $revision) {
+        foreach ([UserResource::class, PostResource::class] as $resource) {
+            if (!Definitions::exists($resource, $revision)) {
+                continue;
+            }
+
+            $this->assertSame(
+                file_get_contents(__DIR__ . "/contracts/{$revision->name}/" . class_basename($resource) . '.php'),
+                var_export(ResourceAssertions::definitionAt($resource, $revision), true),
+            );
+        }
+    }
+}
+```
+
+A change of an old revision then shows in the diff of the review; a change of the head only touches the head.
+
+# Alongside Laravel's native JSON:API
+Laravel (12.46+, 13) ships `Illuminate\Http\Resources\JsonApi\JsonApiResource`, a lean implementation of the
+specification that suits many APIs. This package stays independent of it and interoperates with it: a relationship
+may relate native resources ([Native resources](#native-resources)), and a native `JsonApiRequest` is read like any
+request. What each one covers:
+
+|                                                                   | Laravel's native        | This package                                      |
+|-------------------------------------------------------------------|-------------------------|---------------------------------------------------|
+| `id` as a string, `"data": null`, primary data out of `included`  | ✅                       | ✅                                                 |
+| Attributes resolved after the sparse fieldset                     | ✅                       | ✅                                                 |
+| Relationships that are not included                               | left out                | linkage loaded in batch, or left out (`relationship.linkage`) |
+| Typed values: nullable, date format, decimal precision, enum      | —                       | ✅                                                 |
+| Definition of a resource, validation of `include` and `fields`    | —                       | ✅ (`JsonApiFormRequest`, `jsonapi:check`)         |
+| Links and meta per relationship, `whenIncluded()`, `can()`, filters | —                      | ✅                                                 |
+| Resources that are not Eloquent models                            | Eloquent models only    | ✅                                                 |
+| Public contract for the tooling (OpenAPI)                         | —                       | ✅                                                 |
+| Error documents, content negotiation                              | —                       | ✅                                                 |
+| API revisions (versioned resources, Stripe-style)                 | —                       | ✅ ([Versioned resources](#versioned-resources))   |

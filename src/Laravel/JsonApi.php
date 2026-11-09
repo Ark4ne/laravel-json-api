@@ -7,6 +7,9 @@ namespace Ark4ne\JsonApi\Laravel;
 use Ark4ne\JsonApi\Compilation\CompiledDefinitions;
 use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Configuration\Configuration;
+use Ark4ne\JsonApi\Context\JsonApiContext;
+use Ark4ne\JsonApi\Context\RequestedRevision;
+use Ark4ne\JsonApi\Definition\Revision;
 use Ark4ne\JsonApi\Descriptors\ValueTypes;
 use Ark4ne\JsonApi\Exceptions\InvalidConfigurationException;
 use Ark4ne\JsonApi\Http\Errors\ErrorRenderers;
@@ -25,6 +28,24 @@ use Throwable;
 final class JsonApi
 {
     private function __construct() {}
+
+    /**
+     * The revision a request is rendered at, for the guards written outside a resource (`with()`, `additional()`, a
+     * controller).
+     */
+    public static function revision(Request $request): RequestedRevision
+    {
+        return RequestedRevision::of($request);
+    }
+
+    /**
+     * Sets the revision a request is rendered and validated at, `null` for the head: call it from a middleware of the
+     * application, which reads the revision from its own header, before the response is built.
+     */
+    public static function useRevision(Request $request, ?Revision $revision): void
+    {
+        $request->attributes->set(JsonApiContext::REVISION, $revision);
+    }
 
     /**
      * Registers a value type of the application: `$this->money()` in a resource, `->of('money')` as the items of an

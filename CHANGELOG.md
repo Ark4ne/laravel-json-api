@@ -5,6 +5,120 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [2.1.0] — 2026-11-08
+
+Versioned resources: dated revisions of the API, Stripe-style, declared on the fields that changed. No breaking
+change.
+
+### Added
+
+- **Versioned resources** (README, "Versioned resources"; `docs/architecture.md` §18): `Definition\Revision`, the contract an
+  application implements with an enum whose cases, declared oldest first, are the revisions its clients are pinned on;
+  `Definition\RevisionOrder` compares them (inclusive bounds, the head newer than every revision).
+- `JsonApi::useRevision($request, $revision)` sets the revision a request is rendered at, from a middleware of the
+  application (which reads its own header); `JsonApiContext::$revision` carries it to the rendering, `null` for the
+  head, read from the `jsonapi.revision` request attribute (`JsonApiContext::revisionOf()`).
+- `$this->requestedRevision()` in a resource, `RequestedRevision::of($request)` or `JsonApi::revision($request)`
+  elsewhere: guards for a change of meaning without change of shape (`atMost()`, `atLeast()`, `is()`, `isHead()`).
+- `->was($revision, name: …, value: …)` on every value descriptor (structs and their members included): what the
+  attribute was up to a revision, included; stored as `Descriptors\FieldRevision`, without effect on the head. The same
+  on every relation descriptor: its old name, its old relation (related resource, cardinality, loads of its own).
+- `->since($revision)` and `->until($revision)` on every descriptor: the field exists from, or up to, a revision
+  (inclusive).
+- `#[Definition\JsonApiSince($revision)]` and `#[Definition\JsonApiUntil($revision)]` on a resource: the type exists
+  from, or up to, a revision (inclusive), read on the class itself; `Definitions::lifetime($class)` gives its
+  `Definition\Lifetime`. A resource existing at no revision cannot be compiled.
+- `ResourceDefinition::$revision` (the revision a definition describes, `null` for the head), `$since` / `$until`
+  (the lifetime of the resource, set by the compiler) and `$boundaries` (the revisions where its shape changes), with
+  `revision()`, `lifetime()` and `boundaries()`; optional keys of `__set_state()`, so a compiled file of 2.0 is read.
+- `Definitions::for($class, $revision)`: the definition of a resource at a revision, with the names, values and
+  relationships of that revision; revisions with the same shape share one definition. `Definitions::exists($class,
+  $revision)`, `Definitions::loadConstraints($class, $revision)`, `Definitions::compile($class, $revision)`,
+  `ResourceDefinition::existsAt()` / `boundaryOf()`, `RevisionOrder::sorted()` / `boundaryOf()`.
+- Diagnostics of the revision declarations, reported on the head definition whichever revision shows them:
+  `revision-duplicate`, `revision-empty-was`, `revision-out-of-life`, `revision-name-collision`,
+  `revision-reserved-name`, `revision-unsourced-value`, `revision-mixed-enums` (errors), `revision-value-gap`,
+  `revision-noop` (warnings); constants of `DefinitionCompiler`. A `was()` newer than the `until()` of its field is a
+  `revision-out-of-life` warning: it applies up to `until()`.
+- `jsonapi:cache` writes the definition of every revision where the shape of a resource changes, keyed
+  `class@Case` (`CompiledDefinitions::key()`), and prints the number of resources and definitions; a compiled file
+  of 2.0 is still read while the code is unchanged (run `jsonapi:cache` again on deploy, as for any change).
+- A resource is rendered at the revision of its request: its attributes, resource meta and document meta take the
+  names and values of that revision, a field `until()` a revision is left out of the head, and sparse fieldsets are
+  read in the names of the revision. A resource declaring no revision renders as in 2.0, its members untouched.
+- The eager loads are planned at the revision of the request: the include paths of an old client, its relationships,
+  their loads and constraints and their related resources are those of its revision, loaded in batch.
+- The relationships are rendered at the revision of the request: their old names and include paths, their old related
+  resources (types) and cardinality; the same model reached as two old types is included once per type.
+- Rendering a resource at a revision it does not exist at (`#[JsonApiSince]`, `#[JsonApiUntil]`), as the primary data
+  or through a relationship without the `was()` to the resource of that revision, throws
+  `RenderingException::notInRevision()` before anything is written; a resource `#[JsonApiUntil]` a revision is not
+  rendered for the head.
+- At a revision, `whenInFields($request, 'name', …)` and `whenInIncludes($request, 'name', …)` translate the name of
+  the code to the name the field has at that revision (and fail for a field that does not exist at it); the conditions
+  reading the model (`whenHas()`, `when()`…) keep reading the head attribute. `ResourceDefinition::$fieldNames`
+  (with `fieldNames()`, an optional key of `__set_state()`) maps the names of the code to those of the revision (the
+  head included, for a resource declaring revisions).
+- The links of a resource are rendered at the revision of the request too.
+- `Support\Memo`: pure memos of what only depends on the code (the order of the cases of a revision enum), flushed by
+  the service provider after every Octane request, task and tick.
+- `composer benchmark` also measures resources declaring revisions, at the head, the newest and the oldest revision,
+  and `--cold` an old revision against the head from the compiled file: reported, not gated.
+- `new Includes($resource, $maxDepth, $revision)` validates the include paths of a client against the relationships of
+  its revision, by their names at it, at every level; `Includes::revision()` returns it, for the tools.
+- `new Fields($resource, $revision)` validates the sparse fieldsets of a client against the types reachable at its
+  revision and the names of their fields at it; `Fields::revision()` returns it, for the tools.
+- `JsonApiFormRequest` validates `include` and `fields` at the revision of the request: the middleware setting it runs
+  before the form request, resolved with the controller; the errors still name their parameter (`source.parameter`).
+- Both rules read the lifetime of the resources (`#[JsonApiSince]`, `#[JsonApiUntil]`), at the head too: a
+  relationship whose related resources all are absent from the revision may not be included, nor their types
+  restricted; a resource validated at a revision it is absent from throws `RenderingException::notInRevision()`, as
+  its rendering. Built by hand, they validate against the head unless given the revision of the request.
+- `jsonapi:check` checks every revision: the diagnostics of the definition of a revision name it, and those only a
+  revision shows are printed with the oldest one showing them (`[error] [Labels] invalid-member (author): …`,
+  `Diagnostic::$revision`, an optional key of `__set_state()`, and `Diagnostic::describe()`); they no longer carry
+  `At the revision [X]:` in their message. It also checks the references between resources: a relationship reaching,
+  at a revision, a resource absent from it is a `revision-unavailable-resource` error
+  (`DefinitionCompiler::REVISION_UNAVAILABLE_RESOURCE`). `--revision=Labels` restricts the check to the shape of that
+  revision (the errors it shares with the head or with other revisions included), its declarations and its
+  references, at every case of that name the resource may be rendered at; a resource declaring no revision is checked
+  at its head shape, one absent from the revision is skipped. Each resource is compiled once.
+- `Compilation\RevisionAudit`: the shapes of a resource compiled once, its diagnostics at a revision
+  (`diagnosticsAt()`), its shape there (`shapeAt()`) and its references (`check()`), read by `jsonapi:check` and
+  `ResourceAssertions`. `Definitions::compiler()` is public (internal).
+- `ResourceAssertions::assertValid($class, $strict, $revision)` asserts the shape of a revision and its references
+  there (the head by default, with the diagnostics of every revision and the references at the head);
+  `assertValidAtEveryRevision($class, $strict)` asserts the references at every revision; `definitionAt($class,
+  $revision)` returns the definition of a revision compiled from the current code, for snapshot tests.
+- README "Versioned resources" and a "Revisions" section in the skill reference and its rules; a tested recipe
+  "Versioned resources" in the skill.
+- `Http\Rules\Revised`: the validation rules of one key of a form request across the revisions,
+  `Revised::rules($head)->was(X, rules: …)->since(X)->until(X)`, bounds included. `JsonApiFormRequest` resolves them
+  at the revision of the request and leaves out a key absent from it, with the plain rules of its members (`tags.*`); a plain
+  `FormRequest` uses the trait `Http\Concerns\UseRevisedRules`, any other code calls
+  `Revised::resolve($rules, $revision)`. Public for the tools: `head()`, `lifetime()`, `history()` (a list of
+  `Http\Rules\RulesRevision`, oldest first), `existsAt()`, `at()`. A declaration that cannot apply throws a
+  `DefinitionException` (`emptyRulesLifetime()`, `duplicateRulesRevision()`, `rulesRevisionOutsideLifetime()`), and
+  so does a `Revised` in a list of rules or in the rules of another `Revised` (`nestedRevisedRules()`): it is the whole
+  value of its key. A member declared with its own `Revised` follows its own lifetime. `Definition\Lifetime::isEmpty()`
+  holds the check of an empty lifetime once. README
+  "Write requests across revisions" under "Versioned resources", a tested recipe "Write request across revisions" in the skill.
+- README: a list of the features, API revisions among them, at the top; the comparison with Laravel's native JSON:API
+  moves to the end, as "Alongside Laravel's native JSON:API"; the CI badge reads the `ci.yml` workflow.
+- At a revision, the links of `#[JsonApiRoutes]` follow the relationships of that revision and their names; the
+  default attributes leave out the foreign keys of the relationships of that revision; a polymorphic relationship
+  plans only the resources of its map existing at it; `whenInFields()` / `whenInIncludes()` translate the first
+  segment of a dotted path and keep a name no shape declares; an automatic `whenHas()` checks the head attribute. The
+  `JsonApiContext` of the container sees a revision set after its first resolution.
+- `Diagnostic::key()`, `Support\RevisionLabel`; `DefinitionException::notInRevision()` takes the revision;
+  `DefinitionCompiler::compile($class, $revision)` throws for a revision the resource does not exist at
+  (`DefinitionCompiler::shapeOf()`, shared with `RevisionAudit` and `Definitions`).
+- The members of a struct the head does not read (a struct `until()` a revision, the struct value of a `was()`)
+  declare their revisions too. `whenInIncludes()` translates every relationship of a nested path. The `JsonApiContext`
+  of the container keeps its diagnostics when moved to a revision set later (`JsonApiContext::withRevision()`).
+
 ## [2.0.0] — 2026-11-03
 
 ### Added

@@ -7,6 +7,7 @@ namespace Test\Unit\Definition;
 use Ark4ne\JsonApi\Configuration\Linkage;
 use Ark4ne\JsonApi\Definition\AttributeDefinition;
 use Ark4ne\JsonApi\Definition\Cardinality;
+use Ark4ne\JsonApi\Definition\Lifetime;
 use Ark4ne\JsonApi\Definition\LoadDefinition;
 use Ark4ne\JsonApi\Definition\RelationshipDefinition;
 use Ark4ne\JsonApi\Definition\ResourceDefinition;
@@ -17,6 +18,7 @@ use PHPUnit\Framework\TestCase;
 use Test\app\Http\Resources\CommentResource;
 use Test\app\Http\Resources\PostResource;
 use Test\app\Http\Resources\UserResource;
+use Test\app\Revisions\ApiRevision;
 
 final class ResourceDefinitionTest extends TestCase
 {
@@ -99,5 +101,80 @@ final class ResourceDefinitionTest extends TestCase
         $definition = $this->definition();
 
         self::assertEquals($definition, unserialize(serialize($definition)));
+    }
+
+    public function test_the_definition_names_its_revision(): void
+    {
+        $definition = $this->definition();
+        $revised = $definition->revision(ApiRevision::Labels);
+
+        self::assertNull($definition->revision);
+        self::assertSame(ApiRevision::Labels, $revised->revision);
+        self::assertNull($revised->revision(null)->revision);
+        self::assertEquals($definition->attributes, $revised->attributes);
+    }
+
+    public function test_the_definition_names_the_lifetime_of_the_resource(): void
+    {
+        $definition = $this->definition()->lifetime(new Lifetime(ApiRevision::Initial, ApiRevision::Labels));
+
+        self::assertSame(ApiRevision::Initial, $definition->since);
+        self::assertSame(ApiRevision::Labels, $definition->until);
+    }
+
+    public function test_the_boundaries_list_the_declared_revisions_once(): void
+    {
+        $definition = $this->definition()->boundaries(ApiRevision::Labels, ApiRevision::Initial, ApiRevision::Labels);
+
+        self::assertSame([ApiRevision::Initial, ApiRevision::Labels], $definition->boundaries);
+    }
+
+    public function test_the_revision_is_kept_by_the_other_replacements(): void
+    {
+        $definition = $this->definition()
+            ->revision(ApiRevision::Labels)
+            ->lifetime(new Lifetime(until: ApiRevision::Labels))
+            ->boundaries(ApiRevision::Labels)
+            ->attributes();
+
+        self::assertSame(ApiRevision::Labels, $definition->revision);
+        self::assertSame(ApiRevision::Labels, $definition->until);
+        self::assertSame([ApiRevision::Labels], $definition->boundaries);
+    }
+
+    public function test_a_definition_with_revisions_survives_var_export(): void
+    {
+        $definition = $this->definition()
+            ->revision(ApiRevision::Initial)
+            ->lifetime(new Lifetime(ApiRevision::Initial, ApiRevision::Labels))
+            ->boundaries(ApiRevision::Initial)
+            ->fieldNames(['display_name' => 'name']);
+
+        self::assertEquals($definition, eval('return ' . var_export($definition, true) . ';'));
+        self::assertEquals($definition, unserialize(serialize($definition)));
+    }
+
+    public function test_a_definition_exported_without_revisions_is_read(): void
+    {
+        $definition = ResourceDefinition::__set_state([
+            'class' => PostResource::class,
+            'type' => 'post',
+            'attributes' => [],
+            'relationships' => [],
+            'links' => [],
+            'meta' => [],
+            'diagnostics' => [],
+        ]);
+
+        self::assertNull($definition->revision);
+        self::assertSame([], $definition->boundaries);
+        self::assertSame([], $definition->fieldNames);
+    }
+
+    public function test_the_field_names_are_kept_by_the_other_replacements(): void
+    {
+        $definition = $this->definition()->fieldNames(['display_name' => 'label', 'email' => 'email'])->revision(ApiRevision::Labels);
+
+        self::assertSame(['display_name' => 'label', 'email' => 'email'], $definition->fieldNames);
     }
 }

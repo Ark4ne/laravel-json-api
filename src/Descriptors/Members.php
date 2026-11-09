@@ -168,7 +168,8 @@ final readonly class Members
     {
         $this->diagnostics->warning(
             self::MERGE_WHEN,
-            'Members merged with mergeWhen() are missing from the definition: use applyWhen() instead.',
+            'Members merged with mergeWhen() are missing from the definition, and their was(), since() and until() '
+            . 'may not apply: use applyWhen() instead.',
         );
     }
 

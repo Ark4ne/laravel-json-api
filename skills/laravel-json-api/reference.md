@@ -66,6 +66,8 @@ Modifiers of every value (each returns a copy):
 | `->whenHas(?string $field = null)` | Left out when the model has no such attribute |
 | `->whenAppended()` | Rendered only when the attribute is appended to the model |
 | `->whenInFields()` | Left out unless `fields[type]` names it explicitly (sparse) |
+| `->was(Revision $revision, ?string $name = null, ?Value $value = null)` | What the attribute was up to `$revision` included |
+| `->since(Revision $revision)`, `->until(Revision $revision)` | The field (value or relationship) exists from / up to `$revision` included |
 
 ## Relation helpers
 
@@ -98,6 +100,7 @@ Modifiers of every relationship:
 | `->linkage(Linkage $linkage)` | `Configuration\Linkage::Always`, `Loaded` or `Included` for this relationship |
 | `->filters(Closure $filters)` | Renders only the related resources passing the rules: `fn(Filters $filters) => $filters->can('view')->when(fn(Request $request, Comment $comment) => …)` (immutable: return the result; a callback may return any truthy value) |
 | `->can(iterable\|string $abilities, array $arguments = [], string $gateClass = Gate::class, ?string $guard = null)` | Rendered only when the user has the abilities on the model |
+| `->was(Revision $revision, ?string $name = null, ?Relation $value = null)` | What the relationship was up to `$revision` included: its name, its relation (resource, cardinality, loads: its own) |
 | `->when(...)`, `->unless(...)` | As for values |
 
 ## Conditional helpers of a resource
@@ -108,7 +111,13 @@ Modifiers of every relationship:
 | `$this->when(...)`, `$this->whenHas(...)`, `$this->whenLoaded(...)` | Laravel's, on any value |
 | `$this->whenInFields(Request $request, string $attribute, mixed $value)` | A value rendered only when `fields` requests it |
 | `$this->whenInIncludes(Request $request, string $relationship, mixed $value)` | A value rendered only when `include` names the relationship |
-| `$this->mergeWhen(...)` | Avoid: rendered, but hidden from the definition (`merge-when` warning) |
+| `$this->mergeWhen(...)` | Avoid: rendered, but hidden from the definition (`merge-when` warning), its `was()` / `since()` / `until()` may not apply |
+
+Both helpers take the name of the code; at a revision, they test the name the field has at it (every relationship of a
+nested include path, the first segment of a struct path), and fail for a field that does not exist at it; a name no
+field declares is kept as it is. A descriptor given as their value is hidden from the definition (it is missing on the
+probe), and so are its `was()`, `since()` and `until()`: for a revised field, use the descriptor conditions
+(`->whenInFields()`, `->when()`), which the definition sees.
 
 ## PHP attributes
 
@@ -117,7 +126,31 @@ Modifiers of every relationship:
 | `#[Resources\Attributes\JsonApiType('posts')]` | a resource | Its type, without `toType()` |
 | `#[Resources\Attributes\JsonApiModel(Post::class)]` | a resource | Its model, to guess the resources of its relationships (default: the naming convention) |
 | `#[Resources\Attributes\JsonApiRoutes(self: 'posts.show', relationship: …, related: …)]` | a resource | `links.self` from the route `self`; `links.self` / `links.related` of each relationship from `posts.relationships.{name}` / `posts.{name}`, or the routes given (`false` for none) |
+| `#[Definition\JsonApiSince(ApiRevision::X)]`, `#[Definition\JsonApiUntil(ApiRevision::X)]` | a resource | The resource exists from / up to the revision included, not inherited |
 | `#[Illuminate\Database\Eloquent\Attributes\UseResource(UserResource::class)]` | a model | The resource of the model when a relationship is guessed |
+
+## Revisions
+
+Versioned resources (README, "Versioned resources"): the code holds the latest shape, the head; older shapes are
+declared on the fields that changed. Bounds are inclusive.
+
+| Entry point | Effect |
+| --- | --- |
+| `enum ApiRevision: string implements Definition\Revision` | The revisions, cases declared oldest first, with `description()` |
+| `JsonApi::useRevision(Request $request, ?Revision $revision)` | In a middleware of the application: the revision of the request (`null`, the head), read by its rendering and its `JsonApiFormRequest` |
+| `->was(X, name: …, value: …)` | The whole field up to `X`; write `was(<the newest revision until now>)`; an argument left out is the head's; one `was()` applies, the oldest at or after the client's |
+| `->until(X)`, `->since(X)` | A field removed after `X` (kept at the end of the hook, under `// Revisions`), added at `X` |
+| `#[Definition\JsonApiSince(X)]`, `#[Definition\JsonApiUntil(X)]` | A new type is a new resource; every relationship reaching it needs a `was()` to the old one |
+| `$this->requestedRevision()` | Guards of a change of meaning: `->atMost(X)`, `->atLeast(X)`, `->is(X)`, `->isHead()`; outside a resource `JsonApi::revision($request)` or `RequestedRevision::of($request)` |
+| `Definitions::for(PostResource::class, X)`, `Definitions::exists(PostResource::class, X)` | The definition at a revision (names, values, relationships of `X`), whether the resource exists at it |
+| `Http\Rules\Revised::rules($head)->was(X, rules: …)->since(X)->until(X)` | The rules of one key of a form request across revisions; resolved at the revision of the request by `JsonApiFormRequest`, by the trait `Http\Concerns\UseRevisedRules` in a plain `FormRequest`, by `Revised::resolve($rules, $revision)` elsewhere; a key absent from the revision is left out |
+| `#[Resources\Attributes\JsonApiRoutes(…)]` at a revision | The links of the relationships of that revision, by their names at it (`posts.relationships.writer`); a relationship absent from it gets none |
+
+- A `value:` without source reads the head source; a head field computed by a closure needs a `value:` with its own
+  source (`revision-unsourced-value`). Model conditions read the head; `whenInFields()` / `whenInIncludes()` the
+  names of the revision.
+- Retiring the oldest revision: delete its case, run `composer stan`, delete every reported line and every resource
+  `#[JsonApiUntil]` it, run `php artisan jsonapi:check`.
 
 ## Configuration (`config/jsonapi.php`)
 
@@ -145,7 +178,7 @@ Validated at boot: a wrong value throws `Exceptions\InvalidConfigurationExceptio
 | Command | Effect |
 | --- | --- |
 | `php artisan make:jsonapi-resource PostResource [--model=Post] [--force]` | Writes a resource from the casts, fillable attributes and relations of the model (`vendor:publish --tag=jsonapi-stubs` for its stub) |
-| `php artisan jsonapi:check [resources…] [--strict]` | Prints the diagnostics of the definitions; fails on an error (on a warning too with `--strict`) |
+| `php artisan jsonapi:check [resources…] [--strict] [--revision=Case]` | Prints the diagnostics of the definitions at every revision (`[error] [Labels] code (subject): …`) and of the references between resources; fails on an error (on a warning too with `--strict`); `--revision` checks one revision only |
 | `php artisan jsonapi:cache` | Compiles every definition into `bootstrap/cache/jsonapi.php` (run by `php artisan optimize`) |
 | `php artisan jsonapi:clear` | Removes the compiled definitions (run by `optimize:clear`) |
 
@@ -163,6 +196,16 @@ only, in the diagnostics of the `JsonApiContext`.
 | `reserved-name` | error | A member named `id` or `type` |
 | `invalid-member` | error | A member that throws on the probe, or a relationship to a class that is not a resource |
 | `hook-failure` | error | A hook threw on the probe (an `if` on the model, a call on a relation): use the descriptors |
+| `revision-duplicate` | error | Two `was()` with one revision on a field, or `until()` / `since()` set twice |
+| `revision-empty-was` | error | A `was()` with neither `name:` nor `value:` |
+| `revision-out-of-life` | error | A `was(X)` older than the `since()` of its field, or a `since()` newer than its `until()`; a warning for a `was(X)` newer than its `until()`, which applies as `was(<until>)` |
+| `revision-name-collision` | error | Two fields with one name at a revision (attributes and relationships together): bound them with `until()` / `since()` |
+| `revision-reserved-name` | error | A field named `id` or `type` at a revision |
+| `revision-unsourced-value` | error | A `value:` without source while the head reads through a closure: give it its source |
+| `revision-value-gap` | warning | An older `was()` without the value (or name) a newer one gives: its clients get the head's |
+| `revision-noop` | warning | `since()` / `#[JsonApiSince]` naming the oldest revision |
+| `revision-mixed-enums` | error | Revisions of one resource from several enums |
+| `revision-unavailable-resource` | error | A relationship reaches, at a revision, a resource absent from it (`#[JsonApiSince]` without `was()` for the older revisions, a head relationship to a `#[JsonApiUntil]` resource, a resource of a morph map included): read by `jsonapi:check`, not by the compiler |
 | `missing-route` | error | The `self` route of `#[JsonApiRoutes]` does not exist |
 | `load-conflict` | warning | Two relationships load the same relation with different `withLoad()` constraints |
 | `filter-on-unloaded` | warning | `->filters()` on a relation that is not loaded, read resource by resource: let it load |
@@ -170,12 +213,16 @@ only, in the diagnostics of the `JsonApiContext`.
 ## HTTP
 
 - `Http\JsonApiFormRequest`: `protected string $resource = PostResource::class;` validates `include` and `fields`
-  (query string only) against the definitions; your `rules()` are added, a rule keyed `include` or `fields` replaces
-  the preset one. `$request->jsonApi()` returns a `Http\ResourceDocument` of the validated body: `type()`, `id()`,
+  (query string only) against the definitions at the revision of the request (set by a middleware, which runs first);
+  your `rules()` are added, a rule keyed `include` or `fields` replaces
+  the preset one; a `Rules\Revised` among them is resolved at the revision of the request. `$request->jsonApi()` returns a `Http\ResourceDocument` of the validated body: `type()`, `id()`,
   `attributes()`, `attribute($name)`, `hasAttribute($name)`, `relationships()`, `relationship($name)` (the linkage),
   `hasRelationship($name)`, `ids($name)`, `meta()`.
-- `Http\Rules\Includes(PostResource::class, maxDepth: 2)` and `Http\Rules\Fields(PostResource::class)` in any form
-  request. Messages: `jsonapi::validation.*`, published by `vendor:publish --tag=jsonapi-lang`.
+- `Http\Rules\Includes(PostResource::class, maxDepth: 2, revision: $revision)` and
+  `Http\Rules\Fields(PostResource::class, $revision)` in any form request (`$revision` from
+  `JsonApiContext::revisionOf($request)`; without it, the head, whatever the revision of the request). A relationship
+  to a resource absent from the revision may not be included, nor its type restricted; a resource absent from it
+  throws `RenderingException::notInRevision()`, as its rendering. Messages: `jsonapi::validation.*`, published by `vendor:publish --tag=jsonapi-lang`.
 - `Laravel\JsonApi::renderErrors($exceptions, ?Closure $when = null)` in `bootstrap/app.php`: JSON:API error
   documents for the requests expecting JSON (validation 422 with `source.pointer` / `source.parameter`, 401, 403,
   404, `HttpException`s, 500).
@@ -195,7 +242,9 @@ only, in the diagnostics of the `JsonApiContext`.
 
 ## Testing
 
-- `Testing\ResourceAssertions::assertValid(PostResource::class, strict: false)`: fails on the diagnostics of the
-  definition, as `jsonapi:check` does.
+- `Testing\ResourceAssertions::assertValid(PostResource::class, strict: false, revision: null)`: fails on the
+  diagnostics of the definition and of its references, as `jsonapi:check` does; at a revision, those of its shape and
+  references there. `assertValidAtEveryRevision(PostResource::class)` checks every revision;
+  `definitionAt(PostResource::class, ApiRevision::Labels)` returns the definition of a revision, for snapshot tests.
 - `PostResource::definition()`: the compiled definition (type, attributes with their `ValueType`, relationships with
   their related classes), the public contract read by tools such as `laravel-openapi-generator`.

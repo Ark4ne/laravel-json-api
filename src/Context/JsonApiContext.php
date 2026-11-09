@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Ark4ne\JsonApi\Context;
 
 use Ark4ne\JsonApi\Configuration\Configuration;
+use Ark4ne\JsonApi\Definition\Revision;
+use Ark4ne\JsonApi\Exceptions\RenderingException;
 use Ark4ne\JsonApi\Support\Diagnostics;
 use Illuminate\Http\Request;
 
@@ -17,7 +19,13 @@ use Illuminate\Http\Request;
 final readonly class JsonApiContext
 {
     /**
+     * The request attribute holding the revision a request is rendered at (`JsonApi::useRevision()`).
+     */
+    public const REVISION = 'jsonapi.revision';
+
+    /**
      * @param string $path The include path of the resources being rendered, empty for the primary resources
+     * @param Revision|null $revision The revision the request is rendered at, `null` for the head
      */
     public function __construct(
         public Request $request,
@@ -26,10 +34,26 @@ final readonly class JsonApiContext
         public SparseFieldsets $fields,
         public Diagnostics $diagnostics,
         public string $path = '',
+        public ?Revision $revision = null,
     ) {}
 
     /**
-     * Parses the `include` and `fields` query parameters of the request: the body is never read.
+     * The revision a request is rendered at: the `jsonapi.revision` attribute of the request, `null` for the head.
+     *
+     * @throws RenderingException when the attribute is not a `Revision`
+     */
+    public static function revisionOf(Request $request): ?Revision
+    {
+        $revision = $request->attributes->get(self::REVISION);
+
+        return $revision === null || $revision instanceof Revision
+            ? $revision
+            : throw RenderingException::notARevision($revision);
+    }
+
+    /**
+     * Parses the `include` and `fields` query parameters of the request, and reads its revision (`revisionOf()`): the
+     * body is never read.
      */
     public static function fromRequest(Request $request, Configuration $configuration): self
     {
@@ -39,6 +63,7 @@ final readonly class JsonApiContext
             IncludeTree::parse($request->query('include'), $configuration->maxIncludeDepth),
             SparseFieldsets::parse($request->query('fields')),
             new Diagnostics(),
+            revision: self::revisionOf($request),
         );
     }
 
@@ -54,6 +79,24 @@ final readonly class JsonApiContext
             $this->fields,
             $this->diagnostics,
             $this->path,
+            $this->revision,
+        );
+    }
+
+    /**
+     * The same context at another revision: the request set its revision after the context was built
+     * (`JsonApi::useRevision()`). The diagnostics are shared.
+     */
+    public function withRevision(?Revision $revision): self
+    {
+        return new self(
+            $this->request,
+            $this->configuration,
+            $this->include,
+            $this->fields,
+            $this->diagnostics,
+            $this->path,
+            $revision,
         );
     }
 
@@ -69,6 +112,7 @@ final readonly class JsonApiContext
             $this->fields,
             $this->diagnostics,
             $this->path === '' ? $relationship : "{$this->path}.{$relationship}",
+            $this->revision,
         );
     }
 

@@ -4,11 +4,39 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Exceptions;
 
+use Ark4ne\JsonApi\Support\RevisionLabel;
 use LogicException;
 use UnitEnum;
 
 final class RenderingException extends LogicException implements JsonApiException
 {
+    /**
+     * The `jsonapi.revision` attribute of a request is not a revision (`JsonApi::useRevision()` sets it).
+     */
+    public static function notARevision(mixed $value): self
+    {
+        return new self(sprintf(
+            'The revision of a request must be a case of an enum implementing Ark4ne\\JsonApi\\Definition\\Revision, [%s] given: set it with JsonApi::useRevision().',
+            get_debug_type($value),
+        ));
+    }
+
+    /**
+     * A resource is rendered at a revision it does not exist at (`#[JsonApiSince]`, `#[JsonApiUntil]`): as the primary
+     * data, or reached through a relationship lacking the `was()` to the resource of that revision.
+     *
+     * @param UnitEnum|null $revision The revision, `null` for the head
+     */
+    public static function notInRevision(string $class, ?UnitEnum $revision): self
+    {
+        $revision = RevisionLabel::of($revision);
+
+        return new self(
+            "[{$class}] does not exist at the revision [{$revision}]: see its #[JsonApiSince] and #[JsonApiUntil], and give "
+            . 'the relationships reaching it a was() to the resource of that revision.',
+        );
+    }
+
     /**
      * A value declared not nullable (`nullable(false)`) has no value to render for `null` (a date), with
      * `describer.strict` enabled.

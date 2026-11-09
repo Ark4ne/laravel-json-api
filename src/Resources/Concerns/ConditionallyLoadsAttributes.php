@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
+use Ark4ne\JsonApi\Compilation\Definitions;
+use Ark4ne\JsonApi\Definition\RelatedResource;
+use Ark4ne\JsonApi\Definition\Revision;
 use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Descriptors\MergeWhenValue;
 use Ark4ne\JsonApi\Descriptors\Relations\RelationRaw;
@@ -41,7 +44,9 @@ trait ConditionallyLoadsAttributes
     }
 
     /**
-     * Retrieve a relationship if it has been present in fields.
+     * Retrieve a value if a field of the resource is requested by the sparse fieldset of its type (`fields`). The
+     * field is named as in the code: for a client on an older revision, by the name it has at that revision, the
+     * condition failing for a field that does not exist at it.
      *
      * @template K
      *
@@ -54,16 +59,18 @@ trait ConditionallyLoadsAttributes
     protected function whenInFields(Request $request, string $attribute, mixed $value)
     {
         $context = $this->renderingContext;
+        $field = $this->nameAtRevision($attribute);
 
         return $this->when(
-            $context !== null && $context->fields->requests($this->toType($request), $attribute),
+            $context !== null && $field !== null && $context->fields->requests($this->toType($request), $field),
             $value,
         );
     }
 
     /**
      * Retrieve a value if a relationship of the resource is included (`include`). Not to be confused with
-     * `whenIncluded()` of the relationships.
+     * `whenIncluded()` of the relationships. The relationship is named as in the code: for a client on an older
+     * revision, by the name it has at that revision, the condition failing for one that does not exist at it.
      *
      * @template K
      *
@@ -75,7 +82,83 @@ trait ConditionallyLoadsAttributes
      */
     protected function whenInIncludes(Request $request, string $relationship, mixed $value)
     {
-        return $this->when($this->renderingContext?->includes($relationship) ?? false, $value);
+        $name = $this->includeAtRevision($relationship);
+
+        return $this->when($name !== null && ($this->renderingContext?->includes($name) ?? false), $value);
+    }
+
+    /**
+     * The name a field of the code has at the revision of the rendering, `null` when it does not exist at it: the
+     * client writes `fields` and `include` in the names of its revision. Of a dotted path, the first segment is
+     * translated (a struct member keeps its name). A name no shape of the resource declares (a field of `toLinks()`)
+     * is kept. Unchanged for a resource declaring no revision.
+     */
+    private function nameAtRevision(string $field): ?string
+    {
+        $context = $this->renderingContext;
+        // Outside a rendering (the probe of the compilation, which must not ask for its own definition): no condition
+        // passes anyway.
+        if ($context === null) {
+            return $field;
+        }
+
+        $segments = explode('.', $field, 2);
+        $first = self::fieldAtRevision(static::class, $segments[0], $context->revision);
+
+        return $first === null || !isset($segments[1]) ? $first : "{$first}.{$segments[1]}";
+    }
+
+    /**
+     * The include path of the code `$path` at the revision of the rendering: each relationship by its name at that
+     * revision, following the related resource of each one; `null` when one does not exist at it. Past a polymorphic
+     * or native relationship, the rest of the path is kept.
+     */
+    private function includeAtRevision(string $path): ?string
+    {
+        $context = $this->renderingContext;
+        if ($context === null) {
+            return $path;
+        }
+
+        $class = static::class;
+        $translated = [];
+        $segments = explode('.', $path);
+        foreach ($segments as $index => $segment) {
+            $name = self::fieldAtRevision($class, $segment, $context->revision);
+            if ($name === null) {
+                return null;
+            }
+
+            $translated[] = $name;
+            $relationship = Definitions::for($class, $context->revision)->relationships[$name] ?? null;
+            if ($relationship === null || $relationship->isNative() || count(array_unique($relationship->related)) !== 1) {
+                return implode('.', [...$translated, ...array_slice($segments, $index + 1)]);
+            }
+
+            $class = RelatedResource::resolve($relationship->related[0]);
+            if (!Definitions::exists($class, $context->revision)) {
+                return null;
+            }
+        }
+
+        return implode('.', $translated);
+    }
+
+    /**
+     * The name the field of the code `$field` of `$class` has at `$revision`, `null` when it does not exist at it; a
+     * name no shape declares, or a resource declaring no revision, keeps it.
+     *
+     * @param class-string<\Ark4ne\JsonApi\Definition\DefinitionSource> $class
+     */
+    private static function fieldAtRevision(string $class, string $field, ?Revision $revision): ?string
+    {
+        if (!Definitions::isRevised($class)) {
+            return $field;
+        }
+
+        // The head too: a field `until()` a revision does not exist there.
+        return Definitions::for($class, $revision)->fieldNames[$field]
+            ?? (Definitions::declaresField($class, $field) ? null : $field);
     }
 
     /**

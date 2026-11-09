@@ -4,16 +4,20 @@ declare(strict_types=1);
 
 namespace Test\Unit\Http;
 
+use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Http\JsonApiFormRequest;
 use Illuminate\Routing\Redirector;
 use Illuminate\Validation\ValidationException;
+use Test\app\Http\Requests\Revisions\PostRequest as RevisedPostRequest;
 use Test\app\Http\Resources\PostResource;
+use Test\app\Revisions\ApiRevision;
 use Test\TestCase;
 use Test\Unit\Http\Fixtures\PostFormRequest;
 use Test\Unit\Http\Fixtures\PostUpdateFormRequest;
 use Test\Unit\Http\Fixtures\PostWriteFormRequest;
 use Test\Unit\Http\Fixtures\ResourcelessFormRequest;
+use Test\Unit\Http\Fixtures\RevisedPostFormRequest;
 
 final class JsonApiFormRequestTest extends TestCase
 {
@@ -167,6 +171,61 @@ final class JsonApiFormRequestTest extends TestCase
         $errors = $this->errors(PostWriteFormRequest::class, '/posts', 'POST', ['data' => ['attributes' => []]]);
 
         self::assertSame(['data.attributes.title'], array_keys($errors));
+    }
+
+    public function test_the_include_and_the_fieldset_are_validated_at_the_revision_of_the_request(): void
+    {
+        $request = RevisedPostRequest::create('/posts?include=writer&fields[writers]=name');
+        $request->attributes->set(JsonApiContext::REVISION, ApiRevision::Labels);
+
+        self::assertSame([], $this->errors($request));
+        self::assertSame(['include', 'fields'], array_keys($this->errors(RevisedPostRequest::create('/posts?include=writer&fields[writers]=name'))));
+    }
+
+    public function test_the_body_is_validated_with_the_rules_of_the_revision_of_the_request(): void
+    {
+        $request = RevisedPostFormRequest::create('/posts', 'POST', ['data' => ['attributes' => [
+            'title' => 'Too long',
+            'code' => 'ABC',
+            'tags' => [1, 2],
+        ]]]);
+        $request->attributes->set(JsonApiContext::REVISION, ApiRevision::Initial);
+
+        // max:5 up to Initial; summary not yet required; tags integers then.
+        self::assertSame(['data.attributes.title'], array_keys($this->errors($request)));
+    }
+
+    public function test_the_validated_body_holds_the_keys_of_the_revision_of_the_request(): void
+    {
+        $body = ['data' => ['attributes' => ['title' => 'Old', 'summary' => 'Summary', 'code' => 'ABC', 'tags' => [1]]]];
+        $initial = RevisedPostFormRequest::create('/posts', 'POST', $body);
+        $initial->attributes->set(JsonApiContext::REVISION, ApiRevision::Initial);
+
+        self::assertSame(['title' => 'Old', 'code' => 'ABC', 'tags' => [1]], $this->validate($initial)->jsonApi()->attributes());
+
+        $head = $this->resolve(RevisedPostFormRequest::class, '/posts', 'POST', ['data' => ['attributes' => [
+            'title' => 'New title', 'summary' => 'Summary', 'code' => 'ABC', 'tags' => ['a'],
+        ]]]);
+
+        self::assertSame(['title' => 'New title', 'summary' => 'Summary', 'tags' => ['a']], $head->jsonApi()->attributes());
+    }
+
+    public function test_the_body_is_validated_with_the_head_rules_without_revision(): void
+    {
+        $errors = $this->errors(RevisedPostFormRequest::class, '/posts', 'POST', ['data' => ['attributes' => [
+            'title' => 'A title too long',
+            'tags' => [1],
+        ]]]);
+
+        self::assertSame(['data.attributes.title', 'data.attributes.summary', 'data.attributes.tags.0'], array_keys($errors));
+    }
+
+    public function test_a_key_removed_after_a_revision_is_required_up_to_it(): void
+    {
+        $request = RevisedPostFormRequest::create('/posts', 'POST', ['data' => ['attributes' => ['title' => 'Old']]]);
+        $request->attributes->set(JsonApiContext::REVISION, ApiRevision::Initial);
+
+        self::assertSame(['data.attributes.code'], array_keys($this->errors($request)));
     }
 
     public function test_a_form_request_without_resource_throws(): void

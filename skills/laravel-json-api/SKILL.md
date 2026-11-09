@@ -17,7 +17,7 @@ Files of this skill:
   configuration keys, the commands, the HTTP layer and the extension points.
 - [recipes.md](recipes.md): complete, tested examples (a blog with includes and fieldsets, validation of the query and
   of a write request, a value type of the application, a polymorphic relationship, a collection with document meta,
-  errors and content negotiation, checking resources in tests).
+  errors and content negotiation, versioned resources, write request across revisions, checking resources in tests).
 
 The source is the final authority: `vendor/ark4ne/laravel-json-api/src/` (`Descriptors/` for the helpers,
 `config/jsonapi.php` for the configuration, documented key by key) and its `readme.md`.
@@ -66,6 +66,12 @@ php artisan make:jsonapi-resource PostResource --model=Post                     
     `Testing\ResourceAssertions::assertValid(PostResource::class)` does the same in a test.
 11. **Type the model.** `@extends JsonApiResource<Post>` types `$this->resource` and the closures of the descriptors
     for PHPStan and the IDE; hooks need no `@return`.
+12. **Change the head, declare the past.** In a versioned API, edit the field to its new shape and add
+    `->was(<the revision that was the newest until now>, name: …, value: …)`; never an `if` on the revision for a
+    change of shape (`$this->requestedRevision()` is for a change of meaning only). A new type is a new resource
+    (`#[Definition\JsonApiSince]`, the old one `#[Definition\JsonApiUntil]`). The rules of a body that change take
+    `Http\Rules\Revised::rules(<head>)->was(…, rules: …)`, `->since()`, `->until()`, never an `if` in `rules()`. See
+    `reference.md`, "Revisions".
 
 ## Workflow to add a resource
 

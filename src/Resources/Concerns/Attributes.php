@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
+use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Definition\DefinitionSource;
+use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Closure;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Model;
@@ -74,7 +76,11 @@ trait Attributes
 
         $keys[] = $model->getKeyName();
 
-        foreach ($this::definition()->relationships as $relationship) {
+        // The relationships of the revision of the rendering: a relationship `until()` or `since()` a revision has its
+        // foreign key left out where it is rendered only.
+        $revision = $this instanceof JsonApiResource ? $this->renderingContext?->revision : null;
+
+        foreach (Definitions::for(static::class, $revision)->relationships as $relationship) {
             $relation = $relationship->source !== null && is_callable($method = [$model, $relationship->source])
                 ? $method()
                 : null;

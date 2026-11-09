@@ -4,13 +4,20 @@ declare(strict_types=1);
 
 namespace Test\Unit\Http\Rules;
 
+use Ark4ne\JsonApi\Exceptions\RenderingException;
 use Ark4ne\JsonApi\Http\Rules\Fields;
 use Illuminate\Support\Facades\Validator;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Test\app\Http\Resources\NativePostResource;
+use Test\app\Http\Resources\Revisions\PostResource as RevisedPostResource;
+use Test\app\Http\Resources\Revisions\UserResource as RevisedUserResource;
 use Test\app\Http\Resources\UserCollection;
 use Test\app\Http\Resources\UserResource;
+use Test\app\Revisions\ApiRevision;
+use Test\app\Revisions\MemberResource;
+use Test\app\Revisions\TeacherResource;
 use Test\TestCase;
+use Test\Unit\Http\Rules\Fixtures\LifetimeHolderResource;
 use Test\Unit\Http\Rules\Fixtures\UntypedNativeHolderResource;
 use Test\Unit\Resources\Fixtures\AlphaResource;
 
@@ -145,5 +152,76 @@ class FieldsTest extends TestCase
             'The selected fields is invalid.',
             '"unknown" doesn\'t exist.',
         ], $validator->errors()->get('fields'));
+    }
+
+    public function test_an_old_client_may_restrict_an_old_type(): void
+    {
+        $labels = new Fields(RevisedPostResource::class, ApiRevision::Labels);
+
+        self::assertSame([], self::ruleErrors('fields', $labels, ['posts' => 'title,writer', 'writers' => 'name', 'commenters' => 'name']));
+        self::assertSame([], self::ruleErrors('fields', new Fields(RevisedUserResource::class, ApiRevision::Labels), ['users' => 'label,full_name']));
+        self::assertSame([
+            'The selected :attribute is invalid.',
+            '"writers" doesn\'t exist.',
+        ], self::ruleErrors('fields', new Fields(RevisedPostResource::class), ['writers' => 'name']));
+    }
+
+    public function test_an_old_client_may_not_restrict_a_new_type(): void
+    {
+        self::assertSame([
+            'The selected :attribute is invalid.',
+            '"users" doesn\'t exist.',
+        ], self::ruleErrors('fields', new Fields(RevisedPostResource::class, ApiRevision::Labels), ['users' => 'email']));
+        self::assertSame([
+            'The selected :attribute is invalid.',
+            '"users" doesn\'t have fields "display_name".',
+        ], self::ruleErrors('fields', new Fields(RevisedUserResource::class, ApiRevision::Labels), ['users' => 'display_name']));
+    }
+
+    public function test_the_rule_tells_the_revision_it_validates_against(): void
+    {
+        self::assertNull((new Fields(UserResource::class))->revision());
+        self::assertSame(ApiRevision::Labels, (new Fields(UserResource::class, ApiRevision::Labels))->revision());
+    }
+
+    public function test_the_type_of_a_resource_absent_from_the_revision_is_not_reachable(): void
+    {
+        $initial = new Fields(LifetimeHolderResource::class, ApiRevision::Initial);
+        $head = new Fields(LifetimeHolderResource::class);
+
+        self::assertSame([], self::ruleErrors('fields', $initial, ['holders' => 'members,teachers', 'teachers' => 'label']));
+        self::assertSame([
+            'The selected :attribute is invalid.',
+            '"members" doesn\'t exist.',
+        ], self::ruleErrors('fields', $initial, ['members' => 'name']));
+        self::assertSame([], self::ruleErrors('fields', $head, ['members' => 'name']));
+        self::assertSame([
+            'The selected :attribute is invalid.',
+            '"teachers" doesn\'t exist.',
+        ], self::ruleErrors('fields', $head, ['teachers' => 'name']));
+    }
+
+    public function test_a_resource_absent_from_the_revision_is_not_validated(): void
+    {
+        $this->expectException(RenderingException::class);
+        $this->expectExceptionMessage(MemberResource::class . '] does not exist at the revision [' . ApiRevision::class . '::Labels]');
+
+        self::ruleErrors('fields', new Fields(MemberResource::class, ApiRevision::Labels), []);
+    }
+
+    public function test_a_resource_absent_from_the_head_is_not_validated(): void
+    {
+        $this->expectException(RenderingException::class);
+        $this->expectExceptionMessage(TeacherResource::class . '] does not exist at the revision [head]');
+
+        self::ruleErrors('fields', new Fields(TeacherResource::class), []);
+    }
+
+    public function test_a_rule_written_without_revision_validates_against_the_head(): void
+    {
+        self::assertSame([
+            'The selected :attribute is invalid.',
+            '"users" doesn\'t have fields "label".',
+        ], self::ruleErrors('fields', new Fields(RevisedUserResource::class), ['users' => 'label']));
     }
 }

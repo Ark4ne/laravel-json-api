@@ -6,7 +6,9 @@ namespace Test\Feature\Laravel;
 
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Context\JsonApiContext;
+use Ark4ne\JsonApi\Laravel\JsonApi;
 use Illuminate\Http\Request;
+use Test\app\Revisions\ApiRevision;
 use Test\TestCase;
 
 final class ContextBindingTest extends TestCase
@@ -46,6 +48,22 @@ final class ContextBindingTest extends TestCase
         app()->instance('request', $request);
 
         self::assertSame($first, app(JsonApiContext::class));
+    }
+
+    public function test_a_revision_set_after_the_first_resolution_is_seen(): void
+    {
+        $request = new Request(['include' => 'posts']);
+        app()->instance('request', $request);
+        $head = app(JsonApiContext::class);
+
+        JsonApi::useRevision($request, ApiRevision::Labels);
+        $labels = app(JsonApiContext::class);
+
+        self::assertNull($head->revision);
+        self::assertSame(ApiRevision::Labels, $labels->revision);
+        self::assertSame(['posts'], $labels->include->paths());
+        self::assertSame($head->diagnostics, $labels->diagnostics);
+        self::assertSame($labels, app(JsonApiContext::class));
     }
 
     public function test_a_published_configuration_missing_a_nested_key_takes_the_default_of_the_package(): void

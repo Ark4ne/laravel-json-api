@@ -6,9 +6,12 @@ namespace Ark4ne\JsonApi\Descriptors\Values;
 
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Definition\AttributeDefinition;
+use Ark4ne\JsonApi\Definition\Revision;
 use Ark4ne\JsonApi\Definition\ValueType;
 use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Descriptors\Members;
+use Ark4ne\JsonApi\Descriptors\RevisedMembers;
+use Ark4ne\JsonApi\Descriptors\RevisionFindings;
 use Ark4ne\JsonApi\Support\Diagnostics;
 use Ark4ne\JsonApi\Support\Values;
 use Closure;
@@ -61,7 +64,8 @@ final class ValueStruct extends Value
     }
 
     /**
-     * The members the struct declares, read on a subject standing for the model.
+     * The members the struct declares, read on a subject standing for the model; the closure receives the head name of a
+     * struct standing for it at a revision, as when rendered.
      *
      * @return iterable<array-key, mixed>
      */
@@ -70,7 +74,24 @@ final class ValueStruct extends Value
         /** @var Closure(mixed, string): iterable<array-key, mixed> $members */
         $members = $this->attribute;
 
-        return $members($subject, $name);
+        return $members($subject, $this->headName ?? $name);
+    }
+
+    /**
+     * This struct with its members as `$revision` sees them, transformed when the struct reads them.
+     *
+     * @internal Used by `RevisedMembers`.
+     */
+    public function atRevision(?Revision $revision, ?RevisionFindings $findings = null): static
+    {
+        /** @var Closure(mixed, string): iterable<array-key, mixed> $members */
+        $members = $this->attribute;
+
+        return $this->with('attribute', static fn(mixed $model, string $name): array => RevisedMembers::apply(
+            $members($model, $name),
+            $revision,
+            $findings,
+        ));
     }
 
     public function definition(

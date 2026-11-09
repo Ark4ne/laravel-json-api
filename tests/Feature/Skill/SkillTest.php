@@ -4,18 +4,25 @@ declare(strict_types=1);
 
 namespace Test\Feature\Skill;
 
+use Ark4ne\JsonApi\Context\RequestedRevision;
 use Ark4ne\JsonApi\Definition\ValueType;
 use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Descriptors\Relations;
 use Ark4ne\JsonApi\Descriptors\Relations\Relation;
 use Ark4ne\JsonApi\Descriptors\Values;
+use Ark4ne\JsonApi\Resources\Concerns\Revisions;
 use Ark4ne\JsonApi\Resources\JsonApiCollection;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
+use Ark4ne\JsonApi\Testing\ResourceAssertions;
 use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Testing\TestResponse;
 use ReflectionClass;
 use ReflectionMethod;
+use Symfony\Component\HttpFoundation\Response;
+use Test\Support\JsonApiSchema;
 
 /**
  * The agent skill shipped with the package (`skills/laravel-json-api/`): every recipe runs and renders a valid
@@ -96,6 +103,25 @@ final class SkillTest extends SkillTestCase
 
         foreach ($attributes as $file) {
             self::assertStringContainsString('#[Resources\Attributes\\' . basename($file, '.php') . '(', $reference, $file);
+        }
+    }
+
+    public function test_the_reference_names_every_entry_point_of_the_revisions(): void
+    {
+        $reference = self::read('reference.md');
+
+        foreach ((new ReflectionClass(Revisions::class))->getMethods() as $method) {
+            self::assertStringContainsString("\$this->{$method->name}()", $reference, "helper {$method->name}()");
+        }
+
+        foreach ((new ReflectionClass(RequestedRevision::class))->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
+            if (!$method->isConstructor()) {
+                self::assertMatchesRegularExpression("/[`:>]{$method->name}\\(/", $reference, "RequestedRevision::{$method->name}()");
+            }
+        }
+
+        foreach (['JsonApi::useRevision(', 'JsonApi::revision(', 'Definition\\Revision', 'Definitions::for(', 'Revised::rules(', 'Revised::resolve(', 'Concerns\\UseRevisedRules'] as $name) {
+            self::assertStringContainsString($name, $reference, $name);
         }
     }
 
@@ -236,6 +262,82 @@ final class SkillTest extends SkillTestCase
         $response->assertJsonPath('meta', ['total' => 2]);
         $response->assertJsonPath('data.0.attributes', ['name' => 'Ada', 'role' => 'lead']);
         $response->assertJsonPath('data.1.attributes', ['name' => 'Alan']);
+    }
+
+    public function test_the_versioned_resources_recipe(): void
+    {
+        self::runRecipe('recipes.md', 'Versioned resources');
+
+        $author = self::model('App\Recipes\Library\Author', ['id' => 3, 'name' => 'Ada']);
+        $book = self::model('App\Recipes\Library\Book', [
+            'id' => 1,
+            'title' => 'Notes on the Analytical Engine',
+            'summary' => 'The first published algorithm, with its notes.',
+            'legacy_code' => 'AE-1843',
+        ])->setRelation('author', $author);
+        $resource = self::resource('App\Recipes\Library\BookResource', $book);
+        // No diagnostic, as `jsonapi:check --strict` would say, at every revision.
+        ResourceAssertions::assertValidAtEveryRevision($resource::class, strict: true);
+
+        $head = $this->renderAtVersion($resource, null, 'include=author');
+        $head->assertJsonPath('data.attributes', ['title' => 'Notes on the Analytical Engine', 'summary' => 'The first published...']);
+        $head->assertJsonPath('data.relationships.author.data', ['type' => 'authors', 'id' => '3']);
+        $head->assertJsonPath('included.0.attributes', ['display_name' => 'Ada']);
+
+        $initial = $this->renderAtVersion($resource, '2026-09-01', 'include=writer&fields[books]=name,writer');
+        $initial->assertJsonPath('data.attributes', ['name' => 'Notes on the Analytical Engine']);
+        $initial->assertJsonPath('data.relationships.writer.data', ['type' => 'writers', 'id' => '3']);
+        $initial->assertJsonPath('included.0.attributes', ['name' => 'Ada']);
+
+        $this->renderAtVersion($resource, '2026-09-01')->assertJsonPath(
+            'data.attributes',
+            ['name' => 'Notes on the Analytical Engine', 'summary' => 'The first published algorithm, with its notes.', 'legacy_code' => 'AE-1843'],
+        );
+    }
+
+    public function test_the_write_request_across_revisions_recipe(): void
+    {
+        self::runRecipe('recipes.md', 'Versioned resources');
+        self::runRecipe('recipes.md', 'Write request across revisions');
+
+        Route::post('recipes/books', static function (): array {
+            $request = self::formRequest('App\Recipes\Library\BookStoreRequest');
+            self::assertTrue(method_exists($request, 'title'));
+
+            return ['title' => $request->title(), 'attributes' => $request->jsonApi()->attributes()];
+        })->middleware('App\Recipes\Library\UseLibraryRevision');
+
+        $long = str_repeat('a', 501);
+        $this->postJson('recipes/books', ['data' => ['type' => 'books', 'attributes' => ['title' => 'Notes', 'summary' => 'Short']]])
+            ->assertOk()->assertExactJson(['title' => 'Notes', 'attributes' => ['title' => 'Notes', 'summary' => 'Short']]);
+        $this->postJson('recipes/books', ['data' => ['type' => 'books', 'attributes' => ['name' => 'Notes', 'summary' => $long]]])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['data.attributes.title', 'data.attributes.summary']);
+
+        $initial = ['Api-Version' => '2026-09-01'];
+        $this->postJson('recipes/books', ['data' => ['type' => 'books', 'attributes' => ['name' => 'Notes', 'summary' => $long]]], $initial)
+            ->assertOk()->assertExactJson(['title' => 'Notes', 'attributes' => ['summary' => $long, 'name' => 'Notes']]);
+        $this->postJson('recipes/books', ['data' => ['type' => 'books', 'attributes' => ['title' => 'Notes']]], $initial)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['data.attributes.name']);
+    }
+
+    /**
+     * A resource rendered for a request going through the middleware of the recipe, with its `Api-Version` header.
+     *
+     * @return TestResponse<\Symfony\Component\HttpFoundation\Response>
+     */
+    private function renderAtVersion(Responsable $resource, ?string $version, string $query = ''): TestResponse
+    {
+        $request = Request::create("/?{$query}", server: $version === null ? [] : ['HTTP_API_VERSION' => $version]);
+        $middleware = app('App\Recipes\Library\UseLibraryRevision');
+        self::assertTrue(is_object($middleware) && method_exists($middleware, 'handle'));
+        $middleware->handle($request, static fn(): Response => new Response());
+
+        $response = $resource->toResponse($request);
+        self::assertSame([], JsonApiSchema::errors((string) $response->getContent()));
+
+        return TestResponse::fromBaseResponse($response);
     }
 
     /**

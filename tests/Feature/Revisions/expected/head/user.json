@@ -1,0 +1,20 @@
+{
+    "jsonapi": {
+        "version": "1.1"
+    },
+    "data": {
+        "type": "users",
+        "id": "1",
+        "attributes": {
+            "display_name": "User 1",
+            "email": "user1@example.com",
+            "born_at": "2026-01-01T00:00:00+00:00"
+        },
+        "meta": {
+            "updated_at": "2026-01-01T00:00:00+00:00"
+        }
+    },
+    "meta": {
+        "directory": "users"
+    }
+}

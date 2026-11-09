@@ -10,6 +10,7 @@ use Ark4ne\JsonApi\Configuration\SparseRelationships;
 use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Definition\DefinitionSource;
 use Ark4ne\JsonApi\Definition\RelatedResource;
+use Ark4ne\JsonApi\Exceptions\RenderingException;
 
 /**
  * Computes from the definitions and the context which Eloquent relations to load before rendering (docs/architecture.md
@@ -30,14 +31,21 @@ final readonly class LoadPlanner
      * - otherwise, nothing.
      *
      * Two relationships loading the same path with different constraints share the first one, with a `load-conflict`
-     * diagnostic.
+     * diagnostic. Planned at the revision of the context: its relationships, its loads, its related resources.
      *
      * @param class-string<DefinitionSource> $class
+     *
+     * @throws RenderingException when a resource planned does not exist at the revision of the context
      */
     public function plan(string $class, JsonApiContext $context): LoadPlan
     {
-        $definition = Definitions::for($class);
-        $constraints = Definitions::loadConstraints($class);
+        if (!Definitions::exists($class, $context->revision)) {
+            throw RenderingException::notInRevision($class, $context->revision);
+        }
+
+        // The names, relations and related resources of the revision: the include paths are written in its names.
+        $definition = Definitions::for($class, $context->revision);
+        $constraints = Definitions::loadConstraints($class, $context->revision);
         $filter = $context->configuration->sparseRelationships === SparseRelationships::Filter;
 
         $relations = [];
@@ -82,10 +90,17 @@ final readonly class LoadPlanner
 
             $reach = $relationship->source !== null ? [$relationship->source] : $relationship->load->roots();
             // The related models of a polymorphic relationship are planned by class, with the resource of their class.
+            // A resource of its map absent from the revision is not planned: a model of it throws when rendered
+            // (`RenderingException::notInRevision()`, reported by `jsonapi:check`), not when planned.
             $plans = [];
             if ($relationship->isPolymorphic()) {
                 foreach (array_unique($relationship->morphs) as $related) {
-                    $plan = $this->plan(RelatedResource::resolve($related), $context->withPath($name));
+                    $resource = RelatedResource::resolve($related);
+                    if (!Definitions::exists($resource, $context->revision)) {
+                        continue;
+                    }
+
+                    $plan = $this->plan($resource, $context->withPath($name));
                     $plans[] = new LoadPlan($plan->relations, $plan->sources, $plan->nested, $relationship->morphs, $related);
                 }
             } elseif (!$relationship->isNative()) {

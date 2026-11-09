@@ -8,11 +8,15 @@ declare(strict_types=1);
  *
  * Options: --iterations=5 --posts=1000 --tolerance=10 (in %) --only=current,v1.9,native --update-reference
  *
+ * With `current`, the same document is rendered by resources declaring revisions (`benchmark/Revised/`) at the head, at
+ * the newest revision and at the oldest one: reported, not gated.
+ *
  * --cold measures instead the first rendering of a request in a new process, as under PHP-FPM: one post
  * with 3 includes, in --iterations processes (20 by default), with the definitions compiled on first use and read from a
  * compiled file (`jsonapi:cache`). The opcache keeps the compiled scripts between the processes in a file cache, as the
  * opcache of FPM does between requests. The definitions are measured apart from the first rendering. Exits with 1 when
- * reading the compiled file is slower than compiling beyond the tolerance.
+ * reading the compiled file is slower than compiling beyond the tolerance. Resources declaring revisions are measured
+ * too, from the compiled file, at the head and at their oldest revision: reported, not gated.
  *
  * 1.9 is extracted from its tag into build/benchmark/v1.9 and installed on first run. Each implementation runs in its
  * own process, Xdebug off. Exits with 1 when:
@@ -79,16 +83,14 @@ function cold(string $root, int $iterations, int $tolerance): never
 
     run([...$php, $scenario, 'compile', $compiled]);
 
-    $modes = ['compiled on first use' => 'none', 'compiled file' => $compiled];
-    $results = [];
-    foreach ($modes as $mode => $file) {
+    $measure = static function (string $mode, string $file, string $set) use ($php, $scenario, $iterations): array {
         echo "Running {$mode}…\n";
         // A first process fills the opcache file cache, as the first requests of FPM do.
-        run([...$php, $scenario, 'render', $file]);
+        run([...$php, $scenario, 'render', $file, $set]);
 
         $runs = [];
         for ($i = 0; $i < $iterations; $i++) {
-            $decoded = json_decode(trim(run([...$php, $scenario, 'render', $file])), true, flags: JSON_THROW_ON_ERROR);
+            $decoded = json_decode(trim(run([...$php, $scenario, 'render', $file, $set])), true, flags: JSON_THROW_ON_ERROR);
             $runs[] = is_array($decoded) ? $decoded : fail('The cold scenario printed no measures.');
         }
 
@@ -99,14 +101,20 @@ function cold(string $root, int $iterations, int $tolerance): never
             return $values[intdiv(count($values), 2)];
         };
 
-        $results[$mode] = [
+        return [
             'definitions_ms' => $median('definitions_ms'),
             'cold_ms' => $median('cold_ms'),
             'warm_ms' => $median('warm_ms'),
             'peak_mb' => $median('peak_mb'),
             'included' => (int) $median('included'),
         ];
-    }
+    };
+
+    $first = $measure('compiled on first use', 'none', 'package');
+    $file = $measure('compiled file', $compiled, 'package');
+    $head = $measure('revised, head', $compiled, 'head');
+    $oldest = $measure('revised, oldest', $compiled, 'oldest');
+    $results = ['compiled on first use' => $first, 'compiled file' => $file, 'revised, head' => $head, 'revised, oldest' => $oldest];
 
     printf(
         "\n1 post, include=user,comments,comments.user, median of %d processes (PHP %s, opcache file cache)\n\n",
@@ -135,11 +143,16 @@ function cold(string $root, int $iterations, int $tolerance): never
         );
     }
 
-    [$first, $file] = array_values($results);
     printf(
         "\ncompiled file / compiled on first use: definitions ×%.3f, definitions and first rendering ×%.3f\n",
         $file['definitions_ms'] / $first['definitions_ms'],
         ($file['definitions_ms'] + $file['cold_ms']) / ($first['definitions_ms'] + $first['cold_ms']),
+    );
+
+    printf(
+        "revised, oldest / head (compiled file, not gated): definitions ×%.3f, first rendering ×%.3f\n",
+        $oldest['definitions_ms'] / $head['definitions_ms'],
+        $oldest['cold_ms'] / $head['cold_ms'],
     );
 
     if ($first['included'] !== $file['included']) {
@@ -253,6 +266,32 @@ foreach ($results as $name => $result) {
         $result['included'],
         $result['size_kb'],
     );
+}
+
+if (isset($results['current'])) {
+    $revised = [];
+    foreach (['head', 'newest', 'oldest'] as $revision) {
+        echo "Running revised resources at {$revision}…\n";
+        $revised[$revision] = measures(
+            run([PHP_BINARY, __DIR__ . '/benchmark/scenario.php', 'revised', $root, $iterations, $posts, $revision]),
+        );
+    }
+
+    printf("\nResources declaring revisions (reported, not gated)\n\n");
+    printf("| %-8s | %12s | %10s | %10s | %7s | %8s | %11s |\n", 'revision', 'median (ms)', 'min (ms)', 'peak (MB)', 'queries', 'included', '/ current');
+    printf("| %'-8s | %'-12s | %'-10s | %'-10s | %'-7s | %'-8s | %'-11s |\n", '', '', '', '', '', '', '');
+    foreach ($revised as $revision => $result) {
+        printf(
+            "| %-8s | %12.1f | %10.1f | %10.1f | %7d | %8d | %10.3f× |\n",
+            $revision,
+            $result['median_ms'],
+            $result['min_ms'],
+            $result['peak_mb'],
+            $result['queries'],
+            $result['included'],
+            $result['median_ms'] / $results['current']['median_ms'],
+        );
+    }
 }
 
 $failures = [];
