@@ -57,7 +57,7 @@ The resource **describes**, the definition is **compiled once**, the renderer **
   singleton (the only static caches are `Compilation\Definitions` and `Support\Memo`, pure memos of what only depends
   on the code, flushed after every Octane operation).
 - Descriptors are immutable fluent builders; conditions are rules (`Closure(Request, model, attribute): bool`); value types live in a registry.
-- Classes are `final` (except the base classes listed in the architecture test); traits used only in `src/Resources/` (`Http\Concerns\ResolvesRevisedRules` is declared for applications);
+- Classes are `final` (except the base classes listed in the architecture test); traits used only in `src/Resources/` (`Http\Concerns\UseRevisedRules` is declared for applications);
   `declare(strict_types=1)`; PHPStan max.
 
 ## Tests

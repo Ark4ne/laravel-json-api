@@ -120,7 +120,7 @@ final class SkillTest extends SkillTestCase
             }
         }
 
-        foreach (['JsonApi::useRevision(', 'JsonApi::revision(', 'Definition\\Revision', 'Definitions::for(', 'Revised::rules(', 'Revised::resolve(', 'Concerns\\ResolvesRevisedRules'] as $name) {
+        foreach (['JsonApi::useRevision(', 'JsonApi::revision(', 'Definition\\Revision', 'Definitions::for(', 'Revised::rules(', 'Revised::resolve(', 'Concerns\\UseRevisedRules'] as $name) {
             self::assertStringContainsString($name, $reference, $name);
         }
     }

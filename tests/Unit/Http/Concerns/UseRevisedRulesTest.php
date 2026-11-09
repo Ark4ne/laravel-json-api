@@ -13,7 +13,7 @@ use Test\app\Revisions\ApiRevision;
 use Test\TestCase;
 use Test\Unit\Http\Fixtures\RevisedTraitFormRequest;
 
-final class ResolvesRevisedRulesTest extends TestCase
+final class UseRevisedRulesTest extends TestCase
 {
     public function test_the_rules_are_resolved_at_the_revision_of_the_request(): void
     {

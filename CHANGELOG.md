@@ -97,7 +97,7 @@ change.
 - `Http\Rules\Revised`: the validation rules of one key of a form request across the revisions,
   `Revised::rules($head)->was(X, rules: …)->since(X)->until(X)`, bounds included. `JsonApiFormRequest` resolves them
   at the revision of the request and leaves out a key absent from it, with the rules of its members (`tags.*`); a plain
-  `FormRequest` uses the trait `Http\Concerns\ResolvesRevisedRules`, any other code calls
+  `FormRequest` uses the trait `Http\Concerns\UseRevisedRules`, any other code calls
   `Revised::resolve($rules, $revision)`. Public for the tools: `head()`, `lifetime()`, `history()` (a list of
   `Http\Rules\RulesRevision`, oldest first), `existsAt()`, `at()`. A declaration that cannot apply throws a
   `DefinitionException` (`emptyRulesLifetime()`, `duplicateRulesRevision()`, `rulesRevisionOutsideLifetime()`,

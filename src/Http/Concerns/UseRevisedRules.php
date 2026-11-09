@@ -14,7 +14,7 @@ use Ark4ne\JsonApi\Http\Rules\Revised;
  * ```php
  * final class PostStoreRequest extends FormRequest
  * {
- *     use ResolvesRevisedRules;
+ *     use UseRevisedRules;
  * }
  * ```
  *
@@ -23,7 +23,7 @@ use Ark4ne\JsonApi\Http\Rules\Revised;
  *
  * @phpstan-require-extends \Illuminate\Foundation\Http\FormRequest
  */
-trait ResolvesRevisedRules
+trait UseRevisedRules
 {
     /**
      * The rules of `rules()` at the revision of the request (`Revised::resolve()`).

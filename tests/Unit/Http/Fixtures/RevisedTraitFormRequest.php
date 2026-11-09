@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Test\Unit\Http\Fixtures;
 
-use Ark4ne\JsonApi\Http\Concerns\ResolvesRevisedRules;
+use Ark4ne\JsonApi\Http\Concerns\UseRevisedRules;
 use Ark4ne\JsonApi\Http\Rules\Revised;
 use Illuminate\Foundation\Http\FormRequest;
 use Test\app\Revisions\ApiRevision;
@@ -14,7 +14,7 @@ use Test\app\Revisions\ApiRevision;
  */
 final class RevisedTraitFormRequest extends FormRequest
 {
-    use ResolvesRevisedRules;
+    use UseRevisedRules;
 
     /**
      * @return array<string, mixed>

@@ -143,7 +143,7 @@ declared on the fields that changed. Bounds are inclusive.
 | `#[Definition\JsonApiSince(X)]`, `#[Definition\JsonApiUntil(X)]` | A new type is a new resource; every relationship reaching it needs a `was()` to the old one |
 | `$this->requestedRevision()` | Guards of a change of meaning: `->atMost(X)`, `->atLeast(X)`, `->is(X)`, `->isHead()`; outside a resource `JsonApi::revision($request)` or `RequestedRevision::of($request)` |
 | `Definitions::for(PostResource::class, X)`, `Definitions::exists(PostResource::class, X)` | The definition at a revision (names, values, relationships of `X`), whether the resource exists at it |
-| `Http\Rules\Revised::rules($head)->was(X, rules: …)->since(X)->until(X)` | The rules of one key of a form request across revisions; resolved at the revision of the request by `JsonApiFormRequest`, by the trait `Http\Concerns\ResolvesRevisedRules` in a plain `FormRequest`, by `Revised::resolve($rules, $revision)` elsewhere; a key absent from the revision is left out |
+| `Http\Rules\Revised::rules($head)->was(X, rules: …)->since(X)->until(X)` | The rules of one key of a form request across revisions; resolved at the revision of the request by `JsonApiFormRequest`, by the trait `Http\Concerns\UseRevisedRules` in a plain `FormRequest`, by `Revised::resolve($rules, $revision)` elsewhere; a key absent from the revision is left out |
 | `#[Resources\Attributes\JsonApiRoutes(…)]` at a revision | The links of the relationships of that revision, by their names at it (`posts.relationships.writer`); a relationship absent from it gets none |
 
 - A `value:` without source reads the head source; a head field computed by a closure needs a `value:` with its own

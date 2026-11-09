@@ -1348,17 +1348,17 @@ names of its revision, which the controller reads. A declaration that cannot app
 `since()` newer than the `until()`, a `was()` outside them or at the `until()` (the head rules would never apply), the
 same `was()` twice, revisions of two enums.
 
-Any other form request uses the trait `Http\Concerns\ResolvesRevisedRules`, which resolves them at the revision of
+Any other form request uses the trait `Http\Concerns\UseRevisedRules`, which resolves them at the revision of
 the request:
 
 ```php
-use Ark4ne\JsonApi\Http\Concerns\ResolvesRevisedRules;
+use Ark4ne\JsonApi\Http\Concerns\UseRevisedRules;
 use Ark4ne\JsonApi\Http\Rules\Revised;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ProfileUpdateRequest extends FormRequest
 {
-    use ResolvesRevisedRules;
+    use UseRevisedRules;
 
     public function rules(): array
     {
