@@ -10,8 +10,8 @@ A Lightweight [{JSON:API}](https://jsonapi.org/) Resource for Laravel.
   `$this->one()`…), conditions, links and meta.
 - Sparse fieldsets, includes eager-loaded in batch, and their validation (`JsonApiFormRequest`).
 - **API revisions**: pin each client on a dated revision of your API (`Api-Version: 2026-12-01`), Stripe-style. The
-  code keeps the latest shape of each resource, the older ones are declared on the fields that changed
-  ([Versioned resources](#versioned-resources)).
+  code keeps the latest shape of each resource, the older ones are declared on the fields that changed, and the
+  rules of the request bodies on the keys that changed ([Versioned resources](#versioned-resources)).
 - Error documents, content negotiation, and a public definition of every resource for the tooling (`jsonapi:check`,
   OpenAPI).
 
@@ -89,7 +89,8 @@ class PostStoreRequest extends JsonApiFormRequest
 `jsonApi()` reads the resource object of the body from the validated data: a member without rule is missing from it.
 To read a relationship cleared (`'data' => null`, or `[]` for a to-many one), give its linkage a rule of its own
 (`data.relationships.tags.data`): the rules of its identifiers alone (`data.relationships.tags.data.*.id`) leave it out
-of the validated data. The validation errors are keyed by the path of the member (`data.attributes.title`).
+of the validated data. The validation errors are keyed by the path of the member (`data.attributes.title`). Rules
+that change with the revision of the client: [Write requests across revisions](#write-requests-across-revisions).
 
 ```php
 class PostStoreRequest extends JsonApiFormRequest
@@ -1316,7 +1317,7 @@ A change of meaning has no shape to declare: read the revision of the rendering.
 `$this->requestedRevision()` gives `atMost()`, `atLeast()`, `is()` and `isHead()`; outside a resource (`with()`,
 `additional()`, a controller), `JsonApi::revision($request)`.
 
-## Write requests
+## Write requests across revisions
 
 The rules of a body change with the revision too. Declare the history of each key that changed with
 `Http\Rules\Revised`, the head written plainly, bounds included:

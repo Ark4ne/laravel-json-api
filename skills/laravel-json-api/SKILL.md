@@ -69,7 +69,9 @@ php artisan make:jsonapi-resource PostResource --model=Post                     
 12. **Change the head, declare the past.** In a versioned API, edit the field to its new shape and add
     `->was(<the revision that was the newest until now>, name: …, value: …)`; never an `if` on the revision for a
     change of shape (`$this->requestedRevision()` is for a change of meaning only). A new type is a new resource
-    (`#[Definition\JsonApiSince]`, the old one `#[Definition\JsonApiUntil]`). See `reference.md`, "Revisions".
+    (`#[Definition\JsonApiSince]`, the old one `#[Definition\JsonApiUntil]`). The rules of a body that change take
+    `Http\Rules\Revised::rules(<head>)->was(…, rules: …)`, `->since()`, `->until()`, never an `if` in `rules()`. See
+    `reference.md`, "Revisions".
 
 ## Workflow to add a resource
 

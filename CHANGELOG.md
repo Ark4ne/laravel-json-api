@@ -103,7 +103,7 @@ change.
   `DefinitionException` (`emptyRulesLifetime()`, `duplicateRulesRevision()`, `rulesRevisionOutsideLifetime()`,
   `rulesRevisionHidesHead()` for a `was()` at the `until()`), and so does a `Revised` in a list of rules
   (`nestedRevisedRules()`): it is the whole value of its key. README
-  "Write requests" under "Versioned resources", a tested recipe "Write request across revisions" in the skill.
+  "Write requests across revisions" under "Versioned resources", a tested recipe "Write request across revisions" in the skill.
 - README: a list of the features, API revisions among them, at the top; the comparison with Laravel's native JSON:API
   moves to the end, as "Alongside Laravel's native JSON:API"; the CI badge reads the `ci.yml` workflow.
 - At a revision, the links of `#[JsonApiRoutes]` follow the relationships of that revision and their names; the
