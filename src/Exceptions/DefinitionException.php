@@ -75,6 +75,29 @@ final class DefinitionException extends LogicException implements JsonApiExcepti
     }
 
     /**
+     * Validation rules declare what they were up to their last revision (`Revised::was()` at `until()`): the head rules
+     * would apply at no revision.
+     */
+    public static function rulesRevisionHidesHead(UnitEnum $revision): self
+    {
+        return new self(
+            'Revised rules declare was(' . RevisionLabel::of($revision) . ') at their until(): the head rules would never '
+            . 'apply. Write these rules as the head and remove the was().',
+        );
+    }
+
+    /**
+     * A `Revised` is one rule of a list: it is the whole value of its key.
+     */
+    public static function nestedRevisedRules(string $key): self
+    {
+        return new self(
+            "The rules of [{$key}] hold a Revised in a list: a Revised is the whole value of its key, "
+            . "Revised::rules([...]) holds the list.",
+        );
+    }
+
+    /**
      * The definition of a resource was read at a revision it does not exist at (`#[JsonApiSince]`, `#[JsonApiUntil]`).
      */
     public static function notInRevision(string $class, ?UnitEnum $revision): self

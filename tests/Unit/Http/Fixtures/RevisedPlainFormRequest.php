@@ -30,9 +30,6 @@ final class RevisedPlainFormRequest extends FormRequest
      */
     protected function validationRules(): array
     {
-        /** @var array<array-key, mixed> $rules */
-        $rules = parent::validationRules();
-
-        return Revised::resolve($rules, JsonApiContext::revisionOf($this));
+        return Revised::resolve(parent::validationRules(), JsonApiContext::revisionOf($this));
     }
 }

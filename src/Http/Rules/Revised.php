@@ -29,7 +29,11 @@ use Ark4ne\JsonApi\Exceptions\DefinitionException;
  * form request calls `Revised::resolve()`. Bounds are included, as `was()`, `since()` and `until()` of the
  * descriptors.
  *
- * Public contract, for the tools that document the rules: `head()`, `lifetime()`, `history()`.
+ * A `Revised` is the whole value of its key, never one rule of a list. A key left out of a revision leaves out its
+ * members too (`tags` leaves out `tags.*`).
+ *
+ * Public contract, for the tools that document the rules: `head()`, `lifetime()`, `history()`, `existsAt()`, `at()`,
+ * `resolve()`.
  */
 final readonly class Revised
 {
@@ -54,8 +58,9 @@ final readonly class Revised
      * The rules of the key up to `$revision`, included. At a revision, the `was()` with the oldest revision at least as
      * new as it applies, whatever the order of the calls; none for the head.
      *
-     * @throws DefinitionException when `$revision` is already declared, is outside the lifetime of the key, or is a
-     *                             case of another enum than the other revisions
+     * @throws DefinitionException when `$revision` is already declared, is outside the lifetime of the key, is its
+     *                             `until()` (the head rules would never apply), or is a case of another enum than the
+     *                             other revisions
      */
     public function was(Revision $revision, mixed $rules): self
     {
@@ -135,25 +140,13 @@ final readonly class Revised
      */
     public function at(?Revision $revision): mixed
     {
-        if (!$this->existsAt($revision)) {
-            return null;
-        }
-
-        if ($revision !== null) {
-            // Oldest first: the first at least as new as the revision is the oldest one.
-            foreach ($this->history as $declared) {
-                if (RevisionOrder::compare($declared->revision, $revision) >= 0) {
-                    return $declared->rules;
-                }
-            }
-        }
-
-        return $this->head;
+        return $this->existsAt($revision) ? $this->rulesAt($revision) : null;
     }
 
     /**
      * The rules of a form request at `$revision` (`null` for the head): each `Revised` replaced by its rules there, or
-     * left out when its key does not exist there; the other rules unchanged, in their order.
+     * left out with the rules of its members (`key.*`, `key.name`) when its key does not exist there; the other rules
+     * unchanged, in their order.
      *
      * ```php
      * protected function validationRules(): array
@@ -168,27 +161,69 @@ final readonly class Revised
      *
      * @return array<K, mixed>
      *
-     * @throws DefinitionException when `$revision` is a case of another enum than the declared revisions
+     * @throws DefinitionException when `$revision` is a case of another enum than the declared revisions, or a
+     *                             `Revised` is one rule of a list
      */
     public static function resolve(array $rules, ?Revision $revision): array
     {
         $resolved = [];
+        $absent = [];
         foreach ($rules as $key => $rule) {
-            if (!$rule instanceof self) {
+            if ($rule instanceof self) {
+                if ($rule->existsAt($revision)) {
+                    $resolved[$key] = $rule->rulesAt($revision);
+                } else {
+                    $absent[] = "{$key}.";
+                }
+            } else {
+                if (is_array($rule)) {
+                    foreach ($rule as $item) {
+                        if ($item instanceof self) {
+                            throw DefinitionException::nestedRevisedRules((string) $key);
+                        }
+                    }
+                }
+
                 $resolved[$key] = $rule;
-            } elseif ($rule->existsAt($revision)) {
-                $resolved[$key] = $rule->at($revision);
             }
         }
 
-        return $resolved;
+        if ($absent === []) {
+            return $resolved;
+        }
+
+        return array_filter($resolved, static function (int|string $key) use ($absent): bool {
+            foreach ($absent as $prefix) {
+                if (str_starts_with((string) $key, $prefix)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }, ARRAY_FILTER_USE_KEY);
+    }
+
+    /**
+     * The rules of the key at `$revision`, a revision it exists at: those of the oldest `was()` at least as new as it
+     * (`RevisionOrder::boundaryOf()`), the head's otherwise.
+     */
+    private function rulesAt(?Revision $revision): mixed
+    {
+        $boundary = RevisionOrder::boundaryOf(array_map(static fn(RulesRevision $declared): Revision => $declared->revision, $this->history), $revision);
+        foreach ($boundary === null ? [] : $this->history as $declared) {
+            if ($declared->revision === $boundary) {
+                return $declared->rules;
+            }
+        }
+
+        return $this->head;
     }
 
     /**
      * @param list<RulesRevision> $history Oldest first
      *
-     * @throws DefinitionException when the lifetime is empty, a `was()` is outside it, or the revisions are cases of
-     *                             two enums
+     * @throws DefinitionException when the lifetime is empty, a `was()` is outside it or at its `until()`, or the
+     *                             revisions are cases of two enums
      */
     private static function checked(mixed $head, Lifetime $lifetime, array $history): self
     {
@@ -202,6 +237,9 @@ final readonly class Revised
         foreach ($history as $declared) {
             if (!$lifetime->covers($declared->revision)) {
                 throw DefinitionException::rulesRevisionOutsideLifetime($declared->revision);
+            }
+            if ($lifetime->until !== null && RevisionOrder::compare($declared->revision, $lifetime->until) === 0) {
+                throw DefinitionException::rulesRevisionHidesHead($declared->revision);
             }
         }
 

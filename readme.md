@@ -1344,16 +1344,23 @@ class PostStoreRequest extends JsonApiFormRequest
 A `JsonApiFormRequest` resolves them at the revision of the request: a key absent from it is left out, its member
 neither validated nor returned by `validated()` and `jsonApi()`. The body is not translated: an old client sends the
 names of its revision, which the controller reads. A declaration that cannot apply throws a `DefinitionException`: a
-`since()` newer than the `until()`, a `was()` outside them, the same `was()` twice, revisions of two enums.
+`since()` newer than the `until()`, a `was()` outside them or at the `until()` (the head rules would never apply), the
+same `was()` twice, revisions of two enums.
 
 Any other form request resolves them itself:
 
 ```php
+use Ark4ne\JsonApi\Context\JsonApiContext;
+use Ark4ne\JsonApi\Http\Rules\Revised;
+
 protected function validationRules(): array
 {
     return Revised::resolve(parent::validationRules(), JsonApiContext::revisionOf($this));
 }
 ```
+
+A `Revised` is the whole value of its key, never one rule of a list (`Revised::rules(['bail', 'string'])`). A key left
+out of a revision leaves out its members too: `tags` absent leaves out `tags.*`.
 
 Tools read the history without a request: `head()`, `lifetime()` (`since`, `until`), `history()` (each `was()` as a
 `RulesRevision`, oldest first), and `at($revision)` / `existsAt($revision)`.

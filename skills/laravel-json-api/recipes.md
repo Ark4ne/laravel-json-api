@@ -624,8 +624,10 @@ final class BookStoreRequest extends JsonApiFormRequest
 ```
 
 `Revised::rules($head)`, then `->was(X, rules: …)` (the rules up to `X`, included), `->since(X)`, `->until(X)`. A
-plain `FormRequest` resolves them itself: `Revised::resolve(parent::validationRules(), JsonApiContext::revisionOf($this))`
-in its `validationRules()`.
+plain `FormRequest` resolves them itself in its `validationRules()`:
+`Revised::resolve(parent::validationRules(), JsonApiContext::revisionOf($this))` (`use
+Ark4ne\JsonApi\Context\JsonApiContext;`). A `Revised` is the whole value of its key; a key left out of a revision
+leaves out its members (`tags.*`).
 
 ## Checking resources in tests
 

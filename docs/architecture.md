@@ -548,6 +548,7 @@ resources (`revision-unavailable-resource`): what `jsonapi:check` and `ResourceA
 
 The rules of a body are the application's: `Http\Rules\Revised` declares the history of the rules of one key
 (`was()`, `since()`, `until()`, bounds included) and `JsonApiFormRequest::validationRules()` resolves them at the
-revision of the request (`Revised::resolve()`), a key absent from it left out. A `Revised` checks its declarations when
+revision of the request (`Revised::resolve()`), a key absent from it left out with the rules of its members. A
+`Revised` is the whole value of its key, never one rule of a list. It checks its declarations when
 they are made and throws a `DefinitionException`: there is no compilation to report them. The body is not translated
 to the names of the head, nor the pointers of its errors to those of the revision.

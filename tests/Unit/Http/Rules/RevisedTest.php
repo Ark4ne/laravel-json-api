@@ -197,16 +197,38 @@ final class RevisedTest extends TestCase
         Revised::rules('string')->was(ApiRevision::Labels, rules: 'integer')->until(ApiRevision::Initial);
     }
 
-    public function test_a_was_on_the_bounds_of_the_lifetime_is_accepted(): void
+    public function test_a_was_at_the_since_is_accepted(): void
     {
         $rules = Revised::rules('string')
             ->since(ApiRevision::Initial)
             ->until(ApiRevision::Labels)
-            ->was(ApiRevision::Initial, rules: 'a')
-            ->was(ApiRevision::Labels, rules: 'b');
+            ->was(ApiRevision::Initial, rules: 'a');
 
         self::assertSame('a', $rules->at(ApiRevision::Initial));
-        self::assertSame('b', $rules->at(ApiRevision::Labels));
+        self::assertSame('string', $rules->at(ApiRevision::Labels));
+    }
+
+    public function test_a_was_at_the_until_throws_as_the_head_would_never_apply(): void
+    {
+        $this->expectException(DefinitionException::class);
+        $this->expectExceptionMessage('declare was(' . ApiRevision::class . '::Initial) at their until()');
+
+        Revised::rules('max:255')->until(ApiRevision::Initial)->was(ApiRevision::Initial, rules: 'max:80');
+    }
+
+    public function test_an_until_declared_at_a_was_throws(): void
+    {
+        $this->expectException(DefinitionException::class);
+        $this->expectExceptionMessage('at their until()');
+
+        Revised::rules('max:255')->was(ApiRevision::Labels, rules: 'max:80')->until(ApiRevision::Labels);
+    }
+
+    public function test_a_revision_newer_than_every_was_reads_the_head(): void
+    {
+        $rules = Revised::rules('max:10')->was(ApiRevision::Initial, rules: 'max:5');
+
+        self::assertSame('max:10', $rules->at(ApiRevision::Labels));
     }
 
     public function test_revisions_of_two_enums_throw(): void
@@ -265,6 +287,27 @@ final class RevisedTest extends TestCase
         ];
 
         self::assertSame(['data.attributes.tags' => 'array', 'data.attributes.tags.*' => 'integer'], Revised::resolve($rules, ApiRevision::Initial));
+    }
+
+    public function test_resolve_leaves_out_the_members_of_a_key_absent_at_the_revision(): void
+    {
+        $rules = [
+            'data.attributes.tags' => Revised::rules('array')->since(ApiRevision::Labels),
+            'data.attributes.tags.*' => 'string',
+            'data.attributes.tags.*.name' => 'string',
+            'data.attributes.tagsCount' => 'integer',
+        ];
+
+        self::assertSame(['data.attributes.tagsCount' => 'integer'], Revised::resolve($rules, ApiRevision::Initial));
+        self::assertSame($rules['data.attributes.tags.*'], Revised::resolve($rules, ApiRevision::Labels)['data.attributes.tags.*']);
+    }
+
+    public function test_resolve_rejects_a_revised_in_a_list_of_rules(): void
+    {
+        $this->expectException(DefinitionException::class);
+        $this->expectExceptionMessage('The rules of [data.attributes.title] hold a Revised in a list');
+
+        Revised::resolve(['data.attributes.title' => ['bail', Revised::rules('string')]], null);
     }
 
     public function test_a_plain_form_request_resolves_its_rules_at_the_revision_of_the_request(): void
