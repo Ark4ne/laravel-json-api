@@ -250,7 +250,11 @@ final class Definitions
         if (!isset(self::$fieldsOfTheCode[$class])) {
             $head = self::for($class);
             $fields = $head->fieldNames;
-            foreach ($head->boundaries as $boundary) {
+            // Declared on the base: any revision may hold a field the others do not.
+            $revisions = self::declaresSchema($class)
+                ? BaseOrder::between(BaseOrder::oldest(self::newest()::class), self::newest())
+                : $head->boundaries;
+            foreach ($revisions as $boundary) {
                 if (self::exists($class, $boundary)) {
                     $fields += self::for($class, $boundary)->fieldNames;
                 }
@@ -289,6 +293,11 @@ final class Definitions
      */
     public static function isRevised(string $class): bool
     {
+        // Declared on the base: its names are always those of the shape of the revision.
+        if (self::declaresSchema($class)) {
+            return true;
+        }
+
         $head = self::$definitions[$class] ?? self::head($class);
 
         // The names: also set when the revisions mix two enums, whose fields `until()` are left out of the head too.

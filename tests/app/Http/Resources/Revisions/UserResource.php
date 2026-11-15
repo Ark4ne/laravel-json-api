@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Test\app\Http\Resources\Revisions;
 
+use Ark4ne\ApiRevisions\Schema\Schema;
 use Ark4ne\JsonApi\Resources\Attributes\JsonApiType;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
+use DateTimeInterface;
 use Illuminate\Http\Request;
 use Test\app\Models\User;
 use Test\app\Revisions\ApiRevision;
@@ -23,14 +25,15 @@ final class UserResource extends JsonApiResource
     public function toAttributes(Request $request): iterable
     {
         return [
-            'display_name' => $this->string('name')
+            'display_name' => Schema::string('name')->nullable()->whenHas()
                 ->was(ApiRevision::Labels, name: 'label')
                 ->was(ApiRevision::Initial, name: 'name'),
-            'email' => $this->string(),
-            'born_at' => $this->datetime('created_at')
-                ->was(ApiRevision::Initial, value: $this->date()),
+            'email' => Schema::string()->nullable()->whenHas(),
+            'born_at' => Schema::dateTime('created_at')->nullable()->whenHas()
+                // No automatic conversion from a date and time to a date: the same instant, serialized as a date.
+                ->was(ApiRevision::Initial, schema: Schema::date(), down: static fn(DateTimeInterface $at): DateTimeInterface => $at),
             // Revisions
-            'full_name' => $this->string(fn() => "{$this->resource->name} <{$this->resource->email}>")
+            'full_name' => Schema::string(fn() => "{$this->resource->name} <{$this->resource->email}>")
                 ->until(ApiRevision::Labels),
         ];
     }
@@ -38,28 +41,28 @@ final class UserResource extends JsonApiResource
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'posts' => $this->many(PostResource::class)->whenIncluded()->was(
+            'posts' => Schema::relationship($this->many(PostResource::class)->whenIncluded())->was(
                 ApiRevision::Initial,
                 name: 'post',
-                value: $this->one(PostResource::class, fn() => $this->resource->posts->first())
+                schema: Schema::relationship($this->one(PostResource::class, fn() => $this->resource->posts->first())
                     ->withLoad('posts')
-                    ->whenIncluded(),
+                    ->whenIncluded()),
             ),
-            'comments' => $this->many(CommentResource::class)->whenIncluded(),
+            'comments' => Schema::relationship($this->many(CommentResource::class)->whenIncluded()),
         ];
     }
 
     protected function toResourceMeta(Request $request): iterable
     {
         return [
-            'updated_at' => $this->datetime()->was(ApiRevision::Labels, name: 'modified_at'),
+            'updated_at' => Schema::dateTime()->nullable()->whenHas()->was(ApiRevision::Labels, name: 'modified_at'),
         ];
     }
 
     protected function toDocumentMeta(Request $request): iterable
     {
         return [
-            'directory' => $this->string(fn() => 'users')->was(ApiRevision::Labels, name: 'catalog'),
+            'directory' => Schema::string(fn() => 'users')->was(ApiRevision::Labels, name: 'catalog'),
         ];
     }
 }

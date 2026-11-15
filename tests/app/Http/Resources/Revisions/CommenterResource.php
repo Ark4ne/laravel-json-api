@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Test\app\Http\Resources\Revisions;
 
+use Ark4ne\ApiRevisions\Schema\Schema;
 use Ark4ne\JsonApi\Definition\JsonApiUntil;
 use Ark4ne\JsonApi\Resources\Attributes\JsonApiType;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
@@ -23,7 +24,7 @@ final class CommenterResource extends JsonApiResource
     public function toAttributes(Request $request): iterable
     {
         return [
-            'name' => $this->string(),
+            'name' => Schema::string()->nullable()->whenHas(),
         ];
     }
 }

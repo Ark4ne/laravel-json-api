@@ -167,6 +167,7 @@ hook stays per resource.
 |---|---|
 | `tests/app/Http/Resources/UserResource` | ✅ on the base: the plain members of `applyWhen()` and of the struct became descriptors with the same values, `describer.nullable` / `when-has` written as `->nullable()` / `->whenHas()`; every expected document unchanged. It needed the fieldset on the members of an object (`Rendering\MemberFieldsets`: removed after the projection, so a member left out is still evaluated — base requirement **R13**, plan keys as paths). |
 | `tests/app/Http/Resources/PostResource`, `CommentResource` | ✅ on the base: `enum()` names its class, the members without key of the meta are keyed; every expected document unchanged. |
+| `tests/app/Http/Resources/Revisions/*` (the 2.1 revisions scenario: users, posts, comments, writers, commenters) | ✅ on the base: `was(R, name:, value:)` becomes `was(R, name:, schema:)`; every expected document of `tests/Feature/Revisions/expected/` unchanged. Found: the base has no automatic conversion from a date and time to a date (`born_at` at `Initial` declares `down:`; candidate base requirement **R14**); `Definitions::isRevised()` / `declaresField()` now know a resource declared on the base, so the helpers of a 2.0 resource translate a path through it. |
 
 ### US 2.4 — plan of the switch
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Test\app\Http\Resources\Revisions;
 
+use Ark4ne\ApiRevisions\Schema\Schema;
 use Ark4ne\JsonApi\Resources\Attributes\JsonApiType;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Http\Request;
@@ -21,16 +22,16 @@ final class PostResource extends JsonApiResource
     public function toAttributes(Request $request): iterable
     {
         return [
-            'title' => $this->string(),
+            'title' => Schema::string()->nullable()->whenHas(),
         ];
     }
 
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'user' => $this->one(UserResource::class)
-                ->was(ApiRevision::Labels, name: 'writer', value: $this->one(WriterResource::class)),
-            'comments' => $this->many(CommentResource::class)->whenIncluded(),
+            'user' => Schema::relationship($this->one(UserResource::class))
+                ->was(ApiRevision::Labels, name: 'writer', schema: Schema::relationship($this->one(WriterResource::class))),
+            'comments' => Schema::relationship($this->many(CommentResource::class)->whenIncluded()),
         ];
     }
 }
