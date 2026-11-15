@@ -103,9 +103,16 @@ trait Renderable
         if (Definitions::declaresSchema(static::class)) {
             foreach ($this->relationsAt($context) as $name => [$key, $relation]) {
                 $definition = $definitions[$name] ?? null;
-                $relationship = Relationship::declared($relation
-                    ->resolveRelated($key, $definition?->related[0] ?? $definition?->native)
-                    ->resolveFor($context->request, $model, $key, $context->configuration));
+                if ($relation instanceof RelationRaw) {
+                    $relationship = $relation->relationship();
+                    if (!$relationship instanceof Relationship) {
+                        continue;
+                    }
+                } else {
+                    $relationship = Relationship::declared($relation
+                        ->resolveRelated($key, $definition?->related[0] ?? $definition?->native)
+                        ->resolveFor($context->request, $model, $key, $context->configuration));
+                }
 
                 yield $name => $definition === null || (
                     ($definition->linkage ?? $context->configuration->linkage) !== Linkage::Loaded

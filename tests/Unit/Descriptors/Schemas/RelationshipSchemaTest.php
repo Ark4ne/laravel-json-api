@@ -11,6 +11,7 @@ use Ark4ne\ApiRevisions\Schema\DeclarationKind;
 use Ark4ne\ApiRevisions\Schema\TypeRegistry;
 use Ark4ne\JsonApi\Descriptors\Relations\RelationMany;
 use Ark4ne\JsonApi\Descriptors\Relations\RelationOne;
+use Ark4ne\JsonApi\Descriptors\Relations\RelationRaw;
 use Ark4ne\JsonApi\Descriptors\Schemas\RelationshipSchema;
 use Ark4ne\JsonApi\Descriptors\Schemas\SchemaTypes;
 use PHPUnit\Framework\TestCase;
@@ -56,6 +57,20 @@ final class RelationshipSchemaTest extends TestCase
     public function test_the_type_of_a_relationship_guessed_from_the_model_names_no_resource(): void
     {
         self::assertSame([], (new RelationshipSchema(new RelationOne(null, 'author')))->toType()->fragment['x-jsonapi-related']);
+    }
+
+    public function test_a_relationship_of_a_resource_is_held_as_a_relation(): void
+    {
+        $relationship = CommentResource::relationship(static fn(): array => [])->asCollection();
+        $schema = new RelationshipSchema($relationship);
+
+        self::assertInstanceOf(RelationRaw::class, $schema->relation());
+        self::assertSame($relationship, $schema->relation()->relationship());
+        self::assertSame(
+            ['type' => 'object', 'x-jsonapi-cardinality' => 'many', 'x-jsonapi-related' => [CommentResource::class]],
+            $schema->toType()->fragment,
+        );
+        self::assertSame('one', (new RelationshipSchema(UserResource::relationship(static fn(): null => null)))->toType()->fragment['x-jsonapi-cardinality']);
     }
 
     public function test_the_value_of_a_relationship_is_never_refused(): void

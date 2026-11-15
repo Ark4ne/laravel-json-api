@@ -9,8 +9,11 @@ use Ark4ne\ApiRevisions\Conversion\Converters;
 use Ark4ne\ApiRevisions\Definition\TypeDefinition;
 use Ark4ne\ApiRevisions\Schema\DeclaresConversions;
 use Ark4ne\ApiRevisions\Schema\Descriptor;
+use Ark4ne\JsonApi\Definition\Cardinality;
+use Ark4ne\JsonApi\Definition\DescribesRelationship;
 use Ark4ne\JsonApi\Descriptors\Relations\Relation;
 use Ark4ne\JsonApi\Descriptors\Relations\RelationMany;
+use Ark4ne\JsonApi\Descriptors\Relations\RelationRaw;
 
 /**
  * A relationship as a field of `ark4ne/laravel-api-revisions` (docs/rfc/api-revisions-integration.md D3): the base
@@ -30,11 +33,19 @@ final class RelationshipSchema extends Descriptor implements DeclaresConversions
 {
     public const TYPE = 'jsonapi.relationship';
 
+    /** @var Relation<T> */
+    private readonly Relation $relation;
+
     /**
-     * @param Relation<T> $relation
+     * @param Relation<T>|DescribesRelationship $relation A relation of the resource (`$this->one()`, `$this->many()`)
+     *        or a relationship of another one (`CommentResource::relationship(fn() => …)`)
      */
-    public function __construct(private readonly Relation $relation)
+    public function __construct(DescribesRelationship $relation)
     {
+        /** @var Relation<T> $held */
+        $held = $relation instanceof Relation ? $relation : RelationRaw::of($relation);
+        $this->relation = $held;
+
         // No source: the base never reads a relationship, and the schema of a `was()` may not declare one.
         parent::__construct();
     }
@@ -91,8 +102,17 @@ final class RelationshipSchema extends Descriptor implements DeclaresConversions
 
         return TypeDefinition::custom(self::TYPE, [
             'type' => 'object',
-            'x-jsonapi-cardinality' => $this->relation instanceof RelationMany ? 'many' : 'one',
+            'x-jsonapi-cardinality' => $this->cardinality() === Cardinality::Many ? 'many' : 'one',
             'x-jsonapi-related' => $related,
         ]);
+    }
+
+    private function cardinality(): Cardinality
+    {
+        if ($this->relation instanceof RelationRaw) {
+            return $this->relation->relationship()->definition('related')->cardinality;
+        }
+
+        return $this->relation instanceof RelationMany ? Cardinality::Many : Cardinality::One;
     }
 }

@@ -26,6 +26,7 @@ replaces them.
   base, which gives it its history; a custom type `jsonapi.relationship` whose fragment names the cardinality and the
   related resources, converted to itself (a relationship to another resource at an old revision is
   `->was(R, schema: Schema::relationship(…))`). `relationAt($field)` gives the relation in force at a revision.
+  A relationship of another resource is held too: `Schema::relationship(CommentResource::relationship(fn() => …))`.
 - `->unless()`, `->whenNotNull()` and `->whenFilled()` on every descriptor of `ark4ne/laravel-api-revisions`
   (`Descriptors\Schemas\Conditions`, macros registered by the service provider); their closures receive
   `($value, $model)`. `->whenInFields()`: the attribute is rendered only when the sparse fieldset names it, in its
