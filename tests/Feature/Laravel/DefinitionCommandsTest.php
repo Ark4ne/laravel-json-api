@@ -108,7 +108,6 @@ final class DefinitionCommandsTest extends TestCase
         self::assertArrayHasKey(ProfileResource::class, $definitions);
         self::assertArrayHasKey(ProfileResource::class . '@Initial', $definitions);
         self::assertArrayHasKey(ProfileResource::class . '@Labels', $definitions);
-        self::assertArrayHasKey(TeacherResource::class . '@Labels', $definitions);
         self::assertArrayNotHasKey(ProfileResource::class . '@UsersReplaceTeachers', $definitions);
     }
 

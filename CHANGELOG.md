@@ -27,6 +27,10 @@ replaces them.
   related resources, converted to itself (a relationship to another resource at an old revision is
   `->was(R, schema: Schema::relationship(…))`). `relationAt($field)` gives the relation in force at a revision.
   A relationship of another resource is held too: `Schema::relationship(CommentResource::relationship(fn() => …))`.
+  Its conditions (`->when(fn($value, $model) => …)`) are read for each resource: the relationship is left out when one
+  fails.
+- `applyWhen()` groups descriptors of `ark4ne/laravel-api-revisions` too: each member takes the condition as a
+  `->when()`, attributes and relationships alike.
 - `->unless()`, `->whenNotNull()` and `->whenFilled()` on every descriptor of `ark4ne/laravel-api-revisions`
   (`Descriptors\Schemas\Conditions`, macros registered by the service provider); their closures receive
   `($value, $model)`. `->whenInFields()`: the attribute is rendered only when the sparse fieldset names it, in its

@@ -25,6 +25,7 @@ use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Ark4ne\JsonApi\Support\Memo;
 use Ark4ne\JsonApi\Support\Probe;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\MergeValue;
 use LogicException;
 use ReflectionClass;
 use ReflectionMethod;
@@ -152,7 +153,7 @@ trait DeclaresSchema
                 $resource->toDocumentMeta($request) ?? [],
             ];
             foreach ($hooks as $members) {
-                foreach ($members as $member) {
+                foreach (self::membersOf($members) as $member) {
                     if ($member instanceof Descriptor) {
                         return true;
                     }
@@ -289,12 +290,18 @@ trait DeclaresSchema
         }
 
         // The hook runs for each resource: the closures of a relation are read after its resource is rendered.
-        $declared = $this->toRelationships($context->request);
-        $declared = is_array($declared) ? $declared : iterator_to_array($declared);
+        $declared = self::membersOf($this->toRelationships($context->request));
 
         foreach ($fields as $key => $field) {
             $relationship = $declared[$key] ?? null;
             if ($relationship instanceof RelationshipSchema) {
+                // The conditions of the field (`->when()`, `applyWhen()`): the base never reads a relationship.
+                foreach ($relationship->conditions() as $condition) {
+                    if ($condition(null, $this->resource) !== true) {
+                        continue 2;
+                    }
+                }
+
                 yield $field->name => [$key, $relationship->relationAt($field)];
             }
         }
@@ -307,7 +314,7 @@ trait DeclaresSchema
     private static function schemaObject(string $hook, iterable $members, string $of = Descriptor::class): ObjectSchema
     {
         $children = [];
-        foreach ($members as $name => $member) {
+        foreach (self::membersOf($members) as $name => $member) {
             if (!is_string($name) || $name === '' || !$member instanceof $of) {
                 throw DefinitionException::notASchema(static::class, $hook, (string) $name, get_debug_type($member));
             }
@@ -315,5 +322,28 @@ trait DeclaresSchema
         }
 
         return new ObjectSchema($children);
+    }
+
+    /**
+     * The members of a hook, those grouped by `applyWhen()` among the others.
+     *
+     * @param iterable<array-key, mixed> $members
+     *
+     * @return array<array-key, mixed>
+     */
+    private static function membersOf(iterable $members): array
+    {
+        $flat = [];
+        foreach ($members as $name => $member) {
+            if (is_int($name) && $member instanceof MergeValue) {
+                foreach ($member->data as $grouped => $value) {
+                    $flat[$grouped] = $value;
+                }
+            } else {
+                $flat[$name] = $member;
+            }
+        }
+
+        return $flat;
     }
 }

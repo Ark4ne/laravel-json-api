@@ -207,13 +207,14 @@ final class DefinitionsTest extends TestCase
         self::assertSame([ApiRevision::Initial, ApiRevision::Labels], Definitions::for(ProfileResource::class, ApiRevision::Initial)->boundaries);
     }
 
-    public function test_two_revisions_with_the_same_shape_share_a_definition(): void
+    public function test_two_revisions_with_the_same_shape_have_the_same_members(): void
     {
+        // Declared on the base: one shape per revision, compiled and cached by it.
         $initial = Definitions::for(TeacherResource::class, ApiRevision::Initial);
 
-        self::assertSame($initial, Definitions::for(TeacherResource::class, ApiRevision::Labels));
-        self::assertSame(ApiRevision::Labels, $initial->revision);
+        self::assertSame($initial, Definitions::for(TeacherResource::class, ApiRevision::Initial));
         self::assertSame(['label'], array_keys($initial->attributes));
+        self::assertSame(['label'], array_keys(Definitions::for(TeacherResource::class, ApiRevision::Labels)->attributes));
     }
 
     public function test_a_revision_newer_than_every_declaration_reads_the_head(): void

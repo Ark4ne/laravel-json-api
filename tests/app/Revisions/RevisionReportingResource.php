@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Test\app\Revisions;
 
+use Ark4ne\ApiRevisions\Schema\Schema;
 use Ark4ne\JsonApi\Resources\Attributes\JsonApiType;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Http\Request;
@@ -20,7 +21,7 @@ final class RevisionReportingResource extends JsonApiResource
     public function toAttributes(Request $request): iterable
     {
         return [
-            'revision' => $this->string(fn() => $this->renderingContext?->revision->name ?? 'head'),
+            'revision' => Schema::string(fn() => $this->renderingContext?->revision->name ?? 'head'),
         ];
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Test\Feature;
 
+use Ark4ne\ApiRevisions\Schema\Schema;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Http\Request;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -36,6 +37,47 @@ final class ApplyWhenTest extends FeatureTestCase
         }
     }
 
+    #[DataProvider('conditions')]
+    public function test_a_relationship_with_a_condition_follows_it(bool $condition): void
+    {
+        $resource = new /** @extends JsonApiResource<object{id: int, name: string, author: object}> */ class ((object) ['id' => 1, 'name' => 'Ada', 'author' => (object) ['id' => 2, 'name' => 'Alan']], $condition) extends JsonApiResource {
+            public function __construct(mixed $resource, private readonly bool $condition = true)
+            {
+                parent::__construct($resource);
+            }
+
+            protected function toType(Request $request): string
+            {
+                return 'conditional-post';
+            }
+
+            public function toAttributes(Request $request): iterable
+            {
+                return [
+                    'name' => Schema::string(),
+                    $this->applyWhen(fn(): bool => $this->condition, ['shout' => Schema::string(fn(): string => strtoupper($this->resource->name))]),
+                ];
+            }
+
+            protected function toRelationships(Request $request): iterable
+            {
+                return [
+                    'author' => Schema::relationship($this->one(UserResource::class))->when(fn(mixed $value, mixed $model): bool => $this->condition && $model === $this->resource),
+                ];
+            }
+        };
+
+        [$response] = $this->render($resource);
+
+        if ($condition) {
+            $response->assertJsonPath('data.attributes', ['name' => 'Ada', 'shout' => 'ADA']);
+            $response->assertJsonPath('data.relationships.author.data', ['type' => 'user', 'id' => '2']);
+        } else {
+            $response->assertJsonPath('data.attributes', ['name' => 'Ada']);
+            $response->assertJsonMissingPath('data.relationships');
+        }
+    }
+
     /**
      * @return JsonApiResource<object{id: int, name: string, author: object}>
      */
@@ -54,14 +96,14 @@ final class ApplyWhenTest extends FeatureTestCase
 
             public function toAttributes(Request $request): iterable
             {
-                return ['name' => $this->string()];
+                return ['name' => Schema::string()];
             }
 
             protected function toRelationships(Request $request): iterable
             {
                 return [
-                    $this->applyWhen($this->condition, [
-                        'author' => UserResource::relationship(fn() => new UserResource($this->resource->author)),
+                    $this->applyWhen(fn(): bool => $this->condition, [
+                        'author' => Schema::relationship(UserResource::relationship(fn() => new UserResource($this->resource->author))),
                     ]),
                 ];
             }

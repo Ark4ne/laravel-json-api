@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
 use Ark4ne\ApiRevisions\Revisions\Revision;
+use Ark4ne\ApiRevisions\Schema\Descriptor;
 use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Definition\RelatedResource;
 use Ark4ne\JsonApi\Descriptors\Describer;
@@ -234,6 +235,11 @@ trait ConditionallyLoadsAttributes
     protected function applyWhen(bool|Closure $condition, iterable $data): MergeValue
     {
         return new MergeValue(collect($data)->map(function ($raw) use ($condition) {
+            // A descriptor of the base: the condition is one of the field, read when it is rendered.
+            if ($raw instanceof Descriptor) {
+                return $raw->when(static fn(): bool => value($condition));
+            }
+
             if ($raw instanceof Describer) {
                 $value = $raw;
             } elseif ($raw instanceof Relationship) {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Test\app\Revisions;
 
+use Ark4ne\ApiRevisions\Schema\Schema;
 use Ark4ne\JsonApi\Definition\JsonApiUntil;
 use Ark4ne\JsonApi\Resources\Attributes\JsonApiType;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
@@ -23,7 +24,7 @@ class TeacherResource extends JsonApiResource
     public function toAttributes(Request $request): iterable
     {
         return [
-            'name' => $this->string()->was(ApiRevision::Labels, name: 'label'),
+            'name' => Schema::string()->was(ApiRevision::Labels, name: 'label'),
         ];
     }
 }

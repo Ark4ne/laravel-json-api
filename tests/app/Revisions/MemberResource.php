@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Test\app\Revisions;
 
+use Ark4ne\ApiRevisions\Schema\Schema;
 use Ark4ne\JsonApi\Definition\JsonApiSince;
 use Ark4ne\JsonApi\Resources\Attributes\JsonApiType;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
@@ -22,7 +23,7 @@ final class MemberResource extends JsonApiResource
     public function toAttributes(Request $request): iterable
     {
         return [
-            'name' => $this->string(),
+            'name' => Schema::string(),
         ];
     }
 }
