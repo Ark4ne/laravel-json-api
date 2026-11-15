@@ -19,6 +19,7 @@ use Ark4ne\JsonApi\Descriptors\Relations\Relation;
 use Ark4ne\JsonApi\Descriptors\Schemas\Conditions;
 use Ark4ne\JsonApi\Descriptors\Schemas\RelationshipSchema;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
+use Ark4ne\JsonApi\Rendering\MemberFieldsets;
 use Ark4ne\JsonApi\Rendering\ResourcePlan;
 use Ark4ne\JsonApi\Support\Probe;
 use Illuminate\Http\Request;
@@ -158,15 +159,20 @@ trait DeclaresSchema
                 // The sparse fieldset is written in the names of the revision: it keeps the fields it allows, and a field
                 // only in fields (`whenInFields()`) when it names it.
                 $keys = [];
+                $kept = [];
                 $attributes = $schema['attributes']->children();
                 foreach ($children('attributes')->fields as $key => $field) {
-                    $kept = isset($attributes[$key]) && Conditions::isOnlyInFields($attributes[$key])
+                    $requested = isset($attributes[$key]) && Conditions::isOnlyInFields($attributes[$key])
                         ? $context->fields->requests($type, $field->name)
                         : $context->fields->allows($type, $field->name);
-                    if ($kept) {
+                    if ($requested) {
                         $keys[] = $key;
+                        $kept[] = $field;
                     }
                 }
+
+                // The fieldset may name the members of an object (`fields[users]=address.city`).
+                $restrict = $context->fields->restricts($type) ? MemberFieldsets::of($kept, $context->fields, $type) : null;
 
                 return new ResourcePlan(
                     static function (mixed $model) use ($template): void {
@@ -175,6 +181,7 @@ trait DeclaresSchema
                     $projector->plan($children('attributes'), $schema['attributes']->children(), $keys),
                     $projector->plan($children('meta'), $schema['meta']->children()),
                     $projector->plan($children('documentMeta'), $schema['documentMeta']->children()),
+                    $restrict,
                 );
             },
         );

@@ -47,6 +47,8 @@ replaces them.
   to a resource that does not exist there (`jsonapi-absent-resource`).
 - `Rendering\ModelSourceReader`: the reader the projection reads Eloquent models with, without listing their
   properties (the reader of the base costs about 3 KB per model and three times the read).
+- `Rendering\MemberFieldsets`: the sparse fieldset applied to the members of the objects of a resource declared on
+  the base (`fields[users]=address.city`), by their names at the revision.
 - `Rendering\ProjectedValues`: the members a `ResourcePlan` rendered, which the `ValueResolver` gives as they are.
 - `composer benchmark` also renders the benchmark resources declared on the base (`bin/benchmark/Schema/`): reported,
   not gated yet.

@@ -120,6 +120,20 @@ final class ValuesTest extends TestCase
         $this->render($resource(), ApiRevision::Initial, 'fields[sparse]=hidden')->assertJsonPath('data.attributes', ['hidden' => 's']);
     }
 
+    public function test_a_sparse_fieldset_names_the_members_of_an_object(): void
+    {
+        $resource = static fn(): NestedResource => NestedResource::make(['id' => 1, 'city' => 'Paris', 'zip' => '75001', 'lat' => 48.85]);
+
+        $this->render($resource(), null, 'fields[nested]=address.city')
+            ->assertJsonPath('data.attributes', ['address' => ['city' => 'Paris']]);
+        $this->render($resource(), null, 'fields[nested]=address.position.lat,address.zip')
+            ->assertJsonPath('data.attributes', ['address' => ['zip' => '75001', 'position' => ['lat' => 48.85]]]);
+        $this->render($resource(), null, 'fields[nested]=address')
+            ->assertJsonPath('data.attributes.address.position', ['lat' => 48.85, 'precise' => true]);
+        $this->render($resource(), ApiRevision::Initial, 'fields[nested]=address.town')
+            ->assertJsonPath('data.attributes', ['address' => ['town' => 'Paris']]);
+    }
+
     public function test_a_field_only_in_fields_is_sparse_in_the_definition(): void
     {
         $attributes = Definitions::for(SparseResource::class, ApiRevision::UsersReplaceTeachers)->attributes;
@@ -181,6 +195,27 @@ final class SparseResource extends JsonApiResource
         return [
             'name' => Schema::string(),
             'secret' => Schema::string()->whenInFields()->was(ApiRevision::Initial, name: 'hidden'),
+        ];
+    }
+}
+
+/**
+ * @extends JsonApiResource<array<string, mixed>>
+ */
+#[JsonApiType('nested')]
+final class NestedResource extends JsonApiResource
+{
+    public function toAttributes(Request $request): iterable
+    {
+        return [
+            'address' => Schema::object([
+                'city' => Schema::string()->was(ApiRevision::Initial, name: 'town'),
+                'zip' => Schema::string(),
+                'position' => Schema::object([
+                    'lat' => Schema::float(),
+                    'precise' => Schema::bool(static fn(): bool => true),
+                ]),
+            ]),
         ];
     }
 }

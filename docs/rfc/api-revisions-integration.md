@@ -154,6 +154,19 @@ Transitional state, until US 2.4: the base discovers every resource as a `Revisi
 (run by `php artisan optimize`) and `revision:check` fail on a resource still written with the 2.0 descriptors.
 The branch is not releasable between US 3.1 and US 2.4.
 
+### US 2.4 — how it is done (decided 2026-11-15)
+
+The usages move first, the helpers last: each fixture of the test application is rewritten with the descriptors of
+the base (`Schema::…`, `Schema::relationship($this->one(…))`), which puts it on the new engine; the expected
+documents and the tests of the suite are the acceptance, one green commit per fixture. When no fixture uses a 2.0
+helper any more, the helpers change their return type and the 2.0 engine is removed (the plan below, from step 4).
+Float rounding stays open (base R11): `precision()` / `truncate()` have no equivalent until then. The relationships
+hook stays per resource.
+
+| Fixture | State |
+|---|---|
+| `tests/app/Http/Resources/UserResource` | ✅ on the base: the plain members of `applyWhen()` and of the struct became descriptors with the same values, `describer.nullable` / `when-has` written as `->nullable()` / `->whenHas()`; every expected document unchanged. It needed the fieldset on the members of an object (`Rendering\MemberFieldsets`: removed after the projection, so a member left out is still evaluated — base requirement **R13**, plan keys as paths). |
+
 ### US 2.4 — plan of the switch
 
 The one story that cannot stay green in parts: the helpers keep their names and change their return type. Prepared by

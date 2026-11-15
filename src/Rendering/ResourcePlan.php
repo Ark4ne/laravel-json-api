@@ -18,12 +18,15 @@ final readonly class ResourcePlan
 {
     /**
      * @param Closure(mixed): void $bind Sets the model the template instance stands for
+     * @param MemberFieldsets|null $restrict Leaves out of the attributes the members of their objects the sparse
+     *                                       fieldset does not keep; `null` when it restricts none
      */
     public function __construct(
         private Closure $bind,
         private ProjectionPlan $attributes,
         private ProjectionPlan $meta,
         private ProjectionPlan $documentMeta,
+        private ?MemberFieldsets $restrict = null,
     ) {}
 
     /**
@@ -33,7 +36,9 @@ final readonly class ResourcePlan
     {
         ($this->bind)($model);
 
-        return new ProjectedValues($this->attributes->run($model));
+        $attributes = $this->attributes->run($model);
+
+        return new ProjectedValues($this->restrict === null ? $attributes : $this->restrict->restrict($attributes));
     }
 
     /**

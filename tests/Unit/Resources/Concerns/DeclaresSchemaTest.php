@@ -103,10 +103,17 @@ final class DeclaresSchemaTest extends TestCase
 
     public function test_a_member_that_is_not_a_descriptor_of_the_base_is_refused(): void
     {
-        $this->expectException(DefinitionException::class);
-        $this->expectExceptionMessage('[name] of toAttributes() in [' . UserResource::class . ']');
+        $resource = new class ([]) extends JsonApiResource {
+            public function toAttributes(Request $request): iterable
+            {
+                return ['name' => $this->string()];
+            }
+        };
 
-        UserResource::describeRevisioned(DeclarationKind::Response, new Probe(self::class));
+        $this->expectException(DefinitionException::class);
+        $this->expectExceptionMessage('[name] of toAttributes() in [' . $resource::class . ']');
+
+        $resource::describeRevisioned(DeclarationKind::Response, new Probe(self::class));
     }
 
     public function test_a_plain_value_is_refused(): void
