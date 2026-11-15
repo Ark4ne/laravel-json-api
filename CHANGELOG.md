@@ -39,6 +39,8 @@ replaces them.
   run once per response on a template instance, the sparse fieldset is read in the names of the revision and a field
   it leaves out is never evaluated. `JsonApiContext` carries the `Compilation\Projection` (the shapes and the
   projector of the application, `Definitions::projectWith()` / `projection()`) and a `Context\ResponseCache`.
+- A `JsonApiFormRequest` may use the `RevisionedRequest` of `ark4ne/laravel-api-revisions`: its `body()` is validated
+  in the shape of the client's revision and `jsonApi()` reads the head's.
 - `Compilation\ResourceCheck`, tagged in the check of `ark4ne/laravel-api-revisions` (`revision:check`,
   `assertRevisionsAreConsistent()`): at each revision, an attribute or a relationship named `id` or `type`
   (`jsonapi-reserved-name`), an attribute and a relationship sharing a name (`jsonapi-name-collision`), a relationship

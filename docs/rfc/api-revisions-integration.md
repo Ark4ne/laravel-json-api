@@ -188,6 +188,14 @@ everything above; to be done in this order, as one branch of work ending green.
 Open before it starts: base R11 (float rounding) or a float type of this package; the relationships hook once per
 response (D7) or per resource (as now).
 
+### EJ5 — stories
+
+| Story | Content |
+|---|---|
+| **US 5.1** ✅ | A `JsonApiFormRequest` using the base's `RevisionedRequest` (and implementing `Revisioned`) works as it is: `body()` declares `data.type` and `data.attributes` with descriptors; the body is validated in the names of the client's revision, the errors point at the members it sent, `jsonApi()` reads the head shape (renamed, converted, defaults written), and `include` / `fields` stay validated at the revision. Covered by `tests/Feature/Schemas/RequestsTest.php`; no code needed. |
+| **US 5.2** | Helpers for a JSON:API body (`data.type` from the resource, relationships linkage as descriptors), so `body()` declares attributes and relationships only. |
+| **US 5.3** | `Http\Rules\Revised`, `RulesRevision`, `Http\Concerns\UseRevisedRules` removed; README and skill rewritten on `RevisionedRequest`. |
+
 ### EJ6 — stories
 
 | Story | Content |
