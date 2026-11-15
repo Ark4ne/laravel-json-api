@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace Ark4ne\JsonApi\Laravel;
 
 use Ark4ne\ApiRevisions\Compilation\Shapes;
+use Ark4ne\ApiRevisions\Configuration\Configuration as SchemaConfiguration;
+use Ark4ne\ApiRevisions\Laravel\Resources\EloquentSourceReader;
 use Ark4ne\ApiRevisions\Laravel\RevisionsConfig;
 use Ark4ne\ApiRevisions\Laravel\RevisionsServiceProvider;
 use Ark4ne\ApiRevisions\Projection\Projector;
+use Ark4ne\ApiRevisions\Projection\ValueErrorHandler;
 use Ark4ne\JsonApi\Compilation\CompiledDefinitions;
 use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Compilation\Projection;
@@ -26,6 +29,7 @@ use Ark4ne\JsonApi\Laravel\Commands\CheckDefinitionsCommand;
 use Ark4ne\JsonApi\Laravel\Commands\ClearDefinitionsCommand;
 use Ark4ne\JsonApi\Laravel\Commands\MakeResourceCommand;
 use Ark4ne\JsonApi\Laravel\Rendering\RouteLinksStage;
+use Ark4ne\JsonApi\Rendering\ModelSourceReader;
 use Ark4ne\JsonApi\Support\Memo;
 use Illuminate\Container\Container;
 use Illuminate\Contracts\Events\Dispatcher;
@@ -176,7 +180,15 @@ final class JsonApiServiceProvider extends ServiceProvider
         Definitions::projectWith(static function (): Projection {
             $container = Container::getInstance();
 
-            return new Projection($container->make(Shapes::class), $container->make(Projector::class));
+            $shapes = $container->make(Shapes::class);
+
+            // The projector of the application, reading the models without listing their properties.
+            return new Projection($shapes, new Projector(
+                $container->make(SchemaConfiguration::class),
+                reader: new ModelSourceReader(new EloquentSourceReader()),
+                shapes: $shapes,
+                values: $container->make(ValueErrorHandler::class),
+            ));
         });
 
         $this->app->make(Dispatcher::class)->listen(self::OCTANE_TERMINATED, static function (): void {

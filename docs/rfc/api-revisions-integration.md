@@ -154,6 +154,24 @@ Transitional state, until US 2.4: the base discovers every resource as a `Revisi
 (run by `php artisan optimize`) and `revision:check` fail on a resource still written with the 2.0 descriptors.
 The branch is not releasable between US 3.1 and US 2.4.
 
+### Performance of the engine on the base (measured 2026-11-15)
+
+`composer benchmark` renders `bin/benchmark/Schema/`, the benchmark resources declared on the base: the same document
+as the 2.0 resources (872.9 KB).
+
+| State | Time / 2.0 | Peak memory / 2.0 |
+|---|---|---|
+| US 3.3, the application's projector | ×1.22 | ×1.57 |
+| with `Rendering\ModelSourceReader` | ×1.13 | ×1.00 |
+
+- **Base requirement R12**: `PlainSourceReader::key()` and `holds()` call `get_object_vars()` on every read. On an
+  Eloquent model PHP then builds and keeps its table of properties: +2.6 KB per model, 3.4 µs instead of 1 µs per
+  subject of two fields. This package reads models with its own reader meanwhile; the fix belongs to the base (its
+  US 12.8 left "the direct property read" as a follow-up).
+- Left to reach P1 (not slower than 2.0), measured per rendering of 4 100 resources: `toRelationships()` and the
+  relationships object still built per resource (≈ 12 ms), the values walked a second time by `ValueResolver`, the
+  engine looked up per hook (`declaresSchema()`), the dates of the meta (≈ 15 ms for 2 000 dates).
+
 ### EJ1 — delivered
 
 - The base is required from a Composer `path` repository (`../../api/api-revisions`, as `1.0.x-dev`) until its 1.0.0

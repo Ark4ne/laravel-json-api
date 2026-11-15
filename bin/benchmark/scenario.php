@@ -5,11 +5,14 @@ declare(strict_types=1);
 /**
  * Renders one collection of posts with 3 includes, in its own process, and prints the measures as JSON.
  *
- * Usage: php bin/benchmark/scenario.php <package|native|revised> <root of the package to load> <iterations> <posts>
+ * Usage: php bin/benchmark/scenario.php <package|native|revised|schema> <root of the package to load> <iterations> <posts>
  *        [head|newest|oldest]
  *
  * `revised` renders the resources of `Revised/` (this package only) at the revision given: the head (no revision
  * resolved: the newest case), the newest case resolved, or the oldest one (renamed members, old include paths).
+ *
+ * `schema` renders the resources of `Schema/`: those of `Package/` declared with the descriptors of
+ * `ark4ne/laravel-api-revisions`, whose values the base renders.
  *
  * Run by `composer benchmark` (bin/benchmark.php); `root` is this repository, or the 1.9 copy built by the runner.
  */
@@ -67,6 +70,7 @@ benchmark_database($posts);
 $resource = match ($implementation) {
     'native' => Benchmark\Native\PostResource::class,
     'revised' => Benchmark\Revised\PostResource::class,
+    'schema' => Benchmark\Schema\PostResource::class,
     default => Benchmark\Package\PostResource::class,
 };
 $revision = $implementation === 'revised' && $revision !== null ? constant("Benchmark\\Revised\\Revision::{$revision}") : null;

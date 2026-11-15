@@ -39,6 +39,10 @@ replaces them.
   run once per response on a template instance, the sparse fieldset is read in the names of the revision and a field
   it leaves out is never evaluated. `JsonApiContext` carries the `Compilation\Projection` (the shapes and the
   projector of the application, `Definitions::projectWith()` / `projection()`) and a `Context\ResponseCache`.
+- `Rendering\ModelSourceReader`: the reader the projection reads Eloquent models with, without listing their
+  properties (the reader of the base costs about 3 KB per model and three times the read).
+- `composer benchmark` also renders the benchmark resources declared on the base (`bin/benchmark/Schema/`): reported,
+  not gated yet.
 - `Definitions::for($class, $revision)` gives the attributes, the meta and the document meta of such a resource from
   its shape at the revision (names, types, nullability, presence), and its `fieldNames`: `Fields`, `Includes` and the
   tools read the names of the revision. Without revision, the newest one of the application.
