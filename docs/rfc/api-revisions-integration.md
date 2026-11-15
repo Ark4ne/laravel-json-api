@@ -129,7 +129,8 @@ rendering of the values (EJ3, EJ4): the three cannot be delivered apart with a g
 | Story | Content | Needs |
 |---|---|---|
 | **US 2.1** ✅ | `Descriptors\Schemas\DecimalSchema`, `JsonSchema`, `MixedSchema`, registered in the base's `TypeRegistry` by the provider. | — |
-| **US 2.2** | Conditions as macros: `unless()`, `whenNotNull()`, `whenFilled()` (pure), then `whenInFields()`, `whenInIncludes()`, `can()`, `whenAppended()` capturing the context of the hook. | base R10 |
+| **US 2.2** ✅ | Conditions of the value as macros: `unless()`, `whenNotNull()`, `whenFilled()` (`Descriptors\Schemas\Conditions`). | base R10 |
+| **US 2.5** | Conditions of the request as macros: `whenInFields()`, `whenInIncludes()`, `can()`, `whenAppended()`. A macro has neither the request nor the context: it adds a `when()` whose closure belongs to a condition object this package recognizes in `Descriptor::conditions()` and binds to the context of the response when it plans the fields (D9). With EJ4. | base R10 |
 | **US 2.3** | `Descriptors\RelationshipSchema` (custom type `jsonapi.relationship`, identity conversion), built by `$this->one()` / `many()` beside the 2.0 `Relation` until US 2.4. | base R4 |
 | **US 2.4** | The façade returns the descriptors above; plain values refused; `Descriptors\Values\*`, `ValueTypes`, `FieldHistory`, `FieldRevision`, `RevisedMembers`, `RevisionFindings` removed. With EJ3 and EJ4. | US 2.1–2.3, base R11 |
 

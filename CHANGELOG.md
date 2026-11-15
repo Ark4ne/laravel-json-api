@@ -22,7 +22,10 @@ replaces them.
 - `Descriptors\Schemas\DecimalSchema`, `JsonSchema` and `MixedSchema`: the types this package adds to those of
   `ark4ne/laravel-api-revisions`, registered by the service provider as `Schema::decimal()`, `Schema::json()` and
   `Schema::mixed()` (`Descriptors\Schemas\SchemaTypes`). A value they refuse is a value error of the base.
-- `extension.neon`: types those factories for PHPStan, included by `phpstan/extension-installer` or by hand after
+- `->unless()`, `->whenNotNull()` and `->whenFilled()` on every descriptor of `ark4ne/laravel-api-revisions`
+  (`Descriptors\Schemas\Conditions`, macros registered by the service provider); their closures receive
+  `($value, $model)`.
+- `extension.neon`: types those factories and macros for PHPStan, included by `phpstan/extension-installer` or by hand after
   the extension of `ark4ne/laravel-api-revisions`.
 
 ### Changed

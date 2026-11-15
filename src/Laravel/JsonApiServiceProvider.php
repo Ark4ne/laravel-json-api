@@ -11,6 +11,7 @@ use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Context\CurrentRevision;
 use Ark4ne\JsonApi\Context\JsonApiContext;
+use Ark4ne\JsonApi\Descriptors\Schemas\Conditions;
 use Ark4ne\JsonApi\Descriptors\Schemas\SchemaTypes;
 use Ark4ne\JsonApi\Descriptors\ValueTypes;
 use Ark4ne\JsonApi\Exceptions\InvalidConfigurationException;
@@ -38,7 +39,8 @@ use WeakMap;
  *   boot.
  * - Adds `RouteLinksStage` before the stages of `rendering.stages`: the links of `#[JsonApiRoutes]`.
  * - Registers the provider of `ark4ne/laravel-api-revisions`, reads its revision enum (`revisions.enum`) and adds
- *   the types of this package to its registry (`Descriptors\Schemas\SchemaTypes`).
+ *   the types and the conditions of this package to its registries (`Descriptors\Schemas\SchemaTypes`,
+ *   `Conditions`).
  * - Binds one `JsonApiContext` per request object and current revision, built on first use.
  * - Binds the `ErrorRenderers` of the package and those of `errors.renderers` (built by the container, checked at
  *   boot), with the `jsonapi` member and `app.debug`, used by `JsonApi::renderErrors()`; an application binds its
@@ -75,6 +77,7 @@ final class JsonApiServiceProvider extends ServiceProvider
         // Typed values and revisions: a hard dependency, registered here for an application without package discovery.
         $this->app->register(RevisionsServiceProvider::class);
         SchemaTypes::register();
+        Conditions::register();
 
         $this->app->singleton(Configuration::class, static function (Application $app): Configuration {
             /** @var array<array-key, mixed> $jsonapi */
