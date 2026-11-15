@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Compilation;
 
+use Ark4ne\ApiRevisions\Revisions\Revision;
 use Ark4ne\JsonApi\Definition\DefinitionSource;
 use Ark4ne\JsonApi\Definition\ResourceDefinition;
-use Ark4ne\JsonApi\Definition\Revision;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Support\Diagnostic;
 use Ark4ne\JsonApi\Support\DiagnosticLevel;

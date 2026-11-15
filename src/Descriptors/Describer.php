@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Descriptors;
 
+use Ark4ne\ApiRevisions\Revisions\Revision;
 use Ark4ne\JsonApi\Configuration\Configuration;
-use Ark4ne\JsonApi\Definition\Revision;
 use Ark4ne\JsonApi\Support\Values;
 use Closure;
 use Illuminate\Http\Request;

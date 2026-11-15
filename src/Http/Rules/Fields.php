@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Http\Rules;
 
+use Ark4ne\ApiRevisions\Revisions\Revision;
 use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Context\SparseFieldsets;
 use Ark4ne\JsonApi\Definition\RelatedResource;
-use Ark4ne\JsonApi\Definition\Revision;
 use Ark4ne\JsonApi\Exceptions\RenderingException;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -25,7 +25,7 @@ use Throwable;
  * absent from throws, as its rendering.
  *
  * Built by hand, outside `JsonApiFormRequest`, the rule validates against the head unless given the revision of the
- * request (`JsonApiContext::revisionOf($request)`).
+ * request (`Context\CurrentRevision`).
  *
  * Its messages are the translations `jsonapi::validation.fields.*` (`vendor:publish --tag=jsonapi-lang`).
  *
@@ -35,7 +35,7 @@ final class Fields implements ValidationRule
 {
     /**
      * @param class-string<T> $resource
-     * @param Revision|null $revision The revision of the client (`JsonApiContext::revisionOf()`); the head when `null`
+     * @param Revision|null $revision The revision of the client (`Context\CurrentRevision`); the head when `null`
      */
     public function __construct(
         private readonly string $resource,

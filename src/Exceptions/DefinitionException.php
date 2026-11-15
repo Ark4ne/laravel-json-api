@@ -25,16 +25,6 @@ final class DefinitionException extends LogicException implements JsonApiExcepti
     }
 
     /**
-     * A revision is not one of the cases of its own enum.
-     *
-     * @param class-string<UnitEnum> $enum
-     */
-    public static function unknownRevision(string $enum, string $case): self
-    {
-        return new self("[{$enum}::{$case}] is not a case of [{$enum}]: a revision is a case of the enum declaring it.");
-    }
-
-    /**
      * A resource exists from a revision newer than the one it exists up to: it exists at no revision.
      */
     public static function emptyLifetime(string $class, string $since, string $until): self

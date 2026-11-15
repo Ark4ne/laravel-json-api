@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Test;
 
+use Ark4ne\ApiRevisions\Laravel\Http\Resolvers\HeaderResolver;
+use Ark4ne\ApiRevisions\Revisions\Revision;
+use Ark4ne\ApiRevisions\Revisions\RevisionScope;
 use Ark4ne\JsonApi\Laravel\JsonApiServiceProvider;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Translation\PotentiallyTranslatedString;
 use Orchestra\Testbench\TestCase as BaseTestCase;
+use Test\app\Revisions\ApiRevision;
 
 class TestCase extends BaseTestCase
 {
@@ -19,6 +23,38 @@ class TestCase extends BaseTestCase
         return [
             JsonApiServiceProvider::class,
         ];
+    }
+
+    /**
+     * The test application declares its revisions with `ApiRevision`, read from the `Api-Version` header by the
+     * `revision` middleware of `ark4ne/laravel-api-revisions`.
+     */
+    protected function defineEnvironment($app): void
+    {
+        // What a test sets beforehand (`#[DefineEnvironment]` runs first) wins: another enum, or `withoutRevisions()`.
+        if ($app['config']->get('testing.unrevisioned') !== true) {
+            $app['config']->set('revisions.enum', $app['config']->get('revisions.enum') ?? ApiRevision::class);
+        }
+        $app['config']->set('revisions.resolvers', [HeaderResolver::class => ['name' => 'Api-Version']]);
+    }
+
+    /**
+     * For `#[DefineEnvironment('withoutRevisions')]`: an application that configures no revision enum.
+     *
+     * @param \Illuminate\Foundation\Application $app
+     */
+    protected function withoutRevisions($app): void
+    {
+        $app['config']->set('testing.unrevisioned', true);
+    }
+
+    /**
+     * Makes `$revision` the current revision of this test, as the `revision` middleware does for a request; `null`
+     * for the head.
+     */
+    protected static function useRevision(?Revision $revision): void
+    {
+        RevisionScope::get()->setBase($revision);
     }
 
     /**

@@ -158,7 +158,8 @@ What a tool (`laravel-openapi-generator`, `jsonapi:check`…) may read without r
 - `Compilation\Definitions::for()` (cached) and `::compile()` (from the current code), with or without a revision,
   `::exists()` and `::lifetime()` (whether a resource exists at a revision), `JsonApiResource::definition()` and
   `JsonApiCollection::definition()` (that of the resource it collects);
-- `Definition\Revision`, `Definition\RevisionOrder` and the cases of the application enum a definition names
+- `Ark4ne\ApiRevisions\Revisions\Revision` (the contract of `ark4ne/laravel-api-revisions`) and the cases of the
+  application enum a definition names
   (`revision`, `since`, `until`, `boundaries`);
 - the cases of `ValueType`: a new case is a major version, so a tool may match them exhaustively; a custom value type
   declares one of them;
@@ -231,8 +232,10 @@ OPcache read.
 ## 6. Context
 
 `JsonApiContext` is created once per request object by the `Laravel` layer and passed **explicitly**. `include` and
-`fields` are read from the query string only. A revision set after the first resolution (`JsonApi::useRevision()` in
-a later middleware) moves the context of the container to it (`withRevision()`), its diagnostics kept.
+`fields` are read from the query string only. Its revision is the current one of `ark4ne/laravel-api-revisions`
+(`Context\CurrentRevision`: the `revision` middleware, an enclosing `using()`, else the head), read when the context
+is built; a revision becoming current after the first resolution moves the context of the container to it
+(`withRevision()`), its diagnostics kept. `null`, the head, for an application that configures no revision enum.
 
 | Member | Content |
 | --- | --- |
@@ -390,8 +393,8 @@ the application handles them as it would in any Laravel API.
 
 Registries order their entries by priority, never by the order of a configuration array.
 
-Revisions add no extension point: `Definition\Revision` is a contract the application implements with an enum, read
-from the request and from the declarations, never registered.
+Revisions add no extension point: `Ark4ne\ApiRevisions\Revisions\Revision` is a contract the application implements
+with an enum, named in `config/revisions.php` and read from the declarations.
 
 ## 12. Diagnostics and errors
 
@@ -482,16 +485,21 @@ from the request and from the declarations, never registered.
 ## 18. Revisions
 
 An application pins each client on a dated revision of its API (Stripe-style). The code holds the latest shape only,
-the **head**; the older shapes are declared on the fields that changed. Decisions and plan:
-[`rfc/versioned-resources-epics.md`](rfc/versioned-resources-epics.md).
+the **head**; the older shapes are declared on the fields that changed.
+
+**In transition (3.0).** The revision model moves to `ark4ne/laravel-api-revisions`
+([`rfc/api-revisions-integration.md`](rfc/api-revisions-integration.md)). Done (EJ1): the revision contract, its order
+and the revision of a request are the base's. Still this package's until EJ2–EJ4: the history of a field
+(`FieldHistory`, single-`was()` semantics), the shapes (buckets, boundaries), the lifetime and the checks described
+below. `Definition\RevisionOrder` is internal glue between both.
 
 ### Model
 
-- **A revision is an enum case.** The application implements `Definition\Revision` with an enum whose cases are
-  declared oldest first: their order is the order of the revisions (`RevisionOrder`, memoized by `Support\Memo`).
-  The package never knows that enum, a header or a date format: a middleware of the application maps its header to a
-  case (`JsonApi::useRevision($request, $case)`), carried by `JsonApiContext::$revision`. `null` is the head; the
-  newest case renders the head shape.
+- **A revision is an enum case.** The application implements the base's `Revision` with a backed enum; its `order()`
+  is the order of the revisions, the last one the head. The enum is named by `revisions.enum`; the service provider
+  gives it to `Configuration::$revisions`. The `revision` middleware of the base resolves the revision of a request;
+  `Context\CurrentRevision` reads it for `JsonApiContext::$revision` and the form requests. `null` (an application
+  without enum, a context built by hand) is the head.
 - **Inclusive bounds.** `was(X)`, `until(X)` and `#[JsonApiUntil(X)]` hold up to `X` included, `since(X)` and
   `#[JsonApiSince(X)]` from `X` included. Retiring the oldest revision is deleting its case: PHPStan then reports
   exactly the declarations that served only it.
@@ -504,7 +512,7 @@ the **head**; the older shapes are declared on the fields that changed. Decision
 - **Frozen types and kinds.** A resource never changes type: a new type is a new resource (`#[JsonApiSince]`), the old
   one is kept (`#[JsonApiUntil]`) and reached through a `was()` on each relationship. A field never changes kind
   (attribute ↔ relationship is an `until()` plus a `since()`); names are unique revision by revision.
-- **Guards** for a change of meaning without change of shape: `$this->requestedRevision()->atMost(X)`.
+- **Guards** for a change of meaning without change of shape: `ApiRevision::current()->isAtMost(X)`.
 
 ### Central invariant
 

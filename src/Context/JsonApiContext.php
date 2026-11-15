@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Context;
 
+use Ark4ne\ApiRevisions\Revisions\Revision;
 use Ark4ne\JsonApi\Configuration\Configuration;
-use Ark4ne\JsonApi\Definition\Revision;
-use Ark4ne\JsonApi\Exceptions\RenderingException;
 use Ark4ne\JsonApi\Support\Diagnostics;
 use Illuminate\Http\Request;
 
@@ -19,13 +18,9 @@ use Illuminate\Http\Request;
 final readonly class JsonApiContext
 {
     /**
-     * The request attribute holding the revision a request is rendered at (`JsonApi::useRevision()`).
-     */
-    public const REVISION = 'jsonapi.revision';
-
-    /**
      * @param string $path The include path of the resources being rendered, empty for the primary resources
-     * @param Revision|null $revision The revision the request is rendered at, `null` for the head
+     * @param Revision|null $revision The revision the request is rendered at; `null`, for a context built by hand, is
+     *                                the head
      */
     public function __construct(
         public Request $request,
@@ -38,24 +33,10 @@ final readonly class JsonApiContext
     ) {}
 
     /**
-     * The revision a request is rendered at: the `jsonapi.revision` attribute of the request, `null` for the head.
-     *
-     * @throws RenderingException when the attribute is not a `Revision`
+     * Parses the `include` and `fields` query parameters of the request, and reads the current revision
+     * (`CurrentRevision`) once, unless `$revision` is given: the body is never read.
      */
-    public static function revisionOf(Request $request): ?Revision
-    {
-        $revision = $request->attributes->get(self::REVISION);
-
-        return $revision === null || $revision instanceof Revision
-            ? $revision
-            : throw RenderingException::notARevision($revision);
-    }
-
-    /**
-     * Parses the `include` and `fields` query parameters of the request, and reads its revision (`revisionOf()`): the
-     * body is never read.
-     */
-    public static function fromRequest(Request $request, Configuration $configuration): self
+    public static function fromRequest(Request $request, Configuration $configuration, ?Revision $revision = null): self
     {
         return new self(
             $request,
@@ -63,7 +44,7 @@ final readonly class JsonApiContext
             IncludeTree::parse($request->query('include'), $configuration->maxIncludeDepth),
             SparseFieldsets::parse($request->query('fields')),
             new Diagnostics(),
-            revision: self::revisionOf($request),
+            revision: $revision ?? CurrentRevision::of($configuration),
         );
     }
 
@@ -84,8 +65,8 @@ final readonly class JsonApiContext
     }
 
     /**
-     * The same context at another revision: the request set its revision after the context was built
-     * (`JsonApi::useRevision()`). The diagnostics are shared.
+     * The same context at another revision: the current revision changed after the context was built (the `revision`
+     * middleware, a `using()`). The diagnostics are shared.
      */
     public function withRevision(?Revision $revision): self
     {

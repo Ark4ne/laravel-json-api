@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Http\Rules;
 
+use Ark4ne\ApiRevisions\Revisions\Revision;
 use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Context\IncludeTree;
 use Ark4ne\JsonApi\Definition\RelatedResource;
-use Ark4ne\JsonApi\Definition\Revision;
 use Ark4ne\JsonApi\Exceptions\RenderingException;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -20,7 +20,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
  * head included) may not be included; a resource validated at a revision it is absent from throws, as its rendering.
  *
  * Built by hand, outside `JsonApiFormRequest`, the rule validates against the head unless given the revision of the
- * request (`JsonApiContext::revisionOf($request)`).
+ * request (`Context\CurrentRevision`).
  *
  * Its messages are the translations `jsonapi::validation.includes.*` (`vendor:publish --tag=jsonapi-lang`).
  *
@@ -32,7 +32,7 @@ final class Includes implements ValidationRule
      * @param class-string<T> $resource
      * @param positive-int|null $maxDepth Deepest include path accepted; the configured one (`include.max-depth`) when
      *                                    `null`
-     * @param Revision|null $revision The revision of the client (`JsonApiContext::revisionOf()`); the head when `null`
+     * @param Revision|null $revision The revision of the client (`Context\CurrentRevision`); the head when `null`
      */
     public function __construct(
         private readonly string $resource,

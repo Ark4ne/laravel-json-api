@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace Test\Unit\Http\Concerns;
 
-use Ark4ne\JsonApi\Context\JsonApiContext;
 use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
-use Test\app\Http\Middleware\UseApiRevision;
 use Test\app\Revisions\ApiRevision;
 use Test\TestCase;
 use Test\Unit\Http\Fixtures\RevisedTraitFormRequest;
@@ -18,7 +16,7 @@ final class UseRevisedRulesTest extends TestCase
     public function test_the_rules_are_resolved_at_the_revision_of_the_request(): void
     {
         $request = RevisedTraitFormRequest::create('/', 'POST', ['label' => 'Label', 'name' => 'Name', 'note' => 'Note']);
-        $request->attributes->set(JsonApiContext::REVISION, ApiRevision::Initial);
+        self::useRevision(ApiRevision::Initial);
 
         self::assertSame(['label' => 'Label', 'note' => 'Note'], $this->validate($request)->validated());
     }
@@ -45,7 +43,7 @@ final class UseRevisedRulesTest extends TestCase
     public function test_the_revision_set_by_a_middleware_reaches_the_form_request(): void
     {
         Route::post('trait', static fn(RevisedTraitFormRequest $request): array => $request->validated())
-            ->middleware(UseApiRevision::class);
+            ->middleware('revision');
 
         $this->postJson('trait', ['label' => 'Label'], ['Api-Version' => ApiRevision::Initial->value])
             ->assertOk()

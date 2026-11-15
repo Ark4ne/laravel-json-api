@@ -39,6 +39,8 @@ final readonly class Configuration
      * @param TypeNaming $typeNaming The type of a resource that declares none (`type.naming`)
      * @param array<string, class-string> $valueTypes The value types of the application, by name (`describer.types`);
      *                                                `Descriptors\ValueTypes` checks they are values
+     * @param class-string|null $revisions The revision enum of the application, as `ark4ne/laravel-api-revisions` is
+     *                                     configured (`revisions.enum`); `null` for an application without revisions
      */
     private function __construct(
         public bool $nullable,
@@ -55,6 +57,7 @@ final readonly class Configuration
         public ?int $maxIncludeDepth,
         public TypeNaming $typeNaming,
         public array $valueTypes,
+        public ?string $revisions = null,
     ) {}
 
     /**
@@ -136,6 +139,34 @@ final readonly class Configuration
             maxIncludeDepth: $this->maxIncludeDepth,
             typeNaming: $this->typeNaming,
             valueTypes: self::valueTypes(['describer' => ['types' => [...$this->valueTypes, $name => $class]]]),
+            revisions: $this->revisions,
+        );
+    }
+
+    /**
+     * This configuration with the revision enum of the application: the service provider gives the one
+     * `ark4ne/laravel-api-revisions` is configured with.
+     *
+     * @param class-string $revisions
+     */
+    public function withRevisions(string $revisions): self
+    {
+        return new self(
+            nullable: $this->nullable,
+            datetimeFormat: $this->datetimeFormat,
+            precision: $this->precision,
+            strict: $this->strict,
+            whenHas: $this->whenHas,
+            linkage: $this->linkage,
+            sparseRelationships: $this->sparseRelationships,
+            resourcePaths: $this->resourcePaths,
+            renderingStages: $this->renderingStages,
+            jsonapi: $this->jsonapi,
+            errorRenderers: $this->errorRenderers,
+            maxIncludeDepth: $this->maxIncludeDepth,
+            typeNaming: $this->typeNaming,
+            valueTypes: $this->valueTypes,
+            revisions: $revisions,
         );
     }
 
@@ -164,6 +195,7 @@ final readonly class Configuration
             maxIncludeDepth: $this->maxIncludeDepth,
             typeNaming: $this->typeNaming,
             valueTypes: $this->valueTypes,
+            revisions: $this->revisions,
         );
     }
 

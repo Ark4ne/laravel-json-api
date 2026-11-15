@@ -11,17 +11,6 @@ use UnitEnum;
 final class RenderingException extends LogicException implements JsonApiException
 {
     /**
-     * The `jsonapi.revision` attribute of a request is not a revision (`JsonApi::useRevision()` sets it).
-     */
-    public static function notARevision(mixed $value): self
-    {
-        return new self(sprintf(
-            'The revision of a request must be a case of an enum implementing Ark4ne\\JsonApi\\Definition\\Revision, [%s] given: set it with JsonApi::useRevision().',
-            get_debug_type($value),
-        ));
-    }
-
-    /**
      * A resource is rendered at a revision it does not exist at (`#[JsonApiSince]`, `#[JsonApiUntil]`): as the primary
      * data, or reached through a relationship lacking the `was()` to the resource of that revision.
      *

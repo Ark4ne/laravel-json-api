@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Laravel;
 
+use Ark4ne\ApiRevisions\Laravel\RevisionsConfig;
+use Ark4ne\ApiRevisions\Laravel\RevisionsServiceProvider;
 use Ark4ne\JsonApi\Compilation\CompiledDefinitions;
 use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Configuration\Configuration;
+use Ark4ne\JsonApi\Context\CurrentRevision;
 use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Descriptors\ValueTypes;
 use Ark4ne\JsonApi\Exceptions\InvalidConfigurationException;
@@ -33,7 +36,8 @@ use WeakMap;
  * - Gives `bootstrap/cache/jsonapi.php` to `Definitions`, which reads it on first use: nothing is compiled nor read at
  *   boot.
  * - Adds `RouteLinksStage` before the stages of `rendering.stages`: the links of `#[JsonApiRoutes]`.
- * - Binds one `JsonApiContext` per request object, built from it on first use.
+ * - Registers the provider of `ark4ne/laravel-api-revisions` and reads its revision enum (`revisions.enum`).
+ * - Binds one `JsonApiContext` per request object and current revision, built on first use.
  * - Binds the `ErrorRenderers` of the package and those of `errors.renderers` (built by the container, checked at
  *   boot), with the `jsonapi` member and `app.debug`, used by `JsonApi::renderErrors()`; an application binds its
  *   own to replace them all.
@@ -66,6 +70,9 @@ final class JsonApiServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(self::CONFIG, 'jsonapi');
 
+        // Typed values and revisions: a hard dependency, registered here for an application without package discovery.
+        $this->app->register(RevisionsServiceProvider::class);
+
         $this->app->singleton(Configuration::class, static function (Application $app): Configuration {
             /** @var array<array-key, mixed> $jsonapi */
             $jsonapi = $app->make('config')->get('jsonapi', []);
@@ -75,6 +82,13 @@ final class JsonApiServiceProvider extends ServiceProvider
             // `mergeConfigFrom()` merges the top-level keys only: a file published before a nested key existed
             // (`describer.strict`) takes the default of the package for it.
             $configuration = Configuration::fromArray(array_replace_recursive($package, $jsonapi));
+
+            /** @var RevisionsConfig $revisions */
+            $revisions = $app->make(RevisionsConfig::class);
+
+            if ($revisions->revisioned) {
+                $configuration = $configuration->withRevisions($revisions->enum);
+            }
 
             // The links of `#[JsonApiRoutes]` need the routes of the application.
             return $configuration->prependRenderingStages(RouteLinksStage::class);
@@ -120,10 +134,10 @@ final class JsonApiServiceProvider extends ServiceProvider
             $configuration = $app->make(Configuration::class);
 
             $context = $contexts[$request] ??= JsonApiContext::fromRequest($request, $configuration);
-            $revision = JsonApiContext::revisionOf($request);
+            $revision = CurrentRevision::of($configuration);
 
-            // Moved to the revision set after the first resolution (`JsonApi::useRevision()` in a later middleware),
-            // its diagnostics kept.
+            // Moved to the revision that became current after the first resolution (the `revision` middleware, a
+            // `using()`), its diagnostics kept.
             return $context->revision === $revision ? $context : $contexts[$request] = $context->withRevision($revision);
         });
     }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Test\Feature\Revisions;
 
-use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Exceptions\RenderingException;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Contracts\Support\Responsable;
@@ -30,7 +29,7 @@ final class LifetimeTest extends RevisionsTestCase
     public function test_rendering_a_resource_after_its_until_throws(): void
     {
         $this->expectException(RenderingException::class);
-        $this->expectExceptionMessage('does not exist at the revision [head]');
+        $this->expectExceptionMessage('does not exist at the revision [' . ApiRevision::class . '::UsersReplaceTeachers]');
 
         $this->renderAt(WriterResource::make(User::query()->firstOrFail()), null);
     }
@@ -77,7 +76,7 @@ final class LifetimeTest extends RevisionsTestCase
     private function renderAt(Responsable $resource, ?ApiRevision $revision, string $query = ''): string
     {
         $request = Request::create("/?{$query}");
-        $request->attributes->set(JsonApiContext::REVISION, $revision);
+        self::useRevision($revision);
 
         return (string) $resource->toResponse($request)->getContent();
     }

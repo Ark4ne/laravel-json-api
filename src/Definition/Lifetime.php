@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Definition;
 
+use Ark4ne\ApiRevisions\Revisions\Revision;
+
 /**
  * The revisions a resource exists for (`#[JsonApiSince]`, `#[JsonApiUntil]`), bounds included: every revision and the
  * head when it declares none.

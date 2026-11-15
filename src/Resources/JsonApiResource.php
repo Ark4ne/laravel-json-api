@@ -41,7 +41,6 @@ abstract class JsonApiResource extends JsonResource implements DefinitionSource,
     use Concerns\Meta;
     use Concerns\Definable;
     use Concerns\Renderable;
-    use Concerns\Revisions;
     use Concerns\ToResponse;
 
     /** @var T */

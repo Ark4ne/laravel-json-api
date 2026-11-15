@@ -13,6 +13,7 @@ use Ark4ne\JsonApi\Exceptions\InvalidConfigurationException;
 use DateTimeInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Test\app\Revisions\ApiRevision;
 use Test\app\Values\MoneyValue;
 use Test\Unit\Compilation\Fixtures\PrefixedTypeNaming;
 
@@ -213,5 +214,16 @@ final class ConfigurationTest extends TestCase
         $this->expectExceptionMessage('[jsonapi.describer.date] is renamed [jsonapi.describer.datetime]');
 
         Configuration::fromArray(['describer' => ['date' => DateTimeInterface::ATOM]]);
+    }
+
+    public function test_the_revision_enum_is_none_by_default_and_kept_by_the_copies(): void
+    {
+        $configuration = Configuration::fromArray([]);
+        $revised = $configuration->withRevisions(ApiRevision::class);
+
+        self::assertNull($configuration->revisions);
+        self::assertSame(ApiRevision::class, $revised->revisions);
+        self::assertSame(ApiRevision::class, $revised->prependRenderingStages(self::class)->revisions);
+        self::assertSame($configuration->datetimeFormat, $revised->datetimeFormat);
     }
 }

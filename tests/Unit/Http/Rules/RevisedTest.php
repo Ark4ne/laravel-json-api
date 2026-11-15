@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Test\Unit\Http\Rules;
 
-use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Definition\Lifetime;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Http\Rules\Revised;
@@ -340,9 +339,11 @@ final class RevisedTest extends TestCase
     public function test_a_plain_form_request_resolves_its_rules_at_the_revision_of_the_request(): void
     {
         $initial = RevisedPlainFormRequest::create('/', 'POST', ['label' => 'Label']);
-        $initial->attributes->set(JsonApiContext::REVISION, ApiRevision::Initial);
+        self::useRevision(ApiRevision::Initial);
 
         self::assertSame(['label' => 'Label'], $this->validate($initial)->validated());
+
+        self::useRevision(null);
         self::assertSame(['name' => 'Name'], $this->validate(RevisedPlainFormRequest::create('/', 'POST', ['name' => 'Name', 'label' => 'Label']))->validated());
 
         $this->expectException(ValidationException::class);

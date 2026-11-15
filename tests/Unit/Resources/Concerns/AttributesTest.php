@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Test\Unit\Resources\Concerns;
 
-use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Resources\Attributes\JsonApiType;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use ArrayIterator;
@@ -177,7 +176,7 @@ final class AttributesTest extends TestCase
 
         $at = static function (?ApiRevision $revision) use ($resource): mixed {
             $request = new Request();
-            $request->attributes->set(JsonApiContext::REVISION, $revision);
+            self::useRevision($revision);
 
             return TestResponse::fromBaseResponse($resource->toResponse($request))->json('data.attributes');
         };

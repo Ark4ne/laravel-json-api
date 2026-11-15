@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Definition;
 
+use Ark4ne\ApiRevisions\Revisions\Revision;
+use Ark4ne\ApiRevisions\Revisions\RevisionOrder as BaseOrder;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
-use Ark4ne\JsonApi\Support\Memo;
 
 /**
- * The order of the revisions: the declaration order of the cases of their enum, the oldest first. The head (`null`)
- * is newer than every revision.
+ * The order of the revisions, as `ark4ne/laravel-api-revisions` gives it (the `order()` of their enum), for the shapes
+ * this package still selects itself: `null` stands for the head, the newest revision.
+ *
+ * @internal Replaced by the shapes of the base (docs/rfc/api-revisions-integration.md EJ3).
  */
 final readonly class RevisionOrder
 {
@@ -24,7 +27,7 @@ final readonly class RevisionOrder
             throw DefinitionException::mixedRevisions($a::class, $b::class);
         }
 
-        return self::position($a) <=> self::position($b);
+        return BaseOrder::index($a) <=> BaseOrder::index($b);
     }
 
     /**
@@ -112,13 +115,11 @@ final readonly class RevisionOrder
     }
 
     /**
-     * The revision right before `$revision`, `null` for the oldest case.
+     * The revision right before `$revision`, `null` for the oldest one.
      */
     public static function previous(Revision $revision): ?Revision
     {
-        $cases = self::cases($revision);
-
-        return $cases[self::position($revision, $cases) - 1] ?? null;
+        return BaseOrder::previous($revision);
     }
 
     /**
@@ -137,30 +138,5 @@ final readonly class RevisionOrder
         }
 
         return $picked;
-    }
-
-    /**
-     * The index of the case in the declaration of its enum.
-     *
-     * @param list<Revision>|null $cases The cases of its enum, when already read
-     */
-    private static function position(Revision $revision, ?array $cases = null): int
-    {
-        // Compared on every field of every resource rendered at a revision: the positions of an enum are read once.
-        $positions = Memo::remember(self::class, $revision::class, static fn(): array => array_flip(array_map(
-            static fn(Revision $case): string => $case->name,
-            $cases ?? self::cases($revision),
-        )));
-
-        return $positions[$revision->name] ?? throw DefinitionException::unknownRevision($revision::class, $revision->name);
-    }
-
-    /**
-     * @return list<Revision>
-     */
-    private static function cases(Revision $revision): array
-    {
-        /** @var list<Revision> */
-        return $revision::cases();
     }
 }

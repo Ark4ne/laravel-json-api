@@ -136,12 +136,12 @@ declared on the fields that changed. Bounds are inclusive.
 
 | Entry point | Effect |
 | --- | --- |
-| `enum ApiRevision: string implements Definition\Revision` | The revisions, cases declared oldest first, with `description()` |
-| `JsonApi::useRevision(Request $request, ?Revision $revision)` | In a middleware of the application: the revision of the request (`null`, the head), read by its rendering and its `JsonApiFormRequest` |
+| `enum ApiRevision: string implements Ark4ne\ApiRevisions\Revisions\Revision` | The revisions, with `use IsRevision;`, `order()` (oldest first, the last one is the head) and `#[Meta('…')]` on the cases; named by `'enum'` in `config/revisions.php` (`ark4ne/laravel-api-revisions`) |
+| `->middleware('revision')` | The middleware of `ark4ne/laravel-api-revisions`: resolves the revision of the request (the resolvers of `config/revisions.php`, the head by default, 400 for an unknown value), read by the rendering and the `JsonApiFormRequest` |
 | `->was(X, name: …, value: …)` | The whole field up to `X`; write `was(<the newest revision until now>)`; an argument left out is the head's; one `was()` applies, the oldest at or after the client's |
 | `->until(X)`, `->since(X)` | A field removed after `X` (kept at the end of the hook, under `// Revisions`), added at `X` |
 | `#[Definition\JsonApiSince(X)]`, `#[Definition\JsonApiUntil(X)]` | A new type is a new resource; every relationship reaching it needs a `was()` to the old one |
-| `$this->requestedRevision()` | Guards of a change of meaning: `->atMost(X)`, `->atLeast(X)`, `->is(X)`, `->isHead()`; outside a resource `JsonApi::revision($request)` or `RequestedRevision::of($request)` |
+| `ApiRevision::current()` | Guards of a change of meaning, anywhere: `->isAtMost(X)`, `->isAtLeast(X)`, `->isBefore(X)`, `->isAfter(X)`; `ApiRevision::using(X, fn() => …)` renders at `X` |
 | `Definitions::for(PostResource::class, X)`, `Definitions::exists(PostResource::class, X)` | The definition at a revision (names, values, relationships of `X`), whether the resource exists at it |
 | `Http\Rules\Revised::rules($head)->was(X, rules: …)->since(X)->until(X)` | The rules of one key of a form request across revisions; resolved at the revision of the request by `JsonApiFormRequest`, by the trait `Http\Concerns\UseRevisedRules` in a plain `FormRequest`, by `Revised::resolve($rules, $revision)` elsewhere; a key absent from the revision is left out |
 | `#[Resources\Attributes\JsonApiRoutes(…)]` at a revision | The links of the relationships of that revision, by their names at it (`posts.relationships.writer`); a relationship absent from it gets none |
@@ -220,7 +220,7 @@ only, in the diagnostics of the `JsonApiContext`.
   `hasRelationship($name)`, `ids($name)`, `meta()`.
 - `Http\Rules\Includes(PostResource::class, maxDepth: 2, revision: $revision)` and
   `Http\Rules\Fields(PostResource::class, $revision)` in any form request (`$revision` from
-  `JsonApiContext::revisionOf($request)`; without it, the head, whatever the revision of the request). A relationship
+  `ApiRevision::current()`; without it, the head, whatever the revision of the request). A relationship
   to a resource absent from the revision may not be included, nor its type restricted; a resource absent from it
   throws `RenderingException::notInRevision()`, as its rendering. Messages: `jsonapi::validation.*`, published by `vendor:publish --tag=jsonapi-lang`.
 - `Laravel\JsonApi::renderErrors($exceptions, ?Closure $when = null)` in `bootstrap/app.php`: JSON:API error

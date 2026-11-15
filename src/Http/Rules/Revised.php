@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Http\Rules;
 
+use Ark4ne\ApiRevisions\Revisions\Revision;
 use Ark4ne\JsonApi\Definition\Lifetime;
-use Ark4ne\JsonApi\Definition\Revision;
 use Ark4ne\JsonApi\Definition\RevisionOrder;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 
@@ -25,7 +25,7 @@ use Ark4ne\JsonApi\Exceptions\DefinitionException;
  * }
  * ```
  *
- * A `JsonApiFormRequest` resolves them at the revision of the request (`JsonApiContext::revisionOf()`); a plain
+ * A `JsonApiFormRequest` resolves them at the revision of the request (`Context\CurrentRevision`); a plain
  * form request uses the trait `Http\Concerns\UseRevisedRules`; any other code calls `Revised::resolve()`. Bounds are
  * included, as `was()`, `since()` and `until()` of the descriptors.
  *
@@ -152,7 +152,7 @@ final readonly class Revised
      * ```php
      * protected function validationRules(): array
      * {
-     *     return Revised::resolve(parent::validationRules(), JsonApiContext::revisionOf($this));
+     *     return Revised::resolve(parent::validationRules(), CurrentRevision::of(Definitions::configuration()));
      * }
      * ```
      *

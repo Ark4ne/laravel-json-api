@@ -8,8 +8,8 @@ declare(strict_types=1);
  * Usage: php bin/benchmark/scenario.php <package|native|revised> <root of the package to load> <iterations> <posts>
  *        [head|newest|oldest]
  *
- * `revised` renders the resources of `Revised/` (this package only) at the revision given: the head, the newest case
- * (rendered as the head) or the oldest one (renamed members, old include paths).
+ * `revised` renders the resources of `Revised/` (this package only) at the revision given: the head (no revision
+ * resolved: the newest case), the newest case resolved, or the oldest one (renamed members, old include paths).
  *
  * Run by `composer benchmark` (bin/benchmark.php); `root` is this repository, or the 1.9 copy built by the runner.
  */
@@ -46,7 +46,17 @@ foreach (['Ark4ne\JsonApi\Laravel\JsonApiServiceProvider', 'Ark4ne\JsonApi\Provi
     }
 }
 
-$app = Application::create(options: ['extra' => ['providers' => $providers, 'dont-discover' => ['*']]]);
+// The revised resources are those of an application whose revision enum is `Revised\Revision`; the others, of an
+// application without revisions.
+$app = Application::create(
+    resolvingCallback: static function ($app) use ($implementation): void {
+        if ($implementation === 'revised') {
+            // Before the providers boot: the configuration is loaded by then.
+            $app->booting(static fn() => $app['config']->set('revisions.enum', Benchmark\Revised\Revision::class));
+        }
+    },
+    options: ['extra' => ['providers' => $providers, 'dont-discover' => ['*']]],
+);
 
 // Connections are opened on first use: configured here, before any query.
 $app['config']->set('database.default', 'benchmark');
@@ -70,7 +80,8 @@ DB::listen(static function () use (&$queries): void {
 $render = static function () use ($app, $resource, $revision, $include): string {
     $request = Request::create('/posts', 'GET', ['include' => $include]);
     if ($revision !== null) {
-        $request->attributes->set(Ark4ne\JsonApi\Context\JsonApiContext::REVISION, $revision);
+        // What the `revision` middleware does for the request.
+        Ark4ne\ApiRevisions\Revisions\RevisionScope::get()->setBase($revision);
     }
     $app->instance('request', $request);
 

@@ -8,7 +8,6 @@ use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Descriptors\MergeWhenValue;
-use Ark4ne\JsonApi\Laravel\JsonApi;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Generator;
 use Illuminate\Http\Request;
@@ -118,9 +117,6 @@ final class RenderableTest extends TestCase
 
     private function context(?ApiRevision $revision): JsonApiContext
     {
-        $request = new Request();
-        JsonApi::useRevision($request, $revision);
-
-        return JsonApiContext::fromRequest($request, Configuration::defaults());
+        return JsonApiContext::fromRequest(new Request(), Configuration::defaults(), $revision);
     }
 }

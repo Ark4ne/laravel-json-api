@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Http\Rules;
 
-use Ark4ne\JsonApi\Definition\Revision;
+use Ark4ne\ApiRevisions\Revisions\Revision;
 
 /**
  * What the validation rules of one key were up to a revision, included (`Revised::was()`): public contract, for the

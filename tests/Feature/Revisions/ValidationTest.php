@@ -9,7 +9,6 @@ use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Exceptions\Handler;
 use Illuminate\Routing\Router;
-use Test\app\Http\Middleware\UseApiRevision;
 use Test\app\Http\Requests\Revisions\PostRequest;
 use Test\app\Http\Resources\Revisions\PostResource;
 use Test\app\Models\Post;
@@ -29,7 +28,7 @@ final class ValidationTest extends RevisionsTestCase
         $router->get(
             'revisions/validated/posts/{id}',
             static fn(PostRequest $request, string $id) => PostResource::make(Post::query()->findOrFail($id)),
-        )->middleware(UseApiRevision::class);
+        )->middleware('revision');
     }
 
     protected function setUp(): void

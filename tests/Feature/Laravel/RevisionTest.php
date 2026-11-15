@@ -4,11 +4,8 @@ declare(strict_types=1);
 
 namespace Test\Feature\Laravel;
 
-use Ark4ne\JsonApi\Context\JsonApiContext;
-use Ark4ne\JsonApi\Laravel\JsonApi;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
-use Test\app\Http\Middleware\UseApiRevision;
+use Orchestra\Testbench\Attributes\DefineEnvironment;
 use Test\app\Models\User;
 use Test\app\Revisions\ApiRevision;
 use Test\app\Revisions\GuardedUserResource;
@@ -16,7 +13,7 @@ use Test\app\Revisions\RevisionReportingResource;
 use Test\Feature\FeatureTestCase;
 
 /**
- * The revision of a request, set by a middleware of the application (`JsonApi::useRevision()`).
+ * The revision of a request, resolved by the `revision` middleware of `ark4ne/laravel-api-revisions`.
  */
 final class RevisionTest extends FeatureTestCase
 {
@@ -24,12 +21,12 @@ final class RevisionTest extends FeatureTestCase
     {
         /** @var Router $router */
         $router->get('report', static fn() => RevisionReportingResource::make(User::query()->firstOrFail()))
-            ->middleware(UseApiRevision::class);
+            ->middleware('revision');
         $router->get('greeting', static fn() => GuardedUserResource::make(User::query()->firstOrFail()))
-            ->middleware(UseApiRevision::class);
+            ->middleware('revision');
     }
 
-    public function test_use_revision_sets_the_revision_a_resource_is_rendered_at(): void
+    public function test_a_resource_is_rendered_at_the_revision_of_the_request(): void
     {
         $this->get('report', ['Api-Version' => ApiRevision::Labels->value])
             ->assertOk()
@@ -38,7 +35,7 @@ final class RevisionTest extends FeatureTestCase
 
     public function test_a_request_without_revision_renders_the_head(): void
     {
-        $this->get('report')->assertOk()->assertJsonPath('data.attributes.revision', 'head');
+        $this->get('report')->assertOk()->assertJsonPath('data.attributes.revision', 'UsersReplaceTeachers');
     }
 
     public function test_two_requests_in_a_row_do_not_share_their_revision(): void
@@ -46,16 +43,20 @@ final class RevisionTest extends FeatureTestCase
         $this->get('report', ['Api-Version' => ApiRevision::Initial->value])
             ->assertJsonPath('data.attributes.revision', 'Initial');
 
-        $this->get('report')->assertJsonPath('data.attributes.revision', 'head');
+        $this->get('report')->assertJsonPath('data.attributes.revision', 'UsersReplaceTeachers');
     }
 
-    public function test_use_revision_null_sets_the_head(): void
+    public function test_a_revision_the_enum_does_not_have_is_refused(): void
     {
-        $request = new Request();
-        JsonApi::useRevision($request, ApiRevision::Labels);
-        JsonApi::useRevision($request, null);
+        $this->get('report', ['Api-Version' => '1999-01-01'])->assertStatus(400);
+    }
 
-        self::assertNull(JsonApiContext::revisionOf($request));
+    #[DefineEnvironment('withoutRevisions')]
+    public function test_an_application_without_revisions_renders_the_head(): void
+    {
+        $this->get('report', ['Api-Version' => ApiRevision::Labels->value])
+            ->assertOk()
+            ->assertJsonPath('data.attributes.revision', 'head');
     }
 
     public function test_a_guard_keeps_the_old_content_for_an_old_revision(): void

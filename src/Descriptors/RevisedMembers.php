@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Descriptors;
 
-use Ark4ne\JsonApi\Definition\Revision;
+use Ark4ne\ApiRevisions\Revisions\Revision;
 use Ark4ne\JsonApi\Descriptors\Values\ValueStruct;
 use Illuminate\Http\Resources\MergeValue;
 

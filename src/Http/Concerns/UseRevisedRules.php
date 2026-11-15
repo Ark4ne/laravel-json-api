@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Http\Concerns;
 
-use Ark4ne\JsonApi\Context\JsonApiContext;
+use Ark4ne\JsonApi\Compilation\Definitions;
+use Ark4ne\JsonApi\Context\CurrentRevision;
 use Ark4ne\JsonApi\Http\Rules\Revised;
 
 /**
- * For a plain form request whose `rules()` hold `Rules\Revised`: resolves them at the revision of the request
- * (`JsonApiContext::revisionOf()`, set by the middleware calling `JsonApi::useRevision()`), the head without one.
+ * For a plain form request whose `rules()` hold `Rules\Revised`: resolves them at the current revision
+ * (`Context\CurrentRevision`: the `revision` middleware of `ark4ne/laravel-api-revisions`), the head without one.
  *
  * ```php
  * final class PostStoreRequest extends FormRequest
@@ -35,6 +36,6 @@ trait UseRevisedRules
      */
     protected function validationRules(): array
     {
-        return Revised::resolve(parent::validationRules(), JsonApiContext::revisionOf($this));
+        return Revised::resolve(parent::validationRules(), CurrentRevision::of(Definitions::configuration()));
     }
 }

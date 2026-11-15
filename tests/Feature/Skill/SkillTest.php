@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace Test\Feature\Skill;
 
-use Ark4ne\JsonApi\Context\RequestedRevision;
+use Ark4ne\ApiRevisions\Laravel\Http\ResolveRevision;
 use Ark4ne\JsonApi\Definition\ValueType;
 use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Descriptors\Relations;
 use Ark4ne\JsonApi\Descriptors\Relations\Relation;
 use Ark4ne\JsonApi\Descriptors\Values;
-use Ark4ne\JsonApi\Resources\Concerns\Revisions;
 use Ark4ne\JsonApi\Resources\JsonApiCollection;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Ark4ne\JsonApi\Testing\ResourceAssertions;
@@ -19,6 +18,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Testing\TestResponse;
+use Orchestra\Testbench\Attributes\DefineEnvironment;
 use ReflectionClass;
 use ReflectionMethod;
 use Symfony\Component\HttpFoundation\Response;
@@ -110,17 +110,7 @@ final class SkillTest extends SkillTestCase
     {
         $reference = self::read('reference.md');
 
-        foreach ((new ReflectionClass(Revisions::class))->getMethods() as $method) {
-            self::assertStringContainsString("\$this->{$method->name}()", $reference, "helper {$method->name}()");
-        }
-
-        foreach ((new ReflectionClass(RequestedRevision::class))->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
-            if (!$method->isConstructor()) {
-                self::assertMatchesRegularExpression("/[`:>]{$method->name}\\(/", $reference, "RequestedRevision::{$method->name}()");
-            }
-        }
-
-        foreach (['JsonApi::useRevision(', 'JsonApi::revision(', 'Definition\\Revision', 'Definitions::for(', 'Revised::rules(', 'Revised::resolve(', 'Concerns\\UseRevisedRules'] as $name) {
+        foreach (['Ark4ne\\ApiRevisions\\Revisions\\Revision', 'IsRevision', "->middleware('revision')", 'ApiRevision::current()', 'Definitions::for(', 'Revised::rules(', 'Revised::resolve(', 'Concerns\\UseRevisedRules'] as $name) {
             self::assertStringContainsString($name, $reference, $name);
         }
     }
@@ -264,6 +254,7 @@ final class SkillTest extends SkillTestCase
         $response->assertJsonPath('data.1.attributes', ['name' => 'Alan']);
     }
 
+    #[DefineEnvironment('libraryRevisions')]
     public function test_the_versioned_resources_recipe(): void
     {
         self::runRecipe('recipes.md', 'Versioned resources');
@@ -295,6 +286,7 @@ final class SkillTest extends SkillTestCase
         );
     }
 
+    #[DefineEnvironment('libraryRevisions')]
     public function test_the_write_request_across_revisions_recipe(): void
     {
         self::runRecipe('recipes.md', 'Versioned resources');
@@ -305,7 +297,7 @@ final class SkillTest extends SkillTestCase
             self::assertTrue(method_exists($request, 'title'));
 
             return ['title' => $request->title(), 'attributes' => $request->jsonApi()->attributes()];
-        })->middleware('App\Recipes\Library\UseLibraryRevision');
+        })->middleware('revision');
 
         $long = str_repeat('a', 501);
         $this->postJson('recipes/books', ['data' => ['type' => 'books', 'attributes' => ['title' => 'Notes', 'summary' => 'Short']]])
@@ -323,16 +315,27 @@ final class SkillTest extends SkillTestCase
     }
 
     /**
-     * A resource rendered for a request going through the middleware of the recipe, with its `Api-Version` header.
+     * The revisions of the recipe are those of the application: `'enum' => LibraryRevision::class`.
+     *
+     * @param \Illuminate\Foundation\Application $app
+     */
+    protected function libraryRevisions($app): void
+    {
+        // The enum of the recipe is declared before the application boots: its configuration names it.
+        self::runRecipe('recipes.md', 'Versioned resources');
+
+        $app['config']->set('revisions.enum', 'App\Recipes\Library\LibraryRevision');
+    }
+
+    /**
+     * A resource rendered for a request going through the `revision` middleware, with its `Api-Version` header.
      *
      * @return TestResponse<\Symfony\Component\HttpFoundation\Response>
      */
     private function renderAtVersion(Responsable $resource, ?string $version, string $query = ''): TestResponse
     {
         $request = Request::create("/?{$query}", server: $version === null ? [] : ['HTTP_API_VERSION' => $version]);
-        $middleware = app('App\Recipes\Library\UseLibraryRevision');
-        self::assertTrue(is_object($middleware) && method_exists($middleware, 'handle'));
-        $middleware->handle($request, static fn(): Response => new Response());
+        app(ResolveRevision::class)->handle($request, static fn(): Response => new Response());
 
         $response = $resource->toResponse($request);
         self::assertSame([], JsonApiSchema::errors((string) $response->getContent()));

@@ -1,5 +1,26 @@
 # Upgrade guide
 
+## From 2.0 to 3.0
+
+In progress (`docs/rfc/api-revisions-integration.md`); each step of the migration adds its changes here.
+
+### Requirements
+
+`ark4ne/laravel-api-revisions` is required and installed with the package; `JsonApiServiceProvider` registers its
+provider. An application that declares no revision configures nothing: it keeps one shape, the head.
+
+### Revisions (pre-release 2.1 only)
+
+The revisions of the unreleased 2.1 are replaced by those of `ark4ne/laravel-api-revisions`:
+
+| 2.1 (unreleased) | 3.0 |
+| --- | --- |
+| `enum ApiRevision implements Ark4ne\JsonApi\Definition\Revision`, cases declared oldest first, `description()` | `enum ApiRevision: string implements Ark4ne\ApiRevisions\Revisions\Revision` with `use IsRevision;`, `order()` (oldest first, the last one is the head) and `#[Meta('…')]` on the cases |
+| a middleware of the application calling `JsonApi::useRevision($request, $case)` | `'enum'` and `'resolvers'` in `config/revisions.php`, the `revision` middleware on the routes |
+| `$this->requestedRevision()->atMost(X)`, `JsonApi::revision($request)->atMost(X)` | `ApiRevision::current()->isAtMost(X)` |
+| `JsonApiContext::revisionOf($request)` | `ApiRevision::current()` |
+| no header: the head (`null`) | no header: the head, the last case of `order()` |
+
 ## From 1.x to 2.0
 
 Coding agents can follow the `laravel-json-api-upgrade` skill shipped in the package

@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Http;
 
-use Ark4ne\JsonApi\Context\JsonApiContext;
+use Ark4ne\JsonApi\Compilation\Definitions;
+use Ark4ne\JsonApi\Context\CurrentRevision;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Http\Rules\Fields;
 use Ark4ne\JsonApi\Http\Rules\Includes;
@@ -25,9 +26,9 @@ use Illuminate\Foundation\Http\FormRequest;
  * the preconfigured one, and stays `nullable` (`?include=` asks for no include). Both parameters are read from the query string only, as the rendering reads them: a member of
  * the body with the same name is neither validated nor returned by `validated()`.
  *
- * Both are validated at the revision of the request (`JsonApiContext::revisionOf()`): the names an old client includes
- * and restricts are those of its revision. The middleware setting it (`JsonApi::useRevision()`) runs first, global or
- * on the route: a form request is resolved, and validated, with the controller, after every middleware.
+ * Both are validated at the current revision (`Context\CurrentRevision`): the names an old client includes and
+ * restricts are those of its revision. The `revision` middleware of `ark4ne/laravel-api-revisions` runs first, global
+ * or on the route: a form request is resolved, and validated, with the controller, after every middleware.
  *
  * The rules of `rules()` that change across the revisions are declared with `Rules\Revised`; they are resolved at the
  * revision of the request too (`Revised::resolve()`), a key absent from it is left out. A `Revised` keyed `include` or
@@ -85,7 +86,7 @@ abstract class JsonApiFormRequest extends FormRequest
             throw DefinitionException::formRequestWithoutResource(static::class);
         }
 
-        $revision = JsonApiContext::revisionOf($this);
+        $revision = CurrentRevision::of(Definitions::configuration());
 
         /** @var array<array-key, mixed> $own */
         $own = parent::validationRules();

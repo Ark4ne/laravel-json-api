@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
+use Ark4ne\ApiRevisions\Revisions\Revision;
 use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Definition\RelatedResource;
-use Ark4ne\JsonApi\Definition\Revision;
 use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Descriptors\MergeWhenValue;
 use Ark4ne\JsonApi\Descriptors\Relations\RelationRaw;

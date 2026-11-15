@@ -16,9 +16,9 @@ declare(strict_types=1);
  * Run by `composer benchmark -- --cold` (bin/benchmark.php).
  */
 
+use Ark4ne\ApiRevisions\Revisions\RevisionScope;
 use Ark4ne\JsonApi\Compilation\CompiledDefinitions;
 use Ark4ne\JsonApi\Compilation\Definitions;
-use Ark4ne\JsonApi\Context\JsonApiContext;
 use Benchmark\Models\Post;
 use Benchmark\Package;
 use Benchmark\Revised;
@@ -42,9 +42,16 @@ spl_autoload_register(static function (string $class): void {
     }
 });
 
-$app = Application::create(options: [
-    'extra' => ['providers' => [Ark4ne\JsonApi\Laravel\JsonApiServiceProvider::class], 'dont-discover' => ['*']],
-]);
+// The revised resources are those of an application whose revision enum is `Revised\Revision`.
+$app = Application::create(
+    resolvingCallback: static function ($app) use ($set): void {
+        if ($set !== 'package') {
+            // Before the providers boot: the configuration is loaded by then.
+            $app->booting(static fn() => $app['config']->set('revisions.enum', Revised\Revision::class));
+        }
+    },
+    options: ['extra' => ['providers' => [Ark4ne\JsonApi\Laravel\JsonApiServiceProvider::class], 'dont-discover' => ['*']]],
+);
 
 $package = [Package\PostResource::class, Package\UserResource::class, Package\CommentResource::class];
 $revised = [Revised\PostResource::class, Revised\UserResource::class, Revised\CommentResource::class];
@@ -82,7 +89,8 @@ benchmark_database(1);
 
 $render = static function () use ($app, $resources, $revision, $include): string {
     $request = Request::create('/posts/1', 'GET', ['include' => $include]);
-    $request->attributes->set(JsonApiContext::REVISION, $revision);
+    // What the `revision` middleware does for the request; `null` leaves the head.
+    RevisionScope::get()->setBase($revision);
     $app->instance('request', $request);
 
     return (string) $resources[0]::make(Post::query()->findOrFail(1))->toResponse($request)->getContent();

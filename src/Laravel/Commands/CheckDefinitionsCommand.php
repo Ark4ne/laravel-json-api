@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Laravel\Commands;
 
+use Ark4ne\ApiRevisions\Revisions\Revision;
 use Ark4ne\JsonApi\Compilation\DefinitionCompiler;
 use Ark4ne\JsonApi\Compilation\RevisionAudit;
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Definition\DefinitionSource;
-use Ark4ne\JsonApi\Definition\Revision;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Laravel\ResourceFinder;
 use Ark4ne\JsonApi\Support\Diagnostic;

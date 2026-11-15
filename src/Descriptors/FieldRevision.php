@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Descriptors;
 
-use Ark4ne\JsonApi\Definition\Revision;
+use Ark4ne\ApiRevisions\Revisions\Revision;
 
 /**
  * What a field was up to a revision, included (`was()`): its name, its descriptor, or both; what is left out is the

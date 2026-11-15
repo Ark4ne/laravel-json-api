@@ -447,54 +447,39 @@ final readonly class PaymentRequiredErrorRenderer implements ErrorRenderer
 ## Versioned resources
 
 Clients are pinned on a dated revision (`Api-Version: 2026-09-01`); the code holds the latest shape only, the head.
-Here the revision `Authors` renamed `name` to `title`, replaced the `writers` type by `authors`, removed
+The revisions are those of `ark4ne/laravel-api-revisions`: its enum contract, its `revision` middleware on the routes,
+`'enum' => LibraryRevision::class` and the `Api-Version` header resolver in `config/revisions.php`. Here the revision `Authors` renamed `name` to `title`, replaced the `writers` type by `authors`, removed
 `legacy_code` and shortened the summary. Every older shape is declared on the field that changed, with
 `was(<the revision that was the newest until then>)`.
 
 ```php
 namespace App\Recipes\Library;
 
+use Ark4ne\ApiRevisions\Revisions\IsRevision;
+use Ark4ne\ApiRevisions\Revisions\Meta;
+use Ark4ne\ApiRevisions\Revisions\Revision;
 use Ark4ne\JsonApi\Definition\JsonApiSince;
 use Ark4ne\JsonApi\Definition\JsonApiUntil;
-use Ark4ne\JsonApi\Definition\Revision;
-use Ark4ne\JsonApi\Laravel\JsonApi;
 use Ark4ne\JsonApi\Resources\Attributes\JsonApiType;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
-use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-use Symfony\Component\HttpFoundation\Response;
 
-/** The revisions clients can be pinned on, the oldest first. */
+/** The revisions clients can be pinned on; the last one of `order()` is the head, served without header. */
 enum LibraryRevision: string implements Revision
 {
+    use IsRevision;
+
+    #[Meta('First published revision')]
     case Initial = '2026-09-01';
+    #[Meta('Books have a title and authors')]
     case Authors = '2027-01-15';
 
-    public function description(): string
+    public static function order(): array
     {
-        return match ($this) {
-            self::Initial => 'First published revision',
-            self::Authors => 'Books have a title and authors',
-        };
-    }
-}
-
-/** The application reads its own header; no header is the head. */
-final class UseLibraryRevision
-{
-    /**
-     * @param Closure(Request): Response $next
-     */
-    public function handle(Request $request, Closure $next): Response
-    {
-        $header = $request->header('Api-Version');
-
-        JsonApi::useRevision($request, is_string($header) ? LibraryRevision::tryFrom($header) : null);
-
-        return $next($request);
+        return [self::Initial, self::Authors];
     }
 }
 
@@ -558,7 +543,7 @@ final class BookResource extends JsonApiResource
             // Renamed: the old name, the head descriptor.
             'title' => $this->string()->was(LibraryRevision::Initial, name: 'name'),
             // A change of meaning without change of shape: a guard.
-            'summary' => $this->string(fn() => $this->requestedRevision()->atMost(LibraryRevision::Initial)
+            'summary' => $this->string(fn() => LibraryRevision::current()->isAtMost(LibraryRevision::Initial)
                 ? $this->resource->summary
                 : Str::limit((string) $this->resource->summary, 20)),
             // Revisions
@@ -584,8 +569,8 @@ every reported line and `WriterResource`, run `php artisan jsonapi:check`.
 ## Write request across revisions
 
 The body a client sends changes with its revision too. Each key whose rules changed declares its history with
-`Revised`, as a field does; the `JsonApiFormRequest` resolves it at the revision of the request, set by the
-middleware of the recipe above. Here `Authors` renamed `name` to `title` and capped the summary. The body is not
+`Revised`, as a field does; the `JsonApiFormRequest` resolves it at the revision of the request, resolved by
+the `revision` middleware. Here `Authors` renamed `name` to `title` and capped the summary. The body is not
 translated: an old client still sends `name`, which the controller reads.
 
 ```php
@@ -625,7 +610,7 @@ final class BookStoreRequest extends JsonApiFormRequest
 
 `Revised::rules($head)`, then `->was(X, rules: …)` (the rules up to `X`, included), `->since(X)`, `->until(X)`. A
 plain `FormRequest` adds `use Http\Concerns\UseRevisedRules;`, which resolves them in its `validationRules()`
-(`Revised::resolve(parent::validationRules(), JsonApiContext::revisionOf($this))`). A `Revised` is the whole value of its key; a key left out of a revision
+(`Revised::resolve(parent::validationRules(), LibraryRevision::current())`). A `Revised` is the whole value of its key; a key left out of a revision
 leaves out the plain rules of its members (`tags.*`).
 
 ## Checking resources in tests

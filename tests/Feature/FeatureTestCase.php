@@ -27,6 +27,8 @@ abstract class FeatureTestCase extends TestCase
 
     protected function defineEnvironment($app): void
     {
+        parent::defineEnvironment($app);
+
         // What a test sets beforehand (`#[DefineEnvironment]` runs first) wins over the configuration of the test app.
         $repository = $app['config'];
         $defaults = include __DIR__ . '/../app/jsonapi.php';

@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Test\Unit\Http\Fixtures;
 
-use Ark4ne\JsonApi\Context\JsonApiContext;
+use Ark4ne\JsonApi\Compilation\Definitions;
+use Ark4ne\JsonApi\Context\CurrentRevision;
 use Ark4ne\JsonApi\Http\Rules\Revised;
 use Illuminate\Foundation\Http\FormRequest;
 use Test\app\Revisions\ApiRevision;
@@ -30,6 +31,6 @@ final class RevisedPlainFormRequest extends FormRequest
      */
     protected function validationRules(): array
     {
-        return Revised::resolve(parent::validationRules(), JsonApiContext::revisionOf($this));
+        return Revised::resolve(parent::validationRules(), CurrentRevision::of(Definitions::configuration()));
     }
 }

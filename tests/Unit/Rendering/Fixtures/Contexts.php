@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Test\Unit\Rendering\Fixtures;
 
+use Ark4ne\ApiRevisions\Revisions\Revision;
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Context\JsonApiContext;
-use Ark4ne\JsonApi\Definition\Revision;
 use Illuminate\Http\Request;
 
 /**
@@ -29,9 +29,6 @@ final class Contexts
      */
     public static function at(?Revision $revision, string $query = '', array $config = []): JsonApiContext
     {
-        $request = Request::create("/?{$query}");
-        $request->attributes->set(JsonApiContext::REVISION, $revision);
-
-        return JsonApiContext::fromRequest($request, Configuration::fromArray($config));
+        return JsonApiContext::fromRequest(Request::create("/?{$query}"), Configuration::fromArray($config), $revision);
     }
 }

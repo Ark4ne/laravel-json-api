@@ -7,6 +7,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+Towards 3.0: typed values and revisions move to `ark4ne/laravel-api-revisions`
+(`docs/rfc/api-revisions-integration.md`). The revisions of 2.1.0 below were never released: what changes here
+replaces them.
+
+### Added
+
+- `ark4ne/laravel-api-revisions` is required; `JsonApiServiceProvider` registers its provider.
+- `Context\CurrentRevision::of($configuration)`: the revision a rendering or a validation is made at, the current one
+  of `ark4ne/laravel-api-revisions`; `null`, the head, for an application without revision enum.
+- `Configuration::$revisions` and `withRevisions()`: the revision enum of the application, given by the service
+  provider from `revisions.enum`.
+- `JsonApiContext::fromRequest()` takes an optional `$revision`, for a context built at a given revision.
+
+### Changed
+
+- **Breaking**: a revision is a case of an enum implementing `Ark4ne\ApiRevisions\Revisions\Revision` (a backed
+  enum with `IsRevision`, `order()` and `#[Meta]`): the order of the revisions is `order()`, no longer the declaration
+  order of the cases, and the last one is the head.
+- **Breaking**: the revision of a request is resolved by the `revision` middleware of `ark4ne/laravel-api-revisions`
+  (`config/revisions.php`); an unknown value is answered with 400.
+
+### Removed
+
+- **Breaking**: `Definition\Revision` (and its `description()`), `JsonApi::useRevision()`, `JsonApi::revision()`,
+  `Context\RequestedRevision`, `$this->requestedRevision()`, `JsonApiContext::REVISION` and `revisionOf()`,
+  `RenderingException::notARevision()`, `DefinitionException::unknownRevision()`. Guards read
+  `ApiRevision::current()`.
+
 ## [2.1.0] — 2026-11-08
 
 Versioned resources: dated revisions of the API, Stripe-style, declared on the fields that changed. No breaking

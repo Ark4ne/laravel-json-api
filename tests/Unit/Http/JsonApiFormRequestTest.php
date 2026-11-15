@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Test\Unit\Http;
 
-use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Http\JsonApiFormRequest;
 use Illuminate\Routing\Redirector;
@@ -176,9 +175,11 @@ final class JsonApiFormRequestTest extends TestCase
     public function test_the_include_and_the_fieldset_are_validated_at_the_revision_of_the_request(): void
     {
         $request = RevisedPostRequest::create('/posts?include=writer&fields[writers]=name');
-        $request->attributes->set(JsonApiContext::REVISION, ApiRevision::Labels);
+        self::useRevision(ApiRevision::Labels);
 
         self::assertSame([], $this->errors($request));
+
+        self::useRevision(null);
         self::assertSame(['include', 'fields'], array_keys($this->errors(RevisedPostRequest::create('/posts?include=writer&fields[writers]=name'))));
     }
 
@@ -189,7 +190,7 @@ final class JsonApiFormRequestTest extends TestCase
             'code' => 'ABC',
             'tags' => [1, 2],
         ]]]);
-        $request->attributes->set(JsonApiContext::REVISION, ApiRevision::Initial);
+        self::useRevision(ApiRevision::Initial);
 
         // max:5 up to Initial; summary not yet required; tags integers then.
         self::assertSame(['data.attributes.title'], array_keys($this->errors($request)));
@@ -199,10 +200,11 @@ final class JsonApiFormRequestTest extends TestCase
     {
         $body = ['data' => ['attributes' => ['title' => 'Old', 'summary' => 'Summary', 'code' => 'ABC', 'tags' => [1]]]];
         $initial = RevisedPostFormRequest::create('/posts', 'POST', $body);
-        $initial->attributes->set(JsonApiContext::REVISION, ApiRevision::Initial);
+        self::useRevision(ApiRevision::Initial);
 
         self::assertSame(['title' => 'Old', 'code' => 'ABC', 'tags' => [1]], $this->validate($initial)->jsonApi()->attributes());
 
+        self::useRevision(null);
         $head = $this->resolve(RevisedPostFormRequest::class, '/posts', 'POST', ['data' => ['attributes' => [
             'title' => 'New title', 'summary' => 'Summary', 'code' => 'ABC', 'tags' => ['a'],
         ]]]);
@@ -223,7 +225,7 @@ final class JsonApiFormRequestTest extends TestCase
     public function test_a_key_removed_after_a_revision_is_required_up_to_it(): void
     {
         $request = RevisedPostFormRequest::create('/posts', 'POST', ['data' => ['attributes' => ['title' => 'Old']]]);
-        $request->attributes->set(JsonApiContext::REVISION, ApiRevision::Initial);
+        self::useRevision(ApiRevision::Initial);
 
         self::assertSame(['data.attributes.code'], array_keys($this->errors($request)));
     }

@@ -1169,52 +1169,53 @@ validates `include` and `fields` in their names, eager-loads their relationships
 
 ## Declaring the revisions
 
-The revisions are the cases of an enum of the application implementing `Ark4ne\JsonApi\Definition\Revision`,
-**declared from the oldest to the newest**: their order is the order of the revisions. Keep in it the revisions your
-clients can be pinned on, the oldest supported one first.
+The revisions are those of `ark4ne/laravel-api-revisions`,
+installed with this package: the cases of a backed enum of the application implementing its `Revision` contract.
+`order()` lists them **from the oldest to the newest**; the last one is the head. Keep in it the revisions your
+clients can be pinned on.
 
 ```php
-use Ark4ne\JsonApi\Definition\Revision;
+use Ark4ne\ApiRevisions\Revisions\IsRevision;
+use Ark4ne\ApiRevisions\Revisions\Meta;
+use Ark4ne\ApiRevisions\Revisions\Revision;
 
 enum ApiRevision: string implements Revision
 {
+    use IsRevision;
+
+    #[Meta('First published revision')]
     case Initial = '2026-09-01';
+    #[Meta('Names become labels')]
     case Labels = '2026-12-01';
+    #[Meta('Users replace teachers')]
     case UsersReplaceTeachers = '2027-01-15';
 
-    public function description(): string
+    public static function order(): array
     {
-        return match ($this) {
-            self::Initial => 'First published revision',
-            self::Labels => 'Names become labels',
-            self::UsersReplaceTeachers => 'Users replace teachers',
-        };
+        return [self::Initial, self::Labels, self::UsersReplaceTeachers];
     }
 }
 ```
 
-The package reads no header: a middleware of the application maps its own header to a case, and refuses the retired
-revisions itself. No revision (`null`) is the head; the newest case renders the head too.
+Name the enum and the header your clients send in `config/revisions.php`
+(`php artisan vendor:publish --tag=revisions-config`), and put the `revision` middleware on your routes:
 
 ```php
-use Ark4ne\JsonApi\Laravel\JsonApi;
+// config/revisions.php
+'enum' => App\Http\ApiRevision::class,
+'resolvers' => [
+    Ark4ne\ApiRevisions\Laravel\Http\Resolvers\HeaderResolver::class => ['name' => 'Api-Version'],
+],
 
-final class UseApiRevision
-{
-    public function handle(Request $request, Closure $next): Response
-    {
-        $header = $request->header('Api-Version');
-
-        JsonApi::useRevision($request, is_string($header) ? ApiRevision::tryFrom($header) : null);
-
-        return $next($request);
-    }
-}
+// routes/api.php
+Route::middleware('revision')->group(function () { /* … */ });
 ```
 
-Every rendering of that request, its `JsonApiFormRequest` (`include` and `fields`, validated in the names of the
-revision) and the guards below then use the revision. A form request is resolved with the controller, after every
-middleware: the revision is always set first.
+A request without the header is served the head (`'default' => 'latest'`); a value the enum does not have is answered
+with 400. Every rendering of that request, its `JsonApiFormRequest` (`include` and `fields`, validated in the names
+of the revision) and the guards below then use the revision. A form request is resolved with the controller, after
+every middleware: the revision is always resolved first. An application that configures no enum has one shape, the
+head.
 
 ## Changing a field
 
@@ -1309,13 +1310,14 @@ included once per type.
 A change of meaning has no shape to declare: read the revision of the rendering.
 
 ```php
-'sessions' => $this->many(LessonSessionResource::class, fn() => $this->requestedRevision()->atMost(ApiRevision::Labels)
+'sessions' => $this->many(LessonSessionResource::class, fn() => ApiRevision::current()->isAtMost(ApiRevision::Labels)
     ? $this->resource->sessions
     : $this->resource->sessions->where('user_id', $request->user()?->id)),
 ```
 
-`$this->requestedRevision()` gives `atMost()`, `atLeast()`, `is()` and `isHead()`; outside a resource (`with()`,
-`additional()`, a controller), `JsonApi::revision($request)`.
+`ApiRevision::current()` is the revision of the request, anywhere (a resource, `with()`, `additional()`, a
+controller): compare it with `isAtMost()`, `isAtLeast()`, `isBefore()`, `isAfter()`. `ApiRevision::using($revision,
+fn() => …)` renders at another one.
 
 ## Write requests across revisions
 
@@ -1370,8 +1372,8 @@ class ProfileUpdateRequest extends FormRequest
 }
 ```
 
-The trait implements `validationRules()` with `Revised::resolve(parent::validationRules(),
-JsonApiContext::revisionOf($this))`. A form request defining its own `validationRules()` hides the method of the trait
+The trait implements `validationRules()` with `Revised::resolve(parent::validationRules(), $revision)`, `$revision`
+being the current one (`ApiRevision::current()`). A form request defining its own `validationRules()` hides the method of the trait
 (PHP gives the class precedence): call `Revised::resolve()` there instead.
 
 A `Revised` is the whole value of its key: `Revised::rules(['bail', 'string'])`, never `['bail', Revised::rules('string')]`

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Test\Feature\Revisions;
 
-use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Resources\Attributes\JsonApiType;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Http\Request;
@@ -127,7 +126,7 @@ final class ConditionsTest extends RevisionsTestCase
         };
 
         $request = Request::create("/?{$query}");
-        $request->attributes->set(JsonApiContext::REVISION, $revision);
+        self::useRevision($revision);
 
         return TestResponse::fromBaseResponse($resource->toResponse($request));
     }
