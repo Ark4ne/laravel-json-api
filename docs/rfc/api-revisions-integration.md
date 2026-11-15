@@ -154,6 +154,40 @@ Transitional state, until US 2.4: the base discovers every resource as a `Revisi
 (run by `php artisan optimize`) and `revision:check` fail on a resource still written with the 2.0 descriptors.
 The branch is not releasable between US 3.1 and US 2.4.
 
+### US 2.4 — plan of the switch
+
+The one story that cannot stay green in parts: the helpers keep their names and change their return type. Prepared by
+everything above; to be done in this order, as one branch of work ending green.
+
+1. **Façade** (`Descriptors\Values` → the base). `$this->string($source)`, `integer()`, `float()`, `bool()`,
+   `date()`, `datetime()`, `time()`, `uuid()`, `ulid()`, `decimal()`, `json()`, `mixed()` return the descriptors of
+   the mapping of "EJ2 — stories", `->nullable()` applied when `describer.nullable` says so; `enum($class, $source)`;
+   `array($source)` / `arrayOf($items, $source)` → `Schema::list()`; `struct(array $children, $source = null)` →
+   `Schema::object()`; `$this->one()` / `many()` / `morph()` / `morphMany()` return a `RelationshipSchema` (its
+   JSON:API modifiers — `links()`, `meta()`, `withLoad()`, `whenIncluded()`, `can()`… — forwarded to the relation it
+   holds). `JsonApiResource::__call()` serves the custom types of the base's `TypeRegistry`.
+2. **Hook helpers.** `applyWhen(Closure $condition, array $members)` returns the members, each with
+   `->when($condition)` (closure `($value, $model)`), spread by the hook (`...$this->applyWhen()`); `mergeWhen()`,
+   `when()`, `whenHas()`, `whenInFields()` and `whenInIncludes()` as hook helpers are removed (they give plain
+   values): `->when()`, `->whenHas()`, `->whenInFields()` on the descriptor. `describer.when-has` applies
+   `->whenHas()` when the hook declares the field.
+3. **Fixtures and expected documents.** `tests/app/Http/Resources/*` use plain values, raw closures, members without
+   key, `struct(fn)`, `enum()` without class and guessed relations: rewritten with descriptors; an expected document
+   changes only where a decision above says so (the plain members of `applyWhen()` become descriptors with the same
+   values).
+4. **Removal.** `Descriptors\Values\*`, `ValueTypes`, `Describer`, `Members`, `MergeWhenValue`, `FieldHistory`,
+   `FieldRevision`, `RevisedMembers`, `RevisionFindings`, `Definition\AttributeDefinition`, `ValueType`,
+   `RevisionOrder`, `Lifetime`, `Compilation\RevisionChecks`, `RevisionAudit`, the buckets of `DefinitionCompiler` /
+   `Definitions`, `Rendering\ValueResolver` for values, `Support\Values` casts, `declaresSchema()` and
+   `SchemaAttributes` (D10: the definition gives the base's model), `toDefinition()`, `JsonApi::valueType()`,
+   `describer.types` / `describer.precision` / `describer.datetime`.
+5. **Tests.** The unit tests of the removed classes go with them; those of the façade, the definition, the rules and
+   the rendering are rewritten on the new contract; the benchmark `Package/` resources become the `Schema/` ones and
+   the reference is measured again (P1, P2 gated).
+
+Open before it starts: base R11 (float rounding) or a float type of this package; the relationships hook once per
+response (D7) or per resource (as now).
+
 ### EJ6 — stories
 
 | Story | Content |
