@@ -77,8 +77,8 @@ trait Renderable
         $this->renderingContext = $context;
 
         // Declared with the descriptors of the base: rendered by it, from the plan of the response.
-        if (static::declaresSchema()) {
-            return $this->valuesPlan($context, $this->toType($context->request))->attributes($this->resource);
+        if (Definitions::declaresSchema(static::class)) {
+            return $this->valuesPlan($context)->attributes($this->resource);
         }
 
         return $this->autoWhenHas(
@@ -100,7 +100,7 @@ trait Renderable
         $model = $this->resource;
 
         // Declared with the descriptors of the base: its shape gives their names and the relation in force.
-        if (static::declaresSchema()) {
+        if (Definitions::declaresSchema(static::class)) {
             foreach ($this->relationsAt($context) as $name => [$key, $relation]) {
                 $definition = $definitions[$name] ?? null;
                 $relationship = Relationship::declared($relation
@@ -179,8 +179,8 @@ trait Renderable
     {
         $this->renderingContext = $context;
 
-        if (static::declaresSchema()) {
-            return $this->valuesPlan($context, $this->toType($context->request))->meta($this->resource);
+        if (Definitions::declaresSchema(static::class)) {
+            return $this->valuesPlan($context)->meta($this->resource);
         }
 
         return $this->autoWhenHas(
@@ -198,8 +198,8 @@ trait Renderable
     {
         $this->renderingContext = $context;
 
-        if (static::declaresSchema()) {
-            return $this->valuesPlan($context, $this->toType($context->request))->documentMeta($this->resource);
+        if (Definitions::declaresSchema(static::class)) {
+            return $this->valuesPlan($context)->documentMeta($this->resource);
         }
 
         return $this->autoWhenHas(

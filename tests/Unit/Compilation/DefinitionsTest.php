@@ -282,6 +282,8 @@ final class DefinitionsTest extends TestCase
     {
         // A head written alone in the compiled file.
         Definitions::preload([ProfileResource::class => Definitions::compile(ProfileResource::class)]);
+        // Which engine renders the class is decided once, on a run of its hooks (until every resource is on the base).
+        Definitions::declaresSchema(ProfileResource::class);
         $reads = ProfileResource::$reads;
 
         self::assertSame(['name', 'email', 'full_name'], array_keys(Definitions::for(ProfileResource::class, ApiRevision::Initial)->attributes));

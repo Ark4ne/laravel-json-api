@@ -22,6 +22,7 @@ use Illuminate\Http\Resources\PotentiallyMissing;
  * - A descriptor gives its value when its conditions pass; `whenInFields()` only when it is explicitly requested.
  * - A struct is resolved member by member, each filtered by its dotted path.
  * - A closure is called; any other value is kept as is.
+ * - `ProjectedValues`, the members `ark4ne/laravel-api-revisions` rendered, are given as they are.
  */
 final readonly class ValueResolver
 {
@@ -33,6 +34,11 @@ final readonly class ValueResolver
      */
     public function resolve(iterable $members, mixed $model, JsonApiContext $context, ?string $type = null): array
     {
+        // Rendered by the base: already chosen by the sparse fieldset, decided and serialized.
+        if ($members instanceof ProjectedValues) {
+            return $members->values;
+        }
+
         return $this->members($members, $model, $context, $type, null);
     }
 

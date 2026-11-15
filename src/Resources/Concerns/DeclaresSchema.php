@@ -12,6 +12,7 @@ use Ark4ne\ApiRevisions\Schema\DeclarationKind;
 use Ark4ne\ApiRevisions\Schema\Descriptor;
 use Ark4ne\ApiRevisions\Schema\ObjectSchema;
 use Ark4ne\JsonApi\Context\JsonApiContext;
+use Ark4ne\JsonApi\Context\ResponseCache;
 use Ark4ne\JsonApi\Definition\JsonApiSince;
 use Ark4ne\JsonApi\Definition\JsonApiUntil;
 use Ark4ne\JsonApi\Descriptors\Relations\Relation;
@@ -19,7 +20,6 @@ use Ark4ne\JsonApi\Descriptors\Schemas\Conditions;
 use Ark4ne\JsonApi\Descriptors\Schemas\RelationshipSchema;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Rendering\ResourcePlan;
-use Ark4ne\JsonApi\Support\Memo;
 use Ark4ne\JsonApi\Support\Probe;
 use Illuminate\Http\Request;
 use LogicException;
@@ -38,6 +38,11 @@ use Throwable;
  */
 trait DeclaresSchema
 {
+    /** The plan of the values of this resource in the response of `$valuesPlanOf`. */
+    private ?ResourcePlan $valuesPlan = null;
+
+    private ?ResponseCache $valuesPlanOf = null;
+
     /**
      * @internal Read by `ark4ne/laravel-api-revisions`.
      */
@@ -102,25 +107,23 @@ trait DeclaresSchema
 
     /**
      * Whether the hooks of values of the class return descriptors of the base, and at least one: its values are then
-     * rendered by it. Decided once per class, on a stand-in of the model.
+     * rendered by it. Decided on a stand-in of the model; `Definitions::declaresSchema()` remembers it.
      *
      * @internal Until every resource is declared so (docs/rfc/api-revisions-integration.md, US 2.4).
      */
     public static function declaresSchema(): bool
     {
-        return Memo::remember(DeclaresSchema::class, static::class, static function (): bool {
-            try {
-                $schema = static::newDefinitionSource(Probe::root())->describeSchema(new Request());
-            } catch (Throwable) {
-                return false;
-            }
+        try {
+            $schema = static::newDefinitionSource(Probe::root())->describeSchema(new Request());
+        } catch (Throwable) {
+            return false;
+        }
 
-            // Hooks declaring nothing on a stand-in (the default attributes of a model) render as before.
-            return $schema['attributes']->children() !== []
-                || $schema['relationships']->children() !== []
-                || $schema['meta']->children() !== []
-                || $schema['documentMeta']->children() !== [];
-        });
+        // Hooks declaring nothing on a stand-in (the default attributes of a model) render as before.
+        return $schema['attributes']->children() !== []
+            || $schema['relationships']->children() !== []
+            || $schema['meta']->children() !== []
+            || $schema['documentMeta']->children() !== [];
     }
 
     /**
@@ -129,11 +132,18 @@ trait DeclaresSchema
      *
      * @internal
      */
-    public function valuesPlan(JsonApiContext $context, string $type): ResourcePlan
+    public function valuesPlan(JsonApiContext $context): ResourcePlan
     {
-        $revision = $context->revision ?? Unrevisioned::Head;
+        // Asked once per hook of values: the plan of this resource in this response is looked up once.
+        if ($this->valuesPlan !== null && $this->valuesPlanOf === $context->cache) {
+            return $this->valuesPlan;
+        }
 
-        return $context->cache->remember(
+        $type = $this->toType($context->request);
+        $revision = $context->revision ?? Unrevisioned::Head;
+        $this->valuesPlanOf = $context->cache;
+
+        return $this->valuesPlan = $context->cache->remember(
             'values:' . static::class . ':' . $type . ':' . $revision->name,
             function () use ($context, $type, $revision): ResourcePlan {
                 $template = clone $this;
@@ -213,12 +223,19 @@ trait DeclaresSchema
      */
     public function relationsAt(JsonApiContext $context): iterable
     {
-        $shape = $context->projection->shapes
+        // The relationships of the shape of the revision, read once per response.
+        $fields = $context->cache->remember('relationships:' . static::class, fn(): array => $context->projection->shapes
             ->for(static::class, DeclarationKind::Response, $context->revision ?? Unrevisioned::Head)
-            ->field('relationships')?->children;
-        $declared = self::schemaObject('toRelationships', $this->toRelationships($context->request), RelationshipSchema::class)->children();
+            ->field('relationships')?->children->fields ?? []);
+        if ($fields === []) {
+            return;
+        }
 
-        foreach ($shape->fields ?? [] as $key => $field) {
+        // The hook runs for each resource: the closures of a relation are read after its resource is rendered.
+        $declared = $this->toRelationships($context->request);
+        $declared = is_array($declared) ? $declared : iterator_to_array($declared);
+
+        foreach ($fields as $key => $field) {
             $relationship = $declared[$key] ?? null;
             if ($relationship instanceof RelationshipSchema) {
                 yield $field->name => [$key, $relationship->relationAt($field)];

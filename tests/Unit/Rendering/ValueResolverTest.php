@@ -9,6 +9,7 @@ use Ark4ne\JsonApi\Descriptors\Values\ValueFloat;
 use Ark4ne\JsonApi\Descriptors\Values\ValueInteger;
 use Ark4ne\JsonApi\Descriptors\Values\ValueString;
 use Ark4ne\JsonApi\Descriptors\Values\ValueStruct;
+use Ark4ne\JsonApi\Rendering\ProjectedValues;
 use Ark4ne\JsonApi\Rendering\ValueResolver;
 use DateTimeImmutable;
 use Illuminate\Http\Resources\MergeValue;
@@ -179,5 +180,14 @@ final class ValueResolverTest extends TestCase
         ];
 
         self::assertSame([], (new ValueResolver())->resolve($members, self::MODEL, Contexts::of()));
+    }
+
+    public function test_the_values_the_base_projected_are_given_as_they_are(): void
+    {
+        $values = ['name' => 'Ada', 'hidden' => fn(): string => 'kept: never resolved again'];
+        $projected = new ProjectedValues($values);
+
+        self::assertSame($values, (new ValueResolver())->resolve($projected, null, Contexts::of('fields[users]=name'), 'users'));
+        self::assertSame($values, iterator_to_array($projected));
     }
 }

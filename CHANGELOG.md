@@ -41,6 +41,7 @@ replaces them.
   projector of the application, `Definitions::projectWith()` / `projection()`) and a `Context\ResponseCache`.
 - `Rendering\ModelSourceReader`: the reader the projection reads Eloquent models with, without listing their
   properties (the reader of the base costs about 3 KB per model and three times the read).
+- `Rendering\ProjectedValues`: the members a `ResourcePlan` rendered, which the `ValueResolver` gives as they are.
 - `composer benchmark` also renders the benchmark resources declared on the base (`bin/benchmark/Schema/`): reported,
   not gated yet.
 - `Definitions::for($class, $revision)` gives the attributes, the meta and the document meta of such a resource from

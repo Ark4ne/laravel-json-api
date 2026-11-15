@@ -163,14 +163,15 @@ as the 2.0 resources (872.9 KB).
 |---|---|---|
 | US 3.3, the application's projector | ×1.22 | ×1.57 |
 | with `Rendering\ModelSourceReader` | ×1.13 | ×1.00 |
+| projected values given as they are (`Rendering\ProjectedValues`), the plan looked up once per resource, the engine of a class remembered by `Definitions` | ×1.04 | ×1.00 |
 
 - **Base requirement R12**: `PlainSourceReader::key()` and `holds()` call `get_object_vars()` on every read. On an
   Eloquent model PHP then builds and keeps its table of properties: +2.6 KB per model, 3.4 µs instead of 1 µs per
   subject of two fields. This package reads models with its own reader meanwhile; the fix belongs to the base (its
   US 12.8 left "the direct property read" as a follow-up).
-- Left to reach P1 (not slower than 2.0), measured per rendering of 4 100 resources: `toRelationships()` and the
-  relationships object still built per resource (≈ 12 ms), the values walked a second time by `ValueResolver`, the
-  engine looked up per hook (`declaresSchema()`), the dates of the meta (≈ 15 ms for 2 000 dates).
+- Left to reach P1 (not slower than 2.0): `toRelationships()` still runs for each resource, building one
+  `RelationshipSchema` per relationship (the closures of a relation are read after its resource is rendered, so the
+  template of D7 cannot simply be re-bound: to be designed), and the engine is still looked up per hook.
 
 ### EJ1 — delivered
 

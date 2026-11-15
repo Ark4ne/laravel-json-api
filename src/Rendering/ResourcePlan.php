@@ -27,32 +27,32 @@ final readonly class ResourcePlan
     ) {}
 
     /**
-     * @return array<string, mixed> The attributes of the model, by their name at the revision
+     * The attributes of the model, by their name at the revision.
      */
-    public function attributes(mixed $model): array
+    public function attributes(mixed $model): ProjectedValues
     {
         ($this->bind)($model);
 
-        return $this->attributes->run($model);
+        return new ProjectedValues($this->attributes->run($model));
     }
 
     /**
-     * @return array<string, mixed> The meta of the resource object of the model
+     * The meta of the resource object of the model.
      */
-    public function meta(mixed $model): array
+    public function meta(mixed $model): ProjectedValues
     {
         ($this->bind)($model);
 
-        return $this->meta->run($model);
+        return new ProjectedValues($this->meta->run($model));
     }
 
     /**
-     * @return array<string, mixed> The meta the model adds to its document
+     * The meta the model adds to its document.
      */
-    public function documentMeta(mixed $model): array
+    public function documentMeta(mixed $model): ProjectedValues
     {
         ($this->bind)($model);
 
-        return $this->documentMeta->run($model);
+        return new ProjectedValues($this->documentMeta->run($model));
     }
 }

@@ -49,6 +49,9 @@ final class Definitions
     /** @var array<class-string<DefinitionSource>, array<string, array<string, array<string, Closure>>>> By class, then revision */
     private static array $projectedConstraints = [];
 
+    /** @var array<class-string<DefinitionSource>, bool> Whether a resource is declared with the descriptors of the base */
+    private static array $schemas = [];
+
     /** @var array<class-string<DefinitionSource>, array<string, true>> The fields of the code of a resource, by class */
     private static array $fieldsOfTheCode = [];
 
@@ -141,13 +144,26 @@ final class Definitions
     {
         $head = self::$definitions[$class] ?? self::head($class);
         if ($revision === null) {
-            return $class::declaresSchema() ? self::projected($class, $head, self::newest()) : $head;
+            return self::declaresSchema($class) ? self::projected($class, $head, self::newest()) : $head;
         }
 
         // Read once per class and revision: the rendering asks for each resource.
-        return self::$shapes[$class][RevisionLabel::of($revision)] ??= $class::declaresSchema()
+        return self::$shapes[$class][RevisionLabel::of($revision)] ??= self::declaresSchema($class)
             ? self::projected($class, self::shape($class, $head, $revision), $revision)
             : self::shape($class, $head, $revision);
+    }
+
+    /**
+     * Whether the values of the resource are declared with the descriptors of the base
+     * (`DefinitionSource::declaresSchema()`): decided once per class, asked for each resource rendered.
+     *
+     * @internal Until every resource is declared so.
+     *
+     * @param class-string<DefinitionSource> $class
+     */
+    public static function declaresSchema(string $class): bool
+    {
+        return self::$schemas[$class] ??= $class::declaresSchema();
     }
 
     /**
@@ -306,7 +322,7 @@ final class Definitions
     {
         $definition = self::for($class, $revision);
 
-        if ($class::declaresSchema()) {
+        if (self::declaresSchema($class)) {
             // Gathered with the definition of the revision.
             return self::$projectedConstraints[$class][RevisionLabel::of($revision ?? self::newest())] ?? [];
         }
@@ -364,6 +380,7 @@ final class Definitions
         self::$declaredTypes = [];
         self::$shapes = [];
         self::$projected = [];
+        self::$schemas = [];
         self::$projectedConstraints = [];
         self::$fieldsOfTheCode = [];
         self::$compiledRead = false;
