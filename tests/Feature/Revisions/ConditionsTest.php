@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Test\Feature\Revisions;
 
+use Ark4ne\ApiRevisions\Schema\Schema;
 use Ark4ne\JsonApi\Resources\Attributes\JsonApiType;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Http\Request;
@@ -100,27 +101,29 @@ final class ConditionsTest extends RevisionsTestCase
         $resource = new #[JsonApiType('helpers')] class (User::query()->findOrFail(1)) extends JsonApiResource {
             public function toAttributes(Request $request): iterable
             {
+                $true = Schema::bool(static fn(): bool => true);
+
                 return [
-                    'name' => $this->string()->whenHas()->was(ApiRevision::Labels, name: 'label'),
-                    'name_requested' => $this->whenInFields($request, 'name', true),
-                    'posts_included' => $this->whenInIncludes($request, 'posts', true),
-                    'comments_included' => $this->whenInIncludes($request, 'comments', true),
-                    'legacy_requested' => $this->whenInFields($request, 'legacy', true),
-                    'legacy' => $this->string(fn() => 'legacy')->until(ApiRevision::Labels),
-                    'address' => $this->struct(fn() => ['city' => $this->string(fn() => 'Paris')])
+                    'name' => Schema::string()->whenHas()->was(ApiRevision::Labels, name: 'label'),
+                    'name_requested' => $this->whenInFields($request, 'name', $true),
+                    'posts_included' => $this->whenInIncludes($request, 'posts', $true),
+                    'comments_included' => $this->whenInIncludes($request, 'comments', $true),
+                    'legacy_requested' => $this->whenInFields($request, 'legacy', $true),
+                    'legacy' => Schema::string(fn() => 'legacy')->until(ApiRevision::Labels),
+                    'address' => Schema::object(['city' => Schema::string(fn() => 'Paris')])
                         ->was(ApiRevision::Labels, name: 'location'),
-                    'city_requested' => $this->whenInFields($request, 'address.city', true),
-                    'undeclared_requested' => $this->whenInFields($request, 'undeclared', true),
-                    'post_comments_included' => $this->whenInIncludes($request, 'posts.comments', true),
-                    'post_user_included' => $this->whenInIncludes($request, 'posts.user', true),
+                    'city_requested' => $this->whenInFields($request, 'address.city', $true),
+                    'undeclared_requested' => $this->whenInFields($request, 'undeclared', $true),
+                    'post_comments_included' => $this->whenInIncludes($request, 'posts.comments', $true),
+                    'post_user_included' => $this->whenInIncludes($request, 'posts.user', $true),
                 ];
             }
 
             protected function toRelationships(Request $request): iterable
             {
                 return [
-                    'posts' => $this->many(PostResource::class)->whenIncluded()->was(ApiRevision::Labels, name: 'articles'),
-                    'comments' => $this->many(CommentResource::class)->whenIncluded()->since(ApiRevision::UsersReplaceTeachers),
+                    'posts' => Schema::relationship($this->many(PostResource::class)->whenIncluded())->was(ApiRevision::Labels, name: 'articles'),
+                    'comments' => Schema::relationship($this->many(CommentResource::class)->whenIncluded())->since(ApiRevision::UsersReplaceTeachers),
                 ];
             }
         };

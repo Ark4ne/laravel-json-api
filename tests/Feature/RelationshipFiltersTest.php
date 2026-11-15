@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Test\Feature;
 
+use Ark4ne\ApiRevisions\Schema\Schema;
 use Ark4ne\JsonApi\Filters\Filters;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Http\Request;
@@ -34,8 +35,8 @@ final class RelationshipFiltersTest extends FeatureTestCase
             protected function toRelationships(Request $request): iterable
             {
                 return [
-                    'posts' => $this->many(FilteredPostResource::class)
-                        ->filters(fn(Filters $filters) => $filters->can('view')),
+                    'posts' => Schema::relationship($this->many(FilteredPostResource::class)
+                        ->filters(fn(Filters $filters) => $filters->can('view'))),
                 ];
             }
         };
@@ -49,10 +50,10 @@ final class RelationshipFiltersTest extends FeatureTestCase
             protected function toRelationships(Request $request): iterable
             {
                 return [
-                    'posts' => $this->many(FilteredPostResource::class)
+                    'posts' => Schema::relationship($this->many(FilteredPostResource::class)
                         ->filters(fn(Filters $filters) => $filters->when(
                             static fn(Request $request, Post $post): bool => $post->is_public,
-                        )),
+                        ))),
                 ];
             }
         };
@@ -66,12 +67,12 @@ final class RelationshipFiltersTest extends FeatureTestCase
             protected function toRelationships(Request $request): iterable
             {
                 return [
-                    'posts' => $this->many(FilteredPostResource::class)
+                    'posts' => Schema::relationship($this->many(FilteredPostResource::class)
                         ->filters(
                             fn(Filters $filters) => $filters
                                 ->when(static fn(Request $request, Post $post): bool => $post->is_public)
                                 ->when(static fn(Request $request, Post $post): bool => $post->id > 0),
-                        ),
+                        )),
                 ];
             }
         };
@@ -104,8 +105,8 @@ final class FilteredPostResource extends JsonApiResource
     public function toAttributes(Request $request): iterable
     {
         return [
-            'title' => $this->string(),
-            'is_public' => $this->bool(),
+            'title' => Schema::string(),
+            'is_public' => Schema::bool(),
         ];
     }
 }

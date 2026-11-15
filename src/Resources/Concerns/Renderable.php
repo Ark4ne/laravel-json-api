@@ -78,7 +78,7 @@ trait Renderable
 
         // Declared with the descriptors of the base: rendered by it, from the plan of the response.
         if (Definitions::declaresSchema(static::class) && !static::hasDefaultAttributes()) {
-            return $this->valuesPlan($context)->attributes($this->resource);
+            return $this->valuesPlan($context)->attributes($this->resource, $context);
         }
 
         return $this->autoWhenHas(
@@ -187,7 +187,7 @@ trait Renderable
         $this->renderingContext = $context;
 
         if (Definitions::declaresSchema(static::class)) {
-            return $this->valuesPlan($context)->meta($this->resource);
+            return $this->valuesPlan($context)->meta($this->resource, $context);
         }
 
         return $this->autoWhenHas(
@@ -206,7 +206,7 @@ trait Renderable
         $this->renderingContext = $context;
 
         if (Definitions::declaresSchema(static::class)) {
-            return $this->valuesPlan($context)->documentMeta($this->resource);
+            return $this->valuesPlan($context)->documentMeta($this->resource, $context);
         }
 
         return $this->autoWhenHas(

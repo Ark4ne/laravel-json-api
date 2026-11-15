@@ -59,6 +59,15 @@ trait ConditionallyLoadsAttributes
      */
     protected function whenInFields(Request $request, string $attribute, mixed $value)
     {
+        // A descriptor of the base: the condition is one of the field, read for each resource rendered.
+        if ($value instanceof Descriptor) {
+            return $value->when(function () use ($request, $attribute): bool {
+                $field = $this->nameAtRevision($attribute);
+
+                return $field !== null && ($this->renderingContext?->fields->requests($this->toType($request), $field) ?? false);
+            });
+        }
+
         $context = $this->renderingContext;
         $field = $this->nameAtRevision($attribute);
 
@@ -83,6 +92,15 @@ trait ConditionallyLoadsAttributes
      */
     protected function whenInIncludes(Request $request, string $relationship, mixed $value)
     {
+        // A descriptor of the base: the condition is one of the field, read for each resource rendered.
+        if ($value instanceof Descriptor) {
+            return $value->when(function () use ($relationship): bool {
+                $name = $this->includeAtRevision($relationship);
+
+                return $name !== null && ($this->renderingContext?->includes($name) ?? false);
+            });
+        }
+
         $name = $this->includeAtRevision($relationship);
 
         return $this->when($name !== null && ($this->renderingContext?->includes($name) ?? false), $value);

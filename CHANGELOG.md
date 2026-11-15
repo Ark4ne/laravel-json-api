@@ -31,6 +31,9 @@ replaces them.
   fails.
 - `applyWhen()` groups descriptors of `ark4ne/laravel-api-revisions` too: each member takes the condition as a
   `->when()`, attributes and relationships alike.
+- `$this->whenInFields($request, 'name', $descriptor)` and `$this->whenInIncludes($request, 'posts', $descriptor)`
+  take a descriptor of `ark4ne/laravel-api-revisions` and give it the condition, read where each resource is rendered
+  (the includes of its place in the document).
 - `->unless()`, `->whenNotNull()` and `->whenFilled()` on every descriptor of `ark4ne/laravel-api-revisions`
   (`Descriptors\Schemas\Conditions`, macros registered by the service provider); their closures receive
   `($value, $model)`. `->whenInFields()`: the attribute is rendered only when the sparse fieldset names it, in its

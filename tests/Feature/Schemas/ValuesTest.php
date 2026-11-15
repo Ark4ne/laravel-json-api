@@ -134,6 +134,18 @@ final class ValuesTest extends TestCase
             ->assertJsonPath('data.attributes', ['address' => ['town' => 'Paris']]);
     }
 
+    public function test_a_condition_on_the_includes_is_read_where_each_resource_is_rendered(): void
+    {
+        $node = ['id' => 1, 'child' => ['id' => 2, 'child' => ['id' => 3, 'child' => null]]];
+
+        $response = $this->render(NodeResource::make($node), null, 'include=child');
+
+        // The same class at two places of the document: `child` is included under the root only.
+        $response->assertJsonPath('data.attributes', ['child_included' => true]);
+        $response->assertJsonPath('included.0.id', '2');
+        $response->assertJsonMissingPath('included.0.attributes');
+    }
+
     public function test_a_field_only_in_fields_is_sparse_in_the_definition(): void
     {
         $attributes = Definitions::for(SparseResource::class, ApiRevision::UsersReplaceTeachers)->attributes;
@@ -216,6 +228,27 @@ final class NestedResource extends JsonApiResource
                     'precise' => Schema::bool(static fn(): bool => true),
                 ]),
             ]),
+        ];
+    }
+}
+
+/**
+ * @extends JsonApiResource<array<string, mixed>>
+ */
+#[JsonApiType('nodes')]
+final class NodeResource extends JsonApiResource
+{
+    public function toAttributes(Request $request): iterable
+    {
+        return [
+            'child_included' => $this->whenInIncludes($request, 'child', Schema::bool(static fn(): bool => true)),
+        ];
+    }
+
+    protected function toRelationships(Request $request): iterable
+    {
+        return [
+            'child' => Schema::relationship($this->one(self::class)),
         ];
     }
 }

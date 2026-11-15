@@ -226,8 +226,9 @@ trait DeclaresSchema
                 $restrict = $context->fields->restricts($type) ? MemberFieldsets::of($kept, $context->fields, $type) : null;
 
                 return new ResourcePlan(
-                    static function (mixed $model) use ($template): void {
+                    static function (mixed $model, JsonApiContext $context) use ($template): void {
                         $template->resource = $model;
+                        $template->renderingContext = $context;
                     },
                     $projector->plan($children('attributes'), $schema['attributes']->children(), $keys),
                     $projector->plan($children('meta'), $schema['meta']->children()),

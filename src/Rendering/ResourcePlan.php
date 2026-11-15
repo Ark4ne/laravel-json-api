@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Ark4ne\JsonApi\Rendering;
 
 use Ark4ne\ApiRevisions\Projection\ProjectionPlan;
+use Ark4ne\JsonApi\Context\JsonApiContext;
 use Closure;
 
 /**
@@ -17,7 +18,8 @@ use Closure;
 final readonly class ResourcePlan
 {
     /**
-     * @param Closure(mixed): void $bind Sets the model the template instance stands for
+     * @param Closure(mixed, JsonApiContext): void $bind Sets the model the template instance stands for, and the
+     *                                                context it is rendered in (its place in the includes)
      * @param MemberFieldsets|null $restrict Leaves out of the attributes the members of their objects the sparse
      *                                       fieldset does not keep; `null` when it restricts none
      */
@@ -32,9 +34,9 @@ final readonly class ResourcePlan
     /**
      * The attributes of the model, by their name at the revision.
      */
-    public function attributes(mixed $model): ProjectedValues
+    public function attributes(mixed $model, JsonApiContext $context): ProjectedValues
     {
-        ($this->bind)($model);
+        ($this->bind)($model, $context);
 
         $attributes = $this->attributes->run($model);
 
@@ -44,9 +46,9 @@ final readonly class ResourcePlan
     /**
      * The meta of the resource object of the model.
      */
-    public function meta(mixed $model): ProjectedValues
+    public function meta(mixed $model, JsonApiContext $context): ProjectedValues
     {
-        ($this->bind)($model);
+        ($this->bind)($model, $context);
 
         return new ProjectedValues($this->meta->run($model));
     }
@@ -54,9 +56,9 @@ final readonly class ResourcePlan
     /**
      * The meta the model adds to its document.
      */
-    public function documentMeta(mixed $model): ProjectedValues
+    public function documentMeta(mixed $model, JsonApiContext $context): ProjectedValues
     {
-        ($this->bind)($model);
+        ($this->bind)($model, $context);
 
         return new ProjectedValues($this->documentMeta->run($model));
     }
