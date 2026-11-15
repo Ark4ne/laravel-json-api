@@ -134,6 +134,26 @@ rendering of the values (EJ3, EJ4): the three cannot be delivered apart with a g
 | **US 2.3** | `Descriptors\RelationshipSchema` (custom type `jsonapi.relationship`, identity conversion), built by `$this->one()` / `many()` beside the 2.0 `Relation` until US 2.4. | base R4 |
 | **US 2.4** | The façade returns the descriptors above; plain values refused; `Descriptors\Values\*`, `ValueTypes`, `FieldHistory`, `FieldRevision`, `RevisedMembers`, `RevisionFindings` removed. With EJ3 and EJ4. | US 2.1–2.3, base R11 |
 
+### EJ3, EJ4 — stories
+
+Decided 2026-11-15: the engine on the base is built beside the 2.0 one, story by story, each one green; a resource
+whose hooks return descriptors of the base (`Schema::…`, written directly until US 2.4) is its fixture
+(`tests/app/Schemas/`). The 2.0 engine is switched off and removed at the end. Pending with the maintainer: base
+requirement R11 (rounding on `FloatSchema`).
+
+| Story | Content |
+|---|---|
+| **US 3.1** ✅ | `JsonApiResource` implements the base's `Revisioned` and `HasLifetime` (`Resources\Concerns\DeclaresSchema`): one object per hook of values; a member that is not a descriptor under its name is refused (`DefinitionException::notASchema()`); the lifetime is the one of `#[JsonApiSince]` / `#[JsonApiUntil]`. |
+| **US 4.1** | Rendering the values of such a resource: the template instance and the plans of a response (`Rendering\ResourcePlan`, held by the context), sparse fieldsets choosing the keys, `attributes`, resource `meta` and document `meta` written from the plan. |
+| **US 3.2** | The definition for tools from the shape (D10): names at a revision for `Fields`, `Includes` and the helpers. |
+| **US 2.3, 3.3** | `RelationshipSchema` and the `relationships` object of the declaration; relationships rendered from the shape. |
+| **US 2.5** | The conditions of the request. |
+| **US 2.4** | The façade returns the descriptors; the 2.0 engine removed. |
+
+Transitional state, until US 2.4: the base discovers every resource as a `Revisioned` class, so its `revision:cache`
+(run by `php artisan optimize`) and `revision:check` fail on a resource still written with the 2.0 descriptors.
+The branch is not releasable between US 3.1 and US 2.4.
+
 ### EJ1 — delivered
 
 - The base is required from a Composer `path` repository (`../../api/api-revisions`, as `1.0.x-dev`) until its 1.0.0

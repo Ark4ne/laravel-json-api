@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Resources;
 
+use Ark4ne\ApiRevisions\Schema\HasLifetime;
+use Ark4ne\ApiRevisions\Schema\Revisioned;
 use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Definition\DefinitionSource;
@@ -23,7 +25,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * @template T The model of the resource: `JsonApiResource<User>`
  * @property T $resource
  */
-abstract class JsonApiResource extends JsonResource implements DefinitionSource, RenderableResource
+abstract class JsonApiResource extends JsonResource implements DefinitionSource, RenderableResource, Revisioned, HasLifetime
 {
     /** @use Descriptors\Relations<T> */
     use Descriptors\Relations;
@@ -40,6 +42,7 @@ abstract class JsonApiResource extends JsonResource implements DefinitionSource,
     /** @use Concerns\Meta<T> */
     use Concerns\Meta;
     use Concerns\Definable;
+    use Concerns\DeclaresSchema;
     use Concerns\Renderable;
     use Concerns\ToResponse;
 

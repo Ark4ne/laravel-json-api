@@ -87,6 +87,18 @@ final class DefinitionException extends LogicException implements JsonApiExcepti
     }
 
     /**
+     * A member of a hook of values is not a descriptor of `ark4ne/laravel-api-revisions`: a plain value, a closure or a
+     * member without name cannot be declared.
+     */
+    public static function notASchema(string $class, string $hook, string $name, string $given): self
+    {
+        return new self(
+            "[{$name}] of {$hook}() in [{$class}] must be a descriptor (Schema::string(), Schema::int()…) under its "
+            . "name, {$given} given: a value is declared, never written.",
+        );
+    }
+
+    /**
      * The class is not a resource: it does not implement `DefinitionSource`.
      */
     public static function notADefinitionSource(string $class): self

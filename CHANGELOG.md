@@ -25,6 +25,11 @@ replaces them.
 - `->unless()`, `->whenNotNull()` and `->whenFilled()` on every descriptor of `ark4ne/laravel-api-revisions`
   (`Descriptors\Schemas\Conditions`, macros registered by the service provider); their closures receive
   `($value, $model)`.
+- `JsonApiResource` implements `Revisioned` and `HasLifetime` of `ark4ne/laravel-api-revisions`
+  (`Resources\Concerns\DeclaresSchema`): a resource whose `toAttributes()`, `toResourceMeta()` and `toDocumentMeta()`
+  return descriptors of the base is compiled, cached, checked, locked and exported by it, as one response holding the
+  objects `attributes`, `meta` and `documentMeta`; `#[JsonApiSince]` / `#[JsonApiUntil]` give its lifetime. The
+  rendering does not read that declaration yet.
 - `extension.neon`: types those factories and macros for PHPStan, included by `phpstan/extension-installer` or by hand after
   the extension of `ark4ne/laravel-api-revisions`.
 
