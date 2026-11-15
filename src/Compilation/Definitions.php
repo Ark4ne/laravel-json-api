@@ -45,6 +45,9 @@ final class Definitions
     /** @var array<class-string<DefinitionSource>, array<string, ResourceDefinition>> By class, then revision */
     private static array $projected = [];
 
+    /** @var array<class-string<DefinitionSource>, array<string, array<string, array<string, Closure>>>> By class, then revision */
+    private static array $projectedConstraints = [];
+
     /** @var array<class-string<DefinitionSource>, array<string, true>> The fields of the code of a resource, by class */
     private static array $fieldsOfTheCode = [];
 
@@ -170,11 +173,18 @@ final class Definitions
             $object = static fn(string $name): Shape => $shape->field($name)->children
                 ?? throw DefinitionException::cannotCompile($class, new LogicException("The shape has no [{$name}] object."));
 
+            $relationships = $class::describeRelationshipsAt($object('relationships'));
+            self::$projectedConstraints[$class][RevisionLabel::of($revision)] = array_filter(array_combine(
+                array_map(static fn(array $described): string => $described[0]->name, $relationships),
+                array_column($relationships, 1),
+            ));
+
             return $definition
+                ->relationships(...array_column($relationships, 0))
                 ->attributes(...SchemaAttributes::of($object('attributes')))
                 ->meta(...SchemaAttributes::of($object('meta')))
                 ->documentMeta(...SchemaAttributes::of($object('documentMeta')))
-                ->fieldNames([...$definition->fieldNames, ...SchemaAttributes::names($object('attributes'))]);
+                ->fieldNames([...SchemaAttributes::names($object('attributes')), ...SchemaAttributes::names($object('relationships'))]);
         })();
     }
 
@@ -287,6 +297,11 @@ final class Definitions
     {
         $definition = self::for($class, $revision);
 
+        if ($class::declaresSchema()) {
+            // Gathered with the definition of the revision.
+            return self::$projectedConstraints[$class][RevisionLabel::of($revision ?? self::newest())] ?? [];
+        }
+
         return self::$constraints[CompiledDefinitions::key($definition)] ??= self::compiler()->loadConstraints($class, $definition->revision);
     }
 
@@ -340,6 +355,7 @@ final class Definitions
         self::$declaredTypes = [];
         self::$shapes = [];
         self::$projected = [];
+        self::$projectedConstraints = [];
         self::$fieldsOfTheCode = [];
         self::$compiledRead = false;
     }

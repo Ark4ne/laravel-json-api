@@ -96,11 +96,31 @@ trait Renderable
     {
         $this->renderingContext = $context;
 
+        $definitions = Definitions::for(static::class, $context->revision)->relationships;
+        $model = $this->resource;
+
+        // Declared with the descriptors of the base: its shape gives their names and the relation in force.
+        if (static::declaresSchema()) {
+            foreach ($this->relationsAt($context) as $name => [$key, $relation]) {
+                $definition = $definitions[$name] ?? null;
+                $relationship = Relationship::declared($relation
+                    ->resolveRelated($key, $definition?->related[0] ?? $definition?->native)
+                    ->resolveFor($context->request, $model, $key, $context->configuration));
+
+                yield $name => $definition === null || (
+                    ($definition->linkage ?? $context->configuration->linkage) !== Linkage::Loaded
+                    && !$relationship->filtered()
+                )
+                    ? $relationship
+                    : $relationship->loadedWhen(static fn() => LoadedRelations::has($model, $definition));
+            }
+
+            return;
+        }
+
         $relationships = $this->autoWhenIncluded(
             Values::mergeValues($this->revised($this->toRelationships($context->request), $context)),
         );
-        $definitions = Definitions::for(static::class, $context->revision)->relationships;
-        $model = $this->resource;
 
         foreach ($relationships as $key => $relationship) {
             if ($relationship instanceof PotentiallyMissing && $relationship->isMissing()) {

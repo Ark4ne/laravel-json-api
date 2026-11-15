@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Definition;
 
+use Ark4ne\ApiRevisions\Compilation\Shape;
 use Ark4ne\JsonApi\Support\Probe;
+use Closure;
 use Illuminate\Http\Request;
 
 /**
@@ -29,6 +31,17 @@ interface DefinitionSource
      * @internal Until every resource is declared so.
      */
     public static function declaresSchema(): bool;
+
+    /**
+     * The relationships a resource declared with the descriptors of the base has at the revision of `$relationships`
+     * (the `relationships` object of its shape): each one defined under its name there, with the constraints of its
+     * eager-loads.
+     *
+     * @internal Until every resource is declared so.
+     *
+     * @return list<array{RelationshipDefinition, array<string, Closure>}>
+     */
+    public static function describeRelationshipsAt(Shape $relationships): array;
 
     /**
      * The definition written by hand (`toDefinition()`), `null` to compile it from the hooks.

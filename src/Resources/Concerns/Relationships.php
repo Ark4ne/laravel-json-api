@@ -19,7 +19,7 @@ trait Relationships
      *
      * @param \Illuminate\Http\Request $request
      *
-     * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Relations\Relation<T>|Relationship<*>|\Illuminate\Http\Resources\PotentiallyMissing>|iterable<array-key, \Ark4ne\JsonApi\Descriptors\Relations\Relation<T>|\Illuminate\Http\Resources\MergeValue|\Illuminate\Http\Resources\MissingValue>
+     * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Relations\Relation<T>|Relationship<*>|\Illuminate\Http\Resources\PotentiallyMissing>|iterable<array-key, \Ark4ne\JsonApi\Descriptors\Relations\Relation<T>|\Illuminate\Http\Resources\MergeValue|\Illuminate\Http\Resources\MissingValue>|iterable<string, \Ark4ne\JsonApi\Descriptors\Schemas\RelationshipSchema<T>>
      *
      * ```
      * return [

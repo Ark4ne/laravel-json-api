@@ -14,6 +14,8 @@ use Ark4ne\ApiRevisions\Schema\ObjectSchema;
 use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Definition\JsonApiSince;
 use Ark4ne\JsonApi\Definition\JsonApiUntil;
+use Ark4ne\JsonApi\Descriptors\Relations\Relation;
+use Ark4ne\JsonApi\Descriptors\Schemas\RelationshipSchema;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Rendering\ResourcePlan;
 use Ark4ne\JsonApi\Support\Memo;
@@ -25,10 +27,11 @@ use Throwable;
 
 /**
  * A resource is one `Revisioned` response of `ark4ne/laravel-api-revisions` (docs/rfc/api-revisions-integration.md
- * D5): its top level holds one object per hook of values (`attributes`, `meta`, `documentMeta`), so the base compiles,
+ * D5): its top level holds one object per hook (`attributes`, `relationships`, `meta`, `documentMeta`), so the base compiles,
  * caches, checks, locks and exports it as any class. Its lifetime is the one of `#[JsonApiSince]` / `#[JsonApiUntil]`.
  *
- * Every member of those hooks is a descriptor of the base (`Schema::string()`…): a plain value cannot be declared.
+ * Every member of those hooks is a descriptor of the base (`Schema::string()`…, `Schema::relationship()` for a
+ * relationship): a plain value cannot be declared.
  *
  * @phpstan-require-extends \Ark4ne\JsonApi\Resources\JsonApiResource
  */
@@ -82,7 +85,7 @@ trait DeclaresSchema
      *
      * @internal
      *
-     * @return array{attributes: ObjectSchema, meta: ObjectSchema, documentMeta: ObjectSchema}
+     * @return array{attributes: ObjectSchema, relationships: ObjectSchema, meta: ObjectSchema, documentMeta: ObjectSchema}
      *
      * @throws DefinitionException when a member is not a descriptor of the base
      */
@@ -90,6 +93,7 @@ trait DeclaresSchema
     {
         return [
             'attributes' => self::schemaObject('toAttributes', $this->toAttributes($request)),
+            'relationships' => self::schemaObject('toRelationships', $this->toRelationships($request), RelationshipSchema::class),
             'meta' => self::schemaObject('toResourceMeta', $this->toResourceMeta($request) ?? []),
             'documentMeta' => self::schemaObject('toDocumentMeta', $this->toDocumentMeta($request) ?? []),
         ];
@@ -112,6 +116,7 @@ trait DeclaresSchema
 
             // Hooks declaring nothing on a stand-in (the default attributes of a model) render as before.
             return $schema['attributes']->children() !== []
+                || $schema['relationships']->children() !== []
                 || $schema['meta']->children() !== []
                 || $schema['documentMeta']->children() !== [];
         });
@@ -163,13 +168,60 @@ trait DeclaresSchema
     }
 
     /**
-     * @param iterable<array-key, mixed> $members
+     * @internal
      */
-    private static function schemaObject(string $hook, iterable $members): ObjectSchema
+    public static function describeRelationshipsAt(Shape $relationships): array
+    {
+        $declared = static::newDefinitionSource(Probe::root())->describeSchema(new Request())['relationships']->children();
+
+        $described = [];
+        foreach ($relationships->fields as $key => $field) {
+            $relationship = $declared[$key] ?? null;
+            if ($relationship instanceof RelationshipSchema) {
+                $relation = $relationship->relationAt($field);
+                $described[] = [
+                    // Described under its name of the code (its source, its guessed resource), named as the revision does.
+                    $relation->definition($key)->name($field->name)->conditional($field->conditional || $relation->isConditional()),
+                    $relation->loadConstraints(),
+                ];
+            }
+        }
+
+        return $described;
+    }
+
+    /**
+     * The relationships of this instance visible at the revision of `$context`, by their name at it: each one the
+     * relation in force there (`RelationshipSchema::relationAt()`), read under its name of the code.
+     *
+     * @internal
+     *
+     * @return iterable<string, array{string, Relation<mixed>}> The name of the code and the relation, by name at the revision
+     */
+    public function relationsAt(JsonApiContext $context): iterable
+    {
+        $shape = $context->projection->shapes
+            ->for(static::class, DeclarationKind::Response, $context->revision ?? Unrevisioned::Head)
+            ->field('relationships')?->children;
+        $declared = self::schemaObject('toRelationships', $this->toRelationships($context->request), RelationshipSchema::class)->children();
+
+        foreach ($shape->fields ?? [] as $key => $field) {
+            $relationship = $declared[$key] ?? null;
+            if ($relationship instanceof RelationshipSchema) {
+                yield $field->name => [$key, $relationship->relationAt($field)];
+            }
+        }
+    }
+
+    /**
+     * @param iterable<array-key, mixed> $members
+     * @param class-string<Descriptor<mixed>> $of What every member is
+     */
+    private static function schemaObject(string $hook, iterable $members, string $of = Descriptor::class): ObjectSchema
     {
         $children = [];
         foreach ($members as $name => $member) {
-            if (!is_string($name) || $name === '' || !$member instanceof Descriptor) {
+            if (!is_string($name) || $name === '' || !$member instanceof $of) {
                 throw DefinitionException::notASchema(static::class, $hook, (string) $name, get_debug_type($member));
             }
             $children[$name] = $member;

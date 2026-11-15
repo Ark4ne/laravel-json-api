@@ -40,6 +40,9 @@ replaces them.
 - `Definitions::for($class, $revision)` gives the attributes, the meta and the document meta of such a resource from
   its shape at the revision (names, types, nullability, presence), and its `fieldNames`: `Fields`, `Includes` and the
   tools read the names of the revision. Without revision, the newest one of the application.
+- The relationships of such a resource are declared with `Schema::relationship()`: its declaration holds a
+  `relationships` object, and the definition, the include validation, the eager-loads and the rendering read their
+  names and the relation in force from the shape of the revision.
 - `extension.neon`: types those factories and macros for PHPStan, included by `phpstan/extension-installer` or by hand after
   the extension of `ark4ne/laravel-api-revisions`.
 

@@ -104,7 +104,7 @@ final class RelationshipSchemaTest extends TestCase
     }
 
     /**
-     * @return array{author: RelationshipSchema, comments: RelationshipSchema}
+     * @return array{author: RelationshipSchema<mixed>, comments: RelationshipSchema<mixed>}
      */
     private static function descriptors(): array
     {

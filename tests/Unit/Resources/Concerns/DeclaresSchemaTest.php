@@ -32,13 +32,14 @@ final class DeclaresSchemaTest extends TestCase
         self::assertSame([DeclarationKind::Response], ArticleResource::declarationKinds());
     }
 
-    public function test_the_declaration_holds_one_object_per_hook_of_values(): void
+    public function test_the_declaration_holds_one_object_per_hook(): void
     {
         $declaration = ArticleResource::describeRevisioned(DeclarationKind::Response, new Probe(self::class));
 
-        self::assertSame(['attributes', 'meta', 'documentMeta'], array_keys($declaration));
+        self::assertSame(['attributes', 'relationships', 'meta', 'documentMeta'], array_keys($declaration));
         self::assertContainsOnlyInstancesOf(ObjectSchema::class, $declaration);
         self::assertSame(['title', 'views', 'summary'], self::children($declaration['attributes']));
+        self::assertSame([], self::children($declaration['relationships']));
         self::assertSame(['published'], self::children($declaration['meta']));
         self::assertSame(['legacy'], self::children($declaration['documentMeta']));
     }
@@ -78,12 +79,12 @@ final class DeclaresSchemaTest extends TestCase
         );
 
         self::assertSame(
-            ['attributes' => ['name' => 'Hello', 'views' => '12'], 'meta' => ['published' => true], 'documentMeta' => ['legacy' => true]],
-            $project(ApiRevision::Initial),
+            '{"attributes":{"name":"Hello","views":"12"},"relationships":{},"meta":{"published":true},"documentMeta":{"legacy":true}}',
+            json_encode($project(ApiRevision::Initial)),
         );
         // An object without field at the revision is an empty JSON object.
         self::assertSame(
-            '{"attributes":{"title":"Hello","views":12,"summary":"TEXT"},"meta":{"published":true},"documentMeta":{}}',
+            '{"attributes":{"title":"Hello","views":12,"summary":"TEXT"},"relationships":{},"meta":{"published":true},"documentMeta":{}}',
             json_encode($project(ApiRevision::UsersReplaceTeachers)),
         );
     }
@@ -148,6 +149,26 @@ final class DeclaresSchemaTest extends TestCase
 
         self::assertTrue(ClassLifetime::exists(TeacherResource::class, ApiRevision::Labels));
         self::assertFalse(ClassLifetime::exists(TeacherResource::class, ApiRevision::UsersReplaceTeachers));
+    }
+
+    public function test_a_relationship_that_is_not_declared_on_the_base_is_refused(): void
+    {
+        $resource = new class ([]) extends JsonApiResource {
+            public function toAttributes(Request $request): iterable
+            {
+                return ['title' => Schema::string()];
+            }
+
+            protected function toRelationships(Request $request): iterable
+            {
+                return ['author' => $this->one(UserResource::class)];
+            }
+        };
+
+        $this->expectException(DefinitionException::class);
+        $this->expectExceptionMessage('[author] of toRelationships()');
+
+        $resource::describeRevisioned(DeclarationKind::Response, new Probe(self::class));
     }
 
     /**

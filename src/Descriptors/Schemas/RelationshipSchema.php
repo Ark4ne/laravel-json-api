@@ -22,6 +22,8 @@ use Ark4ne\JsonApi\Descriptors\Relations\RelationMany;
  * so a change of them shows in the lock, the export and the changelog. A relationship to another resource at an old
  * revision is `->was(R, schema: Schema::relationship($this->one(OldResource::class)))`: no value is converted.
  *
+ * @template T The model of the resource declaring the relationship
+ *
  * @extends Descriptor<mixed>
  */
 final class RelationshipSchema extends Descriptor implements DeclaresConversions
@@ -29,7 +31,7 @@ final class RelationshipSchema extends Descriptor implements DeclaresConversions
     public const TYPE = 'jsonapi.relationship';
 
     /**
-     * @param Relation<mixed> $relation
+     * @param Relation<T> $relation
      */
     public function __construct(private readonly Relation $relation)
     {
@@ -45,7 +47,7 @@ final class RelationshipSchema extends Descriptor implements DeclaresConversions
     /**
      * The relation of the head.
      *
-     * @return Relation<mixed>
+     * @return Relation<T>
      */
     public function relation(): Relation
     {
@@ -56,13 +58,18 @@ final class RelationshipSchema extends Descriptor implements DeclaresConversions
      * The relation in force at the revision of `$field`, a field of a shape compiled from this descriptor: the one of
      * the `was(schema:)` the shape puts in force, the head's otherwise.
      *
-     * @return Relation<mixed>
+     * @return Relation<T>
      */
     public function relationAt(FieldDefinition $field): Relation
     {
         $schema = $field->schemaChange === null ? null : $this->history()->changes[$field->schemaChange]->schema ?? null;
+        if (!$schema instanceof self) {
+            return $this->relation;
+        }
 
-        return $schema instanceof self ? $schema->relation : $this->relation;
+        // The schema of a `was()` is declared by the resource declaring this relationship: on the same model.
+        /** @var self<T> $schema */
+        return $schema->relation;
     }
 
     /**
