@@ -21,10 +21,13 @@ use Ark4ne\JsonApi\Descriptors\Schemas\RelationshipSchema;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Rendering\MemberFieldsets;
 use Ark4ne\JsonApi\Rendering\ResourcePlan;
+use Ark4ne\JsonApi\Resources\JsonApiResource;
+use Ark4ne\JsonApi\Support\Memo;
 use Ark4ne\JsonApi\Support\Probe;
 use Illuminate\Http\Request;
 use LogicException;
 use ReflectionClass;
+use ReflectionMethod;
 use Throwable;
 
 /**
@@ -99,7 +102,7 @@ trait DeclaresSchema
     public function describeSchema(Request $request): array
     {
         return [
-            'attributes' => self::schemaObject('toAttributes', $this->toAttributes($request)),
+            'attributes' => static::hasDefaultAttributes() ? new ObjectSchema([]) : self::schemaObject('toAttributes', $this->toAttributes($request)),
             'relationships' => self::schemaObject('toRelationships', $this->toRelationships($request), RelationshipSchema::class),
             'meta' => self::schemaObject('toResourceMeta', $this->toResourceMeta($request) ?? []),
             'documentMeta' => self::schemaObject('toDocumentMeta', $this->toDocumentMeta($request) ?? []),
@@ -114,8 +117,13 @@ trait DeclaresSchema
      */
     public static function declaresSchema(): bool
     {
+        $resource = static::newDefinitionSource(Probe::root());
+
         try {
-            $schema = static::newDefinitionSource(Probe::root())->describeSchema(new Request());
+            $schema = $resource->describeSchema(new Request());
+        } catch (DefinitionException $e) {
+            // A hook mixing the descriptors of the base and the 2.0 ones would render the former as plain objects.
+            return self::declaresAnyDescriptor($resource) ? throw $e : false;
         } catch (Throwable) {
             return false;
         }
@@ -125,6 +133,48 @@ trait DeclaresSchema
             || $schema['relationships']->children() !== []
             || $schema['meta']->children() !== []
             || $schema['documentMeta']->children() !== [];
+    }
+
+    /**
+     * Whether a hook of the resource returns a descriptor of the base; `false` when a hook fails on the stand-in.
+     *
+     * @param self<mixed> $resource
+     */
+    private static function declaresAnyDescriptor(self $resource): bool
+    {
+        $request = new Request();
+
+        try {
+            $hooks = [
+                $resource->toAttributes($request),
+                $resource->toRelationships($request),
+                $resource->toResourceMeta($request) ?? [],
+                $resource->toDocumentMeta($request) ?? [],
+            ];
+            foreach ($hooks as $members) {
+                foreach ($members as $member) {
+                    if ($member instanceof Descriptor) {
+                        return true;
+                    }
+                }
+            }
+        } catch (Throwable) {
+            return false;
+        }
+
+        return false;
+    }
+
+    /**
+     * Whether the resource keeps the default attributes (it does not write `toAttributes()`): those of its model,
+     * which no shape can declare. They are rendered as they are, outside the declaration.
+     *
+     * @internal
+     */
+    public static function hasDefaultAttributes(): bool
+    {
+        return Memo::remember(DeclaresSchema::class, static::class, static fn(): bool => (new ReflectionMethod(static::class, 'toAttributes'))
+            ->getDeclaringClass()->getName() === JsonApiResource::class);
     }
 
     /**

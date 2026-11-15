@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Test\Feature\Loading\Fixtures;
 
+use Ark4ne\ApiRevisions\Schema\Schema;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\Request;
@@ -23,19 +24,19 @@ final class LinkageUserResource extends JsonApiResource
     public function toAttributes(Request $request): iterable
     {
         return [
-            'name' => $this->string(),
+            'name' => Schema::string()->nullable()->whenHas(),
         ];
     }
 
     /**
-     * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Relations\Relation<\Test\app\Models\User>>
+     * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Schemas\RelationshipSchema<\Test\app\Models\User>>
      */
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'posts' => $this->many(LinkagePostResource::class)
-                ->withLoad(['posts' => static fn(HasMany $query) => $query->getQuery()->whereKey(range(2, 100, 2))]),
-            'comments' => $this->many(LinkageCommentResource::class)->whenLoaded(),
+            'posts' => Schema::relationship($this->many(LinkagePostResource::class)
+                ->withLoad(['posts' => static fn(HasMany $query) => $query->getQuery()->whereKey(range(2, 100, 2))])),
+            'comments' => Schema::relationship($this->many(LinkageCommentResource::class)->whenLoaded()),
         ];
     }
 }

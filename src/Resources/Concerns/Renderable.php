@@ -77,7 +77,7 @@ trait Renderable
         $this->renderingContext = $context;
 
         // Declared with the descriptors of the base: rendered by it, from the plan of the response.
-        if (Definitions::declaresSchema(static::class)) {
+        if (Definitions::declaresSchema(static::class) && !static::hasDefaultAttributes()) {
             return $this->valuesPlan($context)->attributes($this->resource);
         }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Test\Feature\Loading\Fixtures;
 
+use Ark4ne\ApiRevisions\Schema\Schema;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Http\Request;
 use Test\app\Models\Comment;
@@ -22,16 +23,16 @@ final class LinkageLikeResource extends JsonApiResource
     }
 
     /**
-     * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Relations\Relation<\Test\app\Models\Like>>
+     * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Schemas\RelationshipSchema<\Test\app\Models\Like>>
      */
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'user' => $this->one(LinkageUserResource::class),
-            'likeable' => $this->morph([
+            'user' => Schema::relationship($this->one(LinkageUserResource::class)),
+            'likeable' => Schema::relationship($this->morph([
                 Post::class => LinkagePostResource::class,
                 Comment::class => LinkageCommentResource::class,
-            ]),
+            ])),
         ];
     }
 }

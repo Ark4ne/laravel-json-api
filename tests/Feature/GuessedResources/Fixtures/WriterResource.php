@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Test\Feature\GuessedResources\Fixtures;
 
+use Ark4ne\ApiRevisions\Schema\Schema;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Http\Request;
 
@@ -19,6 +20,6 @@ final class WriterResource extends JsonApiResource
 
     public function toAttributes(Request $request): iterable
     {
-        return ['name' => $this->string()];
+        return ['name' => Schema::string()->nullable()->whenHas()];
     }
 }

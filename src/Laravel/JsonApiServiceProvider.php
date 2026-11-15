@@ -182,6 +182,10 @@ final class JsonApiServiceProvider extends ServiceProvider
         // scoped to it.
         Definitions::projectWith(static function (): Projection {
             $container = Container::getInstance();
+            // A container without the application (a test replacing it): shapes compiled on first use.
+            if (!$container->bound(ValueErrorHandler::class)) {
+                return new Projection();
+            }
 
             $shapes = $container->make(Shapes::class);
 

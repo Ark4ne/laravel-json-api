@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Test\Feature\Loading\Fixtures;
 
+use Ark4ne\ApiRevisions\Schema\Schema;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Http\Request;
 
@@ -22,19 +23,19 @@ final class LinkageCommentResource extends JsonApiResource
     public function toAttributes(Request $request): iterable
     {
         return [
-            'content' => $this->string(),
+            'content' => Schema::string()->nullable()->whenHas(),
         ];
     }
 
     /**
-     * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Relations\Relation<\Test\app\Models\Comment>>
+     * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Schemas\RelationshipSchema<\Test\app\Models\Comment>>
      */
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'user' => $this->one(LinkageUserResource::class),
-            'post' => $this->one(LinkagePostResource::class)->whenIncluded(),
-            'writer' => $this->one(LinkageUserResource::class, 'nothing'),
+            'user' => Schema::relationship($this->one(LinkageUserResource::class)),
+            'post' => Schema::relationship($this->one(LinkagePostResource::class)->whenIncluded()),
+            'writer' => Schema::relationship($this->one(LinkageUserResource::class, 'nothing')),
         ];
     }
 }
