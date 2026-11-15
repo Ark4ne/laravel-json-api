@@ -14,6 +14,7 @@ use Ark4ne\ApiRevisions\Projection\ValueErrorHandler;
 use Ark4ne\JsonApi\Compilation\CompiledDefinitions;
 use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Compilation\Projection;
+use Ark4ne\JsonApi\Compilation\ResourceCheck;
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Context\CurrentRevision;
 use Ark4ne\JsonApi\Context\JsonApiContext;
@@ -86,6 +87,8 @@ final class JsonApiServiceProvider extends ServiceProvider
         $this->app->register(RevisionsServiceProvider::class);
         SchemaTypes::register();
         Conditions::register();
+        // The rules of JSON:API in the check of the base (`revision:check`).
+        $this->app->tag([ResourceCheck::class], RevisionsServiceProvider::CHECKS);
 
         $this->app->singleton(Configuration::class, static function (Application $app): Configuration {
             /** @var array<array-key, mixed> $jsonapi */

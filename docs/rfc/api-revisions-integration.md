@@ -154,6 +154,13 @@ Transitional state, until US 2.4: the base discovers every resource as a `Revisi
 (run by `php artisan optimize`) and `revision:check` fail on a resource still written with the 2.0 descriptors.
 The branch is not releasable between US 3.1 and US 2.4.
 
+### EJ6 — stories
+
+| Story | Content |
+|---|---|
+| **US 6.1** ✅ | `Compilation\ResourceCheck`, a `Check` of the base tagged by the service provider: `jsonapi-reserved-name`, `jsonapi-name-collision`, `jsonapi-absent-resource`, revision by revision, on the resources declared on the base. |
+| **US 6.2** | `jsonapi:check` delegating to `revision:check`; `ResourceAssertions` on the base's testing helpers; the 2.1 `RevisionChecks` / `RevisionAudit` removed (with US 2.4). |
+
 ### Performance of the engine on the base (measured 2026-11-15)
 
 `composer benchmark` renders `bin/benchmark/Schema/`, the benchmark resources declared on the base: the same document

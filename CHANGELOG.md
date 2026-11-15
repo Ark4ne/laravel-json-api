@@ -39,6 +39,10 @@ replaces them.
   run once per response on a template instance, the sparse fieldset is read in the names of the revision and a field
   it leaves out is never evaluated. `JsonApiContext` carries the `Compilation\Projection` (the shapes and the
   projector of the application, `Definitions::projectWith()` / `projection()`) and a `Context\ResponseCache`.
+- `Compilation\ResourceCheck`, tagged in the check of `ark4ne/laravel-api-revisions` (`revision:check`,
+  `assertRevisionsAreConsistent()`): at each revision, an attribute or a relationship named `id` or `type`
+  (`jsonapi-reserved-name`), an attribute and a relationship sharing a name (`jsonapi-name-collision`), a relationship
+  to a resource that does not exist there (`jsonapi-absent-resource`).
 - `Rendering\ModelSourceReader`: the reader the projection reads Eloquent models with, without listing their
   properties (the reader of the base costs about 3 KB per model and three times the read).
 - `Rendering\ProjectedValues`: the members a `ResourcePlan` rendered, which the `ValueResolver` gives as they are.
