@@ -166,6 +166,7 @@ hook stays per resource.
 | Fixture | State |
 |---|---|
 | `tests/app/Http/Resources/UserResource` | ✅ on the base: the plain members of `applyWhen()` and of the struct became descriptors with the same values, `describer.nullable` / `when-has` written as `->nullable()` / `->whenHas()`; every expected document unchanged. It needed the fieldset on the members of an object (`Rendering\MemberFieldsets`: removed after the projection, so a member left out is still evaluated — base requirement **R13**, plan keys as paths). |
+| `tests/app/Http/Resources/PostResource`, `CommentResource` | ✅ on the base: `enum()` names its class, the members without key of the meta are keyed; every expected document unchanged. |
 
 ### US 2.4 — plan of the switch
 
