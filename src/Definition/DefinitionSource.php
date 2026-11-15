@@ -44,6 +44,16 @@ interface DefinitionSource
     public static function describeRelationshipsAt(Shape $relationships): array;
 
     /**
+     * The attributes of a resource declared with the descriptors of the base that are rendered only when the sparse
+     * fieldset names them (`whenInFields()`), by their name of the code.
+     *
+     * @internal Until every resource is declared so.
+     *
+     * @return list<string>
+     */
+    public static function sparseAttributes(): array;
+
+    /**
      * The definition written by hand (`toDefinition()`), `null` to compile it from the hooks.
      *
      * @internal

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Test\Feature\Schemas;
 
 use Ark4ne\ApiRevisions\Schema\Schema;
+use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Resources\Attributes\JsonApiType;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Contracts\Support\Responsable;
@@ -109,6 +110,25 @@ final class ValuesTest extends TestCase
         self::assertSame(1, CountedResource::$sources);
     }
 
+    public function test_a_field_only_in_fields_is_rendered_when_the_fieldset_names_it(): void
+    {
+        $resource = static fn(): SparseResource => SparseResource::make(['id' => 1, 'name' => 'a', 'secret' => 's']);
+
+        $this->render($resource(), null)->assertJsonPath('data.attributes', ['name' => 'a']);
+        $this->render($resource(), null, 'fields[sparse]=name')->assertJsonPath('data.attributes', ['name' => 'a']);
+        $this->render($resource(), null, 'fields[sparse]=name,secret')->assertJsonPath('data.attributes', ['name' => 'a', 'secret' => 's']);
+        $this->render($resource(), ApiRevision::Initial, 'fields[sparse]=hidden')->assertJsonPath('data.attributes', ['hidden' => 's']);
+    }
+
+    public function test_a_field_only_in_fields_is_sparse_in_the_definition(): void
+    {
+        $attributes = Definitions::for(SparseResource::class, ApiRevision::UsersReplaceTeachers)->attributes;
+
+        self::assertTrue($attributes['secret']->sparse);
+        self::assertTrue($attributes['secret']->conditional);
+        self::assertFalse($attributes['name']->sparse);
+    }
+
     /**
      * @return TestResponse<\Symfony\Component\HttpFoundation\Response>
      */
@@ -146,6 +166,21 @@ final class CountedResource extends JsonApiResource
 
                 return is_string($this->resource['name'] ?? null) ? strtoupper($this->resource['name']) : '';
             }),
+        ];
+    }
+}
+
+/**
+ * @extends JsonApiResource<array<string, mixed>>
+ */
+#[JsonApiType('sparse')]
+final class SparseResource extends JsonApiResource
+{
+    public function toAttributes(Request $request): iterable
+    {
+        return [
+            'name' => Schema::string(),
+            'secret' => Schema::string()->whenInFields()->was(ApiRevision::Initial, name: 'hidden'),
         ];
     }
 }

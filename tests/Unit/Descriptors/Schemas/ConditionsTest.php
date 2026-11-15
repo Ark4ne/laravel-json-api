@@ -13,6 +13,8 @@ use Ark4ne\ApiRevisions\Schema\DescriptorMacros;
 use Ark4ne\ApiRevisions\Schema\Schema;
 use Ark4ne\JsonApi\Descriptors\Schemas\Conditions;
 use Ark4ne\JsonApi\Descriptors\Schemas\MixedSchema;
+use Ark4ne\JsonApi\Exceptions\DefinitionException;
+use Illuminate\Database\Eloquent\Model;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -93,6 +95,53 @@ final class ConditionsTest extends TestCase
         self::assertSame($rendered ? ['field' => $value] : [], self::project($descriptors, ['field' => $value]));
     }
 
+    public function test_when_in_fields_marks_the_field_without_hiding_its_value(): void
+    {
+        $sparse = Schema::string()->whenInFields();
+
+        self::assertTrue(Conditions::isOnlyInFields($sparse));
+        self::assertFalse(Conditions::isOnlyInFields(Schema::string()->whenNotNull()));
+        self::assertTrue($sparse->isConditional());
+        // Whether it is requested is decided when the fields are planned: the condition itself passes.
+        self::assertSame(['name' => 'Ada'], self::project(['name' => $sparse], ['name' => 'Ada']));
+    }
+
+    public function test_when_appended_renders_an_accessor_the_model_appends(): void
+    {
+        $descriptors = ['initials' => Schema::string('initials')->whenAppended()];
+        $model = new class extends Model {
+            public function getInitialsAttribute(): string
+            {
+                return 'AL';
+            }
+        };
+
+        self::assertSame([], self::project($descriptors, $model));
+        self::assertSame(['initials' => 'AL'], self::project($descriptors, (clone $model)->append('initials')));
+        self::assertSame([], self::project($descriptors, ['initials' => 'AL']));
+    }
+
+    public function test_when_appended_needs_the_name_of_the_accessor(): void
+    {
+        $this->expectException(DefinitionException::class);
+        $this->expectExceptionMessage('whenAppended()');
+
+        Schema::string()->whenAppended();
+    }
+
+    public function test_when_appended_names_the_accessor_of_another_key(): void
+    {
+        $descriptors = ['short' => Schema::string(static fn(mixed $value, Model $model): mixed => $model->getAttribute('initials'))->whenAppended('initials')];
+        $model = new class extends Model {
+            public function getInitialsAttribute(): string
+            {
+                return 'AL';
+            }
+        };
+
+        self::assertSame(['short' => 'AL'], self::project($descriptors, $model->append('initials')));
+    }
+
     public function test_a_macro_returns_a_copy_of_the_same_type(): void
     {
         $string = Schema::string()->max(3);
@@ -105,11 +154,11 @@ final class ConditionsTest extends TestCase
 
     /**
      * @param array<string, Descriptor<mixed>> $descriptors
-     * @param array<string, mixed> $subject
+     * @param array<string, mixed>|Model $subject
      *
      * @return array<string, mixed>
      */
-    private static function project(array $descriptors, array $subject): array
+    private static function project(array $descriptors, array|Model $subject): array
     {
         $shape = ShapeSelector::at($descriptors, Unrevisioned::Head, DeclarationKind::Response->direction());
 

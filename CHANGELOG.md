@@ -28,7 +28,9 @@ replaces them.
   `->was(R, schema: Schema::relationship(…))`). `relationAt($field)` gives the relation in force at a revision.
 - `->unless()`, `->whenNotNull()` and `->whenFilled()` on every descriptor of `ark4ne/laravel-api-revisions`
   (`Descriptors\Schemas\Conditions`, macros registered by the service provider); their closures receive
-  `($value, $model)`.
+  `($value, $model)`. `->whenInFields()`: the attribute is rendered only when the sparse fieldset names it, in its
+  name at the revision (sparse in the definition). `->whenAppended(?string $attribute = null)`: only when the model
+  appends the accessor the descriptor reads, or the one named.
 - `JsonApiResource` implements `Revisioned` and `HasLifetime` of `ark4ne/laravel-api-revisions`
   (`Resources\Concerns\DeclaresSchema`): a resource whose `toAttributes()`, `toResourceMeta()` and `toDocumentMeta()`
   return descriptors of the base is compiled, cached, checked, locked and exported by it, as one response holding the

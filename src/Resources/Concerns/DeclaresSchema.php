@@ -15,6 +15,7 @@ use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Definition\JsonApiSince;
 use Ark4ne\JsonApi\Definition\JsonApiUntil;
 use Ark4ne\JsonApi\Descriptors\Relations\Relation;
+use Ark4ne\JsonApi\Descriptors\Schemas\Conditions;
 use Ark4ne\JsonApi\Descriptors\Schemas\RelationshipSchema;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Rendering\ResourcePlan;
@@ -144,14 +145,16 @@ trait DeclaresSchema
                 $children = static fn(string $object): Shape => $shape->field($object)->children
                     ?? throw DefinitionException::cannotCompile(static::class, new LogicException("The shape has no [{$object}] object."));
 
-                // The sparse fieldset is written in the names of the revision: it keeps the fields it allows.
-                $keys = null;
-                if ($context->fields->restricts($type)) {
-                    $keys = [];
-                    foreach ($children('attributes')->fields as $key => $field) {
-                        if ($context->fields->allows($type, $field->name)) {
-                            $keys[] = $key;
-                        }
+                // The sparse fieldset is written in the names of the revision: it keeps the fields it allows, and a field
+                // only in fields (`whenInFields()`) when it names it.
+                $keys = [];
+                $attributes = $schema['attributes']->children();
+                foreach ($children('attributes')->fields as $key => $field) {
+                    $kept = isset($attributes[$key]) && Conditions::isOnlyInFields($attributes[$key])
+                        ? $context->fields->requests($type, $field->name)
+                        : $context->fields->allows($type, $field->name);
+                    if ($kept) {
+                        $keys[] = $key;
                     }
                 }
 
@@ -188,6 +191,16 @@ trait DeclaresSchema
         }
 
         return $described;
+    }
+
+    /**
+     * @internal
+     */
+    public static function sparseAttributes(): array
+    {
+        $attributes = static::newDefinitionSource(Probe::root())->describeSchema(new Request())['attributes']->children();
+
+        return array_keys(array_filter($attributes, Conditions::isOnlyInFields(...)));
     }
 
     /**

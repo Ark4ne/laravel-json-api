@@ -10,6 +10,7 @@ use Ark4ne\ApiRevisions\Revisions\RevisionOrder as BaseOrder;
 use Ark4ne\ApiRevisions\Revisions\Unrevisioned;
 use Ark4ne\ApiRevisions\Schema\DeclarationKind;
 use Ark4ne\JsonApi\Configuration\Configuration;
+use Ark4ne\JsonApi\Definition\AttributeDefinition;
 use Ark4ne\JsonApi\Definition\DefinitionSource;
 use Ark4ne\JsonApi\Definition\Lifetime;
 use Ark4ne\JsonApi\Definition\ResourceDefinition;
@@ -179,9 +180,17 @@ final class Definitions
                 array_column($relationships, 1),
             ));
 
+            // What the shape does not hold: the fields rendered only when the sparse fieldset names them.
+            $names = SchemaAttributes::names($object('attributes'));
+            $sparse = array_flip(array_intersect_key($names, array_flip($class::sparseAttributes())));
+            $attributes = array_map(
+                static fn(AttributeDefinition $attribute): AttributeDefinition => isset($sparse[$attribute->name]) ? $attribute->sparse() : $attribute,
+                SchemaAttributes::of($object('attributes')),
+            );
+
             return $definition
                 ->relationships(...array_column($relationships, 0))
-                ->attributes(...SchemaAttributes::of($object('attributes')))
+                ->attributes(...$attributes)
                 ->meta(...SchemaAttributes::of($object('meta')))
                 ->documentMeta(...SchemaAttributes::of($object('documentMeta')))
                 ->fieldNames([...SchemaAttributes::names($object('attributes')), ...SchemaAttributes::names($object('relationships'))]);

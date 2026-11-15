@@ -99,6 +99,14 @@ final class DefinitionException extends LogicException implements JsonApiExcepti
     }
 
     /**
+     * `whenAppended()` on a descriptor reading no key of the model: the accessor must be named.
+     */
+    public static function unnamedAccessor(): self
+    {
+        return new self("whenAppended() needs the accessor: read it (Schema::string('full_name')) or name it (->whenAppended('full_name')).");
+    }
+
+    /**
      * The class is not a resource: it does not implement `DefinitionSource`.
      */
     public static function notADefinitionSource(string $class): self

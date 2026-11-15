@@ -1,6 +1,6 @@
 # PHPStan extension of ark4ne/laravel-json-api: types the factories this package registers in
 # ark4ne/laravel-api-revisions (Schema::decimal(), Schema::json(), Schema::mixed()) and the conditions it adds to
-# every descriptor (->unless(), ->whenNotNull(), ->whenFilled()).
+# every descriptor (->unless(), ->whenNotNull(), ->whenFilled(), ->whenInFields(), ->whenAppended()).
 # Included automatically with phpstan/extension-installer, or by hand, after the extension of the base:
 #   includes:
 #       - vendor/ark4ne/laravel-api-revisions/extension.neon
@@ -16,3 +16,5 @@ parameters:
             unless: 'Ark4ne\JsonApi\Descriptors\Schemas\Conditions::unless'
             whenNotNull: 'Ark4ne\JsonApi\Descriptors\Schemas\Conditions::whenNotNull'
             whenFilled: 'Ark4ne\JsonApi\Descriptors\Schemas\Conditions::whenFilled'
+            whenInFields: 'Ark4ne\JsonApi\Descriptors\Schemas\Conditions::whenInFields'
+            whenAppended: 'Ark4ne\JsonApi\Descriptors\Schemas\Conditions::whenAppended'
