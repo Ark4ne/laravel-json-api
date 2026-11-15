@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Compilation;
 
+use Ark4ne\ApiRevisions\Compilation\Shape;
 use Ark4ne\ApiRevisions\Revisions\Revision;
+use Ark4ne\ApiRevisions\Revisions\RevisionOrder as BaseOrder;
+use Ark4ne\ApiRevisions\Revisions\Unrevisioned;
+use Ark4ne\ApiRevisions\Schema\DeclarationKind;
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Definition\DefinitionSource;
 use Ark4ne\JsonApi\Definition\Lifetime;
@@ -12,6 +16,7 @@ use Ark4ne\JsonApi\Definition\ResourceDefinition;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Support\RevisionLabel;
 use Closure;
+use LogicException;
 
 /**
  * The definitions of the resource classes, compiled once per process (docs/architecture.md §4).
@@ -36,6 +41,9 @@ final class Definitions
 
     /** @var array<class-string<DefinitionSource>, array<string, ResourceDefinition>> By class, then revision */
     private static array $shapes = [];
+
+    /** @var array<class-string<DefinitionSource>, array<string, ResourceDefinition>> By class, then revision */
+    private static array $projected = [];
 
     /** @var array<class-string<DefinitionSource>, array<string, true>> The fields of the code of a resource, by class */
     private static array $fieldsOfTheCode = [];
@@ -129,11 +137,45 @@ final class Definitions
     {
         $head = self::$definitions[$class] ?? self::head($class);
         if ($revision === null) {
-            return $head;
+            return $class::declaresSchema() ? self::projected($class, $head, self::newest()) : $head;
         }
 
         // Read once per class and revision: the rendering asks for each resource.
-        return self::$shapes[$class][RevisionLabel::of($revision)] ??= self::shape($class, $head, $revision);
+        return self::$shapes[$class][RevisionLabel::of($revision)] ??= $class::declaresSchema()
+            ? self::projected($class, self::shape($class, $head, $revision), $revision)
+            : self::shape($class, $head, $revision);
+    }
+
+    /**
+     * The head of the application: the newest revision of its enum, the one revision of an application without enum.
+     */
+    private static function newest(): Revision
+    {
+        /** @var class-string<Revision> $enum */
+        $enum = self::configuration()->revisions ?? Unrevisioned::class;
+
+        return BaseOrder::latest($enum);
+    }
+
+    /**
+     * The definition of a resource declared with the descriptors of the base: its attributes, its meta and its
+     * document meta are those of its shape at `$revision`, read from the shapes of the application.
+     *
+     * @param class-string<DefinitionSource> $class
+     */
+    private static function projected(string $class, ResourceDefinition $definition, Revision $revision): ResourceDefinition
+    {
+        return self::$projected[$class][RevisionLabel::of($revision)] ??= (static function () use ($class, $definition, $revision): ResourceDefinition {
+            $shape = self::projection()->shapes->for($class, DeclarationKind::Response, $revision);
+            $object = static fn(string $name): Shape => $shape->field($name)->children
+                ?? throw DefinitionException::cannotCompile($class, new LogicException("The shape has no [{$name}] object."));
+
+            return $definition
+                ->attributes(...SchemaAttributes::of($object('attributes')))
+                ->meta(...SchemaAttributes::of($object('meta')))
+                ->documentMeta(...SchemaAttributes::of($object('documentMeta')))
+                ->fieldNames([...$definition->fieldNames, ...SchemaAttributes::names($object('attributes'))]);
+        })();
     }
 
     /**
@@ -297,6 +339,7 @@ final class Definitions
         self::$constraints = [];
         self::$declaredTypes = [];
         self::$shapes = [];
+        self::$projected = [];
         self::$fieldsOfTheCode = [];
         self::$compiledRead = false;
     }

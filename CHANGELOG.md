@@ -33,6 +33,9 @@ replaces them.
   run once per response on a template instance, the sparse fieldset is read in the names of the revision and a field
   it leaves out is never evaluated. `JsonApiContext` carries the `Compilation\Projection` (the shapes and the
   projector of the application, `Definitions::projectWith()` / `projection()`) and a `Context\ResponseCache`.
+- `Definitions::for($class, $revision)` gives the attributes, the meta and the document meta of such a resource from
+  its shape at the revision (names, types, nullability, presence), and its `fieldNames`: `Fields`, `Includes` and the
+  tools read the names of the revision. Without revision, the newest one of the application.
 - `extension.neon`: types those factories and macros for PHPStan, included by `phpstan/extension-installer` or by hand after
   the extension of `ark4ne/laravel-api-revisions`.
 

@@ -16,6 +16,7 @@ use Test\app\Http\Resources\UserResource;
 use Test\app\Revisions\ApiRevision;
 use Test\app\Revisions\MemberResource;
 use Test\app\Revisions\TeacherResource;
+use Test\app\Schemas\ArticleResource;
 use Test\TestCase;
 use Test\Unit\Http\Rules\Fixtures\LifetimeHolderResource;
 use Test\Unit\Http\Rules\Fixtures\UntypedNativeHolderResource;
@@ -223,5 +224,12 @@ class FieldsTest extends TestCase
             'The selected :attribute is invalid.',
             '"users" doesn\'t have fields "label".',
         ], self::ruleErrors('fields', new Fields(RevisedUserResource::class), ['users' => 'label']));
+    }
+
+    public function test_the_fields_of_a_resource_declared_on_the_base_are_those_of_the_revision(): void
+    {
+        self::assertSame([], self::ruleErrors('fields', new Fields(ArticleResource::class, ApiRevision::Initial), ['articles' => 'name,views']));
+        self::assertNotSame([], self::ruleErrors('fields', new Fields(ArticleResource::class, ApiRevision::Initial), ['articles' => 'title']));
+        self::assertSame([], self::ruleErrors('fields', new Fields(ArticleResource::class, ApiRevision::UsersReplaceTeachers), ['articles' => 'title,summary']));
     }
 }

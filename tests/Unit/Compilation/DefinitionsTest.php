@@ -10,6 +10,7 @@ use Ark4ne\JsonApi\Compilation\Projection;
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Definition\Lifetime;
 use Ark4ne\JsonApi\Definition\ResourceDefinition;
+use Ark4ne\JsonApi\Definition\ValueType;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Closure;
 use PHPUnit\Framework\TestCase;
@@ -18,6 +19,7 @@ use Test\app\Revisions\ApiRevision;
 use Test\app\Revisions\MemberResource;
 use Test\app\Revisions\ProfileResource;
 use Test\app\Revisions\TeacherResource;
+use Test\app\Schemas\ArticleResource;
 use Test\Unit\Compilation\Fixtures\AttributeTypedResource;
 use Test\Unit\Compilation\Fixtures\BlogPostResource;
 use Test\Unit\Compilation\Fixtures\EagerResource;
@@ -317,5 +319,39 @@ final class DefinitionsTest extends TestCase
 
         self::assertNotSame($projection, Definitions::projection());
         self::assertSame(Definitions::projection(), Definitions::projection());
+    }
+
+    public function test_a_resource_declared_on_the_base_is_defined_from_its_shape_at_the_revision(): void
+    {
+        $initial = Definitions::for(ArticleResource::class, ApiRevision::Initial);
+        $head = Definitions::for(ArticleResource::class, ApiRevision::UsersReplaceTeachers);
+
+        self::assertSame('articles', $initial->type);
+        self::assertSame(['name', 'views'], array_keys($initial->attributes));
+        self::assertSame(ValueType::String, $initial->attributes['views']->type);
+        self::assertSame(['published'], array_keys($initial->meta));
+        self::assertSame(['legacy'], array_keys($initial->documentMeta));
+        self::assertSame(['title' => 'name', 'views' => 'views'], $initial->fieldNames);
+
+        self::assertSame(['title', 'views', 'summary'], array_keys($head->attributes));
+        self::assertSame(ValueType::Integer, $head->attributes['views']->type);
+        self::assertTrue($head->attributes['summary']->nullable);
+        self::assertSame([], $head->documentMeta);
+    }
+
+    public function test_the_head_of_a_resource_declared_on_the_base_is_its_newest_revision(): void
+    {
+        Definitions::configure(Configuration::defaults()->withRevisions(ApiRevision::class));
+
+        self::assertSame(['title', 'views', 'summary'], array_keys(Definitions::for(ArticleResource::class)->attributes));
+        self::assertSame(Definitions::for(ArticleResource::class), Definitions::for(ArticleResource::class));
+    }
+
+    public function test_the_definition_of_a_revision_is_read_once(): void
+    {
+        self::assertSame(
+            Definitions::for(ArticleResource::class, ApiRevision::Labels),
+            Definitions::for(ArticleResource::class, ApiRevision::Labels),
+        );
     }
 }

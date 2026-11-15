@@ -23,6 +23,14 @@ interface DefinitionSource
     public static function newDefinitionSource(Probe $probe): static;
 
     /**
+     * Whether the values of the resource are declared with the descriptors of `ark4ne/laravel-api-revisions`: its
+     * attributes and meta are then defined by the shapes of the base.
+     *
+     * @internal Until every resource is declared so.
+     */
+    public static function declaresSchema(): bool;
+
+    /**
      * The definition written by hand (`toDefinition()`), `null` to compile it from the hooks.
      *
      * @internal
