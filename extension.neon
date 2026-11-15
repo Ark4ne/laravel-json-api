@@ -1,0 +1,12 @@
+# PHPStan extension of ark4ne/laravel-json-api: types the factories this package registers in
+# ark4ne/laravel-api-revisions (Schema::decimal(), Schema::json(), Schema::mixed()).
+# Included automatically with phpstan/extension-installer, or by hand, after the extension of the base:
+#   includes:
+#       - vendor/ark4ne/laravel-api-revisions/extension.neon
+#       - vendor/ark4ne/laravel-json-api/extension.neon
+parameters:
+    apiRevisions:
+        types:
+            decimal: Ark4ne\JsonApi\Descriptors\Schemas\DecimalSchema
+            json: Ark4ne\JsonApi\Descriptors\Schemas\JsonSchema
+            mixed: Ark4ne\JsonApi\Descriptors\Schemas\MixedSchema

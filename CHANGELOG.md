@@ -19,6 +19,11 @@ replaces them.
 - `Configuration::$revisions` and `withRevisions()`: the revision enum of the application, given by the service
   provider from `revisions.enum`.
 - `JsonApiContext::fromRequest()` takes an optional `$revision`, for a context built at a given revision.
+- `Descriptors\Schemas\DecimalSchema`, `JsonSchema` and `MixedSchema`: the types this package adds to those of
+  `ark4ne/laravel-api-revisions`, registered by the service provider as `Schema::decimal()`, `Schema::json()` and
+  `Schema::mixed()` (`Descriptors\Schemas\SchemaTypes`). A value they refuse is a value error of the base.
+- `extension.neon`: types those factories for PHPStan, included by `phpstan/extension-installer` or by hand after
+  the extension of `ark4ne/laravel-api-revisions`.
 
 ### Changed
 

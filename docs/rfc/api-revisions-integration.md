@@ -108,6 +108,31 @@ are the acceptance: unchanged unless a decision above changes them (D14 may).
 
 Order: `EJ1 → EJ2 → EJ3 → EJ4`, `EJ5` after EJ1, `EJ6` after EJ3.
 
+### EJ2 — stories
+
+How the 2.0 value helpers map to the base (D3). The façade switches in US 2.4, with the compilation and the
+rendering of the values (EJ3, EJ4): the three cannot be delivered apart with a green suite.
+
+| 2.0 | 3.0 returns | Note |
+|---|---|---|
+| `string()`, `integer()`, `bool()` | `Schema::string()`, `int()`, `bool()` | |
+| `float()` | `Schema::float()` | **Gap**: `precision()`, `truncate()` and `describer.precision` have no equivalent (base requirement **R11**: rounding on `FloatSchema`). |
+| `date()`, `datetime()` | `Schema::date()`, `dateTime()` | `describer.datetime` becomes the base's `date_time_format`. |
+| `time()` | `Schema::dateTime()->format('H:i:s')` | |
+| `uuid()`, `ulid()` | `Schema::string()->format('uuid' \| 'ulid')` | |
+| `decimal()`, `json()`, `mixed()` | `DecimalSchema`, `JsonSchema`, `MixedSchema` (custom types of this package) | US 2.1 |
+| `enum()` | `Schema::enum($class)` | **Breaking**: the enum class is required (`$this->enum(Status::class, 'status')`). |
+| `array()`, `arrayOf($type)` | `Schema::list($items)` | untyped: items `mixed`. |
+| `struct(fn() => [...])` | `Schema::object([...])` | **Breaking**: an array of children, not a closure. |
+| `nullable` by `describer.nullable` (true by default) | the façade applies `->nullable()` when the configuration says so | The base refuses `null` on a non-nullable field (value error). |
+
+| Story | Content | Needs |
+|---|---|---|
+| **US 2.1** ✅ | `Descriptors\Schemas\DecimalSchema`, `JsonSchema`, `MixedSchema`, registered in the base's `TypeRegistry` by the provider. | — |
+| **US 2.2** | Conditions as macros: `unless()`, `whenNotNull()`, `whenFilled()` (pure), then `whenInFields()`, `whenInIncludes()`, `can()`, `whenAppended()` capturing the context of the hook. | base R10 |
+| **US 2.3** | `Descriptors\RelationshipSchema` (custom type `jsonapi.relationship`, identity conversion), built by `$this->one()` / `many()` beside the 2.0 `Relation` until US 2.4. | base R4 |
+| **US 2.4** | The façade returns the descriptors above; plain values refused; `Descriptors\Values\*`, `ValueTypes`, `FieldHistory`, `FieldRevision`, `RevisedMembers`, `RevisionFindings` removed. With EJ3 and EJ4. | US 2.1–2.3, base R11 |
+
 ### EJ1 — delivered
 
 - The base is required from a Composer `path` repository (`../../api/api-revisions`, as `1.0.x-dev`) until its 1.0.0

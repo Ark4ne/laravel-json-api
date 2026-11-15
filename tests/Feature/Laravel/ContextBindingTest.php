@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Test\Feature\Laravel;
 
 use Ark4ne\ApiRevisions\Laravel\RevisionsServiceProvider;
+use Ark4ne\ApiRevisions\Schema\TypeRegistry;
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Context\JsonApiContext;
+use Ark4ne\JsonApi\Descriptors\Schemas\SchemaTypes;
 use Illuminate\Http\Request;
 use Orchestra\Testbench\Attributes\DefineEnvironment;
 use Test\app\Revisions\ApiRevision;
@@ -71,6 +73,13 @@ final class ContextBindingTest extends TestCase
     {
         self::assertSame(ApiRevision::class, app(Configuration::class)->revisions);
         self::assertTrue(app()->providerIsLoaded(RevisionsServiceProvider::class));
+    }
+
+    public function test_the_types_of_the_package_are_registered_in_the_base(): void
+    {
+        foreach (array_keys(SchemaTypes::TYPES) as $name) {
+            self::assertTrue(TypeRegistry::has($name), $name);
+        }
     }
 
     #[DefineEnvironment('withoutRevisions')]

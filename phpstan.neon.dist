@@ -5,6 +5,8 @@ includes:
     - vendor/phpstan/phpstan-strict-rules/rules.neon
     - vendor/phpat/phpat/extension.neon
     - vendor/spaze/phpstan-disallowed-calls/extension.neon
+    - vendor/ark4ne/laravel-api-revisions/extension.neon
+    - extension.neon
     # Empty since 2.0.0 (the debt of the 1.x code is fixed): never add an entry, fix the cause instead.
     - phpstan-baseline.neon
 

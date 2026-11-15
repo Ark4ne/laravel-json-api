@@ -89,6 +89,11 @@
         "ci": "Run every blocking check of the CI locally."
     },
     "extra": {
+        "phpstan": {
+            "includes": [
+                "extension.neon"
+            ]
+        },
         "laravel": {
             "providers": [
                 "Ark4ne\\JsonApi\\Laravel\\JsonApiServiceProvider"
