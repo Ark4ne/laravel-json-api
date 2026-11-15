@@ -8,7 +8,8 @@ use Ark4ne\ApiRevisions\Schema\TypeRegistry;
 
 /**
  * The types this package adds to those of `ark4ne/laravel-api-revisions`: `Schema::decimal()`, `Schema::json()`,
- * `Schema::mixed()`, behind `$this->decimal()`, `$this->json()` and `$this->mixed()` in a resource.
+ * `Schema::mixed()`, behind `$this->decimal()`, `$this->json()` and `$this->mixed()` in a resource, and
+ * `Schema::relationship()`, a relation as a field of the base.
  */
 final class SchemaTypes
 {
@@ -17,6 +18,7 @@ final class SchemaTypes
         'decimal' => DecimalSchema::class,
         'json' => JsonSchema::class,
         'mixed' => MixedSchema::class,
+        'relationship' => RelationshipSchema::class,
     ];
 
     private function __construct() {}

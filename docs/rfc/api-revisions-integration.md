@@ -131,7 +131,7 @@ rendering of the values (EJ3, EJ4): the three cannot be delivered apart with a g
 | **US 2.1** ✅ | `Descriptors\Schemas\DecimalSchema`, `JsonSchema`, `MixedSchema`, registered in the base's `TypeRegistry` by the provider. | — |
 | **US 2.2** ✅ | Conditions of the value as macros: `unless()`, `whenNotNull()`, `whenFilled()` (`Descriptors\Schemas\Conditions`). | base R10 |
 | **US 2.5** | Conditions of the request as macros: `whenInFields()`, `whenInIncludes()`, `can()`, `whenAppended()`. A macro has neither the request nor the context: it adds a `when()` whose closure belongs to a condition object this package recognizes in `Descriptor::conditions()` and binds to the context of the response when it plans the fields (D9). With EJ4. | base R10 |
-| **US 2.3** | `Descriptors\RelationshipSchema` (custom type `jsonapi.relationship`, identity conversion), built by `$this->one()` / `many()` beside the 2.0 `Relation` until US 2.4. | base R4 |
+| **US 2.3** ✅ | `Descriptors\Schemas\RelationshipSchema` (custom type `jsonapi.relationship`, identity conversion), holding a 2.0 `Relation`: written `Schema::relationship($this->one(…))` until US 2.4. Its fragment names the cardinality and the related resource classes (`x-jsonapi-cardinality`, `x-jsonapi-related`); it declares no source (the schema of a `was()` may not). |
 | **US 2.4** | The façade returns the descriptors above; plain values refused; `Descriptors\Values\*`, `ValueTypes`, `FieldHistory`, `FieldRevision`, `RevisedMembers`, `RevisionFindings` removed. With EJ3 and EJ4. | US 2.1–2.3, base R11 |
 
 ### EJ3, EJ4 — stories
@@ -146,7 +146,7 @@ requirement R11 (rounding on `FloatSchema`).
 | **US 3.1** ✅ | `JsonApiResource` implements the base's `Revisioned` and `HasLifetime` (`Resources\Concerns\DeclaresSchema`): one object per hook of values; a member that is not a descriptor under its name is refused (`DefinitionException::notASchema()`); the lifetime is the one of `#[JsonApiSince]` / `#[JsonApiUntil]`. |
 | **US 4.1** ✅ | Rendering the values of such a resource: the template instance and the plans of a response (`Rendering\ResourcePlan`, held by `JsonApiContext::$cache`), sparse fieldsets choosing the keys, `attributes`, resource `meta` and document `meta` written from the plan. A class is on the base when its hooks of values declare at least one descriptor on a stand-in (`declaresSchema()`, transitional). Left for later stories: the fieldset paths of nested objects, `ValueResolver` still walking the projected values. |
 | **US 3.2** ✅ | The definition for tools from the shape: `Definitions::for()` replaces the attributes, meta and document meta of a resource declared on the base by those of its shape at the revision (`Compilation\SchemaAttributes`, an adapter to `AttributeDefinition` kept until D10 gives the model of the base itself), with its `fieldNames`. `Fields` validates the names of the revision. Not yet: the compiled file (`jsonapi:cache`) holding them, `source` / `computed` of an attribute. |
-| **US 2.3, 3.3** | `RelationshipSchema` and the `relationships` object of the declaration; relationships rendered from the shape. |
+| **US 3.3** | The `relationships` object of the declaration; the definition, the loading and the rendering of the relationships from the shape (name and relation in force at the revision). |
 | **US 2.5** | The conditions of the request. |
 | **US 2.4** | The façade returns the descriptors; the 2.0 engine removed. |
 

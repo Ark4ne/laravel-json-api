@@ -22,6 +22,10 @@ replaces them.
 - `Descriptors\Schemas\DecimalSchema`, `JsonSchema` and `MixedSchema`: the types this package adds to those of
   `ark4ne/laravel-api-revisions`, registered by the service provider as `Schema::decimal()`, `Schema::json()` and
   `Schema::mixed()` (`Descriptors\Schemas\SchemaTypes`). A value they refuse is a value error of the base.
+- `Descriptors\Schemas\RelationshipSchema` (`Schema::relationship($this->one(…))`): a relation as a field of the
+  base, which gives it its history; a custom type `jsonapi.relationship` whose fragment names the cardinality and the
+  related resources, converted to itself (a relationship to another resource at an old revision is
+  `->was(R, schema: Schema::relationship(…))`). `relationAt($field)` gives the relation in force at a revision.
 - `->unless()`, `->whenNotNull()` and `->whenFilled()` on every descriptor of `ark4ne/laravel-api-revisions`
   (`Descriptors\Schemas\Conditions`, macros registered by the service provider); their closures receive
   `($value, $model)`.

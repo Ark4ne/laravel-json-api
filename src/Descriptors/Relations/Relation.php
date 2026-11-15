@@ -158,6 +158,18 @@ abstract class Relation extends Describer implements DescribesRelationship
     }
 
     /**
+     * The map of a polymorphic relationship, resource class by model class; empty otherwise.
+     *
+     * @internal Read by `Schemas\RelationshipSchema`.
+     *
+     * @return array<class-string, class-string>
+     */
+    public function morphMap(): array
+    {
+        return $this->morphs;
+    }
+
+    /**
      * Links of the relationship object: those of a closure receiving the related resource (or collection), and the
      * `self` and `related` links declared by name, which win. A named link is a string or a closure receiving the
      * related resource; a `null` link is left out. Declared again, they replace the previous ones.

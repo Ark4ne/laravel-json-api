@@ -11,6 +11,7 @@ parameters:
             decimal: Ark4ne\JsonApi\Descriptors\Schemas\DecimalSchema
             json: Ark4ne\JsonApi\Descriptors\Schemas\JsonSchema
             mixed: Ark4ne\JsonApi\Descriptors\Schemas\MixedSchema
+            relationship: Ark4ne\JsonApi\Descriptors\Schemas\RelationshipSchema
         macros:
             unless: 'Ark4ne\JsonApi\Descriptors\Schemas\Conditions::unless'
             whenNotNull: 'Ark4ne\JsonApi\Descriptors\Schemas\Conditions::whenNotNull'
