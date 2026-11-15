@@ -5,16 +5,23 @@ declare(strict_types=1);
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
 use Ark4ne\ApiRevisions\Compilation\Probe as CompilationProbe;
+use Ark4ne\ApiRevisions\Compilation\Shape;
 use Ark4ne\ApiRevisions\Definition\Lifetime;
+use Ark4ne\ApiRevisions\Revisions\Unrevisioned;
 use Ark4ne\ApiRevisions\Schema\DeclarationKind;
 use Ark4ne\ApiRevisions\Schema\Descriptor;
 use Ark4ne\ApiRevisions\Schema\ObjectSchema;
+use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Definition\JsonApiSince;
 use Ark4ne\JsonApi\Definition\JsonApiUntil;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
+use Ark4ne\JsonApi\Rendering\ResourcePlan;
+use Ark4ne\JsonApi\Support\Memo;
 use Ark4ne\JsonApi\Support\Probe;
 use Illuminate\Http\Request;
+use LogicException;
 use ReflectionClass;
+use Throwable;
 
 /**
  * A resource is one `Revisioned` response of `ark4ne/laravel-api-revisions` (docs/rfc/api-revisions-integration.md
@@ -86,6 +93,73 @@ trait DeclaresSchema
             'meta' => self::schemaObject('toResourceMeta', $this->toResourceMeta($request) ?? []),
             'documentMeta' => self::schemaObject('toDocumentMeta', $this->toDocumentMeta($request) ?? []),
         ];
+    }
+
+    /**
+     * Whether the hooks of values of the class return descriptors of the base, and at least one: its values are then
+     * rendered by it. Decided once per class, on a stand-in of the model.
+     *
+     * @internal Until every resource is declared so (docs/rfc/api-revisions-integration.md, US 2.4).
+     */
+    public static function declaresSchema(): bool
+    {
+        return Memo::remember(DeclaresSchema::class, static::class, static function (): bool {
+            try {
+                $schema = static::newDefinitionSource(Probe::root())->describeSchema(new Request());
+            } catch (Throwable) {
+                return false;
+            }
+
+            // Hooks declaring nothing on a stand-in (the default attributes of a model) render as before.
+            return $schema['attributes']->children() !== []
+                || $schema['meta']->children() !== []
+                || $schema['documentMeta']->children() !== [];
+        });
+    }
+
+    /**
+     * The plan of the values of the resources of this class and type in the response of `$context`: built once, on a
+     * template instance (a copy of this one) whose hooks run once.
+     *
+     * @internal
+     */
+    public function valuesPlan(JsonApiContext $context, string $type): ResourcePlan
+    {
+        $revision = $context->revision ?? Unrevisioned::Head;
+
+        return $context->cache->remember(
+            'values:' . static::class . ':' . $type . ':' . $revision->name,
+            function () use ($context, $type, $revision): ResourcePlan {
+                $template = clone $this;
+                $template->renderingContext = $context;
+                $schema = $template->describeSchema($context->request);
+                $shape = $context->projection->shapes->for(static::class, DeclarationKind::Response, $revision);
+                $projector = $context->projection->projector;
+
+                $children = static fn(string $object): Shape => $shape->field($object)->children
+                    ?? throw DefinitionException::cannotCompile(static::class, new LogicException("The shape has no [{$object}] object."));
+
+                // The sparse fieldset is written in the names of the revision: it keeps the fields it allows.
+                $keys = null;
+                if ($context->fields->restricts($type)) {
+                    $keys = [];
+                    foreach ($children('attributes')->fields as $key => $field) {
+                        if ($context->fields->allows($type, $field->name)) {
+                            $keys[] = $key;
+                        }
+                    }
+                }
+
+                return new ResourcePlan(
+                    static function (mixed $model) use ($template): void {
+                        $template->resource = $model;
+                    },
+                    $projector->plan($children('attributes'), $schema['attributes']->children(), $keys),
+                    $projector->plan($children('meta'), $schema['meta']->children()),
+                    $projector->plan($children('documentMeta'), $schema['documentMeta']->children()),
+                );
+            },
+        );
     }
 
     /**

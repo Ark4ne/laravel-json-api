@@ -144,7 +144,7 @@ requirement R11 (rounding on `FloatSchema`).
 | Story | Content |
 |---|---|
 | **US 3.1** ✅ | `JsonApiResource` implements the base's `Revisioned` and `HasLifetime` (`Resources\Concerns\DeclaresSchema`): one object per hook of values; a member that is not a descriptor under its name is refused (`DefinitionException::notASchema()`); the lifetime is the one of `#[JsonApiSince]` / `#[JsonApiUntil]`. |
-| **US 4.1** | Rendering the values of such a resource: the template instance and the plans of a response (`Rendering\ResourcePlan`, held by the context), sparse fieldsets choosing the keys, `attributes`, resource `meta` and document `meta` written from the plan. |
+| **US 4.1** ✅ | Rendering the values of such a resource: the template instance and the plans of a response (`Rendering\ResourcePlan`, held by `JsonApiContext::$cache`), sparse fieldsets choosing the keys, `attributes`, resource `meta` and document `meta` written from the plan. A class is on the base when its hooks of values declare at least one descriptor on a stand-in (`declaresSchema()`, transitional). Left for later stories: the fieldset paths of nested objects, `ValueResolver` still walking the projected values. |
 | **US 3.2** | The definition for tools from the shape (D10): names at a revision for `Fields`, `Includes` and the helpers. |
 | **US 2.3, 3.3** | `RelationshipSchema` and the `relationships` object of the declaration; relationships rendered from the shape. |
 | **US 2.5** | The conditions of the request. |

@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Laravel;
 
+use Ark4ne\ApiRevisions\Compilation\Shapes;
 use Ark4ne\ApiRevisions\Laravel\RevisionsConfig;
 use Ark4ne\ApiRevisions\Laravel\RevisionsServiceProvider;
+use Ark4ne\ApiRevisions\Projection\Projector;
 use Ark4ne\JsonApi\Compilation\CompiledDefinitions;
 use Ark4ne\JsonApi\Compilation\Definitions;
+use Ark4ne\JsonApi\Compilation\Projection;
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Context\CurrentRevision;
 use Ark4ne\JsonApi\Context\JsonApiContext;
@@ -24,6 +27,7 @@ use Ark4ne\JsonApi\Laravel\Commands\ClearDefinitionsCommand;
 use Ark4ne\JsonApi\Laravel\Commands\MakeResourceCommand;
 use Ark4ne\JsonApi\Laravel\Rendering\RouteLinksStage;
 use Ark4ne\JsonApi\Support\Memo;
+use Illuminate\Container\Container;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Request;
@@ -139,7 +143,11 @@ final class JsonApiServiceProvider extends ServiceProvider
             /** @var Configuration $configuration */
             $configuration = $app->make(Configuration::class);
 
-            $context = $contexts[$request] ??= JsonApiContext::fromRequest($request, $configuration);
+            $context = $contexts[$request] ??= JsonApiContext::fromRequest(
+                $request,
+                $configuration,
+                projection: Definitions::projection(),
+            );
             $revision = CurrentRevision::of($configuration);
 
             // Moved to the revision that became current after the first resolution (the `revision` middleware, a
@@ -163,6 +171,13 @@ final class JsonApiServiceProvider extends ServiceProvider
             }
         }
         Definitions::configure($configuration, $compiled);
+        // The container of each call: Octane runs each request in a clone of the application, and the projector is
+        // scoped to it.
+        Definitions::projectWith(static function (): Projection {
+            $container = Container::getInstance();
+
+            return new Projection($container->make(Shapes::class), $container->make(Projector::class));
+        });
 
         $this->app->make(Dispatcher::class)->listen(self::OCTANE_TERMINATED, static function (): void {
             Memo::flush();

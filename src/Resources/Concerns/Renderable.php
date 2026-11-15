@@ -76,6 +76,11 @@ trait Renderable
     {
         $this->renderingContext = $context;
 
+        // Declared with the descriptors of the base: rendered by it, from the plan of the response.
+        if (static::declaresSchema()) {
+            return $this->valuesPlan($context, $this->toType($context->request))->attributes($this->resource);
+        }
+
         return $this->autoWhenHas(
             $this->revised($this->toAttributes($context->request), $context),
             $context->configuration->autoWhenHas('attributes'),
@@ -154,6 +159,10 @@ trait Renderable
     {
         $this->renderingContext = $context;
 
+        if (static::declaresSchema()) {
+            return $this->valuesPlan($context, $this->toType($context->request))->meta($this->resource);
+        }
+
         return $this->autoWhenHas(
             $this->revised($this->toResourceMeta($context->request) ?? [], $context),
             $context->configuration->autoWhenHas('resource-meta'),
@@ -168,6 +177,10 @@ trait Renderable
     public function renderDocumentMeta(JsonApiContext $context): iterable
     {
         $this->renderingContext = $context;
+
+        if (static::declaresSchema()) {
+            return $this->valuesPlan($context, $this->toType($context->request))->documentMeta($this->resource);
+        }
 
         return $this->autoWhenHas(
             $this->revised($this->toDocumentMeta($context->request) ?? [], $context),

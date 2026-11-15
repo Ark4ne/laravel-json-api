@@ -6,6 +6,7 @@ namespace Test\Unit\Compilation;
 
 use Ark4ne\JsonApi\Compilation\CompiledDefinitions;
 use Ark4ne\JsonApi\Compilation\Definitions;
+use Ark4ne\JsonApi\Compilation\Projection;
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Definition\Lifetime;
 use Ark4ne\JsonApi\Definition\ResourceDefinition;
@@ -303,5 +304,18 @@ final class DefinitionsTest extends TestCase
 
         self::assertSame(ApiRevision::Labels, Definitions::lifetime(TypedResource::class)->until);
         self::assertFalse(Definitions::exists(TypedResource::class, null));
+    }
+
+    public function test_the_projection_is_the_one_the_application_gives(): void
+    {
+        $projection = new Projection();
+        Definitions::projectWith(static fn(): Projection => $projection);
+
+        self::assertSame($projection, Definitions::projection());
+
+        Definitions::projectWith(null);
+
+        self::assertNotSame($projection, Definitions::projection());
+        self::assertSame(Definitions::projection(), Definitions::projection());
     }
 }

@@ -28,8 +28,11 @@ replaces them.
 - `JsonApiResource` implements `Revisioned` and `HasLifetime` of `ark4ne/laravel-api-revisions`
   (`Resources\Concerns\DeclaresSchema`): a resource whose `toAttributes()`, `toResourceMeta()` and `toDocumentMeta()`
   return descriptors of the base is compiled, cached, checked, locked and exported by it, as one response holding the
-  objects `attributes`, `meta` and `documentMeta`; `#[JsonApiSince]` / `#[JsonApiUntil]` give its lifetime. The
-  rendering does not read that declaration yet.
+  objects `attributes`, `meta` and `documentMeta`; `#[JsonApiSince]` / `#[JsonApiUntil]` give its lifetime.
+- The values of such a resource are rendered by `ark4ne/laravel-api-revisions` (`Rendering\ResourcePlan`): its hooks
+  run once per response on a template instance, the sparse fieldset is read in the names of the revision and a field
+  it leaves out is never evaluated. `JsonApiContext` carries the `Compilation\Projection` (the shapes and the
+  projector of the application, `Definitions::projectWith()` / `projection()`) and a `Context\ResponseCache`.
 - `extension.neon`: types those factories and macros for PHPStan, included by `phpstan/extension-installer` or by hand after
   the extension of `ark4ne/laravel-api-revisions`.
 

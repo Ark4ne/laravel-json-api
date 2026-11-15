@@ -48,6 +48,16 @@ final class Definitions
     private static bool $compiledRead = false;
 
     /**
+     * Configuration, not state: how the projection of the running application is found, set once at boot.
+     *
+     * @var (Closure(): Projection)|null
+     */
+    private static ?Closure $projection = null;
+
+    /** The projection used when none is given: its shapes only depend on the code. */
+    private static ?Projection $standalone = null;
+
+    /**
      * Sets the configuration used to compile and the compiled file (`bootstrap/cache/jsonapi.php`); called once at
      * boot. Nothing is compiled nor read here: the compiled file is read on the first `for()`. Flushes the cache.
      */
@@ -56,6 +66,26 @@ final class Definitions
         self::$configuration = $configuration;
         self::$compiled = $compiled;
         self::flush();
+    }
+
+    /**
+     * Sets how the projection of the values is found (the shapes and the projector of `ark4ne/laravel-api-revisions`
+     * the application binds); `null` restores the default, shapes compiled on first use and a plain projector.
+     *
+     * @param (Closure(): Projection)|null $projection
+     */
+    public static function projectWith(?Closure $projection): void
+    {
+        self::$projection = $projection;
+        self::$standalone = null;
+    }
+
+    /**
+     * What renders the values: read by the resources to build the context of their rendering without the container.
+     */
+    public static function projection(): Projection
+    {
+        return self::$projection !== null ? (self::$projection)() : self::$standalone ??= new Projection();
     }
 
     /**
