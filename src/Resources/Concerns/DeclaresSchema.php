@@ -17,7 +17,7 @@ use Ark4ne\JsonApi\Context\ResponseCache;
 use Ark4ne\JsonApi\Definition\DescribesRelationship;
 use Ark4ne\JsonApi\Definition\JsonApiSince;
 use Ark4ne\JsonApi\Definition\JsonApiUntil;
-use Ark4ne\JsonApi\Descriptors\Relations\Relation;
+use Ark4ne\JsonApi\Descriptors\Relations\RelationRaw;
 use Ark4ne\JsonApi\Descriptors\Schemas\Conditions;
 use Ark4ne\JsonApi\Descriptors\Schemas\MixedSchema;
 use Ark4ne\JsonApi\Descriptors\Schemas\RelationshipSchema;
@@ -133,8 +133,8 @@ trait DeclaresSchema
     }
 
     /**
-     * The plan of the values of the resources of this class and type in the response of `$context`: built once, on a
-     * template instance (a copy of this one) whose hooks run once.
+     * The plan of the values and of the relationships of the resources of this class and type in the response of
+     * `$context`: built once, on a template instance (a copy of this one) whose hooks run once.
      *
      * @internal
      */
@@ -179,6 +179,27 @@ trait DeclaresSchema
                 // The fieldset may name the members of an object (`fields[users]=address.city`).
                 $restrict = $context->fields->restricts($type) ? MemberFieldsets::of($kept, $context->fields, $type) : null;
 
+                // The relationships of the revision: the relation in force at it, its guessed resource the one of the
+                // definition (guessed once, when compiled). The conditions of the field (`->when()`, `applyWhen()`)
+                // are read by the plan: the base never reads a relationship.
+                $definitions = Definitions::for(static::class, $context->revision)->relationships;
+                $declared = $schema['relationships']->children();
+                $relationships = [];
+                foreach ($children('relationships')->fields as $key => $field) {
+                    $relationship = $declared[$key] ?? null;
+                    if ($relationship instanceof RelationshipSchema) {
+                        $relation = $relationship->relationAt($field);
+                        $definition = $definitions[$field->name] ?? null;
+                        $relationships[$field->name] = [
+                            $key,
+                            $relation instanceof RelationRaw
+                                ? $relation
+                                : $relation->resolveRelated($key, $definition?->related[0] ?? $definition?->native),
+                            $relationship->conditions(),
+                        ];
+                    }
+                }
+
                 return new ResourcePlan(
                     static function (mixed $model, JsonApiContext $context) use ($template): void {
                         $template->resource = $model;
@@ -188,6 +209,7 @@ trait DeclaresSchema
                     $projector->plan($children('meta'), $schema['meta']->children()),
                     $projector->plan($children('documentMeta'), $schema['documentMeta']->children()),
                     $restrict,
+                    $relationships,
                 );
             },
         );
@@ -224,42 +246,6 @@ trait DeclaresSchema
         $attributes = static::newDefinitionSource(Probe::root())->describeSchema(new Request())['attributes']->children();
 
         return array_keys(array_filter($attributes, Conditions::isOnlyInFields(...)));
-    }
-
-    /**
-     * The relationships of this instance visible at the revision of `$context`, by their name at it: each one the
-     * relation in force there (`RelationshipSchema::relationAt()`), read under its name of the code.
-     *
-     * @internal
-     *
-     * @return iterable<string, array{string, Relation<mixed>}> The name of the code and the relation, by name at the revision
-     */
-    public function relationsAt(JsonApiContext $context): iterable
-    {
-        // The relationships of the shape of the revision, read once per response.
-        $fields = $context->cache->remember('relationships:' . static::class, fn(): array => $context->projection->shapes
-            ->for(static::class, DeclarationKind::Response, $context->revision ?? Unrevisioned::Head)
-            ->field('relationships')?->children->fields ?? []);
-        if ($fields === []) {
-            return;
-        }
-
-        // The hook runs for each resource: the closures of a relation are read after its resource is rendered.
-        $declared = $this->relationshipsOf($this->toRelationships($context->request));
-
-        foreach ($fields as $key => $field) {
-            $relationship = $declared[$key] ?? null;
-            if ($relationship !== null) {
-                // The conditions of the field (`->when()`, `applyWhen()`): the base never reads a relationship.
-                foreach ($relationship->conditions() as $condition) {
-                    if ($condition(null, $this->resource) !== true) {
-                        continue 2;
-                    }
-                }
-
-                yield $field->name => [$key, $relationship->relationAt($field)];
-            }
-        }
     }
 
     /**

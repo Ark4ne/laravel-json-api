@@ -86,6 +86,30 @@ final class ValuesTest extends TestCase
         self::assertSame(2, CountedResource::$hooks);
     }
 
+    public function test_the_relationships_hook_runs_once_per_response_and_each_resource_reads_its_own_model(): void
+    {
+        $tree = static fn(int $id): array => ['id' => $id, 'parent' => ['id' => $id * 10, 'parent' => null]];
+        $this->render(TreeResource::make($tree(1)), null);
+        TreeResource::$hooks = 0;
+
+        $response = $this->render(TreeResource::collection([$tree(1), $tree(2), $tree(3)]), null, 'include=parent');
+
+        // Once for the resources of the collection and those included under `parent` alike.
+        self::assertSame(1, TreeResource::$hooks);
+        foreach ([1, 2, 3] as $index => $id) {
+            $response->assertJsonPath("data.{$index}.relationships.parent.data.id", (string) ($id * 10));
+            // A closure reading the resource itself, run after related resources of the same class were built.
+            $response->assertJsonPath("data.{$index}.relationships.parent.links.self", "https://example.com/trees/{$id}/parent");
+            $response->assertJsonPath("data.{$index}.relationships.parent.meta.of", $id);
+            $response->assertJsonPath("included.{$index}.relationships.parent.data", null);
+            $response->assertJsonPath("included.{$index}.relationships.parent.links.self", 'https://example.com/trees/' . ($id * 10) . '/parent');
+        }
+        // A condition is read for each resource.
+        $response->assertJsonPath('data.0.relationships.odd.data', null);
+        $response->assertJsonMissingPath('data.1.relationships.odd');
+        $response->assertJsonPath('data.2.relationships.odd.data', null);
+    }
+
     public function test_a_sparse_fieldset_is_written_in_the_names_of_the_revision(): void
     {
         $this->render(ArticleResource::make(self::ARTICLE), ApiRevision::Initial, 'fields[articles]=name')
@@ -250,5 +274,40 @@ final class NodeResource extends JsonApiResource
         return [
             'child' => $this->one(self::class),
         ];
+    }
+}
+
+/**
+ * Counts the runs of its relationships hook; its relationship reads the resource itself in its closures.
+ *
+ * @extends JsonApiResource<array<string, mixed>>
+ */
+#[JsonApiType('trees')]
+final class TreeResource extends JsonApiResource
+{
+    public static int $hooks = 0;
+
+    public function toAttributes(Request $request): iterable
+    {
+        return [];
+    }
+
+    protected function toRelationships(Request $request): iterable
+    {
+        self::$hooks++;
+
+        return [
+            'parent' => $this->one(self::class)
+                ->links(self: fn(): string => 'https://example.com/trees/' . $this->id() . '/parent')
+                ->meta(fn(): array => ['of' => $this->id()]),
+            'odd' => $this->one(self::class, fn(): mixed => null)->when(fn(): bool => $this->id() % 2 === 1),
+        ];
+    }
+
+    private function id(): int
+    {
+        $id = $this->resource['id'] ?? null;
+
+        return is_int($id) ? $id : 0;
     }
 }

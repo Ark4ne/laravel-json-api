@@ -90,8 +90,8 @@ trait Renderable
         $definitions = Definitions::for(static::class, $context->revision)->relationships;
         $model = $this->resource;
 
-        // The shape of the revision gives their names and the relation in force.
-        foreach ($this->relationsAt($context) as $name => [$key, $relation]) {
+        // The plan gives their names at the revision and the relation in force, declared once per response.
+        foreach ($this->valuesPlan($context)->relationships($model, $context) as $name => [$key, $relation]) {
             $definition = $definitions[$name] ?? null;
             if ($relation instanceof RelationRaw) {
                 $relationship = $relation->relationship();
@@ -99,10 +99,7 @@ trait Renderable
                     continue;
                 }
             } else {
-                // A resource guessed from the model is that of the definition: guessed once, when compiled.
-                $relationship = Relationship::declared($relation
-                    ->resolveRelated($key, $definition?->related[0] ?? $definition?->native)
-                    ->resolveFor($context->request, $model, $key, $context->configuration));
+                $relationship = Relationship::declared($relation->resolveFor($context->request, $model, $key, $context->configuration));
             }
 
             // Only `Linkage::Loaded` and the filters read whether the relation is loaded.

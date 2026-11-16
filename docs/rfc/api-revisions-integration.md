@@ -234,6 +234,11 @@ feature tests unchanged). What was done differently from the plan above, and wha
   (2.0: ×0.518, so about 10 % slower than 2.0: P1 not met yet), ×0.617 in memory (2.0: ×0.615); resources declaring
   revisions cost ×1.00 to ×1.04 of the others (2.1: ×1.09 to ×1.15). The reference of `composer benchmark` is not
   updated: it still fails on the time, on purpose. Left: `toRelationships()` runs for each resource.
+- **Relationships hook once per response** (delivered after, same day): the plan of a class holds its relationships
+  at the revision (the relation in force, its related resource resolved, the conditions of the field), declared by
+  the template; the template is bound to the model before each relationship, which the stage resolves (value, links,
+  meta) before asking for the next one. ×0.49 to ×0.50 of Laravel's native resources in time (2.0: ×0.518): P1 is
+  met and `composer benchmark` passes again, its reference unchanged.
 - **Cold start (P5)**: `jsonapi:cache` writes one definition per resource and revision; the shapes are cached by
   `revision:cache`. Not measured again.
 - The skills are updated where their tests run code (`reference.md`, the recipes, two examples of the upgrade
@@ -269,9 +274,9 @@ as the 2.0 resources (872.9 KB).
   Eloquent model PHP then builds and keeps its table of properties: +2.6 KB per model, 3.4 µs instead of 1 µs per
   subject of two fields. This package reads models with its own reader meanwhile; the fix belongs to the base (its
   US 12.8 left "the direct property read" as a follow-up).
-- Left to reach P1 (not slower than 2.0): `toRelationships()` still runs for each resource, building one
-  `RelationshipSchema` per relationship (the closures of a relation are read after its resource is rendered, so the
-  template of D7 cannot simply be re-bound: to be designed), and the engine is still looked up per hook.
+- P1 (not slower than 2.0) was reached by running `toRelationships()` once per response (US 2.4 above): the
+  closures of a relation are all read while its relationship is resolved, before the template is bound to another
+  model.
 
 ### EJ1 — delivered
 
