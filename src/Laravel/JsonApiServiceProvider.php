@@ -29,7 +29,6 @@ use Ark4ne\JsonApi\Laravel\Commands\CheckDefinitionsCommand;
 use Ark4ne\JsonApi\Laravel\Commands\ClearDefinitionsCommand;
 use Ark4ne\JsonApi\Laravel\Commands\MakeResourceCommand;
 use Ark4ne\JsonApi\Laravel\Rendering\RouteLinksStage;
-use Ark4ne\JsonApi\Rendering\ModelSourceReader;
 use Ark4ne\JsonApi\Support\Memo;
 use Illuminate\Container\Container;
 use Illuminate\Contracts\Events\Dispatcher;
@@ -187,10 +186,10 @@ final class JsonApiServiceProvider extends ServiceProvider
 
             $shapes = $container->make(Shapes::class);
 
-            // The projector of the application, reading the models without listing their properties.
+            // The projector of the application, reading the Eloquent models.
             return new Projection($shapes, new Projector(
                 $container->make(SchemaConfiguration::class),
-                reader: new ModelSourceReader(new EloquentSourceReader()),
+                reader: new EloquentSourceReader(),
                 shapes: $shapes,
                 values: $container->make(ValueErrorHandler::class),
             ));

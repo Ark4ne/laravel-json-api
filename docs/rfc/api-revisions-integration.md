@@ -291,8 +291,8 @@ as the 2.0 resources (872.9 KB).
 
 - **Base requirement R12**: `PlainSourceReader::key()` and `holds()` call `get_object_vars()` on every read. On an
   Eloquent model PHP then builds and keeps its table of properties: +2.6 KB per model, 3.4 µs instead of 1 µs per
-  subject of two fields. This package reads models with its own reader meanwhile; the fix belongs to the base (its
-  US 12.8 left "the direct property read" as a follow-up).
+  subject of two fields. This package read models with its own reader meanwhile; fixed in the base (US 12.10, D88),
+  `Rendering\ModelSourceReader` removed.
 - P1 (not slower than 2.0) was reached by running `toRelationships()` once per response (US 2.4 above): the
   closures of a relation are all read while its relationship is resolved, before the template is bound to another
   model.
