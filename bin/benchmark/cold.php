@@ -44,11 +44,17 @@ spl_autoload_register(static function (string $class): void {
 
 // The revised resources are those of an application whose revision enum is `Revised\Revision`.
 $app = Application::create(
-    resolvingCallback: static function ($app) use ($set): void {
-        if ($set !== 'package') {
-            // Before the providers boot: the configuration is loaded by then.
-            $app->booting(static fn() => $app['config']->set('revisions.enum', Revised\Revision::class));
-        }
+    resolvingCallback: static function ($app) use ($set, $file): void {
+        // Before the providers boot: the configuration is loaded by then.
+        $app->booting(static function () use ($app, $set, $file): void {
+            if ($set !== 'package') {
+                $app['config']->set('revisions.enum', Revised\Revision::class);
+            }
+            if ($file !== null) {
+                // The shapes `revision:cache` would write to bootstrap/cache/revisions.php.
+                $app['config']->set('revisions.cache_path', "{$file}.shapes.php");
+            }
+        });
     },
     options: ['extra' => ['providers' => [Ark4ne\JsonApi\Laravel\JsonApiServiceProvider::class], 'dont-discover' => ['*']]],
 );
@@ -62,14 +68,20 @@ if ($action === 'compile') {
         exit(2);
     }
 
-    // As `jsonapi:cache` writes them: the head of each resource, then each revision where its shape changes.
+    // As `jsonapi:cache` writes them: the head of each resource, then each older revision it exists at; and the
+    // shapes of the same revisions, as `revision:cache` writes them.
     $compiler = new Ark4ne\JsonApi\Compilation\DefinitionCompiler(Definitions::configuration());
+    $shapes = new Ark4ne\ApiRevisions\Compilation\Compiler($app->make(Ark4ne\ApiRevisions\Configuration\Configuration::class));
+    $head = $compiler->head();
     $definitions = [];
-    foreach ([...$package, ...$revised] as $class) {
+    $compiled = [];
+    foreach ($set === 'package' ? $package : $revised as $class) {
         foreach ($compiler->compileEvery($class) as $definition) {
             $definitions[CompiledDefinitions::key($definition)] = $definition;
+            $compiled[] = $shapes->compile($class, Ark4ne\ApiRevisions\Schema\DeclarationKind::Response, $definition->revision ?? $head);
         }
     }
+    Ark4ne\ApiRevisions\Compilation\CompiledShapes::write("{$file}.shapes.php", $compiled);
     (new CompiledDefinitions($file))->write($definitions);
     echo json_encode(['compiled' => count($definitions)], JSON_THROW_ON_ERROR) . PHP_EOL;
 

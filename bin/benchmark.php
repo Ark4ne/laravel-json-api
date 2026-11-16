@@ -81,7 +81,10 @@ function cold(string $root, int $iterations, int $tolerance): never
     ];
     $scenario = __DIR__ . '/benchmark/cold.php';
 
-    run([...$php, $scenario, 'compile', $compiled]);
+    // One compiled file per application: the one without revision enum, the one declaring revisions.
+    $revised = "{$directory}/jsonapi-revised.php";
+    run([...$php, $scenario, 'compile', $compiled, 'package']);
+    run([...$php, $scenario, 'compile', $revised, 'head']);
 
     $measure = static function (string $mode, string $file, string $set) use ($php, $scenario, $iterations): array {
         echo "Running {$mode}…\n";
@@ -112,8 +115,8 @@ function cold(string $root, int $iterations, int $tolerance): never
 
     $first = $measure('compiled on first use', 'none', 'package');
     $file = $measure('compiled file', $compiled, 'package');
-    $head = $measure('revised, head', $compiled, 'head');
-    $oldest = $measure('revised, oldest', $compiled, 'oldest');
+    $head = $measure('revised, head', $revised, 'head');
+    $oldest = $measure('revised, oldest', $revised, 'oldest');
     $results = ['compiled on first use' => $first, 'compiled file' => $file, 'revised, head' => $head, 'revised, oldest' => $oldest];
 
     printf(

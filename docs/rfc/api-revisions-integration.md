@@ -240,7 +240,13 @@ feature tests unchanged). What was done differently from the plan above, and wha
   meta) before asking for the next one. ×0.49 to ×0.50 of Laravel's native resources in time (2.0: ×0.518): P1 is
   met and `composer benchmark` passes again, its reference unchanged.
 - **Cold start (P5)**: `jsonapi:cache` writes one definition per resource and revision; the shapes are cached by
-  `revision:cache`. Not measured again.
+  `revision:cache`. Measured again once the cold benchmark compiled each application with its own revision enum and
+  its shapes (it compiled the revised resources without their enum, so their oldest revision was compiled on first
+  use): reading the definitions costs 0.75 ms instead of 3.5 ms, at the head and at the oldest revision alike
+  (×1.01), but the first rendering then takes 8.8 ms instead of 6.7 ms: the classes the compilation loaded are
+  loaded by the rendering instead. Definitions and first rendering together: ×0.94 of compiling on first use. Not
+  verified: that no hook runs on a probe with both caches (`Definitions::loadConstraints()` still runs the
+  relationships hook on a probe once per class).
 - The skills are updated where their tests run code (`reference.md`, the recipes, two examples of the upgrade
   skill); the README, `docs/architecture.md` and the prose of the upgrade skill still describe 2.x (EJ7).
 
