@@ -81,6 +81,46 @@ final class ResourceCheckerTest extends TestCase
         );
     }
 
+    public function test_values_this_package_cannot_compile_are_reported_with_the_other_findings_of_the_base(): void
+    {
+        $resource = new class (null) extends JsonApiResource {
+            public function toAttributes(Request $request): iterable
+            {
+                return ['id' => $this->string()];
+            }
+
+            protected function toRelationships(Request $request): iterable
+            {
+                // No related resource to guess: the base compiles the field, this package cannot describe it.
+                return ['owner' => $this->one()];
+            }
+        };
+
+        $found = self::describe(self::checker(null)->check([$resource::class]))[$resource::class];
+
+        self::assertCount(2, $found);
+        self::assertStringStartsWith('[error] invalid-declaration: ', $found[0]);
+        self::assertStringStartsWith('[error] jsonapi-reserved-name (attributes.id): ', $found[1]);
+    }
+
+    public function test_values_that_cannot_be_compiled_at_an_older_revision_are_reported_at_it(): void
+    {
+        $resource = new class (null) extends JsonApiResource {
+            protected function toRelationships(Request $request): iterable
+            {
+                return [
+                    'owner' => $this->one(TypedResource::class)->was(ApiRevision::Initial, schema: $this->one()),
+                ];
+            }
+        };
+
+        $found = self::describe(self::checker()->check([$resource::class]))[$resource::class];
+
+        self::assertCount(1, $found);
+        self::assertStringStartsWith('[error] [Initial] invalid-declaration: ', $found[0]);
+        self::assertSame([], self::checker()->check([$resource::class], ApiRevision::UsersReplaceTeachers)[$resource::class]);
+    }
+
     public function test_a_failing_links_hook_is_reported_with_the_findings_of_the_base(): void
     {
         $resource = new class (null) extends JsonApiResource {

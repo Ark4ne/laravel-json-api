@@ -26,6 +26,8 @@ final class LifetimeTest extends TestCase
         yield 'until, bound' => [$until, ApiRevision::Labels, true];
         yield 'until, newer' => [$until, ApiRevision::UsersReplaceTeachers, false];
         yield 'until, head' => [$until, null, false];
+        // The head is the newest revision of the enum, not a revision after it.
+        yield 'until the newest, head' => [new Lifetime(until: ApiRevision::UsersReplaceTeachers), null, true];
         yield 'since, older' => [$since, ApiRevision::Initial, false];
         yield 'since, bound' => [$since, ApiRevision::Labels, true];
         yield 'since, head' => [$since, null, true];

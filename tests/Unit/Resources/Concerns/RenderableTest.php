@@ -55,6 +55,25 @@ final class RenderableTest extends TestCase
         );
     }
 
+    public function test_a_context_without_revision_renders_the_head_of_the_application(): void
+    {
+        $resource = new class (['display_name' => 'Ada', 'full_name' => 'Ada Lovelace']) extends JsonApiResource {
+            public function toAttributes(Request $request): iterable
+            {
+                return [
+                    'display_name' => $this->string()->was(ApiRevision::Initial, name: 'name'),
+                    'full_name' => $this->string()->until(ApiRevision::Labels),
+                ];
+            }
+        };
+
+        // Built by hand: no revision was read for it.
+        $context = $this->context(ApiRevision::Initial)->withRevision(null);
+
+        self::assertNull($context->revision);
+        self::assertSame(['display_name' => 'Ada'], [...$resource->renderAttributes($context)]);
+    }
+
     public function test_the_meta_are_rendered_by_the_base(): void
     {
         $resource = new class (['rank' => '3']) extends JsonApiResource {

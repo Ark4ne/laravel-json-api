@@ -36,9 +36,16 @@ final readonly class Lifetime
      */
     public function covers(?Revision $revision): bool
     {
-        // The head is newer than every revision: at least any `since`, never at most an `until`.
-        return ($this->since === null || $revision === null || self::compare($revision, $this->since) >= 0)
-            && ($this->until === null || ($revision !== null && self::compare($revision, $this->until) <= 0));
+        $bound = $this->since ?? $this->until;
+        if ($bound === null) {
+            return true;
+        }
+
+        // The head is the newest revision of the enum of the bounds.
+        $revision ??= RevisionOrder::latest($bound::class);
+
+        return ($this->since === null || self::compare($revision, $this->since) >= 0)
+            && ($this->until === null || self::compare($revision, $this->until) <= 0);
     }
 
     /**

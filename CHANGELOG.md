@@ -118,6 +118,7 @@ replaces them.
   `jsonapi-reserved-name`, `jsonapi-name-collision` and `jsonapi-absent-resource`, name their field under its object
   (`attributes.title`, `relationships.author`) and are no longer in `ResourceDefinition::$diagnostics`, which keeps
   `invalid-declaration` and `hook-failure`; a class that is not a resource is the finding `invalid-resource`.
+  The definitions are compiled at every revision the resource exists at: a finding of an older revision names it.
   `jsonapi:check` runs the checks the application tags too (`RevisionsServiceProvider::CHECKS`), not those of the
   lock (`revision:check`).
 - **Breaking**: `jsonapi:cache` writes one definition per resource and revision; `jsonapi:check` checks each

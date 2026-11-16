@@ -19,8 +19,9 @@ use Ark4ne\JsonApi\Support\DiagnosticLevel;
 /**
  * Checks resources (docs/rfc/api-revisions-integration.md D13), for `jsonapi:check` and `ResourceAssertions`:
  *
- * - what only this package compiles, on the definition of each resource at its head: its type, its lifetime, its
- *   links (`hook-failure`), a class that is not a resource (`invalid-resource`);
+ * - what only this package compiles, on the definition of each resource at every revision it exists at: its type,
+ *   its lifetime, its links (`hook-failure`), its relationships (`invalid-declaration`), a class that is not a
+ *   resource (`invalid-resource`);
  * - everything else with the check of `ark4ne/laravel-api-revisions` (its `Checker`, the one of `revision:check`),
  *   revision by revision: the history of the fields, the conversions, and the rules of JSON:API (`ResourceCheck`).
  *
@@ -65,7 +66,7 @@ final readonly class ResourceChecker
                     throw DefinitionException::notADefinitionSource($class);
                 }
 
-                $found[$class] = $this->definitions->compile($class)->diagnostics;
+                $found[$class] = $this->compiled($class, $only);
                 if (is_subclass_of($class, Revisioned::class)) {
                     $resources[] = $class;
                 }
@@ -101,14 +102,57 @@ final readonly class ResourceChecker
         }
 
         foreach ($checked as $class => $diagnostics) {
-            // The check of the base names what cannot be compiled: the finding of the definition repeats it.
+            // The check of the base names what it cannot compile: the finding of the definition repeating it is left
+            // out, the one of what only this package compiles (its relationships) is kept.
             $compiled = array_values(array_filter(
                 $found[$class] ?? [],
-                static fn(Diagnostic $diagnostic): bool => $diagnostic->code !== DefinitionCompiler::INVALID_DECLARATION,
+                static fn(Diagnostic $diagnostic): bool => $diagnostic->code !== DefinitionCompiler::INVALID_DECLARATION
+                    || !self::repeats($diagnostic, $diagnostics),
             ));
             $found[$class] = [...$compiled, ...$diagnostics];
         }
 
         return $found;
+    }
+
+    /**
+     * The findings of the definitions of a resource, compiled at every revision it exists at: each one once, named by
+     * the newest revision showing it (none for the head).
+     *
+     * @param class-string<DefinitionSource> $class
+     *
+     * @return list<Diagnostic>
+     *
+     * @throws DefinitionException
+     */
+    private function compiled(string $class, ?Revision $only): array
+    {
+        $found = [];
+        foreach ($this->definitions->compileEvery($class) as $definition) {
+            foreach ($definition->diagnostics as $diagnostic) {
+                $found[$diagnostic->key()] ??= $diagnostic;
+            }
+        }
+
+        return array_values(array_filter(
+            $found,
+            static fn(Diagnostic $diagnostic): bool => $only === null || $diagnostic->revision === null || $diagnostic->revision === $only->name,
+        ));
+    }
+
+    /**
+     * Whether a finding of the base already gives the reason `$diagnostic` reports.
+     *
+     * @param list<Diagnostic> $checked
+     */
+    private static function repeats(Diagnostic $diagnostic, array $checked): bool
+    {
+        foreach ($checked as $finding) {
+            if ($finding->message !== '' && str_contains($diagnostic->message, $finding->message)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

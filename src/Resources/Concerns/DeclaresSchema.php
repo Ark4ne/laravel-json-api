@@ -7,7 +7,6 @@ namespace Ark4ne\JsonApi\Resources\Concerns;
 use Ark4ne\ApiRevisions\Compilation\Probe as CompilationProbe;
 use Ark4ne\ApiRevisions\Compilation\Shape;
 use Ark4ne\ApiRevisions\Definition\Lifetime;
-use Ark4ne\ApiRevisions\Revisions\Unrevisioned;
 use Ark4ne\ApiRevisions\Schema\DeclarationKind;
 use Ark4ne\ApiRevisions\Schema\Descriptor;
 use Ark4ne\ApiRevisions\Schema\ObjectSchema;
@@ -146,7 +145,8 @@ trait DeclaresSchema
         }
 
         $type = $this->toType($context->request);
-        $revision = $context->revision ?? Unrevisioned::Head;
+        // No revision is the head of the application, as for its definition.
+        $revision = $context->revision ?? Definitions::head();
         $this->valuesPlanOf = $context->cache;
 
         return $this->valuesPlan = $context->cache->remember(
