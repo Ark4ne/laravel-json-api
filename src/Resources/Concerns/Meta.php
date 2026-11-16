@@ -21,12 +21,13 @@ trait Meta
      *
      * @param \Illuminate\Http\Request $request
      *
-     * @return iterable<string, mixed>|iterable<array-key, \Ark4ne\JsonApi\Descriptors\Values\Value<T>>|null
+     * @return iterable<array-key, mixed>|null Descriptors (`$this->string()`…) or closures by name, and the groups of
+     *         `applyWhen()`
      *
      * ```
      * return [
-     *     'created_at' => $this->created_at->format(DateTimeInterface::ATOM),
-     *     'updated_at' => $this->updated_at->format(DateTimeInterface::ATOM),
+     *     'created_at' => $this->datetime(),
+     *     'updated_at' => $this->datetime(),
      * ];
      * ```
      */
@@ -43,7 +44,8 @@ trait Meta
      *
      * @param \Illuminate\Http\Request $request
      *
-     * @return iterable<string, mixed>|iterable<array-key, \Ark4ne\JsonApi\Descriptors\Values\Value<T>>|null
+     * @return iterable<array-key, mixed>|null Descriptors (`$this->string()`…) or closures by name, and the groups of
+     *         `applyWhen()`
      */
     protected function toDocumentMeta(Request $request): ?iterable
     {

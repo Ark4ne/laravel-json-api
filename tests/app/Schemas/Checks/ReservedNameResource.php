@@ -28,7 +28,7 @@ final class ReservedNameResource extends JsonApiResource
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'id' => Schema::relationship($this->one(ValidResource::class)),
+            'id' => $this->one(ValidResource::class),
         ];
     }
 }

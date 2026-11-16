@@ -6,8 +6,6 @@ namespace Test\Architecture;
 
 use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Descriptors\Relations\Relation;
-use Ark4ne\JsonApi\Descriptors\Values\Value;
-use Ark4ne\JsonApi\Descriptors\Values\ValueDateTime;
 use Ark4ne\JsonApi\Http\JsonApiFormRequest;
 use Ark4ne\JsonApi\Resources\JsonApiCollection;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
@@ -57,8 +55,6 @@ final class ArchitectureTest
         JsonApiCollection::class,
         Describer::class,
         Relation::class,
-        Value::class,
-        ValueDateTime::class,
         JsonApiFormRequest::class,
     ];
 

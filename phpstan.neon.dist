@@ -23,6 +23,8 @@ parameters:
         - tests/app/routes.php
         # Extends a class that is not installed, on purpose (ResourceFinderTest).
         - tests/Unit/Laravel/Fixtures/BrokenResource.php
+        # Written with the API of 1.9, loaded by its copy only (composer benchmark).
+        - bin/benchmark/Legacy
 
     # Facades, global helpers and the container belong to src/Laravel/ (docs/architecture.md §2).
     disallowedNamespaces:

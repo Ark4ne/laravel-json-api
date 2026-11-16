@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Test\Feature\Loading\Fixtures;
 
-use Ark4ne\ApiRevisions\Schema\Schema;
 use Ark4ne\JsonApi\Resources\JsonApiCollection;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Http\Request;
@@ -29,13 +28,13 @@ final class LinkageFeedResource extends JsonApiResource
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'items' => Schema::relationship($this->morphMany([
+            'items' => $this->morphMany([
                 Post::class => LinkagePostResource::class,
                 Comment::class => LinkageCommentResource::class,
             ])->meta(static fn(mixed $items): array => [
                 'collection' => $items instanceof JsonApiCollection,
                 'count' => $items instanceof JsonApiCollection ? $items->count() : null,
-            ])),
+            ]),
         ];
     }
 }

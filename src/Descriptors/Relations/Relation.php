@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Descriptors\Relations;
 
-use Ark4ne\ApiRevisions\Revisions\Revision;
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Configuration\Linkage;
 use Ark4ne\JsonApi\Definition\Cardinality;
@@ -114,20 +113,6 @@ abstract class Relation extends Describer implements DescribesRelationship
     }
 
     /**
-     * The relationship as it was up to `$revision` included: its name, its relation, or both; what is left out is the
-     * head's. The relation given is complete: its related resource, its cardinality (`one` ↔ `many`), its loads,
-     * filters, links and meta are its own, nothing is taken from the head. Only one `was()` applies to a revision: the
-     * one with the oldest revision at least as new.
-     *
-     * @param string|null $name The name it had; the head name if `null`
-     * @param Relation<T>|null $value The relation it had; reads the head relation when it names none
-     */
-    public function was(Revision $revision, ?string $name = null, ?Relation $value = null): static
-    {
-        return $this->withRevision($revision, $name, $value);
-    }
-
-    /**
      * The relation a descriptor reads: the one it names, otherwise `$attribute`.
      *
      * @param Describer<mixed> $describer
@@ -137,11 +122,6 @@ abstract class Relation extends Describer implements DescribesRelationship
         $relation = $describer->retriever();
 
         return is_string($relation) ? $relation : $attribute;
-    }
-
-    protected function readingFrom(string $source): static
-    {
-        return $this->relation === null ? $this->with('relation', $source) : $this;
     }
 
     /**
@@ -384,7 +364,6 @@ abstract class Relation extends Describer implements DescribesRelationship
         string $attribute,
         ?Configuration $configuration = null,
     ): DeclaredRelationship {
-        $attribute = $this->headName ?? $attribute;
         $retriever = $this->retriever();
 
         if ($retriever instanceof Closure) {

@@ -101,21 +101,17 @@ final class AttributesTest extends TestCase
             public function toAttributes(Request $request): iterable
             {
                 $attributes = [
-                    'foo' => $this->resource->foo,
+                    'foo' => $this->string(),
                     'baz' => fn() => $this->resource->baz,
-                    'when_false' => $this->when(
-                        false,
-                        fn() => "when_false-{$this->resource->foo}-{$this->resource->baz}",
-                    ),
-                    'when_true' => $this->when(
-                        true,
-                        fn() => "when_true-{$this->resource->foo}-{$this->resource->baz}",
-                    ),
-                    $this->mergeWhen(false, fn() => [
-                        'merged-false' => 'merged-false',
+                    'when_false' => $this->string(fn() => "when_false-{$this->resource->foo}-{$this->resource->baz}")
+                        ->when(static fn(): bool => false),
+                    'when_true' => $this->string(fn() => "when_true-{$this->resource->foo}-{$this->resource->baz}")
+                        ->when(static fn(): bool => true),
+                    $this->applyWhen(static fn(): bool => false, [
+                        'merged-false' => static fn(): string => 'merged-false',
                     ]),
-                    $this->mergeWhen(true, fn() => [
-                        'merged-true' => 'merged-true',
+                    $this->applyWhen(static fn(): bool => true, [
+                        'merged-true' => static fn(): string => 'merged-true',
                     ]),
                 ];
 
@@ -215,9 +211,6 @@ final class DefaultAttributesPostResource extends JsonApiResource
         return 'post';
     }
 
-    /**
-     * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Relations\Relation<Post>>
-     */
     protected function toRelationships(Request $request): iterable
     {
         return [

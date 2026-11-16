@@ -24,7 +24,7 @@ final class UserResource extends JsonApiResource
                 ->was(Revision::Middle, name: 'label')
                 ->was(Revision::Oldest, name: 'full_name'),
             'email' => $this->string(),
-            'contact' => $this->struct(fn() => [
+            'contact' => $this->struct([
                 'email' => $this->string('email'),
                 'display' => $this->string(fn() => "{$this->resource->name} <{$this->resource->email}>")
                     ->was(Revision::Oldest, name: 'label'),

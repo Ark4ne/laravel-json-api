@@ -28,7 +28,7 @@ final class AbsentRelatedResource extends JsonApiResource
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'member' => Schema::relationship($this->one(MemberResource::class)),
+            'member' => $this->one(MemberResource::class),
         ];
     }
 }

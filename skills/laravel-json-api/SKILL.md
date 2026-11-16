@@ -36,15 +36,16 @@ php artisan make:jsonapi-resource PostResource --model=Post                     
 ## Rules that prevent most mistakes
 
 1. **Describe, do not compute.** Write members with descriptors (`'title' => $this->string()`,
-   `'author' => $this->one(UserResource::class)`) or closures, never eagerly (`'title' => $this->title`): a descriptor
-   is typed, read only when the member is requested, and known to the definition. An eager value is `mixed` and gets
-   an `eager-attribute` warning.
+   `'author' => $this->one(UserResource::class)`) or closures, never eagerly (`'title' => $this->title`): a hook runs once per response, on a template whose `$this->resource` is
+   set to each model before its values are read, so an eager value is refused (`DefinitionException`). A descriptor
+   is typed, read only when the member is requested, and known to the definition; a closure is a value of any type.
 2. **No `if` on the request or the model in a hook.** The definition is compiled once, on a probe standing for the
    model, with an empty request: a member added under an `if` is missing from it, so `fields` and `include` cannot
-   name it. Write conditions with `->when()`, `->unless()`, `->whenNotNull()`, `->whenLoaded()` or `$this->applyWhen()`,
-   never `mergeWhen()` (its members are hidden from the definition).
-3. **Name every member.** A hook returns members keyed by name, or descriptors given the attribute they read
-   (`$this->string('email')`). `id` and `type` are reserved: never declare them as attributes.
+   name it. Write conditions with `->when(fn($value, $model) => …)`, `->unless()`, `->whenNotNull()`, `->whenHas()`
+   or `$this->applyWhen(fn() => …, [...])`: a condition is a closure, read for each resource. Laravel's
+   `$this->when()` and `$this->mergeWhen()` give plain values and are refused.
+3. **Name every member.** A hook returns members keyed by name. `id` and `type` are reserved: never declare them
+   as attributes.
 4. **Relationships are descriptors too.** `$this->one(UserResource::class)` / `$this->many(CommentResource::class)`
    read the relation named like the member (or the one given: `$this->one(UserResource::class, 'author')`), load it
    in batch for the whole document, and render its linkage. On a resource of an Eloquent model, the class may be left
@@ -62,12 +63,13 @@ php artisan make:jsonapi-resource PostResource --model=Post                     
 9. **Render errors as JSON:API.** `JsonApi::renderErrors($exceptions)` in `bootstrap/app.php`; the `jsonapi` route
    middleware applies the content negotiation (415, 406).
 10. **Check the resources in CI.** `php artisan jsonapi:check --strict` fails on the diagnostics of the definitions
-    (eager values, `mergeWhen()`, unnamed or reserved members, relationships that cannot be guessed, missing routes);
+    (plain values, unnamed or reserved members, relationships that cannot be guessed, missing routes);
+    `php artisan revision:check` (`ark4ne/laravel-api-revisions`) checks the history of the fields;
     `Testing\ResourceAssertions::assertValid(PostResource::class)` does the same in a test.
 11. **Type the model.** `@extends JsonApiResource<Post>` types `$this->resource` and the closures of the descriptors
     for PHPStan and the IDE; hooks need no `@return`.
 12. **Change the head, declare the past.** In a versioned API, edit the field to its new shape and add
-    `->was(<the revision that was the newest until now>, name: …, value: …)`; never an `if` on the revision for a
+    `->was(<the revision that was the newest until now>, name: …, schema: …, down: …)`; never an `if` on the revision for a
     change of shape (`ApiRevision::current()->isAtMost(…)` is for a change of meaning only). A new type is a new resource
     (`#[Definition\JsonApiSince]`, the old one `#[Definition\JsonApiUntil]`). The rules of a body that change take
     `Http\Rules\Revised::rules(<head>)->was(…, rules: …)`, `->since()`, `->until()`, never an `if` in `rules()`. See
@@ -86,11 +88,12 @@ php artisan make:jsonapi-resource PostResource --model=Post                     
 | Symptom | Cause and fix |
 | --- | --- |
 | A member is missing | Left out by `fields[type]`, by its condition, or empty (`attributes`, `meta`… are left out when empty) |
-| `fields` / `include` rejected for a member that exists | It is added under an `if`, or by `mergeWhen()`: use `->when()` or `applyWhen()` (rule 2) |
+| `fields` / `include` rejected for a member that exists | It is added under an `if`: use `->when()` or `applyWhen()` (rule 2) |
 | `data` missing on a relationship | `relationship.linkage` is `included` or `loaded`, or the relationship has `->whenIncluded()` / `->whenLoaded()` |
 | One query per resource | The relationship is read by a closure (`fn() => $this->resource->posts`): use `$this->many(PostResource::class)`, or `->withLoad('posts')` |
 | A value has the wrong type | Use the matching descriptor (`integer()`, `datetime()`, `decimal()`, `enum()`…) instead of a raw value |
 | A date lost its time | `date()` is a date without time: use `datetime()` |
-| `DefinitionException` when rendered | The definition cannot be compiled: run `php artisan jsonapi:check` to read why |
-| `RenderingException` | A value has no JSON form (an array given to `string()` / `integer()` / `float()`, a date `nullable(false)` given `null` with `describer.strict`, an enum value out of its cases, a member without name), or the identifier is neither an integer nor a string |
+| `DefinitionException` when rendered | The definition cannot be compiled (a plain value in a hook, a member without name…): run `php artisan jsonapi:check` to read why |
+| A value error (`ark4ne/laravel-api-revisions`) | A value its type refuses (an array given to `string()`, `null` for `nullable(false)`, an enum value out of its cases): thrown or reported as `revisions.strict_values` says |
+| `RenderingException` | The identifier is neither an integer nor a string, or the resource does not exist at the revision |
 | The error body is Laravel's | `JsonApi::renderErrors()` is not called, or the request does not expect JSON |

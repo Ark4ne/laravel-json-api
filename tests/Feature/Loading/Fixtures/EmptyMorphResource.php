@@ -19,9 +19,6 @@ final class EmptyMorphResource extends JsonApiResource
         return 'empty';
     }
 
-    /**
-     * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Relations\Relation<mixed>>
-     */
     protected function toRelationships(Request $request): iterable
     {
         return ['likeable' => $this->morph([])];

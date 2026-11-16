@@ -58,8 +58,8 @@ class UserResource extends JsonApiResource
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'main-post' => Schema::relationship($this->one('post')->withLoad('post')),
-            'posts' => Schema::relationship($this->many()
+            'main-post' => $this->one('post')->withLoad('post'),
+            'posts' => $this->many()
                 ->links(
                     self: fn() => "https://api.example.com/user/{$this->resource->id}/relationships/posts",
                     related: fn() => "https://api.example.com/user/{$this->resource->id}/posts",
@@ -67,8 +67,8 @@ class UserResource extends JsonApiResource
                 ->meta(fn() => [
                     'total' => $this->resource->posts()->toBase()->count(),
                 ])
-                ->withLoad(true)),
-            'comments' => Schema::relationship($this->many()
+                ->withLoad(true),
+            'comments' => $this->many()
                 ->whenLoaded()
                 ->links(
                     self: fn() => "https://api.example.com/user/{$this->resource->id}/relationships/comments",
@@ -77,7 +77,7 @@ class UserResource extends JsonApiResource
                 ->meta(fn() => [
                     'total' => $this->resource->comments()->toBase()->count(),
                 ])
-                ->withLoad(['comments' => fn(Builder|Relation $query) => $query->where('content', 'like', '%e%')])),
+                ->withLoad(['comments' => fn(Builder|Relation $query) => $query->where('content', 'like', '%e%')]),
         ];
     }
 }

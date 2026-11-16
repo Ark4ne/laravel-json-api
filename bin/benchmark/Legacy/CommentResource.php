@@ -2,10 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Benchmark\Schema;
+namespace Benchmark\Legacy;
 
-use Ark4ne\ApiRevisions\Schema\Schema;
-use Ark4ne\JsonApi\Descriptors\Schemas\RelationshipSchema;
+use Ark4ne\JsonApi\Descriptors\Relations\RelationOne;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Http\Request;
 
@@ -22,17 +21,17 @@ final class CommentResource extends JsonApiResource
     public function toAttributes(Request $request): iterable
     {
         return [
-            'content' => Schema::string(),
+            'content' => $this->string(),
         ];
     }
 
     /**
-     * @return iterable<string, RelationshipSchema<\Benchmark\Models\Comment>>
+     * @return iterable<string, RelationOne<\Benchmark\Models\Comment>>
      */
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'user' => Schema::relationship($this->one(UserResource::class)->withLoad(true)),
+            'user' => $this->one(UserResource::class)->withLoad(true),
         ];
     }
 }

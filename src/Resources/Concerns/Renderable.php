@@ -7,17 +7,11 @@ namespace Ark4ne\JsonApi\Resources\Concerns;
 use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Configuration\Linkage;
 use Ark4ne\JsonApi\Context\JsonApiContext;
-use Ark4ne\JsonApi\Descriptors\Describer;
-use Ark4ne\JsonApi\Descriptors\Relations\Relation;
 use Ark4ne\JsonApi\Descriptors\Relations\RelationRaw;
-use Ark4ne\JsonApi\Descriptors\RevisedMembers;
 use Ark4ne\JsonApi\Exceptions\RenderingException;
 use Ark4ne\JsonApi\Loading\LoadedRelations;
 use Ark4ne\JsonApi\Rendering\RelationshipSource;
 use Ark4ne\JsonApi\Resources\Relationship;
-use Ark4ne\JsonApi\Support\Values;
-use Illuminate\Http\Resources\MissingValue;
-use Illuminate\Http\Resources\PotentiallyMissing;
 
 /**
  * Implements `Rendering\RenderableResource` for `JsonApiResource`: bridges from the renderer to the user hooks, which
@@ -76,15 +70,12 @@ trait Renderable
     {
         $this->renderingContext = $context;
 
-        // Declared with the descriptors of the base: rendered by it, from the plan of the response.
-        if (Definitions::declaresSchema(static::class) && !static::hasDefaultAttributes()) {
-            return $this->valuesPlan($context)->attributes($this->resource, $context);
+        // The default attributes, those of the model: no shape names them, they are rendered as they are.
+        if (static::hasDefaultAttributes()) {
+            return $this->toAttributes($context->request);
         }
 
-        return $this->autoWhenHas(
-            $this->revised($this->toAttributes($context->request), $context),
-            $context->configuration->autoWhenHas('attributes'),
-        );
+        return $this->valuesPlan($context)->attributes($this->resource, $context);
     }
 
     /**
@@ -99,60 +90,19 @@ trait Renderable
         $definitions = Definitions::for(static::class, $context->revision)->relationships;
         $model = $this->resource;
 
-        // Declared with the descriptors of the base: its shape gives their names and the relation in force.
-        if (Definitions::declaresSchema(static::class)) {
-            foreach ($this->relationsAt($context) as $name => [$key, $relation]) {
-                $definition = $definitions[$name] ?? null;
-                if ($relation instanceof RelationRaw) {
-                    $relationship = $relation->relationship();
-                    if (!$relationship instanceof Relationship) {
-                        continue;
-                    }
-                } else {
-                    $relationship = Relationship::declared($relation
-                        ->resolveRelated($key, $definition?->related[0] ?? $definition?->native)
-                        ->resolveFor($context->request, $model, $key, $context->configuration));
-                }
-
-                yield $name => $definition === null || (
-                    ($definition->linkage ?? $context->configuration->linkage) !== Linkage::Loaded
-                    && !$relationship->filtered()
-                )
-                    ? $relationship
-                    : $relationship->loadedWhen(static fn() => LoadedRelations::has($model, $definition));
-            }
-
-            return;
-        }
-
-        $relationships = $this->autoWhenIncluded(
-            Values::mergeValues($this->revised($this->toRelationships($context->request), $context)),
-        );
-
-        foreach ($relationships as $key => $relationship) {
-            if ($relationship instanceof PotentiallyMissing && $relationship->isMissing()) {
-                continue;
-            }
-
-            $name = (string) Describer::retrieveName($relationship, $key);
+        // The shape of the revision gives their names and the relation in force.
+        foreach ($this->relationsAt($context) as $name => [$key, $relation]) {
             $definition = $definitions[$name] ?? null;
-
-            if ($relationship instanceof RelationRaw) {
-                // A relationship of `applyWhen()`: rendered without data when its condition fails, as a descriptor is.
-                $raw = $relationship->relationship();
-                if (!$raw instanceof Relationship) {
+            if ($relation instanceof RelationRaw) {
+                $relationship = $relation->relationship();
+                if (!$relationship instanceof Relationship) {
                     continue;
                 }
-                $relationship = $relationship->passes($context->request, $model, $name)
-                    ? $raw
-                    : $raw->withValue(static fn() => new MissingValue());
-            } elseif ($relationship instanceof Relation) {
+            } else {
                 // A resource guessed from the model is that of the definition: guessed once, when compiled.
-                $relationship = Relationship::declared($relationship
-                    ->resolveRelated($name, $definition?->related[0] ?? $definition?->native)
-                    ->resolveFor($context->request, $model, $name, $context->configuration));
-            } elseif (!$relationship instanceof Relationship) {
-                continue;
+                $relationship = Relationship::declared($relation
+                    ->resolveRelated($key, $definition?->related[0] ?? $definition?->native)
+                    ->resolveFor($context->request, $model, $key, $context->configuration));
             }
 
             // Only `Linkage::Loaded` and the filters read whether the relation is loaded.
@@ -174,7 +124,7 @@ trait Renderable
     {
         $this->renderingContext = $context;
 
-        return $this->revised($this->toLinks($context->request) ?? [], $context);
+        return $this->toLinks($context->request) ?? [];
     }
 
     /**
@@ -186,14 +136,7 @@ trait Renderable
     {
         $this->renderingContext = $context;
 
-        if (Definitions::declaresSchema(static::class)) {
-            return $this->valuesPlan($context)->meta($this->resource, $context);
-        }
-
-        return $this->autoWhenHas(
-            $this->revised($this->toResourceMeta($context->request) ?? [], $context),
-            $context->configuration->autoWhenHas('resource-meta'),
-        );
+        return $this->valuesPlan($context)->meta($this->resource, $context);
     }
 
     /**
@@ -205,28 +148,6 @@ trait Renderable
     {
         $this->renderingContext = $context;
 
-        if (Definitions::declaresSchema(static::class)) {
-            return $this->valuesPlan($context)->documentMeta($this->resource, $context);
-        }
-
-        return $this->autoWhenHas(
-            $this->revised($this->toDocumentMeta($context->request) ?? [], $context),
-            $context->configuration->autoWhenHas('meta'),
-        );
-    }
-
-    /**
-     * The members of a hook as the revision of the rendering sees them (`RevisedMembers`), before anything reads a name:
-     * the sparse fieldsets and the includes are written in the names of the revision. A resource declaring no revision
-     * gives its members as they are, whatever the revision; a revised one at the head only loses its fields `until()` a
-     * revision.
-     *
-     * @param iterable<array-key, mixed> $members
-     *
-     * @return iterable<array-key, mixed>
-     */
-    private function revised(iterable $members, JsonApiContext $context): iterable
-    {
-        return Definitions::isRevised(static::class) ? RevisedMembers::apply($members, $context->revision) : $members;
+        return $this->valuesPlan($context)->documentMeta($this->resource, $context);
     }
 }

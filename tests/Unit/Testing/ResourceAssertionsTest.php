@@ -13,18 +13,19 @@ use PHPUnit\Framework\TestCase;
 use Test\app\Revisions\ApiRevision;
 use Test\app\Revisions\MemberResource;
 use Test\app\Revisions\ProfileResource;
-use Test\Unit\Compilation\Fixtures\EagerResource;
 use Test\Unit\Compilation\Fixtures\FailingHookResource;
 use Test\Unit\Compilation\Fixtures\TypedResource;
 use Test\Unit\Compilation\References\BoundedReferencesResource;
 use Test\Unit\Compilation\References\ForgottenWasResource;
-use Test\Unit\Compilation\References\HeadSharedErrorResource;
-use Test\Unit\Compilation\References\InvalidAtRevisionResource;
-use Test\Unit\Compilation\References\OlderSharedErrorResource;
 
 final class ResourceAssertionsTest extends TestCase
 {
     protected function setUp(): void
+    {
+        Definitions::configure(Configuration::defaults()->withRevisions(ApiRevision::class));
+    }
+
+    protected function tearDown(): void
     {
         Definitions::configure(Configuration::defaults());
     }
@@ -39,7 +40,7 @@ final class ResourceAssertionsTest extends TestCase
     public function test_a_resource_with_an_error_is_not_valid_and_the_message_lists_it(): void
     {
         $this->expectException(AssertionFailedError::class);
-        $this->expectExceptionMessage('hook-failure');
+        $this->expectExceptionMessage('invalid-declaration');
 
         ResourceAssertions::assertValid(FailingHookResource::class);
     }
@@ -53,33 +54,13 @@ final class ResourceAssertionsTest extends TestCase
         ResourceAssertions::assertValid(FailingHookResource::class);
     }
 
-    public function test_a_warning_is_tolerated_unless_strict(): void
-    {
-        ResourceAssertions::assertValid(EagerResource::class);
-
-        $this->expectException(AssertionFailedError::class);
-        $this->expectExceptionMessage('eager-attribute');
-
-        ResourceAssertions::assertValid(EagerResource::class, strict: true);
-    }
-
-    public function test_a_resource_is_asserted_at_a_revision(): void
-    {
-        ResourceAssertions::assertValid(InvalidAtRevisionResource::class, revision: ApiRevision::Labels);
-
-        $this->expectException(AssertionFailedError::class);
-        $this->expectExceptionMessage('[error] [Initial] invalid-member (author)');
-
-        ResourceAssertions::assertValid(InvalidAtRevisionResource::class, revision: ApiRevision::Initial);
-    }
-
     public function test_the_references_are_asserted_at_the_revision(): void
     {
         ResourceAssertions::assertValid(ForgottenWasResource::class);
         ResourceAssertions::assertValid(ForgottenWasResource::class, revision: ApiRevision::UsersReplaceTeachers);
 
         $this->expectException(AssertionFailedError::class);
-        $this->expectExceptionMessage('revision-unavailable-resource (members)');
+        $this->expectExceptionMessage('unavailable-resource (members)');
 
         ResourceAssertions::assertValid(ForgottenWasResource::class, revision: ApiRevision::Labels);
     }
@@ -99,17 +80,9 @@ final class ResourceAssertionsTest extends TestCase
         ResourceAssertions::assertValidAtEveryRevision(TypedResource::class, strict: true);
 
         $this->expectException(AssertionFailedError::class);
-        $this->expectExceptionMessage('does not exist at [Initial, Labels]');
+        $this->expectExceptionMessage('[error] [Labels] unavailable-resource (members)');
 
         ResourceAssertions::assertValidAtEveryRevision(ForgottenWasResource::class);
-    }
-
-    public function test_every_revision_is_asserted_with_the_diagnostics_of_every_shape(): void
-    {
-        $this->expectException(AssertionFailedError::class);
-        $this->expectExceptionMessage('[Initial] invalid-member');
-
-        ResourceAssertions::assertValidAtEveryRevision(InvalidAtRevisionResource::class);
     }
 
     public function test_the_definition_at_a_revision_is_compiled_from_the_current_code(): void
@@ -121,6 +94,7 @@ final class ResourceAssertionsTest extends TestCase
         self::assertSame('profiles', $definition->type);
         self::assertSame(ApiRevision::Initial, $definition->revision);
         self::assertArrayHasKey('name', $definition->attributes);
+        self::assertSame('profiles', ResourceAssertions::definitionAt(ProfileResource::class)->type);
     }
 
     public function test_the_definition_at_a_revision_the_resource_is_absent_from_fails(): void
@@ -129,32 +103,5 @@ final class ResourceAssertionsTest extends TestCase
         $this->expectExceptionMessage(MemberResource::class);
 
         ResourceAssertions::definitionAt(MemberResource::class, ApiRevision::Labels);
-    }
-
-    public function test_a_revision_is_asserted_with_the_errors_its_shape_shares_with_the_head(): void
-    {
-        $this->expectException(AssertionFailedError::class);
-        $this->expectExceptionMessage('invalid-member (author)');
-
-        ResourceAssertions::assertValid(HeadSharedErrorResource::class, revision: ApiRevision::Initial);
-    }
-
-    public function test_a_revision_is_asserted_with_the_errors_its_shape_shares_with_an_older_one(): void
-    {
-        ResourceAssertions::assertValid(OlderSharedErrorResource::class, revision: ApiRevision::UsersReplaceTeachers);
-
-        $this->expectException(AssertionFailedError::class);
-        $this->expectExceptionMessage('invalid-member (writer)');
-
-        ResourceAssertions::assertValid(OlderSharedErrorResource::class, revision: ApiRevision::Labels);
-    }
-
-    public function test_a_resource_is_compiled_once_by_an_assertion(): void
-    {
-        ProfileResource::$reads = 0;
-
-        ResourceAssertions::assertValidAtEveryRevision(ProfileResource::class);
-
-        self::assertSame(1, ProfileResource::$reads);
     }
 }

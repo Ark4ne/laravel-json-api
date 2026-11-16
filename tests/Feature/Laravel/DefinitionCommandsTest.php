@@ -13,18 +13,13 @@ use Illuminate\Testing\PendingCommand;
 use Orchestra\Testbench\Attributes\DefineEnvironment;
 use Orchestra\Testbench\TestCase;
 use Test\app\Revisions\ApiRevision;
+use Test\app\Revisions\MemberResource;
 use Test\app\Revisions\ProfileResource;
 use Test\app\Revisions\TeacherResource;
-use Test\Unit\Compilation\Fixtures\EagerResource;
 use Test\Unit\Compilation\Fixtures\FailingHookResource;
 use Test\Unit\Compilation\Fixtures\TypedResource;
 use Test\Unit\Compilation\References\BoundedReferencesResource;
 use Test\Unit\Compilation\References\ForgottenWasResource;
-use Test\Unit\Compilation\References\HeadSharedErrorResource;
-use Test\Unit\Compilation\References\InvalidAtRevisionResource;
-use Test\Unit\Compilation\References\OlderSharedErrorResource;
-use Test\Unit\Compilation\References\StaleHeadResource;
-use Test\Unit\Compilation\References\TwoEnumsReferencesResource;
 use Test\Unit\Laravel\Fixtures\FoundResource;
 use Test\Unit\Laravel\Fixtures\Nested\NestedResource;
 
@@ -37,6 +32,8 @@ final class DefinitionCommandsTest extends TestCase
 
     protected function defineEnvironment($app): void
     {
+        $app['config']->set('revisions.enum', ApiRevision::class);
+
         // Testbench applies #[DefineEnvironment] first: the paths it sets are kept.
         if ($app['config']->get('jsonapi.definitions.paths', []) === []) {
             $app['config']->set('jsonapi.definitions.paths', [__DIR__ . '/../../Unit/Laravel/Fixtures']);
@@ -93,7 +90,17 @@ final class DefinitionCommandsTest extends TestCase
 
         $definitions = require $this->compiledPath();
         self::assertIsArray($definitions);
-        self::assertSame([FoundResource::class, NestedResource::class], array_keys($definitions));
+        self::assertSame(
+            [
+                FoundResource::class,
+                FoundResource::class . '@Labels',
+                FoundResource::class . '@Initial',
+                NestedResource::class,
+                NestedResource::class . '@Labels',
+                NestedResource::class . '@Initial',
+            ],
+            array_keys($definitions),
+        );
     }
 
     #[DefineEnvironment('usesRevisionFixtures')]
@@ -108,7 +115,11 @@ final class DefinitionCommandsTest extends TestCase
         self::assertArrayHasKey(ProfileResource::class, $definitions);
         self::assertArrayHasKey(ProfileResource::class . '@Initial', $definitions);
         self::assertArrayHasKey(ProfileResource::class . '@Labels', $definitions);
+        // The head is the newest revision.
         self::assertArrayNotHasKey(ProfileResource::class . '@UsersReplaceTeachers', $definitions);
+        // Only where the resource exists.
+        self::assertArrayHasKey(TeacherResource::class . '@Labels', $definitions);
+        self::assertArrayNotHasKey(MemberResource::class . '@Labels', $definitions);
     }
 
     #[DefineEnvironment('usesRevisionFixtures')]
@@ -179,18 +190,8 @@ final class DefinitionCommandsTest extends TestCase
         $output = Artisan::output();
 
         self::assertSame(Command::FAILURE, $status);
-        self::assertStringContainsString('hook-failure', $output);
+        self::assertStringContainsString('invalid-declaration', $output);
         self::assertStringContainsString('Needs a real model.', $output);
-    }
-
-    public function test_check_tolerates_a_warning_unless_strict(): void
-    {
-        $this->command('jsonapi:check', ['resources' => [EagerResource::class]])
-            ->expectsOutputToContain('eager-attribute')
-            ->assertSuccessful();
-
-        $this->command('jsonapi:check', ['resources' => [EagerResource::class], '--strict' => true])
-            ->assertFailed();
     }
 
     public function test_check_fails_on_a_class_that_is_not_a_resource(): void
@@ -210,24 +211,14 @@ final class DefinitionCommandsTest extends TestCase
 
     public function test_check_reports_a_relationship_to_a_resource_absent_from_a_revision(): void
     {
-        $status = Artisan::call('jsonapi:check', ['resources' => [ForgottenWasResource::class, StaleHeadResource::class]]);
+        $status = Artisan::call('jsonapi:check', ['resources' => [ForgottenWasResource::class]]);
         $output = Artisan::output();
 
         self::assertSame(Command::FAILURE, $status);
-        self::assertStringContainsString('[error] revision-unavailable-resource (members)', $output);
-        self::assertStringContainsString('does not exist at [Initial, Labels]', $output);
-        self::assertStringContainsString('[error] revision-unavailable-resource (teacher)', $output);
-        self::assertStringContainsString('does not exist at [head, UsersReplaceTeachers]', $output);
+        self::assertStringContainsString('[error] [Labels] unavailable-resource (members)', $output);
+        self::assertStringContainsString('[error] [Initial] unavailable-resource (members)', $output);
 
         $this->command('jsonapi:check', ['resources' => [BoundedReferencesResource::class]])->assertSuccessful();
-    }
-
-    public function test_check_prints_the_revision_of_a_diagnostic(): void
-    {
-        $status = Artisan::call('jsonapi:check', ['resources' => [InvalidAtRevisionResource::class]]);
-
-        self::assertSame(Command::FAILURE, $status);
-        self::assertStringContainsString('[error] [Initial] invalid-member (author)', Artisan::output());
     }
 
     public function test_check_may_be_restricted_to_one_revision(): void
@@ -237,14 +228,9 @@ final class DefinitionCommandsTest extends TestCase
         $this->command('jsonapi:check', ['resources' => [ForgottenWasResource::class], '--revision' => 'Labels'])
             ->expectsOutputToContain('does not exist at [Labels]')
             ->assertFailed();
-        // The diagnostics of the other revisions are left out.
-        $this->command('jsonapi:check', ['resources' => [InvalidAtRevisionResource::class], '--revision' => 'Labels'])
-            ->assertSuccessful();
-        $this->command('jsonapi:check', ['resources' => [InvalidAtRevisionResource::class], '--revision' => 'Initial'])
-            ->assertFailed();
     }
 
-    public function test_check_fails_on_a_revision_no_resource_knows(): void
+    public function test_check_fails_on_a_revision_the_application_does_not_have(): void
     {
         $this->command('jsonapi:check', ['resources' => [ForgottenWasResource::class, TypedResource::class], '--revision' => 'Unknown'])
             ->expectsOutputToContain('[Unknown]')
@@ -258,46 +244,13 @@ final class DefinitionCommandsTest extends TestCase
             ->assertSuccessful();
     }
 
-    public function test_check_at_a_revision_reports_an_error_its_shape_shares_with_the_head(): void
-    {
-        $this->command('jsonapi:check', ['resources' => [HeadSharedErrorResource::class], '--revision' => 'Initial'])
-            ->expectsOutputToContain('invalid-member (author)')
-            ->assertFailed();
-    }
-
-    public function test_check_at_a_revision_reports_an_error_its_shape_shares_with_an_older_one(): void
-    {
-        $this->command('jsonapi:check', ['resources' => [OlderSharedErrorResource::class], '--revision' => 'Labels'])
-            ->expectsOutputToContain('invalid-member (writer)')
-            ->assertFailed();
-        $this->command('jsonapi:check', ['resources' => [OlderSharedErrorResource::class], '--revision' => 'UsersReplaceTeachers'])
-            ->assertSuccessful();
-    }
-
     public function test_check_at_a_revision_checks_a_resource_declaring_none(): void
     {
         $status = Artisan::call('jsonapi:check', ['resources' => [ForgottenWasResource::class, FailingHookResource::class], '--revision' => 'UsersReplaceTeachers']);
         $output = Artisan::output();
 
         self::assertSame(Command::FAILURE, $status);
-        self::assertStringContainsString('hook-failure', $output);
+        self::assertStringContainsString('invalid-declaration', $output);
         self::assertStringNotContainsString('SKIPPED', $output);
-    }
-
-    public function test_check_at_a_revision_reads_every_enum_having_a_case_of_that_name(): void
-    {
-        $this->command('jsonapi:check', ['resources' => [TwoEnumsReferencesResource::class], '--revision' => 'Labels'])
-            ->expectsOutputToContain('does not exist at [Labels]')
-            ->assertFailed();
-    }
-
-    #[DefineEnvironment('usesRevisionFixtures')]
-    public function test_check_compiles_each_resource_once(): void
-    {
-        ProfileResource::$reads = 0;
-
-        $this->command('jsonapi:check', ['resources' => [ProfileResource::class]])->assertSuccessful();
-
-        self::assertSame(1, ProfileResource::$reads);
     }
 }

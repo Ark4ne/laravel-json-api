@@ -35,17 +35,17 @@ class PostResource extends JsonApiResource
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'user' => Schema::relationship($this->one()->links(
+            'user' => $this->one()->links(
                 self: fn() => "https://api.example.com/posts/{$this->resource->id}/relationships/user",
-            )->withLoad(true)),
-            'comments' => Schema::relationship($this->many()->links(
+            )->withLoad(true),
+            'comments' => $this->many()->links(
                 self: fn() => "https://api.example.com/posts/{$this->resource->id}/relationships/comments",
                 related: fn() => "https://api.example.com/posts/{$this->resource->id}/comments",
             )->meta(fn() => [
                 'total' => $this->resource->relationLoaded('comments')
                     ? $this->resource->comments->count()
                     : $this->resource->comments()->toBase()->count(),
-            ])->withLoad('comments')),
+            ])->withLoad('comments'),
         ];
     }
 }

@@ -6,7 +6,6 @@ namespace Ark4ne\JsonApi\Testing;
 
 use Ark4ne\ApiRevisions\Revisions\Revision;
 use Ark4ne\JsonApi\Compilation\Definitions;
-use Ark4ne\JsonApi\Compilation\RevisionAudit;
 use Ark4ne\JsonApi\Definition\DefinitionSource;
 use Ark4ne\JsonApi\Definition\ResourceDefinition;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
@@ -24,58 +23,49 @@ final class ResourceAssertions
 {
     /**
      * Fails when the definition of the resource cannot be compiled or has an error; with `$strict`, also on a warning.
-     * The relationships must reach resources existing at the revision (`revision-unavailable-resource`).
-     *
-     * At the head (`null`), the diagnostics are those of the head definition, which carries those of every revision,
-     * as `jsonapi:check` prints them; at a revision, those of its shape and of the revision declarations
-     * (`RevisionAudit::diagnosticsAt()`), and the resource must exist at it.
+     * At the head by default; at a revision, the resource must exist at it. The history of its fields is checked by
+     * `ark4ne/laravel-api-revisions` (`revision:check`).
      *
      * @param class-string<DefinitionSource> $class
      */
     public static function assertValid(string $class, bool $strict = false, ?Revision $revision = null): void
     {
-        $audit = self::audit();
-
-        try {
-            $diagnostics = $revision === null
-                ? $audit->shapes($class)[0]->diagnostics
-                : $audit->diagnosticsAt($class, $revision) ?? throw DefinitionException::notInRevision($class, $revision);
-        } catch (DefinitionException $e) {
-            Assert::fail($e->getMessage());
-        }
-
-        self::assertNoFailure($class, $strict, [...$diagnostics, ...$audit->check($class, [$revision])]);
+        self::assertNoFailure($class, $strict, self::definitionAt($class, $revision)->diagnostics);
     }
 
     /**
-     * `assertValid()` at every revision: the diagnostics of every shape, and the references between resources at the
-     * head and at every case of the enums the resource and its related resources declare with.
+     * `assertValid()` at the head and at every revision the resource exists at.
      *
      * @param class-string<DefinitionSource> $class
      */
     public static function assertValidAtEveryRevision(string $class, bool $strict = false): void
     {
-        $audit = self::audit();
-
         try {
-            $diagnostics = $audit->shapes($class)[0]->diagnostics;
+            $definitions = Definitions::compiler()->compileEvery($class);
         } catch (DefinitionException $e) {
             Assert::fail($e->getMessage());
         }
 
-        self::assertNoFailure($class, $strict, [...$diagnostics, ...$audit->check($class)]);
+        $diagnostics = [];
+        foreach ($definitions as $definition) {
+            foreach ($definition->diagnostics as $diagnostic) {
+                $diagnostics[$diagnostic->key()] ??= $diagnostic;
+            }
+        }
+
+        self::assertNoFailure($class, $strict, array_values($diagnostics));
     }
 
     /**
-     * The definition of the resource at a revision, for snapshot tests: the shape of its bucket, compiled from the
+     * The definition of the resource at a revision (the head by default), for snapshot tests: compiled from the
      * current code. Fails when the resource does not exist at it.
      *
      * @param class-string<DefinitionSource> $class
      */
-    public static function definitionAt(string $class, Revision $revision): ResourceDefinition
+    public static function definitionAt(string $class, ?Revision $revision = null): ResourceDefinition
     {
         try {
-            return self::audit()->shapeAt($class, $revision) ?? throw DefinitionException::notInRevision($class, $revision);
+            return Definitions::compile($class, $revision);
         } catch (DefinitionException $e) {
             Assert::fail($e->getMessage());
         }
@@ -100,10 +90,5 @@ final class ResourceAssertions
                 $failures,
             )),
         );
-    }
-
-    private static function audit(): RevisionAudit
-    {
-        return new RevisionAudit(Definitions::compiler());
     }
 }

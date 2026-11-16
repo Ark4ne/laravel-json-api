@@ -7,110 +7,73 @@ namespace Ark4ne\JsonApi\Resources\Concerns;
 use Ark4ne\ApiRevisions\Revisions\Revision;
 use Ark4ne\ApiRevisions\Schema\Descriptor;
 use Ark4ne\JsonApi\Compilation\Definitions;
+use Ark4ne\JsonApi\Definition\DescribesRelationship;
 use Ark4ne\JsonApi\Definition\RelatedResource;
-use Ark4ne\JsonApi\Descriptors\Describer;
-use Ark4ne\JsonApi\Descriptors\MergeWhenValue;
-use Ark4ne\JsonApi\Descriptors\Relations\RelationRaw;
-use Ark4ne\JsonApi\Descriptors\Values\ValueMixed;
+use Ark4ne\JsonApi\Descriptors\Schemas\MixedSchema;
+use Ark4ne\JsonApi\Descriptors\Schemas\RelationshipSchema;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
-use Ark4ne\JsonApi\Resources\Relationship;
-use Ark4ne\JsonApi\Support\Values;
 use Closure;
-use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MergeValue;
-use Illuminate\Http\Resources\MissingValue;
-use JsonSerializable;
 
+/**
+ * The conditions of a hook: the helpers of Laravel's resources (`when()`, `mergeWhen()`, `whenHas()`…) give plain
+ * values, evaluated when the hook runs, once per response: a member is a descriptor, with its condition on it
+ * (`->when()`, `->whenHas()`, `->whenInFields()`), or grouped with `applyWhen()`.
+ */
 trait ConditionallyLoadsAttributes
 {
     /**
-     * @override JsonResource::when
-     * Typed: the value, or a `MissingValue` (or `$default`) when the condition fails.
+     * Renders a value only when a field of the resource is requested by the sparse fieldset of its type (`fields`).
+     * The field is named as in the code: for a client on an older revision, by the name it has at that revision, the
+     * condition failing for a field that does not exist at it. On the field itself, `->whenInFields()`.
      *
-     * @template V
-     * @template D
+     * @template TDescriptor of Descriptor<mixed>
      *
-     * @param bool $condition
-     * @param V|Closure():V $value
-     * @param D|Closure():D $default
+     * @param TDescriptor|Closure $value A descriptor, or a closure computing a value of any type
      *
-     * @return V|D|\Illuminate\Http\Resources\MissingValue
+     * @return ($value is Closure ? MixedSchema : TDescriptor)
      */
-    protected function when($condition, $value, $default = new MissingValue())
+    protected function whenInFields(Request $request, string $attribute, Descriptor|Closure $value): Descriptor
     {
-        return func_num_args() < 3
-            ? parent::when($condition, $value)
-            : parent::when($condition, $value, $default);
+        $descriptor = $value instanceof Closure ? new MixedSchema($value) : $value;
+
+        // Read for each resource rendered: the hook runs once per response.
+        return $descriptor->when(function () use ($request, $attribute): bool {
+            $field = $this->nameAtRevision($attribute);
+
+            return $field !== null && ($this->renderingContext?->fields->requests($this->toType($request), $field) ?? false);
+        });
     }
 
     /**
-     * Retrieve a value if a field of the resource is requested by the sparse fieldset of its type (`fields`). The
-     * field is named as in the code: for a client on an older revision, by the name it has at that revision, the
-     * condition failing for a field that does not exist at it.
-     *
-     * @template K
-     *
-     * @param \Illuminate\Http\Request $request
-     * @param string $attribute
-     * @param K $value
-     *
-     * @return \Illuminate\Http\Resources\MissingValue|K
-     */
-    protected function whenInFields(Request $request, string $attribute, mixed $value)
-    {
-        // A descriptor of the base: the condition is one of the field, read for each resource rendered.
-        if ($value instanceof Descriptor) {
-            return $value->when(function () use ($request, $attribute): bool {
-                $field = $this->nameAtRevision($attribute);
-
-                return $field !== null && ($this->renderingContext?->fields->requests($this->toType($request), $field) ?? false);
-            });
-        }
-
-        $context = $this->renderingContext;
-        $field = $this->nameAtRevision($attribute);
-
-        return $this->when(
-            $context !== null && $field !== null && $context->fields->requests($this->toType($request), $field),
-            $value,
-        );
-    }
-
-    /**
-     * Retrieve a value if a relationship of the resource is included (`include`). Not to be confused with
+     * Renders a value only when a relationship of the resource is included (`include`). Not to be confused with
      * `whenIncluded()` of the relationships. The relationship is named as in the code: for a client on an older
      * revision, by the name it has at that revision, the condition failing for one that does not exist at it.
      *
-     * @template K
+     * @template TDescriptor of Descriptor<mixed>
      *
-     * @param \Illuminate\Http\Request $request
-     * @param string $relationship
-     * @param K $value
+     * @param TDescriptor|Closure $value A descriptor, or a closure computing a value of any type
      *
-     * @return \Illuminate\Http\Resources\MissingValue|K
+     * @return ($value is Closure ? MixedSchema : TDescriptor)
      */
-    protected function whenInIncludes(Request $request, string $relationship, mixed $value)
+    protected function whenInIncludes(Request $request, string $relationship, Descriptor|Closure $value): Descriptor
     {
-        // A descriptor of the base: the condition is one of the field, read for each resource rendered.
-        if ($value instanceof Descriptor) {
-            return $value->when(function () use ($relationship): bool {
-                $name = $this->includeAtRevision($relationship);
+        $descriptor = $value instanceof Closure ? new MixedSchema($value) : $value;
 
-                return $name !== null && ($this->renderingContext?->includes($name) ?? false);
-            });
-        }
+        // Read for each resource rendered, where it is rendered: the includes of its place in the document.
+        return $descriptor->when(function () use ($relationship): bool {
+            $name = $this->includeAtRevision($relationship);
 
-        $name = $this->includeAtRevision($relationship);
-
-        return $this->when($name !== null && ($this->renderingContext?->includes($name) ?? false), $value);
+            return $name !== null && ($this->renderingContext?->includes($name) ?? false);
+        });
     }
 
     /**
      * The name a field of the code has at the revision of the rendering, `null` when it does not exist at it: the
      * client writes `fields` and `include` in the names of its revision. Of a dotted path, the first segment is
      * translated (a struct member keeps its name). A name no shape of the resource declares (a field of `toLinks()`)
-     * is kept. Unchanged for a resource declaring no revision.
+     * is kept.
      */
     private function nameAtRevision(string $field): ?string
     {
@@ -165,134 +128,48 @@ trait ConditionallyLoadsAttributes
 
     /**
      * The name the field of the code `$field` of `$class` has at `$revision`, `null` when it does not exist at it; a
-     * name no shape declares, or a resource declaring no revision, keeps it.
+     * name no shape declares keeps it.
      *
      * @param class-string<\Ark4ne\JsonApi\Definition\DefinitionSource> $class
      */
     private static function fieldAtRevision(string $class, string $field, ?Revision $revision): ?string
     {
-        if (!Definitions::isRevised($class)) {
-            return $field;
-        }
-
         // The head too: a field `until()` a revision does not exist there.
         return Definitions::for($class, $revision)->fieldNames[$field]
             ?? (Definitions::declaresField($class, $field) ? null : $field);
     }
 
     /**
-     * @override JsonResource::merge
-     * Unconditional: the members are kept in the definition (Laravel's `merge()` goes through `mergeWhen()`).
+     * Groups conditional members: each one is kept in the definition, marked conditional, and rendered when the
+     * condition holds for its resource.
      *
-     * @param mixed $value
+     * ```php
+     * $this->applyWhen(fn() => $request->user()?->isAdmin() ?? false, [
+     *     'email' => $this->string(),
+     *     'roles' => $this->many(RoleResource::class),
+     * ]),
+     * ```
      *
-     * @return \Illuminate\Http\Resources\MergeValue
+     * @param Closure(): bool $condition Read for each resource rendered: the hook runs once per response
+     * @param iterable<string, mixed> $members Descriptors, relationships of a resource
+     *        (`UserResource::relationship()`), or closures computing a value of any type
+     *
+     * @throws DefinitionException when a member is a plain value
      */
-    protected function merge($value)
+    protected function applyWhen(Closure $condition, iterable $members): MergeValue
     {
-        return new MergeValue(self::mergeable(value($value)));
-    }
+        $grouped = [];
+        foreach ($members as $name => $member) {
+            $descriptor = match (true) {
+                $member instanceof Descriptor => $member,
+                $member instanceof DescribesRelationship => new RelationshipSchema($member),
+                $member instanceof Closure => new MixedSchema($member),
+                default => throw DefinitionException::notASchema(static::class, 'applyWhen', $name, get_debug_type($member)),
+            };
 
-    /**
-     * @override JsonResource::mergeWhen
-     * Merged members are hidden from the definition whatever the condition, with a `merge-when` diagnostic: group
-     * conditional members with `applyWhen()`, which keeps them in the definition. `mergeUnless()` relies on it.
-     *
-     * @param bool $condition
-     * @param mixed $value
-     * @param mixed $default
-     *
-     * @return \Illuminate\Http\Resources\MergeValue|mixed
-     */
-    protected function mergeWhen($condition, $value, $default = new MissingValue())
-    {
-        if ($condition) {
-            return new MergeWhenValue(self::mergeable(value($value)));
+            $grouped[$name] = $descriptor->when(static fn(): bool => $condition());
         }
 
-        return new MergeWhenValue(func_num_args() === 3 ? self::mergeable(value($default)) : []);
-    }
-
-    /**
-     * The members to merge, as Laravel merges them: `null` merges nothing.
-     *
-     * @return array<array-key, mixed>
-     *
-     * @throws DefinitionException when the members are a scalar or an object that cannot be merged
-     */
-    private static function mergeable(mixed $members): array
-    {
-        if ($members === null) {
-            return [];
-        }
-
-        if ($members instanceof Arrayable) {
-            return $members->toArray();
-        }
-
-        if (is_iterable($members)) {
-            return is_array($members) ? $members : iterator_to_array($members);
-        }
-
-        if ($members instanceof JsonSerializable && is_array($serialized = $members->jsonSerialize())) {
-            return $serialized;
-        }
-
-        throw DefinitionException::notMergeable(get_debug_type($members));
-    }
-
-    /**
-     * Groups conditional members: they are kept in the definition, marked conditional. The way to group conditions,
-     * rather than `mergeWhen()`, whose members are missing from the definition.
-     *
-     * @param bool|Closure():boolean $condition
-     * @param iterable<array-key, mixed> $data
-     *
-     * @return \Illuminate\Http\Resources\MergeValue
-     */
-    protected function applyWhen(bool|Closure $condition, iterable $data): MergeValue
-    {
-        return new MergeValue(collect($data)->map(function ($raw) use ($condition) {
-            // A descriptor of the base: the condition is one of the field, read when it is rendered.
-            if ($raw instanceof Descriptor) {
-                return $raw->when(static fn(): bool => value($condition));
-            }
-
-            if ($raw instanceof Describer) {
-                $value = $raw;
-            } elseif ($raw instanceof Relationship) {
-                $value = RelationRaw::wrap($raw->getResource(), static fn() => $raw);
-            } else {
-                $value = new ValueMixed($raw instanceof Closure ? $raw : static fn() => $raw);
-            }
-
-            return $value->when(static fn() => value($condition));
-        }));
-    }
-
-    /**
-     * @override JsonResource::whenHas
-     * Support none Model resource
-     *
-     * Retrieve an attribute if it exists on the resource.
-     *
-     * @param string $attribute
-     * @param mixed $value
-     * @param mixed $default
-     * @return \Illuminate\Http\Resources\MissingValue|mixed
-     */
-    public function whenHas($attribute, $value = null, $default = null)
-    {
-        if (func_num_args() < 3) {
-            $default = new MissingValue();
-        }
-
-        if (!Values::hasAttribute($this->resource, $attribute)) {
-            return value($default);
-        }
-
-        return func_num_args() === 1
-            ? Values::getAttribute($this->resource, $attribute)
-            : value($value, Values::getAttribute($this->resource, $attribute));
+        return new MergeValue($grouped);
     }
 }

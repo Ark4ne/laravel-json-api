@@ -5,14 +5,14 @@ declare(strict_types=1);
 /**
  * Renders one collection of posts with 3 includes, in its own process, and prints the measures as JSON.
  *
- * Usage: php bin/benchmark/scenario.php <package|native|revised|schema> <root of the package to load> <iterations> <posts>
+ * Usage: php bin/benchmark/scenario.php <package|native|revised> <root of the package to load> <iterations> <posts>
  *        [head|newest|oldest]
  *
  * `revised` renders the resources of `Revised/` (this package only) at the revision given: the head (no revision
  * resolved: the newest case), the newest case resolved, or the oldest one (renamed members, old include paths).
  *
- * `schema` renders the resources of `Schema/`: those of `Package/` declared with the descriptors of
- * `ark4ne/laravel-api-revisions`, whose values the base renders.
+ * `package` renders the resources of `Package/`, or those of `Legacy/` (the same document, written with the API of
+ * 1.9) when the root is the 1.9 copy.
  *
  * Run by `composer benchmark` (bin/benchmark.php); `root` is this repository, or the 1.9 copy built by the runner.
  */
@@ -70,8 +70,10 @@ benchmark_database($posts);
 $resource = match ($implementation) {
     'native' => Benchmark\Native\PostResource::class,
     'revised' => Benchmark\Revised\PostResource::class,
-    'schema' => Benchmark\Schema\PostResource::class,
-    default => Benchmark\Package\PostResource::class,
+    // The same document written with the API of 1.9, when the root is its copy.
+    default => class_exists('Ark4ne\JsonApi\Providers\LaravelJsonApiProvider')
+        ? 'Benchmark\Legacy\PostResource'
+        : Benchmark\Package\PostResource::class,
 };
 $revision = $implementation === 'revised' && $revision !== null ? constant("Benchmark\\Revised\\Revision::{$revision}") : null;
 $include = $implementation === 'revised' ? Benchmark\Revised\Revision::include($revision) : 'user,comments,comments.user';
@@ -89,7 +91,12 @@ $render = static function () use ($app, $resource, $revision, $include): string 
     }
     $app->instance('request', $request);
 
-    return (string) $resource::collection(Benchmark\Models\Post::query()->get())->toResponse($request)->getContent();
+    $collection = $resource::collection(Benchmark\Models\Post::query()->get());
+    if (!$collection instanceof Illuminate\Contracts\Support\Responsable) {
+        throw new LogicException("[{$resource}] does not render a response.");
+    }
+
+    return (string) $collection->toResponse($request)->getContent();
 };
 
 // A first rendering warms up the autoloader, the definitions and the opcache.

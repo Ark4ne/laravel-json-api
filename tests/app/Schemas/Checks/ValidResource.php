@@ -30,8 +30,8 @@ final class ValidResource extends JsonApiResource
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'member' => Schema::relationship($this->one(MemberResource::class))
-                ->was(ApiRevision::Labels, name: 'teacher', schema: Schema::relationship($this->one(TeacherResource::class))),
+            'member' => $this->one(MemberResource::class)
+                ->was(ApiRevision::Labels, name: 'teacher', schema: $this->one(TeacherResource::class)),
         ];
     }
 }

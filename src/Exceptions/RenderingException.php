@@ -27,63 +27,12 @@ final class RenderingException extends LogicException implements JsonApiExceptio
     }
 
     /**
-     * A value declared not nullable (`nullable(false)`) has no value to render for `null` (a date), with
-     * `describer.strict` enabled.
-     */
-    public static function nullNotNullable(string $attribute): self
-    {
-        return new self(
-            "[{$attribute}] is not nullable but null was given: make it nullable, or give it a value.",
-        );
-    }
-
-    /**
-     * A value declared as a case of an enum (`enum()->of(State::class)`) is not one of its cases.
-     *
-     * @param class-string<UnitEnum> $enum
-     */
-    public static function notAnEnumCase(mixed $value, string $enum): self
-    {
-        $given = match (true) {
-            $value instanceof UnitEnum => $value::class . '::' . $value->name,
-            is_scalar($value) => var_export($value, true),
-            default => get_debug_type($value),
-        };
-
-        return new self("[{$given}] is not a case of [{$enum}].");
-    }
-
-    /**
      * The default `toIdentifier()` found no identifier: neither `toId()`, a model key nor an `id` attribute, as an
      * integer or a string.
      */
     public static function noIdentifier(string $resource): self
     {
         return new self("[{$resource}] has no identifier: give its resource an id, or implement toId().");
-    }
-
-    /**
-     * A value of a `string()`, `integer()` or `float()` has no scalar form (an array, an object without `__toString()`).
-     */
-    public static function notCastable(mixed $value, string $type): self
-    {
-        return new self('[' . get_debug_type($value) . "] cannot be rendered as {$type}: give a scalar value.");
-    }
-
-    /**
-     * A date value is neither a date, a timestamp nor a string.
-     */
-    public static function notADate(mixed $value): self
-    {
-        return new self('[' . get_debug_type($value) . '] is not a date: give a DateTimeInterface, a timestamp or a string.');
-    }
-
-    /**
-     * A `json()` value is a string that does not decode.
-     */
-    public static function invalidJson(string $attribute, string $error): self
-    {
-        return new self("[{$attribute}] is not valid JSON: {$error}.");
     }
 
     /**

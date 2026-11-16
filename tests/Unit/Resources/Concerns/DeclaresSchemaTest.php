@@ -12,6 +12,9 @@ use Ark4ne\ApiRevisions\Schema\DeclarationKind;
 use Ark4ne\ApiRevisions\Schema\ObjectSchema;
 use Ark4ne\ApiRevisions\Schema\Revisioned;
 use Ark4ne\ApiRevisions\Schema\Schema;
+use Ark4ne\JsonApi\Configuration\Linkage;
+use Ark4ne\JsonApi\Descriptors\Schemas\MixedSchema;
+use Ark4ne\JsonApi\Descriptors\Schemas\RelationshipSchema;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Http\Request;
@@ -101,19 +104,68 @@ final class DeclaresSchemaTest extends TestCase
         self::assertSame(['computed'], self::children($resource::describeRevisioned(DeclarationKind::Response, new Probe(self::class))['attributes']));
     }
 
-    public function test_a_member_that_is_not_a_descriptor_of_the_base_is_refused(): void
+    public function test_a_closure_is_a_value_of_any_type(): void
     {
         $resource = new class ([]) extends JsonApiResource {
             public function toAttributes(Request $request): iterable
             {
-                return ['name' => $this->string()];
+                return ['name' => static fn(): string => 'Ada'];
             }
         };
 
-        $this->expectException(DefinitionException::class);
-        $this->expectExceptionMessage('[name] of toAttributes() in [' . $resource::class . ']');
+        $attributes = $resource::describeRevisioned(DeclarationKind::Response, new Probe(self::class))['attributes'];
 
-        $resource::describeRevisioned(DeclarationKind::Response, new Probe(self::class));
+        self::assertInstanceOf(ObjectSchema::class, $attributes);
+        self::assertInstanceOf(MixedSchema::class, $attributes->children()['name']);
+        self::assertTrue($attributes->children()['name']->isNullable());
+    }
+
+    public function test_when_has_applies_to_the_members_read_from_a_key_when_the_resource_says_so(): void
+    {
+        $resource = new class ([]) extends JsonApiResource {
+            protected ?bool $autoWhenHas = true;
+
+            public function toAttributes(Request $request): iterable
+            {
+                return [
+                    'name' => $this->string(),
+                    'email' => $this->string('mail'),
+                    'computed' => $this->string(static fn(): string => 'value'),
+                    'address' => $this->struct(['city' => $this->string()]),
+                ];
+            }
+        };
+
+        $attributes = $resource::describeRevisioned(DeclarationKind::Response, new Probe(self::class))['attributes'];
+
+        self::assertInstanceOf(ObjectSchema::class, $attributes);
+        self::assertCount(1, $attributes->children()['name']->presences());
+        self::assertCount(1, $attributes->children()['email']->presences());
+        self::assertSame([], $attributes->children()['computed']->presences());
+        self::assertSame([], $attributes->children()['address']->presences());
+    }
+
+    public function test_the_linkage_of_the_relationships_follows_the_resource(): void
+    {
+        $resource = new class ([]) extends JsonApiResource {
+            protected ?bool $autoWhenIncluded = true;
+
+            protected function toRelationships(Request $request): iterable
+            {
+                return [
+                    'author' => $this->one(UserResource::class),
+                    'editor' => UserResource::relationship(static fn(): null => null),
+                ];
+            }
+        };
+
+        $relationships = $resource::describeRevisioned(DeclarationKind::Response, new Probe(self::class))['relationships'];
+
+        self::assertInstanceOf(ObjectSchema::class, $relationships);
+        self::assertSame(['author', 'editor'], array_keys($relationships->children()));
+        $author = $relationships->children()['author'];
+        self::assertInstanceOf(RelationshipSchema::class, $author);
+        self::assertSame(Linkage::Included, $author->relation()->definition('author')->linkage);
     }
 
     public function test_a_plain_value_is_refused(): void
@@ -158,17 +210,12 @@ final class DeclaresSchemaTest extends TestCase
         self::assertFalse(ClassLifetime::exists(TeacherResource::class, ApiRevision::UsersReplaceTeachers));
     }
 
-    public function test_a_relationship_that_is_not_declared_on_the_base_is_refused(): void
+    public function test_a_member_that_is_not_a_relationship_is_refused(): void
     {
         $resource = new class ([]) extends JsonApiResource {
-            public function toAttributes(Request $request): iterable
-            {
-                return ['title' => Schema::string()];
-            }
-
             protected function toRelationships(Request $request): iterable
             {
-                return ['author' => $this->one(UserResource::class)];
+                return ['author' => $this->string()];
             }
         };
 

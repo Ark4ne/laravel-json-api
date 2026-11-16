@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace Benchmark\Schema;
+namespace Benchmark\Legacy;
 
-use Ark4ne\ApiRevisions\Schema\Schema;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Http\Request;
 
@@ -21,11 +20,11 @@ final class UserResource extends JsonApiResource
     public function toAttributes(Request $request): iterable
     {
         return [
-            'name' => Schema::string(),
-            'email' => Schema::string(),
-            'contact' => Schema::object([
-                'email' => Schema::string('email'),
-                'display' => Schema::string(fn() => "{$this->resource->name} <{$this->resource->email}>"),
+            'name' => $this->string(),
+            'email' => $this->string(),
+            'contact' => $this->struct(fn() => [
+                'email' => $this->string('email'),
+                'display' => $this->string(fn() => "{$this->resource->name} <{$this->resource->email}>"),
             ]),
         ];
     }

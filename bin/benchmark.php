@@ -269,18 +269,6 @@ foreach ($results as $name => $result) {
 }
 
 if (isset($results['current'])) {
-    echo "Running resources declared on the base…\n";
-    $schema = measures(run([PHP_BINARY, __DIR__ . '/benchmark/scenario.php', 'schema', $root, $iterations, $posts]));
-    printf(
-        "\nResources declared on ark4ne/laravel-api-revisions (reported, not gated): %.1f ms, %.1f MB, %d included, %.1f KB; / current: time ×%.3f, peak memory ×%.3f\n",
-        $schema['median_ms'],
-        $schema['peak_mb'],
-        $schema['included'],
-        $schema['size_kb'],
-        $schema['median_ms'] / $results['current']['median_ms'],
-        $schema['peak_mb'] / $results['current']['peak_mb'],
-    );
-
     $revised = [];
     foreach (['head', 'newest', 'oldest'] as $revision) {
         echo "Running revised resources at {$revision}…\n";

@@ -31,12 +31,12 @@ final class NativePostResource extends JsonApiResource
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'user' => Schema::relationship($this->one(NativeUserResource::class)),
-            'comments' => Schema::relationship($this->many(NativeCommentResource::class)),
-            'writer' => Schema::relationship($this->one(NativeUserResource::class, 'user')
-                ->identifierMeta(static fn(NativeUserResource $user) => ['name' => $user->resource->name])),
-            'notes' => Schema::relationship($this->many(NativeCommentCollection::class, 'comments')
-                ->identifierMeta(static fn(NativeCommentResource $comment) => ['resource' => $comment::class])),
+            'user' => $this->one(NativeUserResource::class),
+            'comments' => $this->many(NativeCommentResource::class),
+            'writer' => $this->one(NativeUserResource::class, 'user')
+                ->identifierMeta(static fn(NativeUserResource $user) => ['name' => $user->resource->name]),
+            'notes' => $this->many(NativeCommentCollection::class, 'comments')
+                ->identifierMeta(static fn(NativeCommentResource $comment) => ['resource' => $comment::class]),
         ];
     }
 }

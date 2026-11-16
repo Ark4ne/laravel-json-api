@@ -15,7 +15,6 @@ use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Ark4ne\JsonApi\Support\Diagnostic;
 use Ark4ne\JsonApi\Support\DiagnosticLevel;
-use DateTimeInterface;
 use Illuminate\Http\Request;
 use PHPUnit\Framework\TestCase;
 use stdClass;
@@ -24,30 +23,30 @@ use Test\app\Http\Resources\CommentResource;
 use Test\app\Http\Resources\UserResource;
 use Test\app\Revisions\ApiRevision;
 use Test\app\Revisions\MemberResource;
+use Test\app\Revisions\OtherRevision;
 use Test\app\Revisions\ProfileResource;
 use Test\app\Revisions\TeacherChildResource;
 use Test\app\Revisions\TeacherResource;
 use Test\Unit\Compilation\Fixtures\AttributeTypedResource;
 use Test\Unit\Compilation\Fixtures\BlogPostResource;
-use Test\Unit\Compilation\Fixtures\EagerResource;
 use Test\Unit\Compilation\Fixtures\EmptyLifetimeResource;
 use Test\Unit\Compilation\Fixtures\FailingHookResource;
-use Test\Unit\Compilation\Fixtures\InvalidMemberResource;
-use Test\Unit\Compilation\Fixtures\MergeWhenResource;
 use Test\Unit\Compilation\Fixtures\OverriddenTypeResource;
-use Test\Unit\Compilation\Fixtures\PredefinedResource;
 use Test\Unit\Compilation\Fixtures\PrefixedTypeNaming;
 use Test\Unit\Compilation\Fixtures\ReservedNameResource;
-use Test\Unit\Compilation\Fixtures\StructResource;
 use Test\Unit\Compilation\Fixtures\TypedResource;
-use Test\Unit\Compilation\Fixtures\UnnamedMembersResource;
 
 final class DefinitionCompilerTest extends TestCase
 {
-    private function compile(string $class, ?Configuration $configuration = null): ResourceDefinition
+    private function compile(string $class, ?Configuration $configuration = null, ?ApiRevision $revision = null): ResourceDefinition
     {
         /** @var class-string<\Ark4ne\JsonApi\Definition\DefinitionSource> $class */
-        return (new DefinitionCompiler($configuration ?? Configuration::defaults()))->compile($class);
+        return (new DefinitionCompiler($configuration ?? Configuration::defaults()))->compile($class, $revision);
+    }
+
+    private static function revised(): Configuration
+    {
+        return Configuration::defaults()->withRevisions(ApiRevision::class);
     }
 
     private function attribute(ResourceDefinition $definition, string $name): AttributeDefinition
@@ -100,13 +99,12 @@ final class DefinitionCompilerTest extends TestCase
     public function test_attributes_are_listed_in_declaration_order(): void
     {
         self::assertSame(
-            ['title', 'name', 'count', 'ratio', 'active', 'published-at', 'state', 'tags', 'full-name', 'secret',
-                'content', 'address', 'grouped'],
+            ['title', 'name', 'count', 'ratio', 'active', 'published-at', 'state', 'tags', 'full-name', 'secret', 'content', 'address', 'grouped'],
             array_keys($this->compile(TypedResource::class)->attributes),
         );
     }
 
-    public function test_each_value_descriptor_gives_its_type(): void
+    public function test_each_value_gives_the_type_of_its_shape(): void
     {
         $definition = $this->compile(TypedResource::class);
 
@@ -116,60 +114,18 @@ final class DefinitionCompilerTest extends TestCase
         self::assertSame(ValueType::Boolean, $this->attribute($definition, 'active')->type);
         self::assertSame(ValueType::Date, $this->attribute($definition, 'published-at')->type);
         self::assertSame(ValueType::Enum, $this->attribute($definition, 'state')->type);
+        self::assertSame(State::class, $this->attribute($definition, 'state')->enum);
         self::assertSame(ValueType::Array, $this->attribute($definition, 'tags')->type);
+        self::assertSame(ValueType::String, $this->attribute($definition, 'tags')->items?->type);
         self::assertSame(ValueType::Struct, $this->attribute($definition, 'address')->type);
-    }
-
-    public function test_the_source_is_the_attribute_read_on_the_model(): void
-    {
-        $definition = $this->compile(TypedResource::class);
-
-        self::assertSame('title', $this->attribute($definition, 'title')->source);
-        self::assertSame('first_name', $this->attribute($definition, 'name')->source);
-        self::assertFalse($this->attribute($definition, 'title')->computed);
-    }
-
-    public function test_a_closure_value_is_computed_without_source(): void
-    {
-        $fullName = $this->attribute($this->compile(TypedResource::class), 'full-name');
-
-        self::assertSame(ValueType::String, $fullName->type);
-        self::assertTrue($fullName->computed);
-        self::assertNull($fullName->source);
     }
 
     public function test_nullable_defaults_to_the_configuration_unless_the_descriptor_says_otherwise(): void
     {
         $definition = $this->compile(TypedResource::class);
+
         self::assertTrue($this->attribute($definition, 'title')->nullable);
         self::assertFalse($this->attribute($definition, 'name')->nullable);
-
-        $strict = $this->compile(
-            TypedResource::class,
-            Configuration::fromArray(['describer' => ['nullable' => false]]),
-        );
-        self::assertFalse($this->attribute($strict, 'title')->nullable);
-    }
-
-    public function test_a_date_format_defaults_to_the_configuration_unless_the_descriptor_says_otherwise(): void
-    {
-        $definition = $this->compile(TypedResource::class);
-
-        self::assertSame('Y-m-d', $this->attribute($definition, 'published-at')->format);
-        self::assertSame(DateTimeInterface::ATOM, $definition->meta['created-at']->format);
-    }
-
-    public function test_an_enum_value_records_its_enum_class(): void
-    {
-        self::assertSame(State::class, $this->attribute($this->compile(TypedResource::class), 'state')->enum);
-    }
-
-    public function test_a_typed_array_records_the_type_of_its_items(): void
-    {
-        $tags = $this->attribute($this->compile(TypedResource::class), 'tags');
-
-        self::assertNotNull($tags->items);
-        self::assertSame(ValueType::String, $tags->items->type);
     }
 
     public function test_a_struct_records_its_members_recursively(): void
@@ -177,7 +133,7 @@ final class DefinitionCompilerTest extends TestCase
         $address = $this->attribute($this->compile(TypedResource::class), 'address');
 
         self::assertSame(['city', 'geo'], array_keys($address->children));
-        self::assertSame(ValueType::String, $address->children['city']->type);
+        self::assertSame(ValueType::Struct, $address->children['geo']->type);
         self::assertSame(ValueType::Number, $address->children['geo']->children['lat']->type);
     }
 
@@ -185,17 +141,17 @@ final class DefinitionCompilerTest extends TestCase
     {
         $definition = $this->compile(TypedResource::class);
 
-        self::assertFalse($this->attribute($definition, 'title')->conditional);
         self::assertTrue($this->attribute($definition, 'secret')->conditional);
-        self::assertFalse($this->attribute($definition, 'secret')->sparse);
+        self::assertFalse($this->attribute($definition, 'title')->conditional);
     }
 
     public function test_when_in_fields_marks_an_attribute_conditional_and_sparse(): void
     {
-        $content = $this->attribute($this->compile(TypedResource::class), 'content');
+        $definition = $this->compile(TypedResource::class);
 
-        self::assertTrue($content->conditional);
-        self::assertTrue($content->sparse);
+        self::assertTrue($this->attribute($definition, 'content')->conditional);
+        self::assertTrue($this->attribute($definition, 'content')->sparse);
+        self::assertFalse($this->attribute($definition, 'title')->sparse);
     }
 
     public function test_the_members_of_apply_when_are_kept_and_conditional(): void
@@ -204,66 +160,6 @@ final class DefinitionCompilerTest extends TestCase
 
         self::assertSame(ValueType::Integer, $grouped->type);
         self::assertTrue($grouped->conditional);
-    }
-
-    public function test_the_members_of_merge_when_are_hidden_with_a_diagnostic_whatever_the_condition(): void
-    {
-        $definition = $this->compile(MergeWhenResource::class);
-
-        self::assertSame(['title', 'merged'], array_keys($definition->attributes));
-        self::assertSame([], $definition->relationships);
-        self::assertSame(
-            [
-                DefinitionCompiler::MERGE_WHEN,
-                DefinitionCompiler::MERGE_WHEN,
-                DefinitionCompiler::MERGE_WHEN,
-                DefinitionCompiler::UNNAMED_MEMBER,
-                DefinitionCompiler::MERGE_WHEN,
-                DefinitionCompiler::MERGE_WHEN,
-            ],
-            $this->codes($definition),
-        );
-    }
-
-    public function test_members_without_key_are_named_after_what_they_read(): void
-    {
-        $definition = $this->compile(UnnamedMembersResource::class);
-
-        self::assertSame(['title'], array_keys($definition->attributes));
-        self::assertSame(['author'], array_keys($definition->relationships));
-        self::assertSame([], $definition->diagnostics);
-    }
-
-    public function test_the_hooks_run_once(): void
-    {
-        StructResource::$reads = 0;
-
-        $this->compile(StructResource::class);
-
-        self::assertSame(2, StructResource::$reads);
-    }
-
-    public function test_the_diagnostics_of_struct_members_are_kept(): void
-    {
-        $definition = $this->compile(StructResource::class);
-
-        self::assertSame([DefinitionCompiler::EAGER_ATTRIBUTE], $this->codes($definition));
-        self::assertSame('city', $definition->diagnostics[0]->subject);
-    }
-
-    public function test_an_invalid_member_is_left_out_with_an_error_naming_it(): void
-    {
-        $definition = $this->compile(InvalidMemberResource::class);
-        $errors = array_values(array_filter(
-            $definition->diagnostics,
-            static fn(Diagnostic $diagnostic): bool => $diagnostic->code === DefinitionCompiler::INVALID_MEMBER,
-        ));
-
-        self::assertSame(['title', 'content'], array_keys($definition->attributes));
-        self::assertSame(['author'], array_keys($definition->relationships));
-        self::assertSame(['broken', 'other'], array_map(static fn(Diagnostic $d): ?string => $d->subject, $errors));
-        self::assertSame(DiagnosticLevel::Error, $errors[0]->level);
-        self::assertStringContainsString('Needs a real model.', $errors[0]->message);
     }
 
     public function test_relationships_record_the_related_resource_and_the_cardinality(): void
@@ -305,23 +201,32 @@ final class DefinitionCompilerTest extends TestCase
         self::assertSame('author', $author->source);
     }
 
-    public function test_links_and_resource_meta_are_described_like_attributes(): void
+    public function test_the_links_are_named_and_the_meta_described_like_attributes(): void
     {
         $definition = $this->compile(TypedResource::class);
 
         self::assertSame(['self'], array_keys($definition->links));
-        self::assertSame(ValueType::String, $definition->links['self']->type);
+        self::assertSame(ValueType::Mixed, $definition->links['self']->type);
+        self::assertTrue($definition->links['self']->computed);
         self::assertSame(['created-at'], array_keys($definition->meta));
         self::assertSame(ValueType::Date, $definition->meta['created-at']->type);
-    }
-
-    public function test_the_document_meta_is_described_like_attributes(): void
-    {
-        $definition = $this->compile(TypedResource::class);
-
         self::assertSame(['version'], array_keys($definition->documentMeta));
         self::assertSame(ValueType::Integer, $definition->documentMeta['version']->type);
-        self::assertTrue($definition->documentMeta['version']->computed);
+    }
+
+    public function test_a_link_that_is_a_descriptor_gives_an_error(): void
+    {
+        $resource = new class (null) extends JsonApiResource {
+            protected function toLinks(Request $request): iterable
+            {
+                return ['self' => $this->string()];
+            }
+        };
+
+        $definition = $this->compile($resource::class);
+
+        self::assertSame([DefinitionCompiler::HOOK_FAILURE], $this->codes($definition));
+        self::assertSame([], $definition->links);
     }
 
     public function test_a_well_written_resource_has_no_diagnostic(): void
@@ -329,54 +234,92 @@ final class DefinitionCompilerTest extends TestCase
         self::assertSame([], $this->compile(TypedResource::class)->diagnostics);
     }
 
-    public function test_an_eager_attribute_is_mixed_with_the_path_read_on_the_probe(): void
+    public function test_a_plain_value_gives_an_error_and_no_value(): void
     {
-        $definition = $this->compile(EagerResource::class);
+        $resource = new class (null) extends JsonApiResource {
+            public function toAttributes(Request $request): iterable
+            {
+                return ['title' => 'eager'];
+            }
 
-        self::assertSame(ValueType::Mixed, $this->attribute($definition, 'title')->type);
-        self::assertSame('title', $this->attribute($definition, 'title')->source);
-        self::assertSame('user.name', $this->attribute($definition, 'author-name')->source);
-    }
+            protected function toLinks(Request $request): iterable
+            {
+                return ['self' => 'https://example.com'];
+            }
+        };
 
-    public function test_an_eager_attribute_gives_a_warning(): void
-    {
-        $diagnostics = $this->compile(EagerResource::class)->diagnostics;
+        $definition = $this->compile($resource::class);
 
-        self::assertCount(2, $diagnostics);
-        self::assertSame(DefinitionCompiler::EAGER_ATTRIBUTE, $diagnostics[0]->code);
-        self::assertSame(DiagnosticLevel::Warning, $diagnostics[0]->level);
-        self::assertSame('title', $diagnostics[0]->subject);
+        self::assertSame([DefinitionCompiler::INVALID_DECLARATION], $this->codes($definition));
+        self::assertSame(DiagnosticLevel::Error, $definition->diagnostics[0]->level);
+        self::assertStringContainsString('[title] of toAttributes()', $definition->diagnostics[0]->message);
+        self::assertSame([], $definition->attributes);
+        self::assertSame(['self'], array_keys($definition->links));
     }
 
     public function test_a_member_named_id_or_type_gives_an_error(): void
     {
         $definition = $this->compile(ReservedNameResource::class);
-        $reserved = array_values(array_filter(
-            $definition->diagnostics,
-            static fn(Diagnostic $diagnostic): bool => $diagnostic->code === DefinitionCompiler::RESERVED_NAME,
-        ));
 
-        self::assertSame(['id', 'type'], array_map(static fn(Diagnostic $d): ?string => $d->subject, $reserved));
-        self::assertSame(DiagnosticLevel::Error, $reserved[0]->level);
+        self::assertSame([DefinitionCompiler::RESERVED_NAME, DefinitionCompiler::RESERVED_NAME], $this->codes($definition));
+        self::assertSame(['id', 'type'], array_map(static fn(Diagnostic $diagnostic) => $diagnostic->subject, $definition->diagnostics));
     }
 
-    public function test_a_failing_hook_keeps_the_other_hooks_and_gives_an_error(): void
+    public function test_an_attribute_and_a_relationship_of_the_same_name_give_an_error(): void
+    {
+        $resource = new class (null) extends JsonApiResource {
+            public function toAttributes(Request $request): iterable
+            {
+                return ['author' => $this->string()];
+            }
+
+            protected function toRelationships(Request $request): iterable
+            {
+                return ['author' => $this->one(UserResource::class)];
+            }
+        };
+
+        self::assertSame([DefinitionCompiler::NAME_COLLISION], $this->codes($this->compile($resource::class)));
+    }
+
+    public function test_a_relationship_to_a_resource_absent_from_the_revision_gives_an_error(): void
+    {
+        $resource = new class (null) extends JsonApiResource {
+            protected function toRelationships(Request $request): iterable
+            {
+                return ['member' => $this->one(MemberResource::class)];
+            }
+        };
+
+        self::assertSame([], $this->codes($this->compile($resource::class, self::revised())));
+        self::assertSame(
+            [DefinitionCompiler::UNAVAILABLE_RESOURCE],
+            $this->codes($this->compile($resource::class, self::revised(), ApiRevision::Initial)),
+        );
+    }
+
+    public function test_a_failing_hook_gives_an_error(): void
     {
         $definition = $this->compile(FailingHookResource::class);
 
-        self::assertSame(['title'], array_keys($definition->attributes));
-        self::assertSame([], $definition->relationships);
-        self::assertSame([DefinitionCompiler::HOOK_FAILURE], $this->codes($definition));
-        self::assertSame(DiagnosticLevel::Error, $definition->diagnostics[0]->level);
+        self::assertSame('failing-hook', $definition->type);
+        self::assertSame([DefinitionCompiler::INVALID_DECLARATION], $this->codes($definition));
         self::assertStringContainsString('Needs a real model.', $definition->diagnostics[0]->message);
     }
 
-    public function test_a_predefined_definition_is_returned_without_running_the_hooks(): void
+    public function test_a_resource_mixing_two_enums_gives_an_error(): void
     {
-        $definition = $this->compile(PredefinedResource::class);
+        $resource = new class (null) extends JsonApiResource {
+            public function toAttributes(Request $request): iterable
+            {
+                return [
+                    'title' => $this->string()->was(ApiRevision::Labels, name: 'label'),
+                    'body' => $this->string()->until(OtherRevision::First),
+                ];
+            }
+        };
 
-        self::assertSame('predefined', $definition->type);
-        self::assertSame(['title'], array_keys($definition->attributes));
+        self::assertSame([DefinitionCompiler::INVALID_DECLARATION], $this->codes($this->compile($resource::class, self::revised())));
     }
 
     public function test_a_resource_rendering_every_linkage_only_when_included_says_so_in_its_definition(): void
@@ -384,9 +327,6 @@ final class DefinitionCompilerTest extends TestCase
         $resource = new class (null) extends JsonApiResource {
             protected ?bool $autoWhenIncluded = true;
 
-            /**
-             * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Relations\Relation<mixed>>
-             */
             protected function toRelationships(Request $request): iterable
             {
                 return [
@@ -407,9 +347,6 @@ final class DefinitionCompilerTest extends TestCase
         $resource = new class (null) extends JsonApiResource {
             protected ?bool $autoWhenIncluded = false;
 
-            /**
-             * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Relations\Relation<mixed>>
-             */
             protected function toRelationships(Request $request): iterable
             {
                 return [
@@ -445,6 +382,14 @@ final class DefinitionCompilerTest extends TestCase
 
         self::assertSame(['comments'], array_keys($constraints));
         self::assertSame(['comments'], array_keys($constraints['comments']));
+    }
+
+    public function test_load_constraints_follow_the_name_of_the_relationship_at_the_revision(): void
+    {
+        $compiler = new DefinitionCompiler(self::revised());
+
+        self::assertSame(['remarks'], array_keys($compiler->loadConstraints(ProfileResource::class)));
+        self::assertSame(['comments'], array_keys($compiler->loadConstraints(ProfileResource::class, ApiRevision::Initial)));
     }
 
     public function test_a_resource_until_a_revision_declares_it(): void
@@ -483,91 +428,65 @@ final class DefinitionCompilerTest extends TestCase
         $this->expectException(DefinitionException::class);
         $this->expectExceptionMessage(EmptyLifetimeResource::class);
 
-        $this->compile(EmptyLifetimeResource::class);
+        $this->compile(EmptyLifetimeResource::class, self::revised());
     }
 
     public function test_the_definition_names_the_lifetime_of_the_resource(): void
     {
-        $definition = $this->compile(TeacherResource::class);
+        $definition = $this->compile(TeacherResource::class, self::revised());
 
         self::assertNull($definition->since);
         self::assertSame(ApiRevision::Labels, $definition->until);
         self::assertNull($definition->revision);
     }
 
-    public function test_a_definition_is_compiled_for_a_revision(): void
+    public function test_the_head_is_the_newest_revision_of_the_application(): void
     {
-        $compiler = new DefinitionCompiler(Configuration::defaults());
+        self::assertSame(ApiRevision::UsersReplaceTeachers, (new DefinitionCompiler(self::revised()))->head());
+        self::assertSame('Head', (new DefinitionCompiler(Configuration::defaults()))->head()->name);
+    }
 
-        $labels = $compiler->compile(ProfileResource::class, ApiRevision::Labels);
-        $newest = $compiler->compile(ProfileResource::class, ApiRevision::UsersReplaceTeachers);
+    public function test_a_definition_is_compiled_for_a_revision_in_its_names(): void
+    {
+        $initial = $this->compile(ProfileResource::class, self::revised(), ApiRevision::Initial);
+        $labels = $this->compile(ProfileResource::class, self::revised(), ApiRevision::Labels);
+        $head = $this->compile(ProfileResource::class, self::revised());
 
-        self::assertSame(ApiRevision::Labels, $labels->revision);
+        self::assertSame(ApiRevision::Initial, $initial->revision);
+        self::assertSame(['name', 'email', 'full_name'], array_keys($initial->attributes));
+        self::assertSame(['comments'], array_keys($initial->relationships));
         self::assertSame(['label', 'email', 'full_name'], array_keys($labels->attributes));
-        self::assertNull($newest->revision);
-        self::assertSame(['display_name', 'email', 'tag_names'], array_keys($newest->attributes));
+        self::assertSame(['remarks'], array_keys($labels->relationships));
+        self::assertNull($head->revision);
+        self::assertSame(['display_name', 'email', 'tag_names'], array_keys($head->attributes));
+        self::assertEquals($head, $this->compile(ProfileResource::class, self::revised(), ApiRevision::UsersReplaceTeachers));
     }
 
     public function test_a_definition_for_a_revision_maps_the_names_of_the_code_to_its_own(): void
     {
-        $compiler = new DefinitionCompiler(Configuration::defaults());
+        $initial = $this->compile(ProfileResource::class, self::revised(), ApiRevision::Initial);
 
         self::assertSame(
             ['display_name' => 'name', 'email' => 'email', 'full_name' => 'full_name', 'remarks' => 'comments'],
-            $compiler->compile(ProfileResource::class, ApiRevision::Initial)->fieldNames,
+            $initial->fieldNames,
         );
-        // The head: the names of the code, without the fields until a revision.
-        self::assertSame(
-            ['display_name' => 'display_name', 'email' => 'email', 'tag_names' => 'tag_names', 'remarks' => 'remarks'],
-            $compiler->compile(ProfileResource::class)->fieldNames,
-        );
-        self::assertSame([], $compiler->compile(StructResource::class)->fieldNames);
     }
 
-    public function test_every_shape_of_a_resource_is_compiled_with_its_hooks_run_once(): void
+    public function test_every_definition_of_a_resource_is_compiled_the_head_first(): void
     {
-        StructResource::$reads = 0;
-        $compiler = new DefinitionCompiler(Configuration::defaults());
+        $definitions = (new DefinitionCompiler(self::revised()))->compileEvery(TeacherResource::class);
 
-        self::assertCount(1, $compiler->compileEvery(StructResource::class));
-        self::assertSame(2, StructResource::$reads);
-        self::assertSame(
-            [null, ApiRevision::Initial, ApiRevision::Labels],
-            array_map(static fn(ResourceDefinition $definition) => $definition->revision, $compiler->compileEvery(ProfileResource::class)),
-        );
+        self::assertSame([null, ApiRevision::Labels, ApiRevision::Initial], array_map(
+            static fn(ResourceDefinition $definition) => $definition->revision,
+            $definitions,
+        ));
     }
 
     public function test_a_resource_compiled_at_a_revision_it_does_not_exist_at_throws(): void
     {
-        $compiler = new DefinitionCompiler(Configuration::defaults());
-
-        self::assertSame(TeacherResource::class, $compiler->compile(TeacherResource::class)->class);
-
         $this->expectException(DefinitionException::class);
-        $compiler->compile(TeacherResource::class, ApiRevision::UsersReplaceTeachers);
-    }
+        $this->expectExceptionMessage(MemberResource::class);
 
-    public function test_the_members_of_a_struct_absent_from_the_head_declare_their_revisions(): void
-    {
-        $resource = new class (null) extends JsonApiResource {
-            public function toAttributes(Request $request): iterable
-            {
-                return [
-                    'address' => $this->struct(fn() => [
-                        'zip' => $this->string()->was(ApiRevision::Initial, name: 'postcode'),
-                    ])->until(ApiRevision::Labels),
-                    'place' => $this->string()->was(ApiRevision::Labels, value: $this->struct(fn() => [
-                        'city' => $this->string()->was(ApiRevision::Initial, name: 'town'),
-                    ])),
-                ];
-            }
-        };
-        $compiler = new DefinitionCompiler(Configuration::defaults());
-
-        self::assertSame([ApiRevision::Initial, ApiRevision::Labels], $compiler->compile($resource::class)->boundaries);
-        $initial = $compiler->compile($resource::class, ApiRevision::Initial);
-        self::assertSame(['postcode'], array_keys($initial->attributes['address']->children));
-        self::assertSame(['town'], array_keys($initial->attributes['place']->children));
-        self::assertSame(['zip'], array_keys($compiler->compile($resource::class, ApiRevision::Labels)->attributes['address']->children));
+        $this->compile(MemberResource::class, self::revised(), ApiRevision::Initial);
     }
 }

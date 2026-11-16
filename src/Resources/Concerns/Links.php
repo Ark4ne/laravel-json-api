@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
+use Closure;
 use Illuminate\Http\Request;
 
 /**
@@ -18,8 +19,8 @@ trait Links
      *
      * @param \Illuminate\Http\Request $request
      *
-     * @return iterable<string, string|array<string, mixed>|null>|iterable<array-key, \Ark4ne\JsonApi\Descriptors\Values\Value<T>>|null
-     *         Links by name: a URL, a link object or `null`; or descriptors
+     * @return iterable<array-key, mixed>|null Links by name: a URL, a link object, `null`, or a closure returning one;
+     *         never a descriptor (a link holds no history)
      *
      * ```
      * return [

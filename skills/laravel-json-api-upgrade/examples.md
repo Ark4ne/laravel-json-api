@@ -31,7 +31,7 @@ class UserResource extends JsonApiResource
 
     protected function toMeta(Request $request): ?iterable
     {
-        return ['copyright' => 'Copyright 2026 Example'];
+        return ['copyright' => fn() => 'Copyright 2026 Example'];        // a closure or a descriptor, never a plain value
     }
 }
 ```
@@ -70,7 +70,7 @@ final class UserResource extends JsonApiResource
         return [
             'name' => $this->string(),
             'registered-at' => $this->datetime('created_at'),               // date() is a date without time now
-            'score' => $this->float()->precision(1)->truncate(),            // 2.0 rounds: truncate() keeps 1.x
+            'score' => $this->float(fn(User $user) => floor($user->score * 10) / 10), // rounded in its source (1.x floored)
             'uuid' => $this->string(fn(User $user) => $user->uuid()),       // $this->uuid() is a value helper now
             $this->applyWhen(fn() => (bool) $this->resource->verified, [   // kept in the definition
                 'email' => $this->string(),
@@ -80,7 +80,7 @@ final class UserResource extends JsonApiResource
 
     protected function toDocumentMeta(Request $request): ?iterable
     {
-        return ['copyright' => 'Copyright 2026 Example'];
+        return ['copyright' => fn() => 'Copyright 2026 Example'];        // a closure or a descriptor, never a plain value
     }
 }
 ```
@@ -208,8 +208,8 @@ final class PublisherResource extends JsonApiResource
 
 ## Custom value
 
-A value of the application receives the configuration instead of reading `Support\Config`, and tells the definition
-its type. Registered under a name, it is a helper of every resource.
+A value of the application is a descriptor of `ark4ne/laravel-api-revisions`: it normalizes the raw value and tells
+its type. Registered under a name in its `TypeRegistry`, it is a helper of every resource.
 
 1.x:
 
@@ -228,38 +228,36 @@ class PercentValue extends Value
 'ratio' => new PercentValue('ratio'),
 ```
 
-2.0:
+Now:
 
 ```php
 namespace App\Upgrade\Stats;
 
-use Ark4ne\JsonApi\Configuration\Configuration;
-use Ark4ne\JsonApi\Definition\ValueType;
-use Ark4ne\JsonApi\Descriptors\Values\Value;
-use Ark4ne\JsonApi\Laravel\JsonApi;
+use Ark4ne\ApiRevisions\Definition\Kind;
+use Ark4ne\ApiRevisions\Definition\TypeDefinition;
+use Ark4ne\ApiRevisions\Schema\Descriptor;
+use Ark4ne\ApiRevisions\Schema\InvalidValue;
+use Ark4ne\ApiRevisions\Schema\TypeRegistry;
 use Ark4ne\JsonApi\Resources\Attributes\JsonApiType;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 
 /**
- * @extends Value<mixed>
+ * @extends Descriptor<string>
  */
-final class PercentValue extends Value
+final class PercentSchema extends Descriptor
 {
-    public function value(mixed $of, Request $request, Configuration $configuration): string
+    public function normalize(mixed $value): mixed
     {
-        return round(((float) $of) * 100, $configuration->precision ?? 0) . '%';
+        return is_numeric($value)
+            ? round(((float) $value) * 100) . '%'
+            : new InvalidValue($value, Kind::Custom, '0%');
     }
 
-    protected function valueType(): ValueType
+    protected function type(): TypeDefinition
     {
-        return ValueType::String;
-    }
-
-    protected function valueFormat(Configuration $configuration): ?string
-    {
-        return 'percent';
+        return TypeDefinition::custom('percent', ['type' => 'string', 'format' => 'percent']);
     }
 }
 
@@ -271,7 +269,7 @@ final class Campaign extends Model
 /**
  * @extends JsonApiResource<Campaign>
  *
- * @method PercentValue percent(string|\Closure|null $attribute = null)
+ * @method PercentSchema percent(string|\Closure|null $source = null)
  */
 #[JsonApiType('campaigns')]
 final class CampaignResource extends JsonApiResource
@@ -284,8 +282,8 @@ final class CampaignResource extends JsonApiResource
     }
 }
 
-// In the boot() of a service provider (or `describer.types` of config/jsonapi.php):
-JsonApi::valueType('percent', PercentValue::class);
+// In the boot() of a service provider:
+TypeRegistry::register('percent', PercentSchema::class);
 ```
 
 ## Validation of the query

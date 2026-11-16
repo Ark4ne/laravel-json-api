@@ -32,14 +32,14 @@ class CommentResource extends JsonApiResource
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'user' => Schema::relationship($this->one()->links(
+            'user' => $this->one()->links(
                 self: fn() => "https://api.example.com/comment/{$this->resource->id}/relationships/user",
                 related: fn() => "https://api.example.com/comment/{$this->resource->id}/user",
-            )->whenIncluded()->withLoad(true)),
-            'post' => Schema::relationship($this->one()->links(
+            )->whenIncluded()->withLoad(true),
+            'post' => $this->one()->links(
                 self: fn() => "https://api.example.com/comment/{$this->resource->id}/relationships/post",
                 related: fn() => "https://api.example.com/comment/{$this->resource->id}/post",
-            )->whenIncluded()->withLoad(true)),
+            )->whenIncluded()->withLoad(true),
         ];
     }
 }

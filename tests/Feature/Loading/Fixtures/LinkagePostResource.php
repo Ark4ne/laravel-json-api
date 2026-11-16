@@ -33,8 +33,8 @@ final class LinkagePostResource extends JsonApiResource
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'user' => Schema::relationship($this->one(LinkageUserResource::class)),
-            'comments' => Schema::relationship($this->many(LinkageCommentResource::class)),
+            'user' => $this->one(LinkageUserResource::class),
+            'comments' => $this->many(LinkageCommentResource::class),
         ];
     }
 }

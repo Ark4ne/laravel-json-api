@@ -7,7 +7,6 @@ namespace Ark4ne\JsonApi\Resources\Concerns;
 use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Definition\DefinitionSource;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
-use Closure;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,17 +26,16 @@ trait Attributes
      *
      * @param \Illuminate\Http\Request $request
      *
-     * @return iterable<array-key, mixed|Closure|\Ark4ne\JsonApi\Descriptors\Values\Value>
+     * @return iterable<array-key, mixed> Descriptors (`$this->string()`…) or closures by name, and the groups of
+     *         `applyWhen()`
      *
      * ```
      * return [
-     *     'name' => fn() => $this->name,
-     *     // with laravel conditional attributes
-     *     'secret' => fn() => $this->when($request->user()->isAdmin(), 'secret-value'),
-     *     // with descriptors
      *     'email' => $this->string(),
      *     'age' => $this->integer()->whenInFields(),
-     *     'secret' => $this->string(fn(Model $model) => $model->secret)->when($request->user()->isAdmin()),
+     *     'secret' => $this->string(fn() => $this->resource->secret)->when(fn() => $request->user()?->isAdmin() ?? false),
+     *     // a value of any type
+     *     'name' => fn() => $this->resource->name,
      * ];
      * ```
      */

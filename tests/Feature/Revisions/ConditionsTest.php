@@ -122,8 +122,8 @@ final class ConditionsTest extends RevisionsTestCase
             protected function toRelationships(Request $request): iterable
             {
                 return [
-                    'posts' => Schema::relationship($this->many(PostResource::class)->whenIncluded())->was(ApiRevision::Labels, name: 'articles'),
-                    'comments' => Schema::relationship($this->many(CommentResource::class)->whenIncluded())->since(ApiRevision::UsersReplaceTeachers),
+                    'posts' => $this->many(PostResource::class)->whenIncluded()->was(ApiRevision::Labels, name: 'articles'),
+                    'comments' => $this->many(CommentResource::class)->whenIncluded()->since(ApiRevision::UsersReplaceTeachers),
                 ];
             }
         };

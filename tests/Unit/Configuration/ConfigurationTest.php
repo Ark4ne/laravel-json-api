@@ -14,7 +14,6 @@ use DateTimeInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Test\app\Revisions\ApiRevision;
-use Test\app\Values\MoneyValue;
 use Test\Unit\Compilation\Fixtures\PrefixedTypeNaming;
 
 final class ConfigurationTest extends TestCase
@@ -32,9 +31,6 @@ final class ConfigurationTest extends TestCase
         $configuration = Configuration::defaults();
 
         self::assertTrue($configuration->nullable);
-        self::assertSame(DateTimeInterface::ATOM, $configuration->datetimeFormat);
-        self::assertNull($configuration->precision);
-        self::assertFalse($configuration->strict);
         self::assertSame([], $configuration->whenHas);
         self::assertSame(Linkage::Always, $configuration->linkage);
         self::assertSame(SparseRelationships::Filter, $configuration->sparseRelationships);
@@ -44,7 +40,6 @@ final class ConfigurationTest extends TestCase
         self::assertEquals(new JsonApiObject('1.1'), $configuration->jsonapi);
         self::assertNull($configuration->maxIncludeDepth);
         self::assertSame(TypeConvention::KebabSingular, $configuration->typeNaming);
-        self::assertSame([], $configuration->valueTypes);
     }
 
     public function test_an_empty_array_gives_the_defaults(): void
@@ -57,11 +52,7 @@ final class ConfigurationTest extends TestCase
         $configuration = Configuration::fromArray([
             'describer' => [
                 'nullable' => false,
-                'datetime' => 'Y-m-d',
-                'precision' => 2,
-                'strict' => true,
                 'when-has' => ['attributes'],
-                'types' => ['money' => MoneyValue::class],
             ],
             'relationship' => ['linkage' => 'loaded'],
             'fields' => ['relationships' => 'keep'],
@@ -79,9 +70,6 @@ final class ConfigurationTest extends TestCase
         ]);
 
         self::assertFalse($configuration->nullable);
-        self::assertSame('Y-m-d', $configuration->datetimeFormat);
-        self::assertSame(2, $configuration->precision);
-        self::assertTrue($configuration->strict);
         self::assertSame(['attributes'], $configuration->whenHas);
         self::assertSame(Linkage::Loaded, $configuration->linkage);
         self::assertSame(SparseRelationships::Keep, $configuration->sparseRelationships);
@@ -90,7 +78,6 @@ final class ConfigurationTest extends TestCase
         self::assertSame([self::class], $configuration->errorRenderers);
         self::assertSame(3, $configuration->maxIncludeDepth);
         self::assertSame(TypeConvention::SnakePlural, $configuration->typeNaming);
-        self::assertSame(['money' => MoneyValue::class], $configuration->valueTypes);
         self::assertEquals(
             new JsonApiObject('1.0', ['https://jsonapi.org/ext/atomic'], ['https://example.com/profile'], ['copyright' => 'ACME']),
             $configuration->jsonapi,
@@ -102,17 +89,6 @@ final class ConfigurationTest extends TestCase
         $configuration = Configuration::fromArray(['type' => ['naming' => PrefixedTypeNaming::class]]);
 
         self::assertInstanceOf(PrefixedTypeNaming::class, $configuration->typeNaming);
-    }
-
-    public function test_a_value_type_is_added_to_a_copy(): void
-    {
-        $configuration = Configuration::defaults();
-
-        $with = $configuration->withValueType('money', MoneyValue::class);
-
-        self::assertSame([], $configuration->valueTypes);
-        self::assertSame(['money' => MoneyValue::class], $with->valueTypes);
-        self::assertSame($configuration->typeNaming, $with->typeNaming);
     }
 
     public function test_the_jsonapi_member_is_disabled_by_false(): void
@@ -154,9 +130,6 @@ final class ConfigurationTest extends TestCase
     public static function invalid(): iterable
     {
         yield 'nullable' => [['describer' => ['nullable' => 'yes']], 'describer.nullable'];
-        yield 'datetime' => [['describer' => ['datetime' => 1]], 'describer.datetime'];
-        yield 'precision' => [['describer' => ['precision' => 'two']], 'describer.precision'];
-        yield 'strict' => [['describer' => ['strict' => 1]], 'describer.strict'];
         yield 'when-has scope' => [['describer' => ['when-has' => ['unknown']]], 'describer.when-has'];
         yield 'linkage' => [['relationship' => ['linkage' => 'never']], 'relationship.linkage'];
         yield 'when-included, replaced by linkage' => [['relationship' => ['when-included' => false]], 'relationship.when-included'];
@@ -170,9 +143,6 @@ final class ConfigurationTest extends TestCase
         yield 'document.jsonapi.ext' => [['document' => ['jsonapi' => ['ext' => 'atomic']]], 'document.jsonapi.ext'];
         yield 'document.jsonapi.profile' => [['document' => ['jsonapi' => ['profile' => [1]]]], 'document.jsonapi.profile'];
         yield 'document.jsonapi.meta' => [['document' => ['jsonapi' => ['meta' => ['a']]]], 'document.jsonapi.meta'];
-        yield 'describer.types not an array' => [['describer' => ['types' => 'money']], 'describer.types'];
-        yield 'describer.types name' => [['describer' => ['types' => ['Money' => MoneyValue::class]]], 'describer.types'];
-        yield 'describer.types unknown class' => [['describer' => ['types' => ['money' => 'App\\Money']]], 'describer.types.money'];
         yield 'type.naming unknown convention' => [['type' => ['naming' => 'camel']], 'type.naming'];
         yield 'type.naming not a type naming' => [['type' => ['naming' => self::class]], 'type.naming'];
         yield 'rendering.stages unknown class' => [['rendering' => ['stages' => ['App\\Unknown']]], 'rendering.stages'];
@@ -208,12 +178,35 @@ final class ConfigurationTest extends TestCase
         Configuration::fromArray([])->prependRenderingStages('App\\Unknown');
     }
 
-    public function test_the_date_format_key_of_1x_must_be_renamed(): void
+    /**
+     * @return iterable<string, array{array<string, mixed>}>
+     */
+    public static function removed(): iterable
+    {
+        yield 'describer.date' => [['date' => DateTimeInterface::ATOM]];
+        yield 'describer.datetime' => [['datetime' => 'Y-m-d']];
+        yield 'describer.precision' => [['precision' => 2]];
+        yield 'describer.strict' => [['strict' => false]];
+        yield 'describer.types' => [['types' => ['money' => self::class]]];
+    }
+
+    /**
+     * @param array<string, mixed> $describer
+     */
+    #[DataProvider('removed')]
+    public function test_a_key_of_2x_no_longer_read_is_refused(array $describer): void
     {
         $this->expectException(InvalidConfigurationException::class);
-        $this->expectExceptionMessage('[jsonapi.describer.date] is renamed [jsonapi.describer.datetime]');
+        $this->expectExceptionMessage('[jsonapi.describer.' . array_key_first($describer) . '] is no longer read');
 
-        Configuration::fromArray(['describer' => ['date' => DateTimeInterface::ATOM]]);
+        Configuration::fromArray(['describer' => $describer]);
+    }
+
+    public function test_a_key_no_longer_read_left_empty_is_ignored(): void
+    {
+        $configuration = Configuration::fromArray(['describer' => ['precision' => null, 'types' => []]]);
+
+        self::assertTrue($configuration->nullable);
     }
 
     public function test_the_revision_enum_is_none_by_default_and_kept_by_the_copies(): void
@@ -224,6 +217,6 @@ final class ConfigurationTest extends TestCase
         self::assertNull($configuration->revisions);
         self::assertSame(ApiRevision::class, $revised->revisions);
         self::assertSame(ApiRevision::class, $revised->prependRenderingStages(self::class)->revisions);
-        self::assertSame($configuration->datetimeFormat, $revised->datetimeFormat);
+        self::assertSame($configuration->nullable, $revised->nullable);
     }
 }

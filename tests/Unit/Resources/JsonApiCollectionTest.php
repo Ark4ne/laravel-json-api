@@ -35,7 +35,8 @@ class JsonApiCollectionTest extends TestCase
         $document = $collection->toResponse(new Request())->getData(true);
 
         self::assertIsArray($document);
-        self::assertSame(['meta-1' => 'bar-1', 'meta-2' => 'bar-2', 'meta-3' => 'bar-3'], $document['meta']);
+        // The same member of several resources: the first one wins.
+        self::assertSame(['first' => 'bar-1', 'meta-1' => 'resource'], $document['meta']);
     }
 
     public function test_the_document_meta_of_the_collection_wins_over_those_of_its_resources(): void
@@ -46,7 +47,7 @@ class JsonApiCollectionTest extends TestCase
 
         self::assertIsArray($document);
         self::assertSame(
-            ['meta-1' => 'collection', 'meta-2' => 'bar-2', 'meta-3' => 'bar-3', 'total' => 3],
+            ['first' => 'bar-1', 'meta-1' => 'collection', 'total' => 3],
             $document['meta'],
         );
     }
@@ -120,12 +121,12 @@ final class CollectedResource extends JsonApiResource
 
     protected function toResourceMeta(Request $request): iterable
     {
-        return ['rank' => $this->resource->id];
+        return ['rank' => $this->integer('id')];
     }
 
     protected function toDocumentMeta(Request $request): iterable
     {
-        return ["meta-{$this->resource->id}" => "bar-{$this->resource->id}"];
+        return ['first' => fn(): string => "bar-{$this->resource->id}", 'meta-1' => static fn(): string => 'resource'];
     }
 }
 

@@ -33,9 +33,9 @@ final class LinkageCommentResource extends JsonApiResource
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'user' => Schema::relationship($this->one(LinkageUserResource::class)),
-            'post' => Schema::relationship($this->one(LinkagePostResource::class)->whenIncluded()),
-            'writer' => Schema::relationship($this->one(LinkageUserResource::class, 'nothing')),
+            'user' => $this->one(LinkageUserResource::class),
+            'post' => $this->one(LinkagePostResource::class)->whenIncluded(),
+            'writer' => $this->one(LinkageUserResource::class, 'nothing'),
         ];
     }
 }

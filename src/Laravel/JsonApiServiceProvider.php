@@ -20,7 +20,6 @@ use Ark4ne\JsonApi\Context\CurrentRevision;
 use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Descriptors\Schemas\Conditions;
 use Ark4ne\JsonApi\Descriptors\Schemas\SchemaTypes;
-use Ark4ne\JsonApi\Descriptors\ValueTypes;
 use Ark4ne\JsonApi\Exceptions\InvalidConfigurationException;
 use Ark4ne\JsonApi\Http\Errors\ErrorRenderer;
 use Ark4ne\JsonApi\Http\Errors\ErrorRenderers;
@@ -170,7 +169,6 @@ final class JsonApiServiceProvider extends ServiceProvider
         /** @var CompiledDefinitions $compiled */
         $compiled = $this->app->make(CompiledDefinitions::class);
 
-        ValueTypes::validate($configuration, JsonApi::reservedValueTypeNames());
         // Checked at boot: `JsonApi::renderErrors()` leaves to Laravel the exceptions it cannot render.
         foreach ($configuration->errorRenderers as $renderer) {
             if (!is_subclass_of($renderer, ErrorRenderer::class)) {

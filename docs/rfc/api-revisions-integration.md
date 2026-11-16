@@ -204,6 +204,41 @@ everything above; to be done in this order, as one branch of work ending green.
 Open before it starts: base R11 (float rounding) or a float type of this package; the relationships hook once per
 response (D7) or per resource (as now).
 
+### US 2.4 — delivered (2026-11-16)
+
+The façade is switched and the 2.0 value engine removed, in one step (1 093 tests, the documents expected by the
+feature tests unchanged). What was done differently from the plan above, and what it leaves open:
+
+- **A closure given to a helper receives the model** (`$this->string(fn(User $user) => …)`), as in 2.0: the façade
+  wraps it. A closure given to `Schema::string()` itself follows the base (`($value, $subject)`).
+- **`applyWhen()` keeps its writing** (`$this->applyWhen(fn() => …, [...])` among the members, no spread): the
+  declaration reads the members it groups.
+- **`whenInFields()` / `whenInIncludes()` stay helpers of the resource**, taking a descriptor or a closure (D8 said
+  macros: a macro knows neither the request nor the place of the resource in the includes). The template of a plan is
+  bound to the context of each resource, so a class rendered at two places reads its own includes.
+- **Links are plain values without history** (D5 names four objects; a link that changes reads
+  `ApiRevision::current()`).
+- **The default attributes** (a resource without `toAttributes()`) are outside the declaration: rendered as they
+  are, neither exported nor locked by the base.
+- **D10 is not done**: `Definition\AttributeDefinition`, `ValueType` and `Compilation\SchemaAttributes` stay, as
+  the adapter from the shapes of the base; the attributes lost `source` and `computed`. `ResourceDefinition` still
+  has `boundaries` (always empty) and `Definition\RevisionOrder` its 2.1 helpers, used by `Http\Rules\Revised`:
+  they go with US 5.3.
+- **Checks** (US 6.2 not done): the compiler reports `invalid-declaration`, `reserved-name`, `name-collision` and
+  `unavailable-resource` per revision, so `jsonapi:check` and `ResourceAssertions` keep working; they duplicate the
+  `ResourceCheck` tagged in `revision:check`, to be merged by US 6.2.
+- **`Definitions::for()` throws when the values cannot be compiled**: a definition without attributes would make
+  `Fields` and `Includes` refuse every member.
+- **Float rounding (R11) is still open**: `precision()` and `truncate()` are gone, the recipes round in the source.
+- **Performance** (same machine, PHP 8.5.3, 1 000 posts, 3 includes): ×0.575 of Laravel's native resources in time
+  (2.0: ×0.518, so about 10 % slower than 2.0: P1 not met yet), ×0.617 in memory (2.0: ×0.615); resources declaring
+  revisions cost ×1.00 to ×1.04 of the others (2.1: ×1.09 to ×1.15). The reference of `composer benchmark` is not
+  updated: it still fails on the time, on purpose. Left: `toRelationships()` runs for each resource.
+- **Cold start (P5)**: `jsonapi:cache` writes one definition per resource and revision; the shapes are cached by
+  `revision:cache`. Not measured again.
+- The skills are updated where their tests run code (`reference.md`, the recipes, two examples of the upgrade
+  skill); the README, `docs/architecture.md` and the prose of the upgrade skill still describe 2.x (EJ7).
+
 ### EJ5 — stories
 
 | Story | Content |

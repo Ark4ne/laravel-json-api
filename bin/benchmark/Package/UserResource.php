@@ -22,7 +22,7 @@ final class UserResource extends JsonApiResource
         return [
             'name' => $this->string(),
             'email' => $this->string(),
-            'contact' => $this->struct(fn() => [
+            'contact' => $this->struct([
                 'email' => $this->string('email'),
                 'display' => $this->string(fn() => "{$this->resource->name} <{$this->resource->email}>"),
             ]),

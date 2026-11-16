@@ -30,27 +30,24 @@ final class TypedResource extends JsonApiResource
             'count' => $this->integer(),
             'ratio' => $this->float(),
             'active' => $this->bool(),
-            'published-at' => $this->date()->format('Y-m-d'),
-            'state' => $this->enum()->of(State::class),
+            'published-at' => $this->date(),
+            'state' => $this->enum(State::class),
             'tags' => $this->arrayOf($this->string()),
             'full-name' => $this->string(fn() => 'computed'),
-            'secret' => $this->string()->when(false),
+            'secret' => $this->string()->when(static fn(): bool => false),
             'content' => $this->string()->whenInFields(),
-            'address' => $this->struct(fn() => [
+            'address' => $this->struct([
                 'city' => $this->string(),
-                'geo' => $this->struct(fn() => [
+                'geo' => $this->struct([
                     'lat' => $this->float(),
                 ]),
             ]),
-            $this->applyWhen(true, [
+            $this->applyWhen(static fn(): bool => true, [
                 'grouped' => $this->integer(),
             ]),
         ];
     }
 
-    /**
-     * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Relations\Relation<\Test\app\Models\Post>>
-     */
     protected function toRelationships(Request $request): iterable
     {
         return [
@@ -64,13 +61,10 @@ final class TypedResource extends JsonApiResource
         ];
     }
 
-    /**
-     * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Values\Value<\Test\app\Models\Post>>
-     */
     protected function toLinks(Request $request): iterable
     {
         return [
-            'self' => $this->string(fn() => 'https://api.example.com'),
+            'self' => static fn(): string => 'https://api.example.com',
         ];
     }
 

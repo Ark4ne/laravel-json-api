@@ -16,10 +16,48 @@ The revisions of the unreleased 2.1 are replaced by those of `ark4ne/laravel-api
 | 2.1 (unreleased) | 3.0 |
 | --- | --- |
 | `enum ApiRevision implements Ark4ne\JsonApi\Definition\Revision`, cases declared oldest first, `description()` | `enum ApiRevision: string implements Ark4ne\ApiRevisions\Revisions\Revision` with `use IsRevision;`, `order()` (oldest first, the last one is the head) and `#[Meta('…')]` on the cases |
+| `->was(X, name: …)`, `->since(X)`, `->until(X)` | unchanged |
 | a middleware of the application calling `JsonApi::useRevision($request, $case)` | `'enum'` and `'resolvers'` in `config/revisions.php`, the `revision` middleware on the routes |
 | `$this->requestedRevision()->atMost(X)`, `JsonApi::revision($request)->atMost(X)` | `ApiRevision::current()->isAtMost(X)` |
 | `JsonApiContext::revisionOf($request)` | `ApiRevision::current()` |
 | no header: the head (`null`) | no header: the head, the last case of `order()` |
+
+### Values are declared, and rendered by `ark4ne/laravel-api-revisions`
+
+The helpers keep their names and return the descriptors of the base. What changes in a resource:
+
+| 2.0 | 3.0 |
+| --- | --- |
+| `'name' => $this->resource->name` (a plain value) | `'name' => $this->string()`, or a closure: `'name' => fn() => $this->resource->name` |
+| `toResourceMeta()` returning `['version' => 3]` | `['version' => fn() => 3]`, or `$this->integer(fn() => 3)` |
+| a member without name (`$this->string('email')`) | `'email' => $this->string()` |
+| `$this->when($condition, $value)`, `$this->whenHas('email')` in a hook | `$this->string()->when(fn($value, $model) => …)`, `->whenHas()` |
+| `$this->mergeWhen($condition, [...])` | `$this->applyWhen(fn() => $condition, [...])` |
+| `$this->applyWhen($bool, [...])` | `$this->applyWhen(fn() => $bool, [...])`: a closure, read for each resource |
+| `->when(true)`, `->when(fn(Request $request, $model, string $attribute) => …)` | `->when(fn($value, $model) => …)`; the request is the one of the hook (`use ($request)`) |
+| `$this->whenInFields($request, 'name', $value)` | the value is a descriptor or a closure: `$this->whenInFields($request, 'name', fn() => $value)` |
+| `$this->enum()->of(State::class)`, `$this->enum()` | `$this->enum(State::class)` (a backed enum) |
+| `$this->struct(fn() => ['city' => $this->string()])` | `$this->struct(['city' => $this->string()])`; with a source, the members are read on its value |
+| `$this->array()->of($this->string())`, `->of('money')` | `$this->arrayOf($this->string())`, `$this->arrayOf($this->money())` |
+| `$this->float()->precision(1)`, `->truncate()` | round in the source: `$this->float(fn(Post $post) => round($post->rating, 1))` |
+| `->nullable(false)` rendering `0` or `''` for `null` | `null` is a value error (`revisions.strict_values`) |
+| `->was(X, value: $this->integer())` | `->was(X, schema: $this->integer())`, with `down:` when the base knows no conversion |
+| `->was(X, value: $this->one(OldResource::class))` on a relationship | `->was(X, schema: $this->one(OldResource::class))` |
+| a descriptor with `was()` in `toLinks()` | a plain link; compute it with `ApiRevision::current()` if it changes |
+| `protected static function toDefinition()` | removed: the definition is compiled from the hooks |
+| `JsonApi::valueType('money', MoneyValue::class)`, `describer.types` | a `Descriptor` of the base registered with `TypeRegistry::register('money', MoneySchema::class)` |
+| `describer.datetime`, `describer.strict` | `date_time_format`, `strict_values` of `config/revisions.php` |
+
+The hooks of values run **once per response**, on a template instance whose `$this->resource` is set to each model
+before its values are read: a closure reading `$this->resource` works as before, an expression evaluated in the hook
+(`$this->resource->name`, `$request->user()->isAdmin()` as a plain boolean) is the same for every resource and is
+refused where it would be a value. `php artisan jsonapi:check` names every member to rewrite.
+
+### Definitions
+
+`Definitions::for($class, $revision)` gives one definition per revision; `ResourceDefinition::$revision` is `null` for
+the head (the newest revision). The attributes no longer hold `source` and `computed`. `jsonapi:cache` writes every
+revision: run it again after the upgrade. The history of the fields is checked by `php artisan revision:check`.
 
 ## From 1.x to 2.0
 

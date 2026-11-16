@@ -4,7 +4,12 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Compilation;
 
+use Ark4ne\ApiRevisions\Compilation\Shape;
 use Ark4ne\ApiRevisions\Revisions\Revision;
+use Ark4ne\ApiRevisions\Revisions\RevisionOrder;
+use Ark4ne\ApiRevisions\Revisions\Unrevisioned;
+use Ark4ne\ApiRevisions\Schema\DeclarationKind;
+use Ark4ne\ApiRevisions\Schema\Descriptor;
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Definition\AttributeDefinition;
 use Ark4ne\JsonApi\Definition\DefinitionSource;
@@ -13,91 +18,56 @@ use Ark4ne\JsonApi\Definition\JsonApiUntil;
 use Ark4ne\JsonApi\Definition\Lifetime;
 use Ark4ne\JsonApi\Definition\RelationshipDefinition;
 use Ark4ne\JsonApi\Definition\ResourceDefinition;
-use Ark4ne\JsonApi\Descriptors\Members;
-use Ark4ne\JsonApi\Descriptors\RevisedMembers;
-use Ark4ne\JsonApi\Descriptors\RevisionFindings;
+use Ark4ne\JsonApi\Definition\ValueType;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Support\Diagnostic;
 use Ark4ne\JsonApi\Support\Diagnostics;
 use Ark4ne\JsonApi\Support\Probe;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\MergeValue;
+use LogicException;
 use ReflectionClass;
 use Throwable;
 
 /**
- * Compiles the definition of a resource class by running its hooks on a probe (docs/architecture.md §4).
+ * Compiles the definition of a resource class at a revision (docs/architecture.md §4).
  *
- * - Descriptors give their own definition (`Value::definition()`, `Relation::definition()`).
- * - A closure gives a `mixed`, computed value; an eager value gives a `mixed` value whose source is the probe path it
- *   was read from, with an `eager-attribute` diagnostic.
- * - `MergeValue`s are merged; the members of `applyWhen()` are conditional; `mergeWhen()` hides its members whatever
- *   its condition, with a `merge-when` diagnostic; a member without name left out on the probe is hidden, with an
- *   `unnamed-member` diagnostic.
- * - Defaults (nullable, date format) are resolved from the configuration.
- * - The hooks run once, with a neutral request: a member declared under an `if` on the request or the model is seen
- *   only when the probe takes that branch. Conditions belong to `when()` and `applyWhen()` (docs/architecture.md §4).
+ * - What is JSON:API is read by running the hooks on a probe: the type, the links, the relationships (related
+ *   resources, linkage, loads), the routes and the lifetime.
+ * - The values (attributes, meta of the resource object, meta of the document) are those of the shape
+ *   `ark4ne/laravel-api-revisions` compiles for the resource at the revision: names, types, nullability, conditions.
+ * - The hooks run with a neutral request: a member declared under an `if` on the request or the model is seen only
+ *   when the probe takes that branch. Conditions belong to `->when()` and `applyWhen()`.
  */
 final readonly class DefinitionCompiler
 {
-    /** A value is not lazy: its type is unknown and it is computed even when not requested. */
-    public const EAGER_ATTRIBUTE = Members::EAGER_ATTRIBUTE;
-
-    /** `mergeWhen()` hides its members from the definition: `applyWhen()` keeps them. */
-    public const MERGE_WHEN = Members::MERGE_WHEN;
-
-    /** A member without name is left out on the probe: the definition cannot name it. */
-    public const UNNAMED_MEMBER = Members::UNNAMED_MEMBER;
-
     /** An attribute or a relationship is named `id` or `type`, reserved by the specification. */
     public const RESERVED_NAME = 'reserved-name';
 
     /** A hook threw on the probe; the definition misses what it declares. */
     public const HOOK_FAILURE = 'hook-failure';
 
-    /** A member cannot be described; the definition misses it, the other members are kept. */
-    public const INVALID_MEMBER = Members::INVALID_MEMBER;
+    /** The values of the resource cannot be compiled (a member that is not a descriptor, an invalid history). */
+    public const INVALID_DECLARATION = 'invalid-declaration';
 
-    /** Two `was()` with the same revision on a field, or `until()` / `since()` set twice. */
-    public const REVISION_DUPLICATE = 'revision-duplicate';
+    /** An attribute and a relationship have the same name at one revision. */
+    public const NAME_COLLISION = 'name-collision';
 
-    /** A `was()` with neither `name:` nor `value:`. */
-    public const REVISION_EMPTY_WAS = 'revision-empty-was';
-
-    /** A `was()` outside the revisions its field exists at (`since()`, `until()`). */
-    public const REVISION_OUT_OF_LIFE = 'revision-out-of-life';
-
-    /** Two fields with the same name at one revision, attributes and relationships together. */
-    public const REVISION_NAME_COLLISION = 'revision-name-collision';
-
-    /** A field named `id` or `type` at one revision. */
-    public const REVISION_RESERVED_NAME = 'revision-reserved-name';
-
-    /** The `value:` of a `was()` names no source, and the head reads through a closure. */
-    public const REVISION_UNSOURCED_VALUE = 'revision-unsourced-value';
-
-    /** An older `was()` without the value (or the name) a newer one gives: its clients get the head's. */
-    public const REVISION_VALUE_GAP = 'revision-value-gap';
-
-    /** `since()` or `#[JsonApiSince]` names the oldest revision: it hides nothing. */
-    public const REVISION_NOOP = 'revision-noop';
-
-    /** The revisions of one resource are cases of several enums. */
-    public const REVISION_MIXED_ENUMS = 'revision-mixed-enums';
-
-    /** A relationship of a resource existing at a revision reaches a resource absent from it (`RevisionAudit`). */
-    public const REVISION_UNAVAILABLE_RESOURCE = 'revision-unavailable-resource';
+    /** A relationship reaches a resource that does not exist at the revision. */
+    public const UNAVAILABLE_RESOURCE = 'unavailable-resource';
 
     /** The names JSON:API reserves for the resource identification. */
     public const RESERVED_NAMES = ['id', 'type'];
 
     public function __construct(
         private Configuration $configuration,
+        private Projection $projection = new Projection(),
     ) {}
 
     /**
-     * The definition of a resource at a revision: the head (`null`) by default. Its `revision` is the boundary whose
-     * shape it describes (`ResourceDefinition::boundaryOf()`), `null` for the head shape.
+     * The definition of a resource at a revision: the head (`null`, the newest revision of the application) by
+     * default. Its `revision` is the one it describes, `null` for the head.
      *
      * @param class-string<DefinitionSource> $class
      *
@@ -106,39 +76,101 @@ final readonly class DefinitionCompiler
      */
     public function compile(string $class, ?Revision $revision = null): ResourceDefinition
     {
-        return self::shapeOf($this->compileEvery($class), $revision);
-    }
-
-    /**
-     * Of the shapes of a resource (`compileEvery()`, the head first), the one describing it at `$revision`: that of
-     * its boundary (`ResourceDefinition::boundaryOf()`). Without revision, the head, even for a resource
-     * `#[JsonApiUntil]`, as `Definitions::for()`.
-     *
-     * @param non-empty-list<ResourceDefinition> $shapes
-     *
-     * @throws DefinitionException when the resource does not exist at `$revision`
-     */
-    public static function shapeOf(array $shapes, ?Revision $revision): ResourceDefinition
-    {
-        $head = $shapes[0];
-        if ($revision !== null && !$head->existsAt($revision)) {
-            throw DefinitionException::notInRevision($head->class, $revision);
+        $class = $this->source($class);
+        $lifetime = $this->lifetime($class);
+        if ($revision !== null && !$lifetime->covers($revision)) {
+            throw DefinitionException::notInRevision($class, $revision);
         }
 
-        // A definition written by hand is the only one: it has no boundary.
-        $boundary = $head->boundaryOf($revision);
-        foreach ($shapes as $shape) {
-            if ($shape->revision === $boundary) {
-                return $shape;
+        $head = $this->head();
+        $at = $revision ?? $head;
+        $probe = Probe::root();
+        $request = new Request();
+
+        try {
+            $source = $class::newDefinitionSource($probe);
+            $type = $source->describeType($request, $this->declaredType($class));
+        } catch (Throwable $e) {
+            throw DefinitionException::cannotCompile($class, $e);
+        }
+
+        $diagnostics = new Diagnostics();
+        $definition = ResourceDefinition::of($class, $type)
+            ->links(...$this->guard('toLinks', $diagnostics, static fn(): array => self::links($source->describeLinks($request))))
+            ->routes($class::declaredRoutes())
+            ->lifetime($lifetime)
+            ->revision($at === $head ? null : $at);
+
+        // The head of a resource `#[JsonApiUntil]` an older revision: it has no shape there, only what identifies it.
+        if (!$lifetime->covers($at)) {
+            return $definition->diagnostics(...$diagnostics);
+        }
+
+        try {
+            $shape = $this->projection->shapes->for($class, DeclarationKind::Response, $at);
+            $attributes = self::object($shape, 'attributes');
+            $relationships = self::object($shape, 'relationships');
+            $described = $class::describeRelationshipsAt($relationships);
+
+            // What the shape does not hold: the fields rendered only when the sparse fieldset names them.
+            $names = SchemaAttributes::names($attributes);
+            $sparse = array_flip(array_intersect_key($names, array_flip($class::sparseAttributes())));
+
+            $definition = $definition
+                ->attributes(...array_map(
+                    static fn(AttributeDefinition $attribute): AttributeDefinition => isset($sparse[$attribute->name]) ? $attribute->sparse() : $attribute,
+                    SchemaAttributes::of($attributes),
+                ))
+                ->relationships(...array_map(static fn(array $relationship): RelationshipDefinition => $relationship[0], $described))
+                ->meta(...SchemaAttributes::of(self::object($shape, 'meta')))
+                ->documentMeta(...SchemaAttributes::of(self::object($shape, 'documentMeta')))
+                ->fieldNames([...$names, ...SchemaAttributes::names($relationships)]);
+        } catch (Throwable $e) {
+            $diagnostics->error(
+                self::INVALID_DECLARATION,
+                "The values of the resource cannot be compiled ({$e->getMessage()}): its attributes, relationships and "
+                . 'meta are missing from the definition.',
+            );
+        }
+
+        // What JSON:API asks of the fields of a resource.
+        foreach (array_keys(array_intersect_key($definition->attributes, $definition->relationships)) as $name) {
+            $diagnostics->error(
+                self::NAME_COLLISION,
+                "[{$name}] names an attribute and a relationship: they share one name space, bound one of them with until() / since().",
+                $name,
+            );
+        }
+
+        foreach ($definition->relationships as $relationship) {
+            foreach ($relationship->related as $related) {
+                if (!$this->lifetime($related)->covers($at)) {
+                    $diagnostics->error(
+                        self::UNAVAILABLE_RESOURCE,
+                        "[{$relationship->name}] relates to [{$related}], which does not exist at [{$at->name}]: give it a was() to "
+                        . 'the resource of the revision, or bound it with since() / until().',
+                        $relationship->name,
+                    );
+                }
             }
         }
 
-        return $head;
+        foreach ([...array_keys($definition->attributes), ...array_keys($definition->relationships)] as $name) {
+            if (in_array($name, self::RESERVED_NAMES, true)) {
+                $diagnostics->error(
+                    self::RESERVED_NAME,
+                    "[{$name}] is reserved by JSON:API for the resource identification: rename the member.",
+                    $name,
+                );
+            }
+        }
+
+        return $definition->diagnostics(...$diagnostics);
     }
 
     /**
-     * The definitions of every shape of a resource, the hooks run once: the head first, then one per boundary, oldest
-     * first.
+     * The definitions of a resource at every revision: the head first, then each older revision it exists at, newest
+     * first. The diagnostics of an older revision name it.
      *
      * @param class-string<DefinitionSource> $class
      *
@@ -149,46 +181,26 @@ final readonly class DefinitionCompiler
      */
     public function compileEvery(string $class): array
     {
-        $class = $this->source($class);
+        $head = $this->head();
         $lifetime = $this->lifetime($class);
+        $definitions = [$this->compile($class)];
 
-        $predefined = $class::predefinedDefinition();
-        if ($predefined !== null) {
-            return [$this->predefined($class, $predefined, $lifetime)];
-        }
+        foreach (array_reverse(RevisionOrder::between(RevisionOrder::oldest($head::class), $head)) as $revision) {
+            if ($revision === $head || !$lifetime->covers($revision)) {
+                continue;
+            }
 
-        $hooks = $this->hooks($class);
-        [$head, $boundaries] = $this->head($class, $hooks, $lifetime);
-        $names = [...array_keys($head->attributes), ...array_keys($head->relationships)];
-
-        $revisions = [];
-        $diagnostics = [];
-        $known = [];
-        foreach ($head->diagnostics as $diagnostic) {
-            $known[$diagnostic->key()] = true;
-        }
-        foreach ($boundaries as $boundary) {
-            $revised = $this->build($class, $hooks, $lifetime, $boundaries, $boundary, head: $names);
-            // Each with the revision whose shape shows it.
-            $revised = $revised->diagnostics(...array_map(static fn(Diagnostic $diagnostic): Diagnostic => new Diagnostic(
+            $definition = $this->compile($class, $revision);
+            $definitions[] = $definition->diagnostics(...array_map(static fn(Diagnostic $diagnostic): Diagnostic => new Diagnostic(
                 $diagnostic->level,
                 $diagnostic->code,
                 $diagnostic->message,
                 $diagnostic->subject,
-                $boundary->name,
-            ), $revised->diagnostics));
-            $revisions[] = $revised;
-            // What only a revision shows is reported on the head too, which the checks read, with the oldest revision
-            // showing it.
-            foreach ($revised->diagnostics as $diagnostic) {
-                $key = $diagnostic->key();
-                if (!isset($known[$key])) {
-                    $diagnostics[$key] ??= $diagnostic;
-                }
-            }
+                $revision->name,
+            ), $definition->diagnostics));
         }
 
-        return [$head->diagnostics(...$head->diagnostics, ...array_values($diagnostics)), ...$revisions];
+        return $definitions;
     }
 
     /**
@@ -203,28 +215,30 @@ final readonly class DefinitionCompiler
     {
         $class = $this->source($class);
 
-        if ($class::predefinedDefinition() !== null) {
-            return [];
-        }
-
-        $probe = Probe::root();
-        $members = new Members($this->configuration, new Diagnostics(), $probe);
-
         try {
-            $relations = $members->relations(RevisedMembers::apply(
-                $class::newDefinitionSource($probe)->describeRelationships(new Request()),
-                $revision,
-            ));
+            $shape = $this->projection->shapes->for($class, DeclarationKind::Response, $revision ?? $this->head());
+            $described = $class::describeRelationshipsAt(self::object($shape, 'relationships'));
         } catch (Throwable) {
             return [];
         }
 
         $constraints = [];
-        foreach ($relations as [$name, $relation]) {
-            $constraints[$name] = $relation->loadConstraints();
+        foreach ($described as [$relationship, $loads]) {
+            $constraints[$relationship->name] = $loads;
         }
 
         return array_filter($constraints);
+    }
+
+    /**
+     * The head of the application: the newest revision of its enum, the one revision of an application without enum.
+     */
+    public function head(): Revision
+    {
+        /** @var class-string<Revision> $enum */
+        $enum = $this->configuration->revisions ?? Unrevisioned::class;
+
+        return RevisionOrder::latest($enum);
     }
 
     /**
@@ -275,200 +289,40 @@ final readonly class DefinitionCompiler
     }
 
     /**
-     * A definition written by hand (`toDefinition()`): the routes of `#[JsonApiRoutes]` and the lifetime of the
-     * attributes are kept unless it has its own. One shape: the hand-written definition has no revision.
+     * The links of the resource object, by name: any value, those of `applyWhen()` among the others.
      *
-     * @param class-string<DefinitionSource> $class
+     * @param iterable<array-key, mixed> $members
+     *
+     * @return list<AttributeDefinition>
      */
-    private function predefined(string $class, ResourceDefinition $predefined, Lifetime $lifetime): ResourceDefinition
+    private static function links(iterable $members): array
     {
-        $predefined = $predefined->routes === null ? $predefined->routes($class::declaredRoutes()) : $predefined;
+        $links = [];
+        foreach ($members as $name => $member) {
+            if (is_int($name) && $member instanceof MergeValue) {
+                /** @var iterable<array-key, mixed> $merged */
+                $merged = $member->data;
+                array_push($links, ...self::links($merged));
+            } elseif (is_string($name)) {
+                // A link holds no history: rendered as it is, it cannot be a descriptor.
+                if ($member instanceof Descriptor) {
+                    throw new LogicException("[{$name}] is a descriptor: a link is a URL, a link object or a closure returning one");
+                }
 
-        return $predefined->since === null && $predefined->until === null ? $predefined->lifetime($lifetime) : $predefined;
-    }
-
-    /**
-     * Runs every hook once on a new probe: the members each declares, or the message of what it threw.
-     *
-     * @param class-string<DefinitionSource> $class
-     *
-     * @return array{
-     *     probe: Probe,
-     *     type: string,
-     *     members: array<string, array<array-key, mixed>>,
-     *     failures: array<string, string>,
-     * }
-     */
-    private function hooks(string $class): array
-    {
-        $probe = Probe::root();
-        $request = new Request();
-
-        try {
-            $source = $class::newDefinitionSource($probe);
-            $type = $source->describeType($request, $this->declaredType($class));
-        } catch (Throwable $e) {
-            throw DefinitionException::cannotCompile($class, $e);
-        }
-
-        $describes = [
-            'toAttributes' => static fn() => $source->describeAttributes($request),
-            'toRelationships' => static fn() => $source->describeRelationships($request),
-            'toLinks' => static fn() => $source->describeLinks($request),
-            'toResourceMeta' => static fn() => $source->describeResourceMeta($request),
-            'toDocumentMeta' => static fn() => $source->describeDocumentMeta($request),
-        ];
-
-        $members = [];
-        $failures = [];
-        foreach ($describes as $hook => $describe) {
-            try {
-                $members[$hook] = [...$describe()];
-            } catch (Throwable $e) {
-                $members[$hook] = [];
-                $failures[$hook] = $e->getMessage();
+                $link = AttributeDefinition::of($name, ValueType::Mixed)->nullable();
+                $links[] = $member instanceof Closure ? $link->computed() : $link;
             }
         }
 
-        return ['probe' => $probe, 'type' => $type, 'members' => $members, 'failures' => $failures];
+        return $links;
     }
 
     /**
-     * The head definition, and the revisions where the shape of the resource changes (each once, oldest first),
-     * gathered while the members of the head are transformed.
-     *
-     * @param class-string<DefinitionSource> $class
-     * @param array{
-     *     probe: Probe,
-     *     type: string,
-     *     members: array<string, array<array-key, mixed>>,
-     *     failures: array<string, string>,
-     * } $hooks
-     *
-     * @return array{ResourceDefinition, list<Revision>}
+     * @throws LogicException when the shape of the resource has no such object
      */
-    private function head(string $class, array $hooks, Lifetime $lifetime): array
+    private static function object(Shape $shape, string $name): Shape
     {
-        $findings = new RevisionFindings();
-        $head = $this->build($class, $hooks, $lifetime, [], null, $findings);
-        $diagnostics = new Diagnostics();
-        // The structs the head does not read declare revisions too (the members of a struct `until()` a revision).
-        $this->guard('toAttributes', $diagnostics, static function () use ($findings, $hooks): array {
-            RevisedMembers::seeUnread($findings->fields(), $hooks['probe'], $findings);
-
-            return [];
-        });
-        $boundaries = RevisionChecks::fields($findings, $lifetime, $diagnostics);
-        $head = $head->boundaries(...$boundaries)->diagnostics(...$head->diagnostics, ...$diagnostics);
-
-        // A resource declaring revisions translates the names of its helpers at the head too: its fields `until()` a
-        // revision do not exist there. Set even when its boundaries are not (two enums mixed).
-        if ($findings->fields() !== []) {
-            $head = $head->fieldNames(self::fieldNames($hooks, null));
-        }
-
-        return [$head, $boundaries];
-    }
-
-    /**
-     * The definition of one shape of the resource, from the members of its hooks as `$boundary` sees them.
-     *
-     * @param class-string<DefinitionSource> $class
-     * @param array{
-     *     probe: Probe,
-     *     type: string,
-     *     members: array<string, array<array-key, mixed>>,
-     *     failures: array<string, string>,
-     * } $hooks
-     * @param list<Revision> $boundaries
-     * @param RevisionFindings $findings Sees the fields declaring a revision and the names taken twice
-     * @param list<string> $head The names of the fields of the head, for the shape of a revision
-     */
-    private function build(
-        string $class,
-        array $hooks,
-        Lifetime $lifetime,
-        array $boundaries,
-        ?Revision $boundary,
-        RevisionFindings $findings = new RevisionFindings(),
-        array $head = [],
-    ): ResourceDefinition {
-        $diagnostics = new Diagnostics();
-        foreach ($hooks['failures'] as $hook => $message) {
-            $this->failure($diagnostics, $hook, $message);
-        }
-
-        $members = new Members($this->configuration, $diagnostics, $hooks['probe']);
-        $at = static fn(string $hook): array => RevisedMembers::apply($hooks['members'][$hook], $boundary, $findings);
-
-        $attributes = $this->guard(
-            'toAttributes',
-            $diagnostics,
-            static fn() => $members->attributes($at('toAttributes'), 'attributes'),
-        );
-        $relationships = $this->guard(
-            'toRelationships',
-            $diagnostics,
-            static fn() => $members->relationships($at('toRelationships')),
-        );
-
-        $definition = ResourceDefinition::of($class, $hooks['type'])
-            ->attributes(...$attributes)
-            ->relationships(...$relationships)
-            ->links(...$this->guard('toLinks', $diagnostics, static fn() => $members->attributes($at('toLinks'))))
-            ->meta(...$this->guard(
-                'toResourceMeta',
-                $diagnostics,
-                static fn() => $members->attributes($at('toResourceMeta'), 'resource-meta'),
-            ))
-            ->documentMeta(...$this->guard(
-                'toDocumentMeta',
-                $diagnostics,
-                static fn() => $members->attributes($at('toDocumentMeta'), 'meta'),
-            ))
-            ->routes($class::declaredRoutes())
-            ->lifetime($lifetime)
-            ->revision($boundary)
-            ->boundaries(...$boundaries);
-
-        if ($boundary !== null) {
-            $definition = $definition->fieldNames(self::fieldNames($hooks, $boundary));
-            RevisionChecks::shape(
-                $boundary,
-                array_map(static fn(AttributeDefinition|RelationshipDefinition $field) => $field->name, [...$attributes, ...$relationships]),
-                $head,
-                $findings,
-                $diagnostics,
-            );
-
-            return $definition->diagnostics(...$diagnostics);
-        }
-
-        foreach ([...array_keys($definition->attributes), ...array_keys($definition->relationships)] as $name) {
-            if (in_array($name, self::RESERVED_NAMES, true)) {
-                $diagnostics->error(
-                    self::RESERVED_NAME,
-                    "[{$name}] is reserved by JSON:API for the resource identification: rename the member.",
-                    $name,
-                );
-            }
-        }
-
-        return $definition->diagnostics(...$diagnostics);
-    }
-
-    /**
-     * What the helpers of the hooks translate (`whenInFields()`, `whenInIncludes()`): the name each attribute and
-     * relationship of the code has at `$revision`.
-     *
-     * @param array{members: array<string, array<array-key, mixed>>} $hooks
-     *
-     * @return array<string, string>
-     */
-    private static function fieldNames(array $hooks, ?Revision $revision): array
-    {
-        return RevisedMembers::names($hooks['members']['toAttributes'], $revision)
-            + RevisedMembers::names($hooks['members']['toRelationships'], $revision);
+        return $shape->field($name)->children ?? throw new LogicException("The shape has no [{$name}] object.");
     }
 
     /**
@@ -483,19 +337,14 @@ final readonly class DefinitionCompiler
         try {
             return $describe();
         } catch (Throwable $e) {
-            $this->failure($diagnostics, $hook, $e->getMessage());
+            $diagnostics->error(
+                self::HOOK_FAILURE,
+                "{$hook}() threw on the probe standing for the model ({$e->getMessage()}): what it declares is missing "
+                . 'from the definition. Read the model through descriptors or closures.',
+                $hook,
+            );
 
             return [];
         }
-    }
-
-    private function failure(Diagnostics $diagnostics, string $hook, string $message): void
-    {
-        $diagnostics->error(
-            self::HOOK_FAILURE,
-            "{$hook}() threw on the probe standing for the model ({$message}): what it declares is missing from the "
-            . 'definition. Read the model through descriptors or closures.',
-            $hook,
-        );
     }
 }

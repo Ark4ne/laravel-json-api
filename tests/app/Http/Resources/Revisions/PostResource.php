@@ -29,9 +29,9 @@ final class PostResource extends JsonApiResource
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'user' => Schema::relationship($this->one(UserResource::class))
-                ->was(ApiRevision::Labels, name: 'writer', schema: Schema::relationship($this->one(WriterResource::class))),
-            'comments' => Schema::relationship($this->many(CommentResource::class)->whenIncluded()),
+            'user' => $this->one(UserResource::class)
+                ->was(ApiRevision::Labels, name: 'writer', schema: $this->one(WriterResource::class)),
+            'comments' => $this->many(CommentResource::class)->whenIncluded(),
         ];
     }
 }

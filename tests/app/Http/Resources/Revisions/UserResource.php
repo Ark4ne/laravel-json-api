@@ -41,14 +41,14 @@ final class UserResource extends JsonApiResource
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'posts' => Schema::relationship($this->many(PostResource::class)->whenIncluded())->was(
+            'posts' => $this->many(PostResource::class)->whenIncluded()->was(
                 ApiRevision::Initial,
                 name: 'post',
-                schema: Schema::relationship($this->one(PostResource::class, fn() => $this->resource->posts->first())
+                schema: $this->one(PostResource::class, fn() => $this->resource->posts->first())
                     ->withLoad('posts')
-                    ->whenIncluded()),
+                    ->whenIncluded(),
             ),
-            'comments' => Schema::relationship($this->many(CommentResource::class)->whenIncluded()),
+            'comments' => $this->many(CommentResource::class)->whenIncluded(),
         ];
     }
 

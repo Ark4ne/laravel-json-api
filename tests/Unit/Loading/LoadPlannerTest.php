@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Test\Unit\Loading;
 
+use Ark4ne\JsonApi\Compilation\Definitions;
+use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Loading\LoadPlan;
 use Ark4ne\JsonApi\Loading\LoadPlanner;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
@@ -64,9 +66,6 @@ class LoadPlannerTest extends TestCase
     public function test_two_relationships_loading_a_path_with_different_constraints_keep_the_first_with_a_diagnostic(): void
     {
         $resource = new class (null) extends JsonApiResource {
-            /**
-             * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Relations\Relation<mixed>>
-             */
             protected function toRelationships(Request $request): iterable
             {
                 return [
@@ -159,6 +158,8 @@ class LoadPlannerTest extends TestCase
 
     public function test_a_was_relation_loads_its_own_constraint(): void
     {
+        Definitions::configure(Configuration::defaults()->withRevisions(ApiRevision::class));
+
         $resource = new class (null) extends JsonApiResource {
             protected function toRelationships(Request $request): iterable
             {
@@ -166,7 +167,7 @@ class LoadPlannerTest extends TestCase
                     'author' => $this->one(RevisedUserResource::class)->whenIncluded()->was(
                         ApiRevision::Initial,
                         name: 'writer',
-                        value: $this->one(RevisedUserResource::class, 'post')
+                        schema: $this->one(RevisedUserResource::class, 'post')
                             ->whenIncluded()
                             ->withLoad(['post' => static fn($query) => $query]),
                     ),

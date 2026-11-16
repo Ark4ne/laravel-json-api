@@ -28,10 +28,10 @@ class GuessedPostResource extends JsonApiResource
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'user' => Schema::relationship($this->one()),
-            'author' => Schema::relationship($this->one('user')),
-            'comments' => Schema::relationship($this->many()),
-            'writer' => Schema::relationship($this->one()),
+            'user' => $this->one(),
+            'author' => $this->one('user'),
+            'comments' => $this->many(),
+            'writer' => $this->one(),
         ];
     }
 }

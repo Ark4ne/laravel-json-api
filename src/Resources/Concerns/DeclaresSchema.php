@@ -11,12 +11,15 @@ use Ark4ne\ApiRevisions\Revisions\Unrevisioned;
 use Ark4ne\ApiRevisions\Schema\DeclarationKind;
 use Ark4ne\ApiRevisions\Schema\Descriptor;
 use Ark4ne\ApiRevisions\Schema\ObjectSchema;
+use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Context\ResponseCache;
+use Ark4ne\JsonApi\Definition\DescribesRelationship;
 use Ark4ne\JsonApi\Definition\JsonApiSince;
 use Ark4ne\JsonApi\Definition\JsonApiUntil;
 use Ark4ne\JsonApi\Descriptors\Relations\Relation;
 use Ark4ne\JsonApi\Descriptors\Schemas\Conditions;
+use Ark4ne\JsonApi\Descriptors\Schemas\MixedSchema;
 use Ark4ne\JsonApi\Descriptors\Schemas\RelationshipSchema;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Rendering\MemberFieldsets;
@@ -24,20 +27,20 @@ use Ark4ne\JsonApi\Rendering\ResourcePlan;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Ark4ne\JsonApi\Support\Memo;
 use Ark4ne\JsonApi\Support\Probe;
+use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\MergeValue;
 use LogicException;
 use ReflectionClass;
 use ReflectionMethod;
-use Throwable;
 
 /**
  * A resource is one `Revisioned` response of `ark4ne/laravel-api-revisions` (docs/rfc/api-revisions-integration.md
  * D5): its top level holds one object per hook (`attributes`, `relationships`, `meta`, `documentMeta`), so the base compiles,
  * caches, checks, locks and exports it as any class. Its lifetime is the one of `#[JsonApiSince]` / `#[JsonApiUntil]`.
  *
- * Every member of those hooks is a descriptor of the base (`Schema::string()`…, `Schema::relationship()` for a
- * relationship): a plain value cannot be declared.
+ * Every member of those hooks is a descriptor of the base (`$this->string()`, `Schema::string()`…, `$this->one()` for
+ * a relationship) or a closure: a plain value cannot be declared.
  *
  * @phpstan-require-extends \Ark4ne\JsonApi\Resources\JsonApiResource
  */
@@ -102,68 +105,19 @@ trait DeclaresSchema
      */
     public function describeSchema(Request $request): array
     {
+        $configuration = $this->renderingContext->configuration ?? Definitions::configuration();
+
         return [
-            'attributes' => static::hasDefaultAttributes() ? new ObjectSchema([]) : self::schemaObject('toAttributes', $this->toAttributes($request)),
-            'relationships' => self::schemaObject('toRelationships', $this->toRelationships($request), RelationshipSchema::class),
-            'meta' => self::schemaObject('toResourceMeta', $this->toResourceMeta($request) ?? []),
-            'documentMeta' => self::schemaObject('toDocumentMeta', $this->toDocumentMeta($request) ?? []),
+            'attributes' => static::hasDefaultAttributes()
+                ? new ObjectSchema([])
+                : $this->schemaObject('toAttributes', $this->toAttributes($request), $configuration->autoWhenHas('attributes')),
+            'relationships' => new ObjectSchema(array_map(
+                $this->autoWhenIncluded(...),
+                $this->relationshipsOf($this->toRelationships($request)),
+            )),
+            'meta' => $this->schemaObject('toResourceMeta', $this->toResourceMeta($request) ?? [], $configuration->autoWhenHas('resource-meta')),
+            'documentMeta' => $this->schemaObject('toDocumentMeta', $this->toDocumentMeta($request) ?? [], $configuration->autoWhenHas('meta')),
         ];
-    }
-
-    /**
-     * Whether the hooks of values of the class return descriptors of the base, and at least one: its values are then
-     * rendered by it. Decided on a stand-in of the model; `Definitions::declaresSchema()` remembers it.
-     *
-     * @internal Until every resource is declared so (docs/rfc/api-revisions-integration.md, US 2.4).
-     */
-    public static function declaresSchema(): bool
-    {
-        $resource = static::newDefinitionSource(Probe::root());
-
-        try {
-            $schema = $resource->describeSchema(new Request());
-        } catch (DefinitionException $e) {
-            // A hook mixing the descriptors of the base and the 2.0 ones would render the former as plain objects.
-            return self::declaresAnyDescriptor($resource) ? throw $e : false;
-        } catch (Throwable) {
-            return false;
-        }
-
-        // Hooks declaring nothing on a stand-in (the default attributes of a model) render as before.
-        return $schema['attributes']->children() !== []
-            || $schema['relationships']->children() !== []
-            || $schema['meta']->children() !== []
-            || $schema['documentMeta']->children() !== [];
-    }
-
-    /**
-     * Whether a hook of the resource returns a descriptor of the base; `false` when a hook fails on the stand-in.
-     *
-     * @param self<mixed> $resource
-     */
-    private static function declaresAnyDescriptor(self $resource): bool
-    {
-        $request = new Request();
-
-        try {
-            $hooks = [
-                $resource->toAttributes($request),
-                $resource->toRelationships($request),
-                $resource->toResourceMeta($request) ?? [],
-                $resource->toDocumentMeta($request) ?? [],
-            ];
-            foreach ($hooks as $members) {
-                foreach (self::membersOf($members) as $member) {
-                    if ($member instanceof Descriptor) {
-                        return true;
-                    }
-                }
-            }
-        } catch (Throwable) {
-            return false;
-        }
-
-        return false;
     }
 
     /**
@@ -291,11 +245,11 @@ trait DeclaresSchema
         }
 
         // The hook runs for each resource: the closures of a relation are read after its resource is rendered.
-        $declared = self::membersOf($this->toRelationships($context->request));
+        $declared = $this->relationshipsOf($this->toRelationships($context->request));
 
         foreach ($fields as $key => $field) {
             $relationship = $declared[$key] ?? null;
-            if ($relationship instanceof RelationshipSchema) {
+            if ($relationship !== null) {
                 // The conditions of the field (`->when()`, `applyWhen()`): the base never reads a relationship.
                 foreach ($relationship->conditions() as $condition) {
                     if ($condition(null, $this->resource) !== true) {
@@ -309,42 +263,86 @@ trait DeclaresSchema
     }
 
     /**
+     * The object of a hook of values: its descriptors by name, a closure a value of any type. `whenHas()` applies to
+     * the members read from a key of the model when the resource says so (`$autoWhenHas`), otherwise when the
+     * configuration of the hook does (`describer.when-has`).
+     *
      * @param iterable<array-key, mixed> $members
-     * @param class-string<Descriptor<mixed>> $of What every member is
+     *
+     * @throws DefinitionException when a member is a plain value or has no name
      */
-    private static function schemaObject(string $hook, iterable $members, string $of = Descriptor::class): ObjectSchema
+    private function schemaObject(string $hook, iterable $members, bool $whenHas): ObjectSchema
     {
+        $whenHas = $this->autoWhenHas ?? $whenHas;
+        $nullable = Definitions::configuration()->nullable;
+
         $children = [];
-        foreach (self::membersOf($members) as $name => $member) {
-            if (!is_string($name) || $name === '' || !$member instanceof $of) {
-                throw DefinitionException::notASchema(static::class, $hook, (string) $name, get_debug_type($member));
+        foreach (self::membersOf($hook, $members) as $name => $member) {
+            if ($member instanceof Closure) {
+                $member = (new MixedSchema($member))->nullable($nullable);
             }
-            $children[$name] = $member;
+            if (!$member instanceof Descriptor) {
+                throw DefinitionException::notASchema(static::class, $hook, $name, get_debug_type($member));
+            }
+
+            $source = $member->source();
+            $children[$name] = $whenHas && $source->closure === null && !$source->parent && $member->presences() === []
+                ? $member->whenHas()
+                : $member;
         }
 
         return new ObjectSchema($children);
     }
 
     /**
-     * The members of a hook, those grouped by `applyWhen()` among the others.
+     * The relationships of `toRelationships()` by name: those of `$this->one()`, `$this->many()`…, and the
+     * relationships of a resource (`UserResource::relationship()`).
      *
      * @param iterable<array-key, mixed> $members
      *
-     * @return array<array-key, mixed>
+     * @return array<string, RelationshipSchema<mixed>>
+     *
+     * @throws DefinitionException when a member is not a relationship or has no name
      */
-    private static function membersOf(iterable $members): array
+    private function relationshipsOf(iterable $members): array
     {
-        $flat = [];
+        $relationships = [];
+        foreach (self::membersOf('toRelationships', $members) as $name => $member) {
+            $relationships[$name] = match (true) {
+                $member instanceof RelationshipSchema => $member,
+                $member instanceof DescribesRelationship => new RelationshipSchema($member),
+                default => throw DefinitionException::notASchema(static::class, 'toRelationships', $name, get_debug_type($member)),
+            };
+        }
+
+        return $relationships;
+    }
+
+    /**
+     * The members of a hook by name, those grouped by `applyWhen()` among the others.
+     *
+     * @param iterable<array-key, mixed> $members
+     *
+     * @return array<string, mixed>
+     *
+     * @throws DefinitionException when a member has no name: a `when()` or a `mergeWhen()` of Laravel's resources,
+     *                             evaluated when the hook runs
+     */
+    private static function membersOf(string $hook, iterable $members): array
+    {
+        $named = [];
         foreach ($members as $name => $member) {
             if (is_int($name) && $member instanceof MergeValue) {
-                foreach ($member->data as $grouped => $value) {
-                    $flat[$grouped] = $value;
-                }
+                /** @var iterable<array-key, mixed> $grouped */
+                $grouped = $member->data;
+                $named = [...$named, ...self::membersOf($hook, $grouped)];
+            } elseif (is_string($name) && $name !== '') {
+                $named[$name] = $member;
             } else {
-                $flat[$name] = $member;
+                throw DefinitionException::notASchema(static::class, $hook, (string) $name, get_debug_type($member));
             }
         }
 
-        return $flat;
+        return $named;
     }
 }

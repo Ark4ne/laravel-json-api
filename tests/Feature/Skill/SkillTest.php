@@ -6,10 +6,10 @@ namespace Test\Feature\Skill;
 
 use Ark4ne\ApiRevisions\Laravel\Http\ResolveRevision;
 use Ark4ne\JsonApi\Definition\ValueType;
-use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Descriptors\Relations;
-use Ark4ne\JsonApi\Descriptors\Relations\Relation;
-use Ark4ne\JsonApi\Descriptors\Values;
+use Ark4ne\JsonApi\Descriptors\Schemas\Conditions;
+use Ark4ne\JsonApi\Descriptors\Schemas\RelationshipSchema;
+use Ark4ne\JsonApi\Resources\Concerns\DescribesValues;
 use Ark4ne\JsonApi\Resources\JsonApiCollection;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Ark4ne\JsonApi\Testing\ResourceAssertions;
@@ -33,9 +33,7 @@ final class SkillTest extends SkillTestCase
 {
     /** Public methods of the descriptors that the resources do not call: read by the package. */
     private const INTERNAL = [
-        'valueFor', 'passes', 'isConditional', 'retriever', 'isSparse', 'isNullable', 'autoWhenHas', 'resolveFor',
-        'appliesAutoWhenHas', 'definition', 'related', 'resolveRelated', 'morphs', 'defaultLinkage',
-        'loadConstraints', 'load', 'members', 'value', '__construct',
+        'relation', 'relationAt', 'normalize', 'morphs', 'defaultLinkage', '__construct',
     ];
 
     protected static function skill(): string
@@ -52,7 +50,7 @@ final class SkillTest extends SkillTestCase
     {
         $reference = self::read('reference.md');
         $helpers = [
-            ...(new ReflectionClass(Values::class))->getMethods(),
+            ...(new ReflectionClass(DescribesValues::class))->getMethods(),
             ...(new ReflectionClass(Relations::class))->getMethods(),
         ];
 
@@ -62,25 +60,20 @@ final class SkillTest extends SkillTestCase
             }
         }
 
-        $modifiers = glob(dirname(__DIR__, 3) . '/src/Descriptors/Values/*.php');
-        self::assertIsArray($modifiers);
-        $classes = [Describer::class, Relation::class, ...array_map(
-            static fn(string $file): string => 'Ark4ne\JsonApi\Descriptors\Values\\' . basename($file, '.php'),
-            $modifiers,
-        )];
-
-        foreach ($classes as $class) {
-            self::assertTrue(class_exists($class), $class);
-            foreach ((new ReflectionClass($class))->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
-                if (
-                    !$method->isStatic()
-                    && !str_contains((string) $method->getDocComment(), '@internal')
-                    && !in_array($method->name, self::INTERNAL, true)
-                    && $method->getDeclaringClass()->getName() === $class
-                ) {
-                    self::assertStringContainsString("->{$method->name}(", $reference, "{$class}::{$method->name}()");
-                }
+        // The modifiers of a relationship, and the conditions this package adds to every descriptor.
+        foreach ((new ReflectionClass(RelationshipSchema::class))->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
+            if (
+                !$method->isStatic()
+                && !str_contains((string) $method->getDocComment(), '@internal')
+                && !in_array($method->name, self::INTERNAL, true)
+                && $method->getDeclaringClass()->getName() === RelationshipSchema::class
+            ) {
+                self::assertStringContainsString("->{$method->name}(", $reference, "RelationshipSchema::{$method->name}()");
             }
+        }
+
+        foreach (Conditions::MACROS as $macro) {
+            self::assertStringContainsString("->{$macro}(", $reference, "{$macro}()");
         }
     }
 

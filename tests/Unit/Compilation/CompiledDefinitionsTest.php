@@ -9,7 +9,7 @@ use Ark4ne\JsonApi\Compilation\DefinitionCompiler;
 use Ark4ne\JsonApi\Configuration\Configuration;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
-use Test\Unit\Compilation\Fixtures\EagerResource;
+use Test\Unit\Compilation\Fixtures\BlogPostResource;
 use Test\Unit\Compilation\Fixtures\TypedResource;
 
 final class CompiledDefinitionsTest extends TestCase
@@ -42,7 +42,7 @@ final class CompiledDefinitionsTest extends TestCase
         $compiler = new DefinitionCompiler(Configuration::defaults());
         $definitions = [
             TypedResource::class => $compiler->compile(TypedResource::class),
-            EagerResource::class => $compiler->compile(EagerResource::class),
+            BlogPostResource::class => $compiler->compile(BlogPostResource::class),
         ];
 
         $this->file->write($definitions);

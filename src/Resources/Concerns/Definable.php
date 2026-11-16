@@ -31,15 +31,6 @@ trait Definable
     }
 
     /**
-     * Override to write the definition by hand instead of compiling it from the hooks: the resource is then never
-     * run on a probe (docs/architecture.md §4).
-     */
-    protected static function toDefinition(): ?ResourceDefinition
-    {
-        return null;
-    }
-
-    /**
      * @internal
      */
     public static function newDefinitionSource(Probe $probe): static
@@ -54,14 +45,6 @@ trait Definable
         (new ReflectionProperty($instance, 'resource'))->setValue($instance, $probe);
 
         return $instance;
-    }
-
-    /**
-     * @internal
-     */
-    public static function predefinedDefinition(): ?ResourceDefinition
-    {
-        return static::toDefinition();
     }
 
     /**
@@ -117,48 +100,8 @@ trait Definable
      *
      * @internal
      */
-    public function describeAttributes(Request $request): iterable
-    {
-        return $this->toAttributes($request);
-    }
-
-    /**
-     * @return iterable<array-key, mixed>
-     *
-     * @internal
-     */
-    public function describeRelationships(Request $request): iterable
-    {
-        return $this->autoWhenIncluded($this->toRelationships($request));
-    }
-
-    /**
-     * @return iterable<array-key, mixed>
-     *
-     * @internal
-     */
     public function describeLinks(Request $request): iterable
     {
         return $this->toLinks($request) ?? [];
-    }
-
-    /**
-     * @return iterable<array-key, mixed>
-     *
-     * @internal
-     */
-    public function describeResourceMeta(Request $request): iterable
-    {
-        return $this->toResourceMeta($request) ?? [];
-    }
-
-    /**
-     * @return iterable<array-key, mixed>
-     *
-     * @internal
-     */
-    public function describeDocumentMeta(Request $request): iterable
-    {
-        return $this->toDocumentMeta($request) ?? [];
     }
 }

@@ -58,18 +58,57 @@ replaces them.
 - `Rendering\MemberFieldsets`: the sparse fieldset applied to the members of the objects of a resource declared on
   the base (`fields[users]=address.city`), by their names at the revision.
 - `Rendering\ProjectedValues`: the members a `ResourcePlan` rendered, which the `ValueResolver` gives as they are.
-- `composer benchmark` also renders the benchmark resources declared on the base (`bin/benchmark/Schema/`): reported,
-  not gated yet.
 - `Definitions::for($class, $revision)` gives the attributes, the meta and the document meta of such a resource from
   its shape at the revision (names, types, nullability, presence), and its `fieldNames`: `Fields`, `Includes` and the
   tools read the names of the revision. Without revision, the newest one of the application.
 - The relationships of such a resource are declared with `Schema::relationship()`: its declaration holds a
   `relationships` object, and the definition, the include validation, the eager-loads and the rendering read their
   names and the relation in force from the shape of the revision.
+- `$this->struct([...], $source)`, `$this->arrayOf($items, $source)`, `$this->enum(State::class, $source)`: the
+  helpers of an object, a typed list and an enum.
+- A closure as a member of a hook of values is a value of any type (`'name' => fn() => …`).
+- `Definitions::head()` and `DefinitionCompiler::head()`: the newest revision of the application;
+  `DefinitionCompiler::compileEvery()` gives the definition of the head and of every older revision the resource
+  exists at.
+- Diagnostics `invalid-declaration` (the values of a resource cannot be compiled), `name-collision` and
+  `unavailable-resource`, at the revision of the definition.
+- `ResourceAssertions::definitionAt()` takes no revision for the head.
 - `extension.neon`: types those factories and macros for PHPStan, included by `phpstan/extension-installer` or by hand after
   the extension of `ark4ne/laravel-api-revisions`.
 
 ### Changed
+
+- **Breaking**: the values of a resource are declared and rendered with `ark4ne/laravel-api-revisions`.
+  `$this->string()`, `$this->integer()`, `$this->date()`… return its descriptors (`StringSchema`, `IntSchema`,
+  `DateSchema`…), nullable as `describer.nullable` says; `$this->one()`, `$this->many()`, `$this->morph()` and
+  `$this->morphMany()` return a `RelationshipSchema`, with the modifiers of a relationship (`links()`, `meta()`,
+  `withLoad()`, `whenIncluded()`, `filters()`, `can()`…). A closure given to a helper still receives the model.
+- **Breaking**: `toAttributes()`, `toRelationships()`, `toResourceMeta()` and `toDocumentMeta()` run once per
+  response, on a template whose `$this->resource` is set to each model before its values are read. A member is a
+  descriptor or a closure under its name: a plain value, a member without name, Laravel's `$this->when()` /
+  `$this->mergeWhen()` are refused (`DefinitionException`). The default attributes and the links stay plain values.
+- **Breaking**: a condition is a closure read for each resource: `->when(Closure($value, $model))`,
+  `->unless(Closure)`, `applyWhen(Closure, array)`; `$this->whenInFields()` and `$this->whenInIncludes()` take a
+  descriptor or a closure and return a descriptor.
+- **Breaking**: `->was(R, name:, schema:, down:)`, `->since()` and `->until()` are those of
+  `ark4ne/laravel-api-revisions` (`value:` is `schema:`; a relationship to another resource is
+  `schema: $this->one(OldResource::class)`). The links of a resource hold no history.
+- **Breaking**: `enum()` takes the class of a backed enum; `struct()` takes an array of members; `array()->of()` is
+  `arrayOf()`; `time()`, `uuid()` and `ulid()` are a date-time and strings with a format.
+- **Breaking**: a value its type refuses is a value error of `ark4ne/laravel-api-revisions`
+  (`revisions.strict_values`); a float is no longer rounded (`precision()`, `truncate()`), the format of a date and
+  time is `revisions.date_time_format`.
+- **Breaking**: a type of the application is a descriptor registered in the `TypeRegistry` of
+  `ark4ne/laravel-api-revisions`, served by `$this->money()`.
+- **Breaking**: `Definitions::for($class, $revision)` gives one definition per revision (its `revision` is the one
+  asked, `null` for the head, the newest revision), built from the shape of the base; it throws when the values of
+  the resource cannot be compiled. `Definitions::compile()` and `jsonapi:check` report it as a diagnostic. The
+  attributes no longer name their `source` nor whether they are `computed`.
+- **Breaking**: `jsonapi:cache` writes one definition per resource and revision; `jsonapi:check` checks each
+  revision the resource exists at and leaves the history of the fields to `revision:check`.
+- `make:jsonapi-resource` writes `$this->enum(State::class)`.
+- `composer benchmark` renders the resources of `bin/benchmark/Package/` with this package and those of
+  `bin/benchmark/Legacy/` (the API of 1.9) with 1.9.
 
 - **Breaking**: a revision is a case of an enum implementing `Ark4ne\ApiRevisions\Revisions\Revision` (a backed
   enum with `IsRevision`, `order()` and `#[Meta]`): the order of the revisions is `order()`, no longer the declaration
@@ -78,6 +117,15 @@ replaces them.
   (`config/revisions.php`); an unknown value is answered with 400.
 
 ### Removed
+
+- **Breaking**: `Descriptors\Values\*` and the trait `Descriptors\Values`, `Descriptors\ValueTypes`,
+  `JsonApi::valueType()`, `Descriptors\Members`, `MergeWhenValue`, `FieldHistory`, `FieldRevision`, `RevisedMembers`,
+  `RevisionFindings`, `Compilation\RevisionChecks`, `Compilation\RevisionAudit`, and the revision diagnostics of 2.1
+  (`revision-*`, `eager-attribute`, `merge-when`, `unnamed-member`, `invalid-member`).
+- **Breaking**: `toDefinition()` (a definition written by hand), `Definitions::isRevised()`, the overrides of
+  `when()`, `whenHas()`, `merge()` and `mergeWhen()` on a resource, `Relation::was()`.
+- **Breaking**: the configuration keys `describer.datetime`, `describer.precision`, `describer.strict` and
+  `describer.types`: still set, they throw an `InvalidConfigurationException` naming what replaces them.
 
 - **Breaking**: `Definition\Revision` (and its `description()`), `JsonApi::useRevision()`, `JsonApi::revision()`,
   `Context\RequestedRevision`, `$this->requestedRevision()`, `JsonApiContext::REVISION` and `revisionOf()`,

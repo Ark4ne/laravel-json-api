@@ -23,10 +23,10 @@ final class BoundedReferencesResource extends JsonApiResource
     {
         return [
             'member' => $this->one(MemberResource::class, static fn() => null)
-                ->was(ApiRevision::Labels, name: 'teacher', value: $this->one(TeacherResource::class, static fn() => null))
-                ->whenIncluded(),
-            'mentor' => $this->one(TeacherResource::class, static fn() => null)->until(ApiRevision::Labels)->whenIncluded(),
-            'members' => $this->many(MemberResource::class, static fn() => [])->since(ApiRevision::UsersReplaceTeachers)->whenIncluded(),
+                ->whenIncluded()
+                ->was(ApiRevision::Labels, name: 'teacher', schema: $this->one(TeacherResource::class, static fn() => null)->whenIncluded()),
+            'mentor' => $this->one(TeacherResource::class, static fn() => null)->whenIncluded()->until(ApiRevision::Labels),
+            'members' => $this->many(MemberResource::class, static fn() => [])->whenIncluded()->since(ApiRevision::UsersReplaceTeachers),
         ];
     }
 }

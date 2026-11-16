@@ -97,7 +97,7 @@ final class PostResource extends JsonApiResource
             'title' => $this->string(),
             'excerpt' => $this->string(fn(Post $post) => mb_substr((string) $post->body, 0, 40)),
             'published-at' => $this->datetime('published_at'),
-            'rating' => $this->float()->precision(1)->whenNotNull(),
+            'rating' => $this->float(fn(Post $post) => $post->rating === null ? null : round((float) $post->rating, 1))->whenNotNull(),
         ];
     }
 
@@ -203,39 +203,39 @@ public function store(PostStoreRequest $request): PostResource
 
 ## Value type of the application
 
-A value type casts the raw value and tells the definition its `ValueType` and format. Registered under a name, it is
-a helper of every resource and an item type of `array()->of()`.
+A type of the application is a descriptor of `ark4ne/laravel-api-revisions`: it normalizes the raw value and tells
+its JSON Schema fragment. Registered under a name in the `TypeRegistry` of the base, it is a helper of every resource
+(`$this->money()`) and of `Schema::money()`, usable as the items of `arrayOf()`.
 
 ```php
 namespace App\Recipes\Shop;
 
-use Ark4ne\JsonApi\Configuration\Configuration;
-use Ark4ne\JsonApi\Definition\ValueType;
-use Ark4ne\JsonApi\Descriptors\Values\Value;
-use Ark4ne\JsonApi\Laravel\JsonApi;
+use Ark4ne\ApiRevisions\Definition\Kind;
+use Ark4ne\ApiRevisions\Definition\TypeDefinition;
+use Ark4ne\ApiRevisions\Schema\Descriptor;
+use Ark4ne\ApiRevisions\Schema\InvalidValue;
+use Ark4ne\ApiRevisions\Schema\TypeRegistry;
 use Ark4ne\JsonApi\Resources\Attributes\JsonApiType;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 
 /**
- * @extends Value<mixed>
+ * @extends Descriptor<string>
  */
-final class MoneyValue extends Value
+final class MoneySchema extends Descriptor
 {
-    public function value(mixed $of, Request $request, Configuration $configuration): string
+    public function normalize(mixed $value): mixed
     {
-        return number_format(((int) $of) / 100, 2, '.', '');
+        // A value the type refuses is a value error of the base: reported, and rendered as the fallback.
+        return is_numeric($value)
+            ? number_format(((int) $value) / 100, 2, '.', '')
+            : new InvalidValue($value, Kind::Custom, '0.00');
     }
 
-    protected function valueType(): ValueType
+    protected function type(): TypeDefinition
     {
-        return ValueType::String;
-    }
-
-    protected function valueFormat(Configuration $configuration): ?string
-    {
-        return 'money';
+        return TypeDefinition::custom('money', ['type' => 'string', 'format' => 'money']);
     }
 }
 
@@ -252,7 +252,7 @@ final class Product extends Model
 /**
  * @extends JsonApiResource<Product>
  *
- * @method MoneyValue money(string|\Closure|null $attribute = null)
+ * @method MoneySchema money(string|\Closure|null $source = null)
  */
 #[JsonApiType('products')]
 final class ProductResource extends JsonApiResource
@@ -262,13 +262,13 @@ final class ProductResource extends JsonApiResource
         return [
             'name' => $this->string(),
             'price' => $this->money('price_cents'),
-            'price-history' => $this->array('price_history')->of('money'),
+            'price-history' => $this->arrayOf($this->money(), 'price_history'),
         ];
     }
 }
 
-// In the boot() of a service provider (or `describer.types` of config/jsonapi.php):
-JsonApi::valueType('money', MoneyValue::class);
+// In the boot() of a service provider:
+TypeRegistry::register('money', MoneySchema::class);
 ```
 
 ## Polymorphic relationship
@@ -556,7 +556,7 @@ final class BookResource extends JsonApiResource
         return [
             // Renamed, to the old type: the value reads the same relation, `author`.
             'author' => $this->one(AuthorResource::class)
-                ->was(LibraryRevision::Initial, name: 'writer', value: $this->one(WriterResource::class)),
+                ->was(LibraryRevision::Initial, name: 'writer', schema: $this->one(WriterResource::class)),
         ];
     }
 }

@@ -8,6 +8,7 @@ use Ark4ne\ApiRevisions\Definition\Kind;
 use Ark4ne\ApiRevisions\Definition\TypeDefinition;
 use Ark4ne\ApiRevisions\Schema\Descriptor;
 use Ark4ne\ApiRevisions\Schema\InvalidValue;
+use Illuminate\Contracts\Support\Arrayable;
 
 /**
  * A value of an unknown type, rendered as it is: the escape hatch of a field no type describes.
@@ -19,6 +20,18 @@ final class MixedSchema extends Descriptor
     public function normalize(mixed $value): mixed
     {
         return $value ?? new InvalidValue(null, Kind::Any, null);
+    }
+
+    /**
+     * Collections and other arrayables become plain arrays, at any depth.
+     */
+    public function serialize(mixed $value): mixed
+    {
+        if ($value instanceof Arrayable) {
+            $value = $value->toArray();
+        }
+
+        return is_array($value) ? array_map($this->serialize(...), $value) : $value;
     }
 
     protected function type(): TypeDefinition

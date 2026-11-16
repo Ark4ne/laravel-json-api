@@ -87,14 +87,15 @@ final class DefinitionException extends LogicException implements JsonApiExcepti
     }
 
     /**
-     * A member of a hook of values is not a descriptor of `ark4ne/laravel-api-revisions`: a plain value, a closure or a
-     * member without name cannot be declared.
+     * A member of a hook is neither a descriptor nor a closure, or has no name: a plain value is evaluated when the
+     * hook runs, once per response, and cannot be declared.
      */
     public static function notASchema(string $class, string $hook, string $name, string $given): self
     {
         return new self(
-            "[{$name}] of {$hook}() in [{$class}] must be a descriptor (Schema::string(), Schema::int()…) under its "
-            . "name, {$given} given: a value is declared, never written.",
+            "[{$name}] of {$hook}() in [{$class}] must be a descriptor (\$this->string(), \$this->one()…) or a closure, "
+            . "under its name, {$given} given: a value is declared, never written (the hook runs once per response). "
+            . 'A condition belongs to the descriptor (->when(), ->whenHas()) or to applyWhen().',
         );
     }
 
@@ -131,22 +132,6 @@ final class DefinitionException extends LogicException implements JsonApiExcepti
     }
 
     /**
-     * A value type was named that is neither registered nor a `Value` class.
-     */
-    public static function unknownValueType(string $type): self
-    {
-        return new self("[{$type}] is not a value type: register it (JsonApi::valueType()) or give a Value class.");
-    }
-
-    /**
-     * A value type was given by its class where an instance is needed: its descriptor needs more than an attribute.
-     */
-    public static function valueTypeNeedsInstance(string $class): self
-    {
-        return new self("[{$class}] cannot be built from its class alone: give an instance (->of(\$this->struct(fn() => [...]))).");
-    }
-
-    /**
      * The resource declares a hook of 1.x that was renamed: kept, it would be ignored silently.
      */
     public static function renamedHook(string $class, string $hook, string $replacement): self
@@ -180,15 +165,6 @@ final class DefinitionException extends LogicException implements JsonApiExcepti
     public static function emptyMorphMap(): self
     {
         return new self('A polymorphic relationship needs the resource of each model class it relates to.');
-    }
-
-    /**
-     * `merge()` or `mergeWhen()` was given members that are neither an array, an iterable, `Arrayable` nor
-     * `JsonSerializable`.
-     */
-    public static function notMergeable(string $type): self
-    {
-        return new self("merge() and mergeWhen() merge an array, an iterable, an Arrayable or a JsonSerializable, [{$type}] given.");
     }
 
     /**

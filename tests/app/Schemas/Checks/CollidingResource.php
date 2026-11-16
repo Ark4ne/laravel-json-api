@@ -28,7 +28,7 @@ final class CollidingResource extends JsonApiResource
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'user' => Schema::relationship($this->one(ValidResource::class))->was(ApiRevision::Labels, name: 'owner'),
+            'user' => $this->one(ValidResource::class)->was(ApiRevision::Labels, name: 'owner'),
         ];
     }
 }

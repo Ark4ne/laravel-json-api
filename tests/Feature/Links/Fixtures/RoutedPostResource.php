@@ -28,9 +28,9 @@ final class RoutedPostResource extends JsonApiResource
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'user' => Schema::relationship($this->one(UserResource::class)),
-            'comments' => Schema::relationship($this->many(CommentResource::class)),
-            'tags' => Schema::relationship($this->many(CommentResource::class, 'comments')->links(self: 'https://declared.example.com')),
+            'user' => $this->one(UserResource::class),
+            'comments' => $this->many(CommentResource::class),
+            'tags' => $this->many(CommentResource::class, 'comments')->links(self: 'https://declared.example.com'),
         ];
     }
 }

@@ -8,7 +8,6 @@ use Ark4ne\JsonApi\Compilation\CompiledDefinitions;
 use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Compilation\Projection;
 use Ark4ne\JsonApi\Configuration\Configuration;
-use Ark4ne\JsonApi\Definition\Lifetime;
 use Ark4ne\JsonApi\Definition\ResourceDefinition;
 use Ark4ne\JsonApi\Definition\ValueType;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
@@ -22,7 +21,7 @@ use Test\app\Revisions\TeacherResource;
 use Test\app\Schemas\ArticleResource;
 use Test\Unit\Compilation\Fixtures\AttributeTypedResource;
 use Test\Unit\Compilation\Fixtures\BlogPostResource;
-use Test\Unit\Compilation\Fixtures\EagerResource;
+use Test\Unit\Compilation\Fixtures\FailingHookResource;
 use Test\Unit\Compilation\Fixtures\TypedResource;
 
 final class DefinitionsTest extends TestCase
@@ -60,6 +59,14 @@ final class DefinitionsTest extends TestCase
 
         /** @phpstan-ignore argument.type */
         Definitions::for(stdClass::class);
+    }
+
+    public function test_a_resource_whose_values_cannot_be_compiled_throws(): void
+    {
+        $this->expectException(DefinitionException::class);
+        $this->expectExceptionMessage('Needs a real model.');
+
+        Definitions::for(FailingHookResource::class);
     }
 
     public function test_the_configuration_is_used_to_compile(): void
@@ -158,7 +165,7 @@ final class DefinitionsTest extends TestCase
         $constraints = Definitions::loadConstraints(TypedResource::class);
 
         self::assertInstanceOf(Closure::class, $constraints['comments']['comments'] ?? null);
-        self::assertSame([], Definitions::loadConstraints(EagerResource::class));
+        self::assertSame([], Definitions::loadConstraints(BlogPostResource::class));
     }
 
     public function test_the_declared_type_follows_the_configuration_set_at_boot(): void
@@ -181,6 +188,8 @@ final class DefinitionsTest extends TestCase
 
     public function test_the_definition_of_a_revision_has_its_names(): void
     {
+        Definitions::configure(Configuration::defaults()->withRevisions(ApiRevision::class));
+
         $initial = Definitions::for(ProfileResource::class, ApiRevision::Initial);
         $labels = Definitions::for(ProfileResource::class, ApiRevision::Labels);
         $head = Definitions::for(ProfileResource::class);
@@ -195,20 +204,17 @@ final class DefinitionsTest extends TestCase
         self::assertNull($head->revision);
     }
 
-    public function test_a_renamed_field_keeps_the_source_of_the_head(): void
+    public function test_a_renamed_relationship_keeps_the_source_of_the_head(): void
     {
-        self::assertSame('name', Definitions::for(ProfileResource::class, ApiRevision::Labels)->attributes['label']->source);
-        self::assertSame('comments', Definitions::for(ProfileResource::class, ApiRevision::Initial)->relationships['comments']->source);
-    }
+        Definitions::configure(Configuration::defaults()->withRevisions(ApiRevision::class));
 
-    public function test_the_head_definition_lists_its_boundaries(): void
-    {
-        self::assertSame([ApiRevision::Initial, ApiRevision::Labels], Definitions::for(ProfileResource::class)->boundaries);
-        self::assertSame([ApiRevision::Initial, ApiRevision::Labels], Definitions::for(ProfileResource::class, ApiRevision::Initial)->boundaries);
+        self::assertSame('comments', Definitions::for(ProfileResource::class, ApiRevision::Initial)->relationships['comments']->source);
     }
 
     public function test_two_revisions_with_the_same_shape_have_the_same_members(): void
     {
+        Definitions::configure(Configuration::defaults()->withRevisions(ApiRevision::class));
+
         // Declared on the base: one shape per revision, compiled and cached by it.
         $initial = Definitions::for(TeacherResource::class, ApiRevision::Initial);
 
@@ -219,24 +225,30 @@ final class DefinitionsTest extends TestCase
 
     public function test_a_revision_newer_than_every_declaration_reads_the_head(): void
     {
+        Definitions::configure(Configuration::defaults()->withRevisions(ApiRevision::class));
+
         self::assertSame(
             Definitions::for(ProfileResource::class),
             Definitions::for(ProfileResource::class, ApiRevision::UsersReplaceTeachers),
         );
     }
 
-    public function test_a_resource_without_declaration_has_one_definition(): void
+    public function test_a_resource_without_history_has_the_same_members_at_every_revision(): void
     {
-        $definition = Definitions::for(BlogPostResource::class);
+        Definitions::configure(Configuration::defaults()->withRevisions(ApiRevision::class));
 
-        self::assertSame([], $definition->boundaries);
-        self::assertSame($definition, Definitions::for(BlogPostResource::class, ApiRevision::Initial));
-        self::assertFalse(Definitions::isRevised(BlogPostResource::class));
-        self::assertTrue(Definitions::isRevised(ProfileResource::class));
+        $definition = Definitions::for(TypedResource::class);
+        $initial = Definitions::for(TypedResource::class, ApiRevision::Initial);
+
+        self::assertSame(ApiRevision::Initial, $initial->revision);
+        self::assertSame(array_keys($definition->attributes), array_keys($initial->attributes));
+        self::assertSame($definition->fieldNames, $initial->fieldNames);
     }
 
     public function test_a_resource_since_a_revision_does_not_exist_before_it(): void
     {
+        Definitions::configure(Configuration::defaults()->withRevisions(ApiRevision::class));
+
         self::assertFalse(Definitions::exists(MemberResource::class, ApiRevision::Labels));
         self::assertTrue(Definitions::exists(MemberResource::class, ApiRevision::UsersReplaceTeachers));
         self::assertTrue(Definitions::exists(MemberResource::class, null));
@@ -249,6 +261,8 @@ final class DefinitionsTest extends TestCase
 
     public function test_a_resource_until_a_revision_does_not_exist_after_it(): void
     {
+        Definitions::configure(Configuration::defaults()->withRevisions(ApiRevision::class));
+
         self::assertTrue(Definitions::exists(TeacherResource::class, ApiRevision::Labels));
         self::assertFalse(Definitions::exists(TeacherResource::class, ApiRevision::UsersReplaceTeachers));
         self::assertFalse(Definitions::exists(TeacherResource::class, null));
@@ -256,6 +270,8 @@ final class DefinitionsTest extends TestCase
 
     public function test_load_constraints_follow_the_renamed_relationship(): void
     {
+        Definitions::configure(Configuration::defaults()->withRevisions(ApiRevision::class));
+
         self::assertSame(['remarks'], array_keys(Definitions::loadConstraints(ProfileResource::class)));
         self::assertSame(['comments'], array_keys(Definitions::loadConstraints(ProfileResource::class, ApiRevision::Initial)));
         self::assertSame(['remarks'], array_keys(Definitions::loadConstraints(ProfileResource::class, ApiRevision::Labels)));
@@ -263,52 +279,37 @@ final class DefinitionsTest extends TestCase
 
     public function test_flush_empties_the_definitions_of_the_revisions(): void
     {
+        Definitions::configure(Configuration::defaults()->withRevisions(ApiRevision::class));
+
         $initial = Definitions::for(ProfileResource::class, ApiRevision::Initial);
         Definitions::flush();
 
         self::assertNotSame($initial, Definitions::for(ProfileResource::class, ApiRevision::Initial));
     }
 
-    public function test_a_compiled_file_without_revisions_is_still_read(): void
+    public function test_a_compiled_file_holding_the_head_only_is_read(): void
     {
+        Definitions::configure(Configuration::defaults()->withRevisions(ApiRevision::class));
+
         $head = ResourceDefinition::of(ProfileResource::class, 'preloaded');
         Definitions::preload([ProfileResource::class => $head]);
 
         self::assertSame($head, Definitions::for(ProfileResource::class));
-        // Without boundaries, as a 2.0 file: one shape.
-        self::assertSame($head, Definitions::for(ProfileResource::class, ApiRevision::Initial));
+        // A revision missing from the file is compiled.
+        self::assertSame('profiles', Definitions::for(ProfileResource::class, ApiRevision::Initial)->type);
     }
 
-    public function test_every_revision_missing_from_the_compiled_file_is_compiled_at_once(): void
+    public function test_preloaded_definitions_of_revisions_are_kept_by_revision(): void
     {
-        // A head written alone in the compiled file.
-        Definitions::preload([ProfileResource::class => Definitions::compile(ProfileResource::class)]);
-        // Which engine renders the class is decided once, on a run of its hooks (until every resource is on the base).
-        Definitions::declaresSchema(ProfileResource::class);
-        $reads = ProfileResource::$reads;
+        Definitions::configure(Configuration::defaults()->withRevisions(ApiRevision::class));
 
-        self::assertSame(['name', 'email', 'full_name'], array_keys(Definitions::for(ProfileResource::class, ApiRevision::Initial)->attributes));
-        self::assertSame(['label', 'email', 'full_name'], array_keys(Definitions::for(ProfileResource::class, ApiRevision::Labels)->attributes));
-        self::assertSame($reads + 1, ProfileResource::$reads);
-    }
-
-    public function test_preloaded_definitions_of_revisions_are_kept_by_boundary(): void
-    {
-        $head = ResourceDefinition::of(ProfileResource::class, 'head')->boundaries(ApiRevision::Initial, ApiRevision::Labels);
+        $head = ResourceDefinition::of(ProfileResource::class, 'head');
         $initial = $head->revision(ApiRevision::Initial);
         Definitions::preload([ProfileResource::class => $head, ProfileResource::class . '@Initial' => $initial]);
 
         self::assertSame($initial, Definitions::for(ProfileResource::class, ApiRevision::Initial));
+        self::assertSame($head, Definitions::for(ProfileResource::class, ApiRevision::UsersReplaceTeachers));
         self::assertSame(ApiRevision::Labels, Definitions::for(ProfileResource::class, ApiRevision::Labels)->revision);
-    }
-
-    public function test_the_lifetime_of_a_resource_is_that_of_its_definition(): void
-    {
-        $definition = ResourceDefinition::of(TypedResource::class, 'typed')->lifetime(new Lifetime(until: ApiRevision::Labels));
-        Definitions::preload([TypedResource::class => $definition]);
-
-        self::assertSame(ApiRevision::Labels, Definitions::lifetime(TypedResource::class)->until);
-        self::assertFalse(Definitions::exists(TypedResource::class, null));
     }
 
     public function test_the_projection_is_the_one_the_application_gives(): void
@@ -326,6 +327,8 @@ final class DefinitionsTest extends TestCase
 
     public function test_a_resource_declared_on_the_base_is_defined_from_its_shape_at_the_revision(): void
     {
+        Definitions::configure(Configuration::defaults()->withRevisions(ApiRevision::class));
+
         $initial = Definitions::for(ArticleResource::class, ApiRevision::Initial);
         $head = Definitions::for(ArticleResource::class, ApiRevision::UsersReplaceTeachers);
 
@@ -352,6 +355,8 @@ final class DefinitionsTest extends TestCase
 
     public function test_the_definition_of_a_revision_is_read_once(): void
     {
+        Definitions::configure(Configuration::defaults()->withRevisions(ApiRevision::class));
+
         self::assertSame(
             Definitions::for(ArticleResource::class, ApiRevision::Labels),
             Definitions::for(ArticleResource::class, ApiRevision::Labels),

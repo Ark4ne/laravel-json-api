@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Ark4ne\JsonApi\Configuration;
 
 use Ark4ne\JsonApi\Exceptions\InvalidConfigurationException;
-use DateTimeInterface;
 
 /**
  * Typed, validated and immutable view of `config/jsonapi.php` (docs/architecture.md §2).
@@ -20,11 +19,19 @@ final readonly class Configuration
     public const WHEN_HAS_SCOPES = ['attributes', 'resource-meta', 'meta'];
 
     /**
+     * The keys of 2.x the values no longer read, with what replaces each: the values are rendered by
+     * `ark4ne/laravel-api-revisions`.
+     */
+    public const REMOVED = [
+        'describer.date' => 'the format of a date and time is [revisions.date_time_format], or ->format() on the descriptor',
+        'describer.datetime' => 'the format of a date and time is [revisions.date_time_format], or ->format() on the descriptor',
+        'describer.precision' => 'round the value in its source',
+        'describer.strict' => 'a value its type refuses is reported as [revisions.strict_values] says',
+        'describer.types' => 'register the type with Ark4ne\\ApiRevisions\\Schema\\TypeRegistry::register()',
+    ];
+
+    /**
      * @param bool $nullable Values are nullable unless a descriptor says otherwise (`describer.nullable`)
-     * @param string $datetimeFormat Default format of datetime values (`describer.datetime`)
-     * @param int|null $precision Default precision of float values, `null` for none (`describer.precision`)
-     * @param bool $strict A value that is not nullable and has no meaningful value for `null` throws instead of
-     *                     rendering `null` (`describer.strict`)
      * @param list<string> $whenHas Scopes where `whenHas()` applies automatically (`describer.when-has`)
      * @param Linkage $linkage When a relationship that is not included renders its linkage (`relationship.linkage`)
      * @param SparseRelationships $sparseRelationships How `fields[type]` treats relationships (`fields.relationships`)
@@ -37,16 +44,11 @@ final readonly class Configuration
      *                                           checked and built by the service provider
      * @param positive-int|null $maxIncludeDepth Deepest include path accepted, `null` for no limit (`include.max-depth`)
      * @param TypeNaming $typeNaming The type of a resource that declares none (`type.naming`)
-     * @param array<string, class-string> $valueTypes The value types of the application, by name (`describer.types`);
-     *                                                `Descriptors\ValueTypes` checks they are values
      * @param class-string|null $revisions The revision enum of the application, as `ark4ne/laravel-api-revisions` is
      *                                     configured (`revisions.enum`); `null` for an application without revisions
      */
     private function __construct(
         public bool $nullable,
-        public string $datetimeFormat,
-        public ?int $precision,
-        public bool $strict,
         public array $whenHas,
         public Linkage $linkage,
         public SparseRelationships $sparseRelationships,
@@ -56,7 +58,6 @@ final readonly class Configuration
         public array $errorRenderers,
         public ?int $maxIncludeDepth,
         public TypeNaming $typeNaming,
-        public array $valueTypes,
         public ?string $revisions = null,
     ) {}
 
@@ -67,9 +68,6 @@ final readonly class Configuration
     {
         return new self(
             nullable: true,
-            datetimeFormat: DateTimeInterface::ATOM,
-            precision: null,
-            strict: false,
             whenHas: [],
             linkage: Linkage::Always,
             sparseRelationships: SparseRelationships::Filter,
@@ -79,7 +77,6 @@ final readonly class Configuration
             errorRenderers: [],
             maxIncludeDepth: null,
             typeNaming: TypeConvention::KebabSingular,
-            valueTypes: [],
         );
     }
 
@@ -88,22 +85,20 @@ final readonly class Configuration
      *
      * @param array<array-key, mixed> $config
      *
-     * @throws InvalidConfigurationException when a key has a value of the wrong type, or is a renamed key of 1.x
+     * @throws InvalidConfigurationException when a key has a value of the wrong type, or is a key of 2.x no longer read
      */
     public static function fromArray(array $config): self
     {
         $defaults = self::defaults();
 
-        // `describer.date` formatted the dates of `date()`, which renders `Y-m-d` now: the format is `datetime()`'s.
-        if (is_array($config['describer'] ?? null) && array_key_exists('date', $config['describer'])) {
-            throw InvalidConfigurationException::renamed('describer.date', 'describer.datetime');
+        foreach (self::REMOVED as $key => $instead) {
+            if (!in_array(self::read($config, $key), [null, []], true)) {
+                throw InvalidConfigurationException::removed($key, $instead);
+            }
         }
 
         return new self(
             nullable: self::bool($config, 'describer.nullable', $defaults->nullable),
-            datetimeFormat: self::string($config, 'describer.datetime', $defaults->datetimeFormat),
-            precision: self::precision($config, $defaults->precision),
-            strict: self::bool($config, 'describer.strict', $defaults->strict),
             whenHas: self::whenHas($config, $defaults->whenHas),
             linkage: self::linkage($config, $defaults->linkage),
             sparseRelationships: self::sparseRelationships($config, $defaults->sparseRelationships),
@@ -113,33 +108,6 @@ final readonly class Configuration
             errorRenderers: self::classes($config, 'errors.renderers', 'a list of error renderer classes'),
             maxIncludeDepth: self::maxIncludeDepth($config),
             typeNaming: self::typeNaming($config, $defaults->typeNaming),
-            valueTypes: self::valueTypes($config),
-        );
-    }
-
-    /**
-     * This configuration with one more value type (`JsonApi::valueType()`).
-     *
-     * @throws InvalidConfigurationException when the name or the class is not valid
-     */
-    public function withValueType(string $name, string $class): self
-    {
-        return new self(
-            nullable: $this->nullable,
-            datetimeFormat: $this->datetimeFormat,
-            precision: $this->precision,
-            strict: $this->strict,
-            whenHas: $this->whenHas,
-            linkage: $this->linkage,
-            sparseRelationships: $this->sparseRelationships,
-            resourcePaths: $this->resourcePaths,
-            renderingStages: $this->renderingStages,
-            jsonapi: $this->jsonapi,
-            errorRenderers: $this->errorRenderers,
-            maxIncludeDepth: $this->maxIncludeDepth,
-            typeNaming: $this->typeNaming,
-            valueTypes: self::valueTypes(['describer' => ['types' => [...$this->valueTypes, $name => $class]]]),
-            revisions: $this->revisions,
         );
     }
 
@@ -153,9 +121,6 @@ final readonly class Configuration
     {
         return new self(
             nullable: $this->nullable,
-            datetimeFormat: $this->datetimeFormat,
-            precision: $this->precision,
-            strict: $this->strict,
             whenHas: $this->whenHas,
             linkage: $this->linkage,
             sparseRelationships: $this->sparseRelationships,
@@ -165,7 +130,6 @@ final readonly class Configuration
             errorRenderers: $this->errorRenderers,
             maxIncludeDepth: $this->maxIncludeDepth,
             typeNaming: $this->typeNaming,
-            valueTypes: $this->valueTypes,
             revisions: $revisions,
         );
     }
@@ -182,9 +146,6 @@ final readonly class Configuration
 
         return new self(
             nullable: $this->nullable,
-            datetimeFormat: $this->datetimeFormat,
-            precision: $this->precision,
-            strict: $this->strict,
             whenHas: $this->whenHas,
             linkage: $this->linkage,
             sparseRelationships: $this->sparseRelationships,
@@ -194,7 +155,6 @@ final readonly class Configuration
             errorRenderers: $this->errorRenderers,
             maxIncludeDepth: $this->maxIncludeDepth,
             typeNaming: $this->typeNaming,
-            valueTypes: $this->valueTypes,
             revisions: $this->revisions,
         );
     }
@@ -240,18 +200,6 @@ final readonly class Configuration
         $value = self::read($config, $key) ?? $default;
 
         return is_string($value) ? $value : throw InvalidConfigurationException::forKey($key, 'a string');
-    }
-
-    /**
-     * @param array<array-key, mixed> $config
-     */
-    private static function precision(array $config, ?int $default): ?int
-    {
-        $value = self::read($config, 'describer.precision') ?? $default;
-
-        return $value === null || is_int($value)
-            ? $value
-            : throw InvalidConfigurationException::forKey('describer.precision', 'an integer or null');
     }
 
     /**
@@ -401,36 +349,6 @@ final readonly class Configuration
 
         /** @var list<string> $value */
         return $value;
-    }
-
-    /**
-     * Only the names and the existence of the classes are checked here: `Descriptors\ValueTypes` checks they are
-     * values.
-     *
-     * @param array<array-key, mixed> $config
-     *
-     * @return array<string, class-string>
-     */
-    private static function valueTypes(array $config): array
-    {
-        $value = self::read($config, 'describer.types') ?? [];
-
-        if (!is_array($value)) {
-            throw InvalidConfigurationException::forKey('describer.types', 'an array of value classes by name');
-        }
-
-        $types = [];
-        foreach ($value as $name => $class) {
-            if (!is_string($name) || preg_match('/^[a-z][A-Za-z0-9]*$/', $name) !== 1) {
-                throw InvalidConfigurationException::forKey('describer.types', 'an array keyed by camelCase method names');
-            }
-
-            $types[$name] = is_string($class) && class_exists($class)
-                ? $class
-                : throw InvalidConfigurationException::forKey("describer.types.{$name}", 'an existing class');
-        }
-
-        return $types;
     }
 
     /**

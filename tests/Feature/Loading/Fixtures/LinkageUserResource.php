@@ -34,9 +34,9 @@ final class LinkageUserResource extends JsonApiResource
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'posts' => Schema::relationship($this->many(LinkagePostResource::class)
-                ->withLoad(['posts' => static fn(HasMany $query) => $query->getQuery()->whereKey(range(2, 100, 2))])),
-            'comments' => Schema::relationship($this->many(LinkageCommentResource::class)->whenLoaded()),
+            'posts' => $this->many(LinkagePostResource::class)
+                ->withLoad(['posts' => static fn(HasMany $query) => $query->getQuery()->whereKey(range(2, 100, 2))]),
+            'comments' => $this->many(LinkageCommentResource::class)->whenLoaded(),
         ];
     }
 }

@@ -4,18 +4,13 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Compilation;
 
-use Ark4ne\ApiRevisions\Compilation\Shape;
 use Ark4ne\ApiRevisions\Revisions\Revision;
-use Ark4ne\ApiRevisions\Revisions\RevisionOrder as BaseOrder;
-use Ark4ne\ApiRevisions\Revisions\Unrevisioned;
-use Ark4ne\ApiRevisions\Schema\DeclarationKind;
+use Ark4ne\ApiRevisions\Revisions\RevisionOrder;
 use Ark4ne\JsonApi\Configuration\Configuration;
-use Ark4ne\JsonApi\Definition\AttributeDefinition;
 use Ark4ne\JsonApi\Definition\DefinitionSource;
 use Ark4ne\JsonApi\Definition\Lifetime;
 use Ark4ne\JsonApi\Definition\ResourceDefinition;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
-use Ark4ne\JsonApi\Support\RevisionLabel;
 use Closure;
 use LogicException;
 
@@ -28,29 +23,17 @@ use LogicException;
  */
 final class Definitions
 {
-    /** @var array<class-string<DefinitionSource>, ResourceDefinition> */
+    /** @var array<class-string<DefinitionSource>, array<string, ResourceDefinition>> By class, then revision name */
     private static array $definitions = [];
 
-    /** @var array<class-string<DefinitionSource>, array<string, ResourceDefinition>> By class, then boundary name */
-    private static array $revisions = [];
-
-    /** @var array<string, array<string, array<string, Closure>>> By class, or `class@boundary` */
+    /** @var array<class-string<DefinitionSource>, array<string, array<string, array<string, Closure>>>> By class, then revision name */
     private static array $constraints = [];
 
     /** @var array<class-string<DefinitionSource>, string> */
     private static array $declaredTypes = [];
 
-    /** @var array<class-string<DefinitionSource>, array<string, ResourceDefinition>> By class, then revision */
-    private static array $shapes = [];
-
-    /** @var array<class-string<DefinitionSource>, array<string, ResourceDefinition>> By class, then revision */
-    private static array $projected = [];
-
-    /** @var array<class-string<DefinitionSource>, array<string, array<string, array<string, Closure>>>> By class, then revision */
-    private static array $projectedConstraints = [];
-
-    /** @var array<class-string<DefinitionSource>, bool> Whether a resource is declared with the descriptors of the base */
-    private static array $schemas = [];
+    /** @var array<class-string<DefinitionSource>, Lifetime> */
+    private static array $lifetimes = [];
 
     /** @var array<class-string<DefinitionSource>, array<string, true>> The fields of the code of a resource, by class */
     private static array $fieldsOfTheCode = [];
@@ -61,6 +44,9 @@ final class Definitions
 
     /** Whether the compiled file was read since the last flush. */
     private static bool $compiledRead = false;
+
+    /** The head of the application, read once (`DefinitionCompiler::head()`). */
+    private static ?Revision $head = null;
 
     /**
      * Configuration, not state: how the projection of the running application is found, set once at boot.
@@ -80,6 +66,8 @@ final class Definitions
     {
         self::$configuration = $configuration;
         self::$compiled = $compiled;
+        // Its shapes hold what the hooks read from the configuration (`describer.nullable`).
+        self::$standalone = null;
         self::flush();
     }
 
@@ -120,20 +108,14 @@ final class Definitions
      */
     public static function preload(array $definitions): void
     {
-        foreach ($definitions as $key => $definition) {
-            $boundary = CompiledDefinitions::boundaryOf($key);
-            if ($boundary === null) {
-                self::$definitions[$definition->class] = $definition;
-            } else {
-                self::$revisions[$definition->class][$boundary] = $definition;
-            }
+        foreach ($definitions as $definition) {
+            self::$definitions[$definition->class][($definition->revision ?? self::head())->name] = $definition;
         }
     }
 
     /**
-     * The definition of a resource class at a revision (`null` for the head): read from the compiled file if any (once,
-     * on the first call), otherwise compiled on first use. Two revisions with the same shape share one definition,
-     * whose `revision` is the boundary of that shape; a revision newer than every boundary reads the head.
+     * The definition of a resource class at a revision (`null` for the head, the newest revision of the application):
+     * read from the compiled file if any (once, on the first call), otherwise compiled on first use.
      *
      * @param class-string<DefinitionSource> $class
      *
@@ -142,102 +124,40 @@ final class Definitions
      */
     public static function for(string $class, ?Revision $revision = null): ResourceDefinition
     {
-        $head = self::$definitions[$class] ?? self::head($class);
-        if ($revision === null) {
-            return self::declaresSchema($class) ? self::projected($class, $head, self::newest()) : $head;
+        if (!self::$compiledRead) {
+            self::$compiledRead = true;
+            self::preload(self::$compiled?->read() ?? []);
         }
 
+        $head = self::head();
+        $name = ($revision ?? $head)->name;
+
         // Read once per class and revision: the rendering asks for each resource.
-        return self::$shapes[$class][RevisionLabel::of($revision)] ??= self::declaresSchema($class)
-            ? self::projected($class, self::shape($class, $head, $revision), $revision)
-            : self::shape($class, $head, $revision);
+        return self::$definitions[$class][$name] ??= self::usable(
+            self::compiler()->compile($class, $revision === $head ? null : $revision),
+        );
     }
 
     /**
-     * Whether the values of the resource are declared with the descriptors of the base
-     * (`DefinitionSource::declaresSchema()`): decided once per class, asked for each resource rendered.
+     * A definition whose values could be compiled: one that could not misses its attributes and relationships, and
+     * would make a rule refuse every field or the rendering write an empty resource.
      *
-     * @internal Until every resource is declared so.
-     *
-     * @param class-string<DefinitionSource> $class
+     * @throws DefinitionException when the values of the resource cannot be compiled
      */
-    public static function declaresSchema(string $class): bool
+    private static function usable(ResourceDefinition $definition): ResourceDefinition
     {
-        return self::$schemas[$class] ??= $class::declaresSchema();
-    }
-
-    /**
-     * The head of the application: the newest revision of its enum, the one revision of an application without enum.
-     */
-    private static function newest(): Revision
-    {
-        /** @var class-string<Revision> $enum */
-        $enum = self::configuration()->revisions ?? Unrevisioned::class;
-
-        return BaseOrder::latest($enum);
-    }
-
-    /**
-     * The definition of a resource declared with the descriptors of the base: its attributes, its meta and its
-     * document meta are those of its shape at `$revision`, read from the shapes of the application.
-     *
-     * @param class-string<DefinitionSource> $class
-     */
-    private static function projected(string $class, ResourceDefinition $definition, Revision $revision): ResourceDefinition
-    {
-        return self::$projected[$class][RevisionLabel::of($revision)] ??= (static function () use ($class, $definition, $revision): ResourceDefinition {
-            $shape = self::projection()->shapes->for($class, DeclarationKind::Response, $revision);
-            $object = static fn(string $name): Shape => $shape->field($name)->children
-                ?? throw DefinitionException::cannotCompile($class, new LogicException("The shape has no [{$name}] object."));
-
-            $relationships = $class::describeRelationshipsAt($object('relationships'));
-            self::$projectedConstraints[$class][RevisionLabel::of($revision)] = array_filter(array_combine(
-                array_map(static fn(array $described): string => $described[0]->name, $relationships),
-                array_column($relationships, 1),
-            ));
-
-            // What the shape does not hold: the fields rendered only when the sparse fieldset names them.
-            $names = SchemaAttributes::names($object('attributes'));
-            $sparse = array_flip(array_intersect_key($names, array_flip($class::sparseAttributes())));
-            $attributes = array_map(
-                static fn(AttributeDefinition $attribute): AttributeDefinition => isset($sparse[$attribute->name]) ? $attribute->sparse() : $attribute,
-                SchemaAttributes::of($object('attributes')),
-            );
-
-            return $definition
-                ->relationships(...array_column($relationships, 0))
-                ->attributes(...$attributes)
-                ->meta(...SchemaAttributes::of($object('meta')))
-                ->documentMeta(...SchemaAttributes::of($object('documentMeta')))
-                ->fieldNames([...SchemaAttributes::names($object('attributes')), ...SchemaAttributes::names($object('relationships'))]);
-        })();
-    }
-
-    /**
-     * @param class-string<DefinitionSource> $class
-     *
-     * @throws DefinitionException when the resource does not exist at `$revision`
-     */
-    private static function shape(string $class, ResourceDefinition $head, Revision $revision): ResourceDefinition
-    {
-        $boundary = $head->existsAt($revision) ? $head->boundaryOf($revision) : null;
-        if ($boundary !== null && !isset(self::$revisions[$class][$boundary->name])) {
-            // A boundary of the head missing from the compiled file (a file written by hand): every shape is compiled
-            // with one run of the hooks, and kept. A file written from older code is stale, revisions or not, as for
-            // any change of the code: `jsonapi:cache` writes it again.
-            foreach (self::compiler()->compileEvery($class) as $definition) {
-                if ($definition->revision !== null) {
-                    self::$revisions[$class][$definition->revision->name] ??= $definition;
-                }
+        foreach ($definition->diagnostics as $diagnostic) {
+            if ($diagnostic->code === DefinitionCompiler::INVALID_DECLARATION) {
+                throw DefinitionException::cannotCompile($definition->class, new LogicException($diagnostic->message));
             }
         }
 
-        return DefinitionCompiler::shapeOf([$head, ...array_values(self::$revisions[$class] ?? [])], $revision);
+        return $definition;
     }
 
     /**
-     * Whether a shape of the resource, the head or one of its revisions, has the attribute or relationship of the code
-     * `$field`: what a helper of a resource declaring revisions may name. Computed once per class.
+     * Whether a shape of the resource, at any revision, has the attribute or relationship of the code `$field`: what
+     * a helper of a resource may name. Computed once per class.
      *
      * @internal Read by the helpers of the resources (`whenInFields()`, `whenInIncludes()`).
      *
@@ -248,15 +168,12 @@ final class Definitions
     public static function declaresField(string $class, string $field): bool
     {
         if (!isset(self::$fieldsOfTheCode[$class])) {
-            $head = self::for($class);
-            $fields = $head->fieldNames;
-            // Declared on the base: any revision may hold a field the others do not.
-            $revisions = self::declaresSchema($class)
-                ? BaseOrder::between(BaseOrder::oldest(self::newest()::class), self::newest())
-                : $head->boundaries;
-            foreach ($revisions as $boundary) {
-                if (self::exists($class, $boundary)) {
-                    $fields += self::for($class, $boundary)->fieldNames;
+            $head = self::head();
+            $fields = [];
+            // Any revision may hold a field the others do not.
+            foreach (RevisionOrder::between(RevisionOrder::oldest($head::class), $head) as $revision) {
+                if (self::exists($class, $revision)) {
+                    $fields += self::for($class, $revision)->fieldNames;
                 }
             }
 
@@ -271,37 +188,14 @@ final class Definitions
      *
      * @param class-string<DefinitionSource> $class
      *
-     * @throws DefinitionException when the class is not a resource or cannot be compiled
+     * @throws DefinitionException when the class is not a resource
      */
     public static function exists(string $class, ?Revision $revision): bool
     {
         // Asked for every resource rendered: a resource without lifetime answers without comparing revisions.
-        $head = self::$definitions[$class] ?? self::head($class);
+        $lifetime = self::lifetime($class);
 
-        return ($head->since === null && $head->until === null) || $head->existsAt($revision);
-    }
-
-    /**
-     * Whether a hook of the resource declares a revision (`was()`, `until()`, `since()`): its members are transformed
-     * when rendered, at the head too (a field `until()` a revision is left out of it).
-     *
-     * @internal Read by the renderer, for its fast path.
-     *
-     * @param class-string<DefinitionSource> $class
-     *
-     * @throws DefinitionException when the class is not a resource or cannot be compiled
-     */
-    public static function isRevised(string $class): bool
-    {
-        // Declared on the base: its names are always those of the shape of the revision.
-        if (self::declaresSchema($class)) {
-            return true;
-        }
-
-        $head = self::$definitions[$class] ?? self::head($class);
-
-        // The names: also set when the revisions mix two enums, whose fields `until()` are left out of the head too.
-        return $head->boundaries !== [] || $head->fieldNames !== [];
+        return ($lifetime->since === null && $lifetime->until === null) || $lifetime->covers($revision ?? self::head());
     }
 
     /**
@@ -329,14 +223,9 @@ final class Definitions
      */
     public static function loadConstraints(string $class, ?Revision $revision = null): array
     {
-        $definition = self::for($class, $revision);
+        $revision ??= self::head();
 
-        if (self::declaresSchema($class)) {
-            // Gathered with the definition of the revision.
-            return self::$projectedConstraints[$class][RevisionLabel::of($revision ?? self::newest())] ?? [];
-        }
-
-        return self::$constraints[CompiledDefinitions::key($definition)] ??= self::compiler()->loadConstraints($class, $definition->revision);
+        return self::$constraints[$class][$revision->name] ??= self::compiler()->loadConstraints($class, $revision);
     }
 
     /**
@@ -353,28 +242,30 @@ final class Definitions
     }
 
     /**
-     * The revisions a resource exists for: those of its definition (`#[JsonApiSince]`, `#[JsonApiUntil]`, or its own
-     * when written by hand).
+     * The revisions a resource exists for (`#[JsonApiSince]`, `#[JsonApiUntil]`).
      *
      * @param class-string<DefinitionSource> $class
      *
-     * @throws DefinitionException when the class is not a resource or cannot be compiled
+     * @throws DefinitionException when the class is not a resource
      */
     public static function lifetime(string $class): Lifetime
     {
-        $head = self::head($class);
-
-        return new Lifetime($head->since, $head->until);
+        return self::$lifetimes[$class] ??= self::compiler()->lifetime($class);
     }
 
     /**
-     * Every definition in the cache, by class.
+     * The head definition of every resource in the cache, by class.
      *
      * @return array<class-string<DefinitionSource>, ResourceDefinition>
      */
     public static function all(): array
     {
-        return self::$definitions;
+        $head = self::head()->name;
+
+        return array_filter(array_map(
+            static fn(array $definitions): ?ResourceDefinition => $definitions[$head] ?? null,
+            self::$definitions,
+        ));
     }
 
     /**
@@ -384,43 +275,20 @@ final class Definitions
     public static function flush(): void
     {
         self::$definitions = [];
-        self::$revisions = [];
         self::$constraints = [];
         self::$declaredTypes = [];
-        self::$shapes = [];
-        self::$projected = [];
-        self::$schemas = [];
-        self::$projectedConstraints = [];
+        self::$lifetimes = [];
         self::$fieldsOfTheCode = [];
         self::$compiledRead = false;
+        self::$head = null;
     }
 
     /**
-     * The head definition of a resource class: read from the compiled file if any (once, on the first call),
-     * otherwise compiled on first use with every shape of the class, its hooks run once.
-     *
-     * @param class-string<DefinitionSource> $class
-     *
-     * @throws DefinitionException when the class is not a resource or cannot be compiled
+     * The head of the application: the newest revision of its enum, the one revision of an application without enum.
      */
-    private static function head(string $class): ResourceDefinition
+    public static function head(): Revision
     {
-        if (!self::$compiledRead) {
-            self::$compiledRead = true;
-            self::preload(self::$compiled?->read() ?? []);
-        }
-
-        if (!isset(self::$definitions[$class])) {
-            $every = self::compiler()->compileEvery($class);
-            self::$definitions[$class] = $every[0];
-            foreach ($every as $revised) {
-                if ($revised->revision !== null) {
-                    self::$revisions[$class][$revised->revision->name] = $revised;
-                }
-            }
-        }
-
-        return self::$definitions[$class];
+        return self::$head ??= self::compiler()->head();
     }
 
     /**
@@ -430,6 +298,6 @@ final class Definitions
      */
     public static function compiler(): DefinitionCompiler
     {
-        return new DefinitionCompiler(self::configuration());
+        return new DefinitionCompiler(self::configuration(), self::projection());
     }
 }

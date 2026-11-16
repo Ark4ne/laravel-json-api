@@ -29,7 +29,7 @@ final class CacheDefinitionsCommand extends Command
 
     public function handle(Configuration $configuration, ResourceFinder $finder, CompiledDefinitions $compiled): int
     {
-        $compiler = new DefinitionCompiler($configuration);
+        $compiler = new DefinitionCompiler($configuration, Definitions::projection());
         $definitions = [];
         $resources = [];
         $invalid = [];
@@ -48,12 +48,13 @@ final class CacheDefinitionsCommand extends Command
                 $resources[$class] = true;
             }
 
-            // The head carries the diagnostics of every revision.
-            foreach ($every[0]->diagnostics as $diagnostic) {
-                if ($diagnostic->level === DiagnosticLevel::Error) {
-                    $invalid[] = $class;
+            foreach ($every as $definition) {
+                foreach ($definition->diagnostics as $diagnostic) {
+                    if ($diagnostic->level === DiagnosticLevel::Error) {
+                        $invalid[] = $class;
 
-                    break;
+                        continue 3;
+                    }
                 }
             }
         }

@@ -6,18 +6,16 @@ namespace Ark4ne\JsonApi\Resources;
 
 use Ark4ne\ApiRevisions\Schema\HasLifetime;
 use Ark4ne\ApiRevisions\Schema\Revisioned;
-use Ark4ne\JsonApi\Compilation\Definitions;
+use Ark4ne\ApiRevisions\Schema\TypeRegistry;
 use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Definition\DefinitionSource;
 use Ark4ne\JsonApi\Descriptors;
-use Ark4ne\JsonApi\Descriptors\ValueTypes;
 use Ark4ne\JsonApi\Loading\LoadPlanner;
 use Ark4ne\JsonApi\Rendering\Document;
 use Ark4ne\JsonApi\Rendering\DocumentBuilder;
 use Ark4ne\JsonApi\Rendering\IncludedRegistry;
 use Ark4ne\JsonApi\Rendering\RenderableResource;
 use Ark4ne\JsonApi\Rendering\ResourceObjectRenderer;
-use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -29,8 +27,8 @@ abstract class JsonApiResource extends JsonResource implements DefinitionSource,
 {
     /** @use Descriptors\Relations<T> */
     use Descriptors\Relations;
-    /** @use Descriptors\Values<T> */
-    use Descriptors\Values;
+    /** @use Concerns\DescribesValues<T> */
+    use Concerns\DescribesValues;
     use Concerns\Relationize;
     use Concerns\Identifier;
     use Concerns\Attributes;
@@ -58,16 +56,9 @@ abstract class JsonApiResource extends JsonResource implements DefinitionSource,
      */
     public function __call($method, $parameters): mixed
     {
-        $configuration = Definitions::configuration();
-
-        if (isset($configuration->valueTypes[$method])) {
-            $attribute = $parameters[0] ?? null;
-
-            return ValueTypes::make(
-                $configuration,
-                $method,
-                is_string($attribute) || $attribute instanceof Closure ? $attribute : null,
-            );
+        // A type the application registered in `ark4ne/laravel-api-revisions` (`TypeRegistry::register('money', …)`).
+        if (TypeRegistry::has($method)) {
+            return TypeRegistry::make($method, array_values($parameters));
         }
 
         return parent::__call($method, $parameters);

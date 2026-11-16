@@ -248,7 +248,7 @@ final class NodeResource extends JsonApiResource
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'child' => Schema::relationship($this->one(self::class)),
+            'child' => $this->one(self::class),
         ];
     }
 }

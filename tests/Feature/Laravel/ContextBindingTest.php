@@ -91,19 +91,17 @@ final class ContextBindingTest extends TestCase
 
     public function test_a_published_configuration_missing_a_nested_key_takes_the_default_of_the_package(): void
     {
-        putenv('APP_DEBUG=true');
-
         try {
-            // A configuration published before `describer.strict` existed.
+            // A configuration published before `relationship.linkage` existed.
             config()->set('jsonapi', ['describer' => ['nullable' => false]]);
             app()->forgetInstance(Configuration::class);
 
             $configuration = app(Configuration::class);
 
             self::assertFalse($configuration->nullable);
-            self::assertTrue($configuration->strict);
+            self::assertSame(Configuration::defaults()->linkage, $configuration->linkage);
+            self::assertSame(Configuration::defaults()->whenHas, $configuration->whenHas);
         } finally {
-            putenv('APP_DEBUG');
             app()->forgetInstance(Configuration::class);
         }
     }
