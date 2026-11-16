@@ -149,7 +149,7 @@ declared on the fields that changed. Bounds are inclusive.
 | --- | --- |
 | `enum ApiRevision: string implements Ark4ne\ApiRevisions\Revisions\Revision` | The revisions, with `use IsRevision;`, `order()` (oldest first, the last one is the head) and `#[Meta('…')]` on the cases; named by `'enum'` in `config/revisions.php` (`ark4ne/laravel-api-revisions`) |
 | `->middleware('revision')` | The middleware of `ark4ne/laravel-api-revisions`: resolves the revision of the request (the resolvers of `config/revisions.php`, the head by default, 400 for an unknown value), read by the rendering and the `JsonApiFormRequest` |
-| `->was(X, name: …, schema: …, down: …)` | The field up to `X` (`ark4ne/laravel-api-revisions`): write `was(<the newest revision until now>)`; an argument left out is the head's; the changes chain from the head down to the client's revision |
+| `->was(X, name: …, schema: …, down: …)` | The field up to `X` (`ark4ne/laravel-api-revisions`): write `was(<the newest revision until now>)`; the changes chain from the head down to the client's revision, an argument left out keeps the next newer shape |
 | `->until(X)`, `->since(X)` | A field removed after `X` (kept at the end of the hook, under `// Revisions`), added at `X` |
 | `#[Definition\JsonApiSince(X)]`, `#[Definition\JsonApiUntil(X)]` | A new type is a new resource; every relationship reaching it needs a `was()` to the old one |
 | `ApiRevision::current()` | Guards of a change of meaning, anywhere: `->isAtMost(X)`, `->isAtLeast(X)`, `->isBefore(X)`, `->isAfter(X)`; `ApiRevision::using(X, fn() => …)` renders at `X` |

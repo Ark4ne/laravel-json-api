@@ -28,15 +28,16 @@ migration from 1.x).
 | Path                         | Type                     | Description                                                                             |
 |------------------------------|--------------------------|-----------------------------------------------------------------------------------------|
 | `describer.nullable`         | `bool`                   | For describer notation, defined if a value is nullable by default.                      |
-| `describer.datetime`         | `string` datetime format | Default format of `$this->datetime()`.                                                  |
-| `describer.precision`        | `int` \ `null`           | For describer notation, decimal precision for float value. `null` for disable rounding. |
-| `describer.strict`           | `bool`                   | A value that is not nullable and has no value for `null` (a date) throws instead of rendering `null`. `APP_DEBUG` by default. |
 | `describer.when-has`         | `bool` \ `string[]`      | For describer notation, Apply automatically whenHas condition on attributes.            |
 | `relationship.linkage`       | `'always'` \ `'loaded'` \ `'included'` | When a relationship that is not included renders its `data`: always, only when already loaded, only when included. See [Linkage and loading](#linkage-and-loading). |
 | `fields.relationships`       | `'filter'` \ `'keep'`    | `fields[type]` restricts the relationships too (`filter`, JSON:API) or not (`keep`, 1.x). |
 | `include.max-depth`          | `int` \ `null`           | Deepest include path accepted; nothing deeper is loaded nor rendered. `null`: no limit.  |
 | `document.jsonapi`           | `array` \ `false`        | Top-level `jsonapi` member (`version`, `ext`, `profile`, `meta`); `false` to omit it.   |
 | `rendering.stages`           | `class-string[]`         | Rendering stages (`Ark4ne\JsonApi\Rendering\Stage`) run after those of the package.    |
+
+The values are rendered by [`ark4ne/laravel-api-revisions`](https://github.com/Ark4ne/laravel-api-revisions): the
+format of a date and time (`date_time_format`), what a value its type refuses does (`strict_values`) and the
+revisions of the API (`enum`, `resolvers`) are set in its `config/revisions.php`.
 
 # Usage
 This package is a specialisation of Laravel's `JsonResource` class.
@@ -159,6 +160,7 @@ The messages are translations of the package: `php artisan vendor:publish --tag=
 | `jsonapi::validation.includes.invalid`        | The selected :attribute is invalid.                            |
 | `jsonapi::validation.includes.invalid_includes` | ":include" doesn't have relationship ":relation".            |
 | `jsonapi::validation.includes.invalid_depth`  | ":include" is deeper than the maximum include depth of :depth. |
+| `jsonapi::validation.linkage.missing`         | The :attribute field must be present, it may be null.          |
 
 ## Errors
 **@see** _[{json:api} errors](https://jsonapi.org/format/#errors)_
@@ -290,31 +292,38 @@ class UserResource extends JsonApiResource
     public function toAttributes(Request $request): iterable
     {
         return [
-            'name' => $this->name,
-            'email' => $this->email,
+            'name' => $this->string(),
+            'email' => $this->string(),
         ];
     }
 
     protected function toResourceMeta(Request $request): ?iterable
     {
         return [
-            'created_at' => $this->created_at->format(DateTimeInterface::ATOM),
-            'updated_at' => $this->updated_at->format(DateTimeInterface::ATOM),
+            'created_at' => $this->datetime(),
+            'updated_at' => $this->datetime(),
         ];
     }
 
     protected function toRelationships(Request $request): iterable
     {
         return [
-            'posts' => PostResource::relationship(fn() => $this->posts, fn() => [
-                'self' => "https://api.example.com/user/{$this->id}/relationships/posts",
-                'related' => "https://api.example.com/user/{$this->id}/posts",
-            ]),
-            'comments' => CommentResource::relationship(fn() => $this->whenLoaded('comments')),
+            'posts' => $this->many(PostResource::class)->links(
+                self: fn() => "https://api.example.com/user/{$this->resource->id}/relationships/posts",
+                related: fn() => "https://api.example.com/user/{$this->resource->id}/posts",
+            ),
+            'comments' => $this->many(CommentResource::class)->whenLoaded(),
         ];
     }
 }
 ```
+
+Every member of `toAttributes()`, `toRelationships()`, `toResourceMeta()` and `toDocumentMeta()` is **declared**,
+under its name: a descriptor (`$this->string()`, `$this->one()`… or `Schema::string()` of
+`ark4ne/laravel-api-revisions`, which renders the values) or a closure. These hooks run **once per response**, on a
+template instance whose `$this->resource` is set to each model before its values are read: a closure reads the
+model of each resource, an expression evaluated in the hook (`'name' => $this->resource->name`) would be the same
+for all of them and is refused.
 
 ### Generate a resource
 
@@ -344,19 +353,17 @@ class UserResource extends JsonApiResource
     public function toAttributes(Request $request): iterable
     {
         return [
-            // $this->resource is a User; the descriptor is a ValueString<User>
+            // $this->resource is a User; the descriptor is a StringSchema
             'name' => $this->string(),
-            // the closures of the descriptors receive the User
-            'email' => $this->string(fn(User $user) => $user->email)->when(fn($request, User $user) => $user->isAdmin()),
-            // MissingValue|bool
-            'admin' => $this->when($request->user()?->is($this->resource) ?? false, fn() => $this->resource->isAdmin()),
+            // the closure of a helper receives the User; a condition, the value and the User
+            'email' => $this->string(fn(User $user) => $user->email)->when(fn($value, User $user) => $user->isAdmin()),
+            // a relationship is a RelationshipSchema<User>
         ];
     }
 }
 ```
 
-The hooks need no `@return`: they inherit that of the parent (`Relation<User>`, `Value<User>`). An annotation of your
-own names the model: `@return iterable<string, Relation<User>>`, not `Relation<mixed>`.
+The hooks need no `@return`: they inherit that of the parent.
 
 ### Definition
 
@@ -369,12 +376,10 @@ Hence a few rules:
 - **No `if` on the request in a hook.** The definition sees an empty request: a member added by an `if` is missing
   from it, so it cannot be requested nor included. Write conditions with `->when()`, `->unless()` or
   `$this->applyWhen()`.
-- **Prefer lazy values.** A described value (`$this->string()`) or a closure is typed and computed only when
-  requested; a value read eagerly (`'name' => $this->name`) has an unknown type.
-- **Group conditional members with `applyWhen()`.** The members of `mergeWhen()` and `mergeUnless()` are missing
-  from the definition whatever the condition, with a `merge-when` warning: they are rendered, but cannot be requested
-  by `fields` nor included, and their relations are not eager-loaded. Their `was()`, `since()` and `until()` may not
-  apply either.
+- **Declare every value.** A described value (`$this->string()`) is typed and computed only when requested; a
+  closure is a value of any type. A value read in the hook (`'name' => $this->resource->name`), a member without
+  name, Laravel's `$this->when()` and `$this->mergeWhen()` are refused: the hooks run once per response.
+- **Group conditional members with `applyWhen()`.** Its condition is a closure, read for each resource.
 
 `php artisan jsonapi:check` reports what breaks these rules (`--strict` fails on warnings too), and
 `php artisan jsonapi:cache` (run by `php artisan optimize`) compiles every definition for production.
@@ -434,8 +439,8 @@ Returns resource attributes.
 public function toAttributes(Request $request): iterable
 {
     return [
-        'name' => $this->name,
-        'email' => $this->email,
+        'name' => $this->string(),
+        'email' => $this->string(),
     ];
 }
 ```
@@ -444,26 +449,26 @@ Without `toAttributes()`, the attributes of the model are rendered (`attributesT
 `$appends` applied), without its key, `id`, `type` and the foreign keys of the relationships declared in
 `toRelationships()`: JSON:API represents them as relationships.
 
-#### Laravel conditional attributes 
-_**@see** [laravel: eloquent-conditional-attributes](https://laravel.com/docs/9.x/eloquent-resources#conditional-attributes)_
+#### Conditional attributes
 
-Support laravel conditional attributes.
+A condition is a closure, read for each resource: `->when()`, `->unless()`, `->whenNotNull()`, `->whenFilled()`,
+`->whenHas()`, `->whenLoaded()`, `->whenAppended()` and `->whenInFields()` on a descriptor, `$this->applyWhen()` for
+several members. Laravel's `$this->when($condition, $value)` and `$this->mergeWhen()` are evaluated when the hook
+runs, once for the whole response: they are refused.
 
 ```php
-public function toAttributes(Request $request): array
+public function toAttributes(Request $request): iterable
 {
     return [
-        'name' => $this->name,
-        'email' => $this->email,
-        // with lazy evaluation
-        'hash64' => fn() => base64_encode("{$this->id}-{$this->email}"),
-        // Conditional attribute
-        'secret' => $this->when($request->user()->isAdmin(), 'secret-value'),       
-        // Merging Conditional Attributes: applyWhen keeps them in the definition,
-        // mergeWhen hides them (fields validation, eager-loads) with a diagnostic
-        $this->applyWhen($request->user()->isAdmin(), [
-            'first-secret' => 123,
-            'second-secret' => 456.789,
+        'name' => $this->string(),
+        // a value of any type, computed for each resource
+        'hash64' => fn() => base64_encode("{$this->resource->id}-{$this->resource->email}"),
+        // a conditional attribute: the closure receives the value and the model
+        'secret' => $this->string()->when(fn() => $request->user()?->isAdmin() ?? false),
+        // several members under one condition
+        $this->applyWhen(fn() => $request->user()?->isAdmin() ?? false, [
+            'first-secret' => $this->integer(fn() => 123),
+            'second-secret' => $this->float(fn() => 456.789),
         ]),
     ];
 }
@@ -473,21 +478,16 @@ public function toAttributes(Request $request): array
 _**@see** [described notation](#described-notation)_
 
 ```php
-public function toAttributes(Request $request): array
+public function toAttributes(Request $request): iterable
 {
     return [
         'name' => $this->string(),
-        // pass key to describer
-        $this->string('email'),
-        // with lazy evaluation
-        'hash64' => $this->string(fn() => base64_encode("{$this->id}-{$this->email}")),
-        // Conditional attribute
-        $this->string('secret')->when($request->user()->isAdmin(), 'secret-value'),       
-        // Merging Conditional Attributes
-        $this->applyWhen($request->user()->isAdmin(), [
-            'first-secret' => $this->integer(fn() => 123),
-            'second-secret' => $this->float(fn() => 456.789),
-        ]),
+        // read from another key of the model
+        'mail' => $this->string('email'),
+        // computed: the closure receives the model
+        'hash64' => $this->string(fn(User $user) => base64_encode("{$user->id}-{$user->email}")),
+        // with its history across the revisions of the API
+        'title' => $this->string()->was(ApiRevision::Initial, name: 'name'),
     ];
 }
 ```
@@ -497,48 +497,29 @@ _**@see** [{json:api} resources-relationships](https://jsonapi.org/format/#docum
 
 Returns resource relationships.
 
-All relationships **must** be created with `ModelResource::relationship`. 
-This allows the [definition](#definition) of the resource and thus the validation of request includes.
+A relationship is declared with `$this->one()`, `$this->many()`, `$this->morph()` or `$this->morphMany()`
+([described notation](#described-notation)), or with `ModelResource::relationship(fn() => …)` when its value is read
+by a closure. This allows the [definition](#definition) of the resource and thus the validation of request includes.
 
-If your relation should have been a collection created via the `::collection(...)` method, you can simply use `->asCollection()`.
-
-If you want the relation data to be rendered only when it is present in the request include, you can use the `->whenIncluded()` method (see [Linkage and loading](#linkage-and-loading)).
+`->asCollection()` makes a `::relationship()` a to-many one. `->whenIncluded()` renders the linkage only when the
+relationship is included (see [Linkage and loading](#linkage-and-loading)).
 
 ```php
-protected function toRelationships(Request $request): array
+protected function toRelationships(Request $request): iterable
 {
     return [
-        'avatar' => AvatarResource::relationship($this->avatar),
-        // with conditional relationship
-        'administrator' => $this->when($request->user()->isAdmin(), UserResource::relationship(fn() => $this->administrator)),
-        // as collection, with conditional value
-        'comments' => CommentResource::relationship(fn() => $this->whenLoaded('comments'))->asCollection(),
-        // with relationship (allow to include links and meta on relation)
-        'posts' => PostResource::relationship(fn() => $this->posts)->links(fn() => [
-            'self' => "https://api.example.com/user/{$this->id}/relationships/posts",
-            'related' => "https://api.example.com/user/{$this->id}/posts",
+        'avatar' => AvatarResource::relationship(fn() => $this->resource->avatar),
+        // as collection
+        'comments' => CommentResource::relationship(fn() => $this->resource->comments)->asCollection(),
+        // with links and meta on the relationship
+        'posts' => PostResource::relationship(fn() => $this->resource->posts)->links(fn() => [
+            'self' => "https://api.example.com/user/{$this->resource->id}/relationships/posts",
+            'related' => "https://api.example.com/user/{$this->resource->id}/posts",
         ])->asCollection(),
-    ];
-}
-```
-
-`toRelationships` must returns an array, keyed by string, of `JsonApiResource` or `JsonApiCollection`.
-
-#### Laravel conditional relationships
-_**@see** [laravel: eloquent-conditional-relationships](https://laravel.com/docs/9.x/eloquent-resources#conditional-relationships)_
-
-Support laravel conditional relationships.
-
-```php
-protected function toRelationships(Request $request): array
-{
-    return [
-        'avatar' => AvatarResource::relationship($this->avatar),
-        // as collection, with condition
-        'comments' => CommentResource::relationship(fn() => $this->whenLoaded('comments'))->asCollection(),
-        // with relationship (allow to include links and meta on relation)
-        'posts' => PostResource::relationship(fn() => $this->posts)
-                ->asCollection(),
+        // conditional relationships: the condition is a closure, read for each resource
+        $this->applyWhen(fn() => $request->user()?->isAdmin() ?? false, [
+            'administrator' => UserResource::relationship(fn() => $this->resource->administrator),
+        ]),
     ];
 }
 ```
@@ -547,7 +528,7 @@ protected function toRelationships(Request $request): array
 _**@see** [described notation](#described-notation)_
 
 ```php
-protected function toRelationships(Request $request): array
+protected function toRelationships(Request $request): iterable
 {
     return [
         'avatar' => $this->one(AvatarResource::class),
@@ -563,7 +544,7 @@ protected function toRelationships(Request $request): array
                     related: fn() => "https://api.example.com/users/{$this->resource->id}/posts",
                 )
                 ->meta(fn() => [
-                    'total' => $this->integer(fn() => $this->resource->posts()->count()),
+                    'total' => $this->resource->posts()->count(),
                 ]),
     ];
 }
@@ -578,7 +559,7 @@ Laravel's `Model::toResource()` does.
 #[JsonApiModel(Post::class)] // optional when the convention applies: App\Http\Resources\PostResource → App\Models\Post
 class PostResource extends JsonApiResource
 {
-    protected function toRelationships(Request $request): array
+    protected function toRelationships(Request $request): iterable
     {
         return [
             'user' => $this->one(),              // the relation `user`
@@ -605,16 +586,16 @@ _**@see** [{json:api}: relation-meta](https://jsonapi.org/format/#document-resou
 Returns links and meta for a relation.
 
 ```php
-protected function toRelationships(Request $request): array
+protected function toRelationships(Request $request): iterable
 {
     return [
-        'posts' => PostResource::relationship(fn() => $this->posts)->links(fn() => [
+        'posts' => PostResource::relationship(fn() => $this->resource->posts)->links(fn() => [
             // links
-            'self' => "https://api.example.com/user/{$this->id}/relationships/posts",
-            'related' => "https://api.example.com/user/{$this->id}/posts",
+            'self' => "https://api.example.com/user/{$this->resource->id}/relationships/posts",
+            'related' => "https://api.example.com/user/{$this->resource->id}/posts",
         ])->meta(fn() => [
             // meta
-            'creator' => $this->name,
+            'creator' => $this->resource->name,
         ])
         ->asCollection(),
     ];
@@ -640,7 +621,7 @@ The `meta()` of a relationship describes the relationship as a whole. Data that 
 resource, such as a pivot, goes to the meta of its resource identifier: the closure receives each related resource.
 
 ```php
-protected function toRelationships(Request $request): array
+protected function toRelationships(Request $request): iterable
 {
     return [
         'tags' => $this->many(TagResource::class)
@@ -682,7 +663,7 @@ Returns resource links.
 protected function toLinks(Request $request): ?array
 {
     return [
-        'self' => route('api.user.show', ['id' => $this->id]),
+        'self' => route('api.user.show', ['id' => $this->resource->id]),
     ];
 }
 ```
@@ -722,8 +703,8 @@ Returns resource meta.
 protected function toResourceMeta(Request $request): ?iterable
 {
     return [
-        'created_at' => $this->created_at->format(DateTimeInterface::ATOM),
-        'updated_at' => $this->updated_at->format(DateTimeInterface::ATOM),
+        'created_at' => $this->datetime(),
+        'updated_at' => $this->datetime(),
     ];
 }
 ```
@@ -738,7 +719,7 @@ Returns document meta (`toMeta()` in 1.x: a resource or a collection still decla
 protected function toDocumentMeta(Request $request): ?iterable
 {
     return [
-        'copyright' => 'Copyright 2022 My Awesome Api',
+        'copyright' => fn() => 'Copyright 2022 My Awesome Api',
     ];
 }
 ```
@@ -785,62 +766,80 @@ UserResource::collection(User::query()->paginate()); // ?page=2
 ## Described notation
 
 ### Value methods
-| Method    | Description                                                     |
-|-----------|-----------------------------------------------------------------|
-| `bool`    | Cast to boolean                                                 |
-| `integer` | Cast to integer                                                 |
-| `float`   | Cast to float, rounded to `->precision(2)`, or `->truncate()`d  |
-| `string`  | Cast to string                                                  |
-| `date`    | Date without time, `Y-m-d` unless `->format()`; `null` stays `null` |
-| `datetime`| Date and time, `describer.datetime` unless `->format()`         |
-| `time`    | Time of day, `H:i:s` unless `->format()`                        |
-| `decimal` | Exact decimal as a string (`"12.50"`), `->scale(2)`; no float   |
-| `uuid`    | UUID object or string, as a string                              |
-| `ulid`    | ULID object or string, as a string                              |
-| `json`    | JSON string, rendered decoded                                   |
-| `array`   | Cast to array, supports typed arrays with `->of()`              |
-| `arrayOf` | Helper method for typed arrays (alternative to `array()->of()`) |
-| `mixed`   | Don't cast, return as is                                        |
-| `enum`    | Get enum value                                                  |
-| `struct`  | Custom struct. Accept an array of values                        |
+
+Each helper returns the descriptor of [`ark4ne/laravel-api-revisions`](https://github.com/Ark4ne/laravel-api-revisions)
+of its type (`$this->string()` is its `Schema::string()`), which renders the value. Its argument is the key of the
+model the value is read from (the name of the member by default), or a closure receiving the model.
+
+| Method    | Description                                                        |
+|-----------|--------------------------------------------------------------------|
+| `bool`    | A boolean                                                          |
+| `integer` | An integer                                                         |
+| `float`   | A float                                                            |
+| `string`  | A string                                                           |
+| `date`    | Date without time, `Y-m-d`                                         |
+| `datetime`| Date and time, `revisions.date_time_format` unless `->format()`    |
+| `time`    | Time of day, `H:i:s`                                               |
+| `decimal` | Exact decimal as a string (`"12.50"`), `->scale(2)`; no float      |
+| `uuid`    | A string of format `uuid`                                          |
+| `ulid`    | A string of format `ulid`                                          |
+| `json`    | JSON string, rendered decoded                                      |
+| `array`   | A list of values of any type                                       |
+| `arrayOf` | A list of values of one type: `$this->arrayOf($this->string())`    |
+| `mixed`   | A value of any type, rendered as it is                             |
+| `enum`    | The value of a backed enum: `$this->enum(State::class)`            |
+| `struct`  | An object of named members: `$this->struct(['city' => $this->string()])` |
+
+A value is nullable when `describer.nullable` says so (`->nullable(false)` otherwise). A value its type refuses (a
+`null` that is not nullable, a string where an integer is declared) is a value error of the base: it throws in debug,
+and is reported and cast otherwise (`revisions.strict_values`). A float is not rounded: round it in its source
+(`$this->float(fn(Post $post) => round($post->rating, 1))`).
+
+Every descriptor takes the conditions (`->when()`, `->unless()`, `->whenNotNull()`, `->whenFilled()`, `->whenHas()`,
+`->whenLoaded()`, `->whenAppended()`, `->whenInFields()`), the documentation (`->describe()`, `->example()`,
+`->deprecated()`) and the history (`->was()`, `->since()`, `->until()`: [Versioned resources](#versioned-resources))
+of the base.
 
 #### Value types of the application
 
-Each value type gives the definition its `ValueType` and a format (`uuid`, `decimal`, the PHP format of a date…), read
-by the tools that document the resources. A value type of your own extends `Ark4ne\JsonApi\Descriptors\Values\Value`:
-it casts the raw value and declares its `valueType()` (and `valueFormat()`, if any).
+A type of your own is a `Descriptor` of the base: it normalizes the raw value and declares its type, read by the
+tools that document the resources.
 
 ```php
-final class MoneyValue extends Value
+use Ark4ne\ApiRevisions\Definition\Kind;
+use Ark4ne\ApiRevisions\Definition\TypeDefinition;
+use Ark4ne\ApiRevisions\Schema\Descriptor;
+use Ark4ne\ApiRevisions\Schema\InvalidValue;
+
+/**
+ * @extends Descriptor<string>
+ */
+final class MoneySchema extends Descriptor
 {
-    public function value(mixed $of, Request $request, Configuration $configuration): string
+    public function normalize(mixed $value): mixed
     {
-        return number_format($of / 100, 2, '.', '');
+        return is_numeric($value)
+            ? number_format((int) $value / 100, 2, '.', '')
+            : new InvalidValue($value, Kind::Custom, '0.00');
     }
 
-    protected function valueType(): ValueType
+    protected function type(): TypeDefinition
     {
-        return ValueType::String;
-    }
-
-    protected function valueFormat(Configuration $configuration): ?string
-    {
-        return 'money';
+        return TypeDefinition::custom('money', ['type' => 'string', 'format' => 'money']);
     }
 }
 ```
 
-Register it under a name, in `config/jsonapi.php` (`describer.types`) or in a service provider:
+Register it under a name in a service provider:
 
 ```php
-use Ark4ne\JsonApi\Laravel\JsonApi;
+use Ark4ne\ApiRevisions\Schema\TypeRegistry;
 
-JsonApi::valueType('money', MoneyValue::class);
+TypeRegistry::register('money', MoneySchema::class);
 ```
 
-It is then written `$this->money('price')` in a resource (declare `@method MoneyValue<mixed> money(...)` for your IDE
-and PHPStan), and named as the items of an array: `$this->array('prices')->of('money')`. A name taken by a method of
-the resources (`string`, `toArray`…) is refused.
+It is then written `$this->money('price')` in a resource (declare `@method MoneySchema money(...)` for your IDE and
+PHPStan), `Schema::money()` anywhere, and as the items of a list: `$this->arrayOf($this->money(), 'prices')`.
 
 ### Relation methods
 | Method  | Description                                                       |
@@ -857,7 +856,7 @@ class of the map it is an instance of: list a subclass before its parent. A mode
 `RenderingException`; the `null` items of a to-many are left out.
 
 ```php
-protected function toRelationships(Request $request): array
+protected function toRelationships(Request $request): iterable
 {
     return [
         'commentable' => $this->morph([
@@ -877,7 +876,7 @@ protected function toRelationships(Request $request): array
 A relationship may relate resources of Laravel's native JSON:API (`Illuminate\Http\Resources\JsonApi\JsonApiResource`):
 
 ```php
-protected function toRelationships(Request $request): array
+protected function toRelationships(Request $request): iterable
 {
     return [
         'author' => $this->one(NativeUserResource::class),
@@ -926,7 +925,7 @@ rendered in every case):
 One relationship sets its own:
 
 ```php
-protected function toRelationships(Request $request): array
+protected function toRelationships(Request $request): iterable
 {
     return [
         // `data` only when included
@@ -953,209 +952,69 @@ These paths are neither validated by `Rules\Includes` nor limited by `include.ma
 
 
 ### Enum
-Method `enum` allow to get enum value for backed enum or name for unit enum.
 
-According to structure:
+`enum()` renders the value of a backed enum, and names its cases in the definition:
+
 ```php
-/// Role.php
-enum Role {
-    case ADMIN;
-    case USER;
-}
-/// State.php
-enum State:int {
+enum State: int {
     case ACTIVE = 1;
     case INACTIVE = 0;
 }
-/// User.php
+
 class User extends Model
 {
-    $casts = [
-        'role' => Role::class,
-        'state' => State::class,
-    ];
+    protected $casts = ['state' => State::class];
 }
-```
 
-The following attributes resource:
-```php
 // UserResource.php
-public function toAttributes(Request $request): array
+public function toAttributes(Request $request): iterable
 {
     return [
-        'status' => $this->enum(),
-        'role' => $this->enum(),
+        'state' => $this->enum(State::class),   // 1
     ];
 }
 ```
 
-Will return:
-```php
-[
-    "status": 1,
-    "role": "ADMIN"
-]
-```
+A value out of the cases is a value error. A unit enum has no value: render its name with a string
+(`$this->string(fn(User $user) => $user->role->name)`).
 
-### Typed Arrays
+### Typed arrays
 
-The `array` descriptor supports typed arrays to ensure all elements are cast to a specific type. This is useful when you need to guarantee type consistency across array elements.
-
-#### Basic Usage
+`arrayOf()` casts every item of a list to one type; `array()` leaves them as they are.
 
 ```php
-// UserResource.php
-public function toAttributes(Request $request): array
+public function toAttributes(Request $request): iterable
 {
     return [
-        // Array of strings - all values will be cast to string
-        'tags' => $this->array('tags')->of($this->string()),
-
-        // Array of integers - all values will be cast to integer
-        'scores' => $this->array('scores')->of($this->integer()),
-
-        // Array of floats
-        'prices' => $this->array('prices')->of($this->float()),
-
-        // Array of booleans
-        'flags' => $this->array('flags')->of($this->bool()),
+        'tags' => $this->arrayOf($this->string()),                 // ["php", "laravel", "123"]
+        'scores' => $this->arrayOf($this->integer(), 'results'),   // read from `results`
+        // a list of lists
+        'matrix' => $this->arrayOf($this->arrayOf($this->integer())),
+        // a list of objects
+        'addresses' => $this->arrayOf($this->struct(['city' => $this->string(), 'zip' => $this->string()])),
+        // computed, then typed
+        'user_ids' => $this->arrayOf($this->integer(), fn(Team $team) => $team->users->pluck('id')->all()),
+        // with a condition on the whole list
+        'notes' => $this->arrayOf($this->string())->when(fn() => $request->user()?->isAdmin() ?? false),
     ];
 }
 ```
 
-#### Using Class References
+A condition on the type of the items is not read for each item: filter the list in its source.
 
-You can also use class references, or the name of a value type (`->of('integer')`, `->of('money')`), instead of
-descriptor instances. A struct needs its closure: give it as an instance (`->of($this->struct(fn() => [...]))`).
+### Objects
 
-```php
-use Ark4ne\JsonApi\Descriptors\Values\ValueString;
-use Ark4ne\JsonApi\Descriptors\Values\ValueInteger;
-
-public function toAttributes(Request $request): array
-{
-    return [
-        'tags' => $this->array('tags')->of(ValueString::class),
-        'scores' => $this->array('scores')->of(ValueInteger::class),
-    ];
-}
-```
-
-#### Alternative Syntax
-
-You can also use the `arrayOf()` helper method:
+`struct()` renders an object of named members, read on the model itself, or on the value of its source:
 
 ```php
-public function toAttributes(Request $request): array
-{
-    return [
-        'tags' => $this->arrayOf($this->string(), 'tags'),
-        'scores' => $this->arrayOf($this->integer(), 'scores'),
-    ];
-}
+'address' => $this->struct([
+    'city' => $this->string(),               // the `city` of the model
+    'zip' => $this->string('postal_code'),
+]),
+'position' => $this->struct(['lat' => $this->float(), 'lng' => $this->float()], 'coordinates'), // those of `coordinates`
 ```
 
-#### Nested Typed Arrays
-
-For multi-dimensional arrays, you can nest `array()->of()` calls:
-
-```php
-public function toAttributes(Request $request): array
-{
-    return [
-        // 2D array (matrix) of integers
-        'matrix' => $this->array('matrix')->of(
-            $this->array()->of($this->integer())
-        ),
-    ];
-}
-```
-
-#### With Closures and Transformations
-
-Combine typed arrays with closures for data transformation:
-
-```php
-public function toAttributes(Request $request): array
-{
-    return [
-        // Transform and type cast
-        'doubled' => $this->array(fn() => array_map(fn($n) => $n * 2, $this->numbers))
-            ->of($this->integer()),
-
-        // Access nested properties
-        'user_ids' => $this->array(fn() => $this->users->pluck('id'))
-            ->of($this->integer()),
-    ];
-}
-```
-
-#### With Conditions
-
-Typed arrays support all conditional methods:
-
-```php
-public function toAttributes(Request $request): array
-{
-    return [
-        // Only include if not null
-        'tags' => $this->array('tags')->of($this->string())->whenNotNull(),
-
-        // Only include if array is not empty
-        'scores' => $this->array('scores')->of($this->integer())->whenFilled(),
-
-        // Conditional based on closure
-        'admin_notes' => $this->array('notes')->of($this->string())
-            ->when(fn() => $request->user()->isAdmin()),
-    ];
-}
-```
-
-> **⚠️ Important Note:** Conditions applied to the item type (inside `of()`) are **not evaluated per-item**. They apply to the entire array descriptor, not individual elements.
->
-> ```php
-> // ❌ This will NOT filter individual items
-> 'even-numbers' => $this->array('numbers')->of(
->     $this->integer()->when(fn($request, $model, $attr) => $attr % 2 === 0)
-> )
-> // All items will be included, the when() doesn't filter per item
->
-> // ✅ To filter items, do it before passing to the array
-> 'even-numbers' => $this->array(
->     fn() => array_filter($this->numbers, fn($n) => $n % 2 === 0)
-> )->of($this->integer())
-> ```
-
-#### Example
-
-Given a model with mixed-type arrays:
-
-```php
-$user = new User([
-    'tags' => ['php', 'laravel', 123, true],
-    'scores' => [95.5, '87', 92, '78.9'],
-]);
-```
-
-The resource will ensure type consistency:
-
-```php
-public function toAttributes(Request $request): array
-{
-    return [
-        'tags' => $this->array('tags')->of($this->string()),
-        'scores' => $this->array('scores')->of($this->integer()),
-    ];
-}
-```
-
-Output:
-```json
-{
-    "tags": ["php", "laravel", "123", "1"],
-    "scores": [95, 87, 92, 78]
-}
-```
+`fields[users]=address.city` keeps one member of the object.
 
 # Versioned resources
 
@@ -1219,8 +1078,9 @@ head.
 
 ## Changing a field
 
-`->was($revision, name: …, value: …)` describes the whole field **as it was up to `$revision` included**. When a field
-changes in a new revision, write **`was(<the revision that was the newest until now>)`**:
+`->was($revision, name: …, schema: …, down: …)` says what the field **was up to `$revision` included**: another name,
+another type, or both. It is the `was()` of `ark4ne/laravel-api-revisions`, on any descriptor. When a field changes in
+a new revision, write **`was(<the revision that was the newest until now>)`**:
 
 ```php
 // Initial → Labels → UsersReplaceTeachers (head)
@@ -1235,40 +1095,41 @@ changes in a new revision, write **`was(<the revision that was the newest until 
 | `Labels` | `label` |
 | `Initial` | `name` |
 
-- One `was()` applies: the one with the oldest revision at or after that of the client, in the order of the revisions
-  (never of the calls); otherwise the head.
-- An argument left out takes the value **of the head**, never that of a newer `was()`: repeat what differs from the
-  head. `name:` alone keeps the head descriptor (type, conditions) under the old name; `value:` replaces it entirely.
+- The changes chain from the head down to the revision of the client, in the order of the revisions (never of the
+  calls): each `was()` says what differs from the next newer shape, an argument left out keeps it.
+- `schema:` is the type the field had: a descriptor without source, since **the model has one version**. The value
+  is read once, as the head reads it, then converted down: by the base when it knows the conversion (an integer to a
+  string, a date and time to a string…), otherwise by `down:`, a closure receiving the value of the newer shape and
+  the model. `php artisan jsonapi:check` reports a conversion that is missing (`conversion-missing`).
 
 ```php
-'price' => $this->struct(fn() => [
-    'amount' => $this->integer('price_cents'),
-    'currency' => $this->string('currency'),
-])
-    ->was(ApiRevision::Labels, value: $this->integer('price_cents'))                  // Labels: integer cents
-    ->was(ApiRevision::Initial, name: 'amount', value: $this->integer('price_cents')), // Initial: renamed, value repeated
+'price' => $this->struct(['amount' => $this->integer('price_cents'), 'currency' => $this->string()])
+    // Labels: integer cents
+    ->was(ApiRevision::Labels, schema: $this->integer(), down: fn(array $price) => $price['amount'])
+    // Initial: still integer cents, under another name
+    ->was(ApiRevision::Initial, name: 'amount'),
 ```
 
-- **The model has one version.** A `value:` without source reads the source of the head field (here `price_cents`
-  for `amount` too), and the conditions reading the model (`whenHas()`, `when()`…) read the head attribute. A head
-  field computed by a closure needs a `value:` with its own source. `whenInFields()` and `whenInIncludes()` follow the
-  names of the revision, which the client writes (every relationship of a nested include path).
+- The conditions (`->when()`, `->whenHas()`…) are those of the head field. `whenInFields()` and `whenInIncludes()`
+  follow the names of the revision, which the client writes (every relationship of a nested include path).
 - The links of `#[JsonApiRoutes]` follow the relationships of the revision and their names: an old client gets
-  `posts.relationships.writer`, never a relationship its revision does not have.
-- The same on a relationship: its old name, include path and fields, its old related resource and cardinality.
+  `posts.relationships.writer`, never a relationship its revision does not have. The links of `toLinks()` hold no
+  history: compute one that changes with `ApiRevision::current()`.
+- The same on a relationship: its old name, include path and fields, its old related resource and cardinality, with
+  `schema:` holding the relationship as it was. No value is converted.
 
 ```php
 'instructor' => $this->one(UserResource::class)
-    ->was(ApiRevision::Labels, name: 'teacher', value: $this->one(TeacherResource::class)),
+    ->was(ApiRevision::Labels, name: 'teacher', schema: $this->one(TeacherResource::class)),
 ```
 
 ## Removing, adding, reusing a name
 
 ```php
 // Revisions
-'full_name' => $this->string(fn() => "{$this->first_name} {$this->last_name}")
+'full_name' => $this->string(fn(User $user) => "{$user->first_name} {$user->last_name}")
     ->until(ApiRevision::Labels),          // removed in UsersReplaceTeachers
-'tag_names' => $this->array(fn() => $this->tags->pluck('name')->all())->of($this->string())
+'tag_names' => $this->arrayOf($this->string(), fn(User $user) => $user->tags->pluck('name')->all())
     ->since(ApiRevision::UsersReplaceTeachers), // added in UsersReplaceTeachers
 ```
 
@@ -1380,8 +1241,8 @@ ResourceAssertions::assertValidAtEveryRevision(UserResource::class);
 ResourceAssertions::assertValid(UserResource::class, revision: ApiRevision::Labels);
 ```
 
-`php artisan jsonapi:cache` compiles every revision: an old client costs one OPcache read, as the head does. A resource
-declaring no revision renders as before.
+`php artisan jsonapi:cache` compiles the definitions of every revision and `php artisan revision:cache` their shapes
+(both run by `php artisan optimize`): an old client costs one OPcache read, as the head does.
 
 ## Retiring a revision
 
@@ -1395,9 +1256,10 @@ Bounds are inclusive so that retiring the oldest revision is mechanical:
 
 ## A contract test in the application
 
-`jsonapi:check` cannot see every mistake: an older `was()` that forgets to repeat a value a newer one gives serves the
-head's to its clients, and the `revision-value-gap` warning misses some cases. Freeze the definitions (or the generated
-OpenAPI) of each supported revision and compare them on every change:
+`ark4ne/laravel-api-revisions` freezes the shapes of every revision in a lock file (`php artisan revision:lock`),
+which `php artisan revision:check` compares with the code: a change of what an old client receives fails the check
+until the lock is written again. The lock holds the values; to freeze what is JSON:API too (the related resources,
+the links, the loads), compare the definitions of each supported revision on every change:
 
 ```php
 public function test_the_contract_of_every_revision_is_frozen(): void
