@@ -25,7 +25,7 @@ the values over.
 | --- | --- | --- |
 | `describer.nullable` | `describer.nullable` | Same value |
 | `describer.date` | `date_time_format` of `config/revisions.php` | Same format; it is the format of `datetime()`, `date()` renders `Y-m-d` |
-| `describer.precision` | Removed | A float is no longer rounded: round it in its source (`$this->float(fn(Post $post) => round($post->rating, 1))`) |
+| `describer.precision` | `describer.precision` | Same value; a float is rounded where 1.x floored it (`->truncate()` on a float keeps the digits of 1.x) |
 | `describer.when-has` | `describer.when-has` | Same value |
 | `relationship.when-included` | `relationship.linkage` | `true` → `'included'`; `false` → remove the key (`'always'`) |
 
@@ -73,7 +73,7 @@ refuses does are `date_time_format` and `strict_values` of `config/revisions.php
 | 1.x | 3.0 |
 | --- | --- |
 | `->date(` (date and time) | `->datetime(`; `date()` renders `Y-m-d` |
-| `->precision(` (floored) | Removed: floor in the source (`$this->float(fn(User $user) => floor($user->score * 10) / 10)`) |
+| `->precision(` (floored) | `->precision(1)` rounds (`4.29` gives `4.3`); `->precision(1)->truncate()` keeps the digits of 1.x (`4.2`) |
 | `->nullable(false)` on a date given `null` | A value error of `ark4ne/laravel-api-revisions`: it throws in debug, is reported otherwise (`revisions.strict_values`); was `1970-01-01T00:00:00+00:00` |
 | `enum()->of(State::class)` | `enum(State::class)`, a backed enum; a value out of the cases is a value error |
 | `value(mixed $of, Request $request)` (custom value) | A `Descriptor` of `ark4ne/laravel-api-revisions` (`normalize()`, `type()`), registered with `TypeRegistry::register('percent', PercentSchema::class)` |

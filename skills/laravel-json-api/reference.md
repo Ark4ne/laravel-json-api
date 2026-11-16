@@ -45,7 +45,7 @@ argument is the attribute read on the model (a string, by default the member nam
 | --- | --- | --- |
 | `bool()` | a boolean | |
 | `integer()` | an integer | |
-| `float()` | a float (round it in its source: `fn(Post $post) => round($post->rating, 1)`) | |
+| `float()` | a float | `precision(int)` (rounds; `describer.precision` by default), `truncate()`, `min()`, `max()` |
 | `string()` | a string | `->format('email')` (a JSON Schema format) |
 | `date()` | a date without time, `Y-m-d` | `->format('d/m/Y')` |
 | `datetime()` | a date and time, `revisions.date_time_format` (ATOM) | `->format('Y-m-d H:i')` |
@@ -169,6 +169,7 @@ Validated at boot: a wrong value throws `Exceptions\InvalidConfigurationExceptio
 | Key | Default | Meaning |
 | --- | --- | --- |
 | `describer.nullable` | `true` | Values are nullable unless `->nullable(false)` |
+| `describer.precision` | `null` | Decimals a `float()` is rounded to unless `->precision()` gives one |
 | `describer.when-has` | `false` | `whenHas()` applied automatically: `true`, or scopes `['attributes', 'resource-meta', 'meta']` |
 | `type.naming` | `'kebab-singular'` | `kebab-singular`, `kebab-plural`, `snake-plural`, or a `Configuration\TypeNaming` class |
 | `relationship.linkage` | `'always'` | When a relationship not included renders `data`: `always`, `loaded`, `included` |
@@ -181,7 +182,7 @@ Validated at boot: a wrong value throws `Exceptions\InvalidConfigurationExceptio
 
 The revision enum, the format of a date and time and the strictness of the values are those of
 `ark4ne/laravel-api-revisions` (`config/revisions.php`: `enum`, `date_time_format`, `strict_values`). The keys
-`describer.datetime`, `describer.precision`, `describer.strict` and `describer.types` of 2.x are refused.
+`describer.datetime`, `describer.strict` and `describer.types` of 2.x are refused.
 
 ## Commands
 

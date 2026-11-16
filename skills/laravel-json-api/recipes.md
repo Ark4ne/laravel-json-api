@@ -97,7 +97,7 @@ final class PostResource extends JsonApiResource
             'title' => $this->string(),
             'excerpt' => $this->string(fn(Post $post) => mb_substr((string) $post->body, 0, 40)),
             'published-at' => $this->datetime('published_at'),
-            'rating' => $this->float(fn(Post $post) => $post->rating === null ? null : round((float) $post->rating, 1))->whenNotNull(),
+            'rating' => $this->float()->precision(1)->whenNotNull(),
         ];
     }
 

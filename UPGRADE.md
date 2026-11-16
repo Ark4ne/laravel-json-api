@@ -39,7 +39,7 @@ The helpers keep their names and return the descriptors of the base. What change
 | `$this->enum()->of(State::class)`, `$this->enum()` | `$this->enum(State::class)` (a backed enum) |
 | `$this->struct(fn() => ['city' => $this->string()])` | `$this->struct(['city' => $this->string()])`; with a source, the members are read on its value |
 | `$this->array()->of($this->string())`, `->of('money')` | `$this->arrayOf($this->string())`, `$this->arrayOf($this->money())` |
-| `$this->float()->precision(1)`, `->truncate()` | round in the source: `$this->float(fn(Post $post) => round($post->rating, 1))` |
+| `$this->float()->precision(1)`, `->truncate()` | unchanged: `$this->float()` returns `Descriptors\Schemas\FloatSchema`, a float of the base that rounds |
 | `->nullable(false)` rendering `0` or `''` for `null` | `null` is a value error (`revisions.strict_values`) |
 | `->was(X, value: $this->integer())` | `->was(X, schema: $this->integer())`, with `down:` when the base knows no conversion |
 | `->was(X, value: $this->one(OldResource::class))` on a relationship | `->was(X, schema: $this->one(OldResource::class))` |

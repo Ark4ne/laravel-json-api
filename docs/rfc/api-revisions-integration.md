@@ -229,7 +229,9 @@ feature tests unchanged). What was done differently from the plan above, and wha
   `ResourceCheck` tagged in `revision:check`, to be merged by US 6.2.
 - **`Definitions::for()` throws when the values cannot be compiled**: a definition without attributes would make
   `Fields` and `Includes` refuse every member.
-- **Float rounding (R11) is still open**: `precision()` and `truncate()` are gone, the recipes round in the source.
+- **Float rounding (R11)**: closed without the base, by a float type of this package
+  (`Descriptors\Schemas\FloatSchema`, `Kind::Float` for the base): `precision()`, `truncate()` and
+  `describer.precision` are back.
 - **Performance** (same machine, PHP 8.5.3, 1 000 posts, 3 includes): ×0.575 of Laravel's native resources in time
   (2.0: ×0.518, so about 10 % slower than 2.0: P1 not met yet), ×0.617 in memory (2.0: ×0.615); resources declaring
   revisions cost ×1.00 to ×1.04 of the others (2.1: ×1.09 to ×1.15). The reference of `composer benchmark` is not

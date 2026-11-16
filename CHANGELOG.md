@@ -22,6 +22,9 @@ replaces them.
 - `Descriptors\Schemas\DecimalSchema`, `JsonSchema` and `MixedSchema`: the types this package adds to those of
   `ark4ne/laravel-api-revisions`, registered by the service provider as `Schema::decimal()`, `Schema::json()` and
   `Schema::mixed()` (`Descriptors\Schemas\SchemaTypes`). A value they refuse is a value error of the base.
+- `Descriptors\Schemas\FloatSchema`, returned by `$this->float()`: the float of `ark4ne/laravel-api-revisions`
+  (`Kind::Float`: same values accepted, same conversions, same export) with `precision()` and `truncate()`, as in
+  2.0. The value is rounded before its conversion to an older revision; `describer.precision` is its default.
 - `Descriptors\Schemas\RelationshipSchema` (`Schema::relationship($this->one(…))`): a relation as a field of the
   base, which gives it its history; a custom type `jsonapi.relationship` whose fragment names the cardinality and the
   related resources, converted to itself (a relationship to another resource at an old revision is
@@ -103,8 +106,7 @@ replaces them.
 - **Breaking**: `enum()` takes the class of a backed enum; `struct()` takes an array of members; `array()->of()` is
   `arrayOf()`; `time()`, `uuid()` and `ulid()` are a date-time and strings with a format.
 - **Breaking**: a value its type refuses is a value error of `ark4ne/laravel-api-revisions`
-  (`revisions.strict_values`); a float is no longer rounded (`precision()`, `truncate()`), the format of a date and
-  time is `revisions.date_time_format`.
+  (`revisions.strict_values`); the format of a date and time is `revisions.date_time_format`.
 - **Breaking**: a type of the application is a descriptor registered in the `TypeRegistry` of
   `ark4ne/laravel-api-revisions`, served by `$this->money()`.
 - **Breaking**: `Definitions::for($class, $revision)` gives one definition per revision (its `revision` is the one
@@ -141,8 +143,7 @@ replaces them.
   (`revision-*`, `eager-attribute`, `merge-when`, `unnamed-member`, `invalid-member`).
 - **Breaking**: `toDefinition()` (a definition written by hand), `Definitions::isRevised()`, the overrides of
   `when()`, `whenHas()`, `merge()` and `mergeWhen()` on a resource, `Relation::was()`.
-- **Breaking**: the configuration keys `describer.datetime`, `describer.precision`, `describer.strict` and
-  `describer.types`: still set, they throw an `InvalidConfigurationException` naming what replaces them.
+- **Breaking**: the configuration keys `describer.datetime`, `describer.strict` and `describer.types`: still set, they throw an `InvalidConfigurationException` naming what replaces them.
 - `Http\Rules\Revised`, `Http\Rules\RulesRevision` and the trait `Http\Concerns\UseRevisedRules` of 2.1 (never
   released): a body that changes across the revisions is declared in the `body()` of a request using the
   `RevisionedRequest` of `ark4ne/laravel-api-revisions`, with `Http\Body`.

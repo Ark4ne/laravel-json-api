@@ -29,6 +29,7 @@ migration from 1.x).
 |------------------------------|--------------------------|-----------------------------------------------------------------------------------------|
 | `describer.nullable`         | `bool`                   | For describer notation, defined if a value is nullable by default.                      |
 | `describer.when-has`         | `bool` \ `string[]`      | For describer notation, Apply automatically whenHas condition on attributes.            |
+| `describer.precision`        | `int` \ `null`           | For describer notation, decimals a float is rounded to; `null` to leave it as it is.    |
 | `relationship.linkage`       | `'always'` \ `'loaded'` \ `'included'` | When a relationship that is not included renders its `data`: always, only when already loaded, only when included. See [Linkage and loading](#linkage-and-loading). |
 | `fields.relationships`       | `'filter'` \ `'keep'`    | `fields[type]` restricts the relationships too (`filter`, JSON:API) or not (`keep`, 1.x). |
 | `include.max-depth`          | `int` \ `null`           | Deepest include path accepted; nothing deeper is loaded nor rendered. `null`: no limit.  |
@@ -775,7 +776,7 @@ model the value is read from (the name of the member by default), or a closure r
 |-----------|--------------------------------------------------------------------|
 | `bool`    | A boolean                                                          |
 | `integer` | An integer                                                         |
-| `float`   | A float                                                            |
+| `float`   | A float: `->precision(2)` rounds it, `->truncate()` truncates       |
 | `string`  | A string                                                           |
 | `date`    | Date without time, `Y-m-d`                                         |
 | `datetime`| Date and time, `revisions.date_time_format` unless `->format()`    |
@@ -792,8 +793,8 @@ model the value is read from (the name of the member by default), or a closure r
 
 A value is nullable when `describer.nullable` says so (`->nullable(false)` otherwise). A value its type refuses (a
 `null` that is not nullable, a string where an integer is declared) is a value error of the base: it throws in debug,
-and is reported and cast otherwise (`revisions.strict_values`). A float is not rounded: round it in its source
-(`$this->float(fn(Post $post) => round($post->rating, 1))`).
+and is reported and cast otherwise (`revisions.strict_values`). A float is rounded to its
+`->precision(2)` (`describer.precision` by default, none as published); `->truncate()` truncates to it instead.
 
 Every descriptor takes the conditions (`->when()`, `->unless()`, `->whenNotNull()`, `->whenFilled()`, `->whenHas()`,
 `->whenLoaded()`, `->whenAppended()`, `->whenInFields()`), the documentation (`->describe()`, `->example()`,

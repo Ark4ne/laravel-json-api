@@ -9,13 +9,13 @@ use Ark4ne\ApiRevisions\Schema\DateSchema;
 use Ark4ne\ApiRevisions\Schema\DateTimeSchema;
 use Ark4ne\ApiRevisions\Schema\Descriptor;
 use Ark4ne\ApiRevisions\Schema\EnumSchema;
-use Ark4ne\ApiRevisions\Schema\FloatSchema;
 use Ark4ne\ApiRevisions\Schema\IntSchema;
 use Ark4ne\ApiRevisions\Schema\ListSchema;
 use Ark4ne\ApiRevisions\Schema\ObjectSchema;
 use Ark4ne\ApiRevisions\Schema\StringSchema;
 use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Descriptors\Schemas\DecimalSchema;
+use Ark4ne\JsonApi\Descriptors\Schemas\FloatSchema;
 use Ark4ne\JsonApi\Descriptors\Schemas\JsonSchema;
 use Ark4ne\JsonApi\Descriptors\Schemas\MixedSchema;
 use BackedEnum;
@@ -48,11 +48,14 @@ trait DescribesValues
     }
 
     /**
+     * A float, rounded to the configured precision (`describer.precision`, none by default) unless `->precision()`
+     * gives one.
+     *
      * @param string|(Closure(T): mixed)|null $source
      */
     protected function float(string|Closure|null $source = null): FloatSchema
     {
-        return self::described(new FloatSchema(self::read($source)));
+        return self::described(new FloatSchema(self::read($source)))->precision(Definitions::configuration()->precision);
     }
 
     /**

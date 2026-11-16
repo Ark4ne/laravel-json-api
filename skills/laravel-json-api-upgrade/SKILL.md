@@ -67,8 +67,8 @@ Apply the renames of [mapping.md](mapping.md): `toMeta()` → `toDocumentMeta()`
 ### 5. Values
 
 For each `->date(`, decide: a date and time is `->datetime(`, a date alone stays `->date(`
-([example](examples.md#attributes-and-document-meta)). `precision()` is gone: round, or floor as 1.x did, in the
-source of the float (`$this->float(fn(User $user) => floor($user->score * 10) / 10)`). Every member is a descriptor
+([example](examples.md#attributes-and-document-meta)). `precision()` rounds where 1.x floored: add
+`->truncate()` to keep the digits 1.x rendered (`$this->float()->precision(1)->truncate()`). Every member is a descriptor
 or a closure under its name: replace the eager values (`'name' => $this->name`) by descriptors, name the members
 (`'email' => $this->string()`, not `$this->string('email')` alone), and call the model for `$this->uuid()` /
 `decimal()` / `json()`… that reached one of its methods (`$this->string(fn(User $user) => $user->uuid())`). A custom

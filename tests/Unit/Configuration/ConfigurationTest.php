@@ -178,6 +178,23 @@ final class ConfigurationTest extends TestCase
         Configuration::fromArray([])->prependRenderingStages('App\\Unknown');
     }
 
+    public function test_the_precision_of_the_floats_is_none_by_default(): void
+    {
+        self::assertNull(Configuration::defaults()->precision);
+        self::assertNull(Configuration::fromArray([])->precision);
+        self::assertSame(2, Configuration::fromArray(['describer' => ['precision' => 2]])->precision);
+        self::assertSame(2, Configuration::fromArray(['describer' => ['precision' => 2]])->withRevisions(ApiRevision::class)->precision);
+        self::assertSame(2, Configuration::fromArray(['describer' => ['precision' => 2]])->prependRenderingStages(self::class)->precision);
+    }
+
+    public function test_a_precision_that_is_not_an_integer_is_refused(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessage('describer.precision');
+
+        Configuration::fromArray(['describer' => ['precision' => '2']]);
+    }
+
     /**
      * @return iterable<string, array{array<string, mixed>}>
      */
@@ -185,7 +202,6 @@ final class ConfigurationTest extends TestCase
     {
         yield 'describer.date' => [['date' => DateTimeInterface::ATOM]];
         yield 'describer.datetime' => [['datetime' => 'Y-m-d']];
-        yield 'describer.precision' => [['precision' => 2]];
         yield 'describer.strict' => [['strict' => false]];
         yield 'describer.types' => [['types' => ['money' => self::class]]];
     }
@@ -204,7 +220,7 @@ final class ConfigurationTest extends TestCase
 
     public function test_a_key_no_longer_read_left_empty_is_ignored(): void
     {
-        $configuration = Configuration::fromArray(['describer' => ['precision' => null, 'types' => []]]);
+        $configuration = Configuration::fromArray(['describer' => ['datetime' => null, 'types' => []]]);
 
         self::assertTrue($configuration->nullable);
     }

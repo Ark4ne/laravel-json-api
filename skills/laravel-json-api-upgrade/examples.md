@@ -70,7 +70,7 @@ final class UserResource extends JsonApiResource
         return [
             'name' => $this->string(),
             'registered-at' => $this->datetime('created_at'),               // date() is a date without time now
-            'score' => $this->float(fn(User $user) => floor($user->score * 10) / 10), // rounded in its source (1.x floored)
+            'score' => $this->float()->precision(1)->truncate(),            // precision() rounds now: truncate() keeps 4.2
             'uuid' => $this->string(fn(User $user) => $user->uuid()),       // $this->uuid() is a value helper now
             $this->applyWhen(fn() => (bool) $this->resource->verified, [   // kept in the definition
                 'email' => $this->string(),

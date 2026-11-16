@@ -170,6 +170,16 @@ final class ValuesTest extends TestCase
         $response->assertJsonMissingPath('included.0.attributes');
     }
 
+    public function test_a_float_is_rounded_to_its_precision_before_its_conversion_to_an_older_revision(): void
+    {
+        $resource = static fn(): RatedResource => RatedResource::make(['id' => 1, 'rating' => 4.26, 'score' => 4.26, 'raw' => 4.26]);
+
+        $this->render($resource(), null)
+            ->assertJsonPath('data.attributes', ['rating' => 4.3, 'score' => 4.2, 'raw' => 4.26]);
+        $this->render($resource(), ApiRevision::Initial)
+            ->assertJsonPath('data.attributes', ['rating' => '4.3', 'score' => 4.2, 'raw' => 4.26]);
+    }
+
     public function test_a_field_only_in_fields_is_sparse_in_the_definition(): void
     {
         $attributes = Definitions::for(SparseResource::class, ApiRevision::UsersReplaceTeachers)->attributes;
@@ -231,6 +241,22 @@ final class SparseResource extends JsonApiResource
         return [
             'name' => Schema::string(),
             'secret' => Schema::string()->whenInFields()->was(ApiRevision::Initial, name: 'hidden'),
+        ];
+    }
+}
+
+/**
+ * @extends JsonApiResource<array<string, mixed>>
+ */
+#[JsonApiType('rated')]
+final class RatedResource extends JsonApiResource
+{
+    public function toAttributes(Request $request): iterable
+    {
+        return [
+            'rating' => $this->float()->precision(1)->was(ApiRevision::Initial, schema: Schema::string()),
+            'score' => $this->float()->precision(1)->truncate(),
+            'raw' => $this->float(),
         ];
     }
 }

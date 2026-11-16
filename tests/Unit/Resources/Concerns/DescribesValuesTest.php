@@ -10,7 +10,6 @@ use Ark4ne\ApiRevisions\Schema\DateSchema;
 use Ark4ne\ApiRevisions\Schema\DateTimeSchema;
 use Ark4ne\ApiRevisions\Schema\Descriptor;
 use Ark4ne\ApiRevisions\Schema\EnumSchema;
-use Ark4ne\ApiRevisions\Schema\FloatSchema;
 use Ark4ne\ApiRevisions\Schema\IntSchema;
 use Ark4ne\ApiRevisions\Schema\ListSchema;
 use Ark4ne\ApiRevisions\Schema\ObjectSchema;
@@ -21,6 +20,7 @@ use Ark4ne\JsonApi\Descriptors\Relations;
 use Ark4ne\JsonApi\Descriptors\Relations\RelationMany;
 use Ark4ne\JsonApi\Descriptors\Relations\RelationOne;
 use Ark4ne\JsonApi\Descriptors\Schemas\DecimalSchema;
+use Ark4ne\JsonApi\Descriptors\Schemas\FloatSchema;
 use Ark4ne\JsonApi\Descriptors\Schemas\JsonSchema;
 use Ark4ne\JsonApi\Descriptors\Schemas\MixedSchema;
 use Ark4ne\JsonApi\Descriptors\Schemas\RelationshipSchema;
@@ -108,6 +108,22 @@ final class DescribesValuesTest extends TestCase
 
         self::assertFalse(self::helper('string')->isNullable());
         self::assertTrue(self::helper('string')->nullable()->isNullable());
+    }
+
+    public function test_a_float_is_rounded_as_the_configuration_says_unless_it_sets_its_precision(): void
+    {
+        $float = self::helper('float');
+        self::assertInstanceOf(FloatSchema::class, $float);
+        self::assertNull($float->rounding());
+
+        Definitions::configure(Configuration::fromArray(['describer' => ['precision' => 2]]));
+
+        $float = self::helper('float');
+        self::assertInstanceOf(FloatSchema::class, $float);
+        self::assertSame(2, $float->rounding());
+        self::assertSame(1.24, $float->normalize(1.239));
+        self::assertSame(1.2, $float->precision(1)->normalize(1.239));
+        self::assertSame(1.239, $float->precision(null)->normalize(1.239));
     }
 
     public function test_the_formats_of_time_uuid_and_ulid_are_set(): void

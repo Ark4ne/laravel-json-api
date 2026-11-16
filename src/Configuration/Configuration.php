@@ -25,13 +25,14 @@ final readonly class Configuration
     public const REMOVED = [
         'describer.date' => 'the format of a date and time is [revisions.date_time_format], or ->format() on the descriptor',
         'describer.datetime' => 'the format of a date and time is [revisions.date_time_format], or ->format() on the descriptor',
-        'describer.precision' => 'round the value in its source',
         'describer.strict' => 'a value its type refuses is reported as [revisions.strict_values] says',
         'describer.types' => 'register the type with Ark4ne\\ApiRevisions\\Schema\\TypeRegistry::register()',
     ];
 
     /**
      * @param bool $nullable Values are nullable unless a descriptor says otherwise (`describer.nullable`)
+     * @param int|null $precision Decimals a float is rounded to unless it says otherwise, `null` for none
+     *                            (`describer.precision`)
      * @param list<string> $whenHas Scopes where `whenHas()` applies automatically (`describer.when-has`)
      * @param Linkage $linkage When a relationship that is not included renders its linkage (`relationship.linkage`)
      * @param SparseRelationships $sparseRelationships How `fields[type]` treats relationships (`fields.relationships`)
@@ -59,6 +60,7 @@ final readonly class Configuration
         public ?int $maxIncludeDepth,
         public TypeNaming $typeNaming,
         public ?string $revisions = null,
+        public ?int $precision = null,
     ) {}
 
     /**
@@ -108,6 +110,7 @@ final readonly class Configuration
             errorRenderers: self::classes($config, 'errors.renderers', 'a list of error renderer classes'),
             maxIncludeDepth: self::maxIncludeDepth($config),
             typeNaming: self::typeNaming($config, $defaults->typeNaming),
+            precision: self::precision($config),
         );
     }
 
@@ -131,6 +134,7 @@ final readonly class Configuration
             maxIncludeDepth: $this->maxIncludeDepth,
             typeNaming: $this->typeNaming,
             revisions: $revisions,
+            precision: $this->precision,
         );
     }
 
@@ -156,6 +160,7 @@ final readonly class Configuration
             maxIncludeDepth: $this->maxIncludeDepth,
             typeNaming: $this->typeNaming,
             revisions: $this->revisions,
+            precision: $this->precision,
         );
     }
 
@@ -375,6 +380,20 @@ final readonly class Configuration
             'type.naming',
             "'kebab-singular', 'kebab-plural', 'snake-plural' or a class implementing " . TypeNaming::class,
         );
+    }
+
+    /**
+     * @param array<array-key, mixed> $config
+     *
+     * @throws InvalidConfigurationException
+     */
+    private static function precision(array $config): ?int
+    {
+        $value = self::read($config, 'describer.precision');
+
+        return $value === null || is_int($value)
+            ? $value
+            : throw InvalidConfigurationException::forKey('describer.precision', 'an integer or null');
     }
 
     /**

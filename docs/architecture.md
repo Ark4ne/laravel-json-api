@@ -76,7 +76,7 @@ Support ← Configuration ← Definition ← Descriptors ← Compilation ← Con
 | Support | `src/Support/` | Building blocks without internal dependency: `Arr`, `Values`, `Probe`, `Diagnostics` |
 | Configuration | `src/Configuration/` | `Configuration`: typed, validated, readonly view of `config/jsonapi.php` |
 | Definition | `src/Definition/` | Public immutable model: `ResourceDefinition`, `AttributeDefinition`, `RelationshipDefinition`, `ValueType`, `Cardinality`, `Lifetime`; the `DefinitionSource` contract, `#[JsonApiSince]` / `#[JsonApiUntil]` |
-| Descriptors | `src/Descriptors/` | What this package adds to the descriptors of `ark4ne/laravel-api-revisions`: `Schemas\` (`DecimalSchema`, `JsonSchema`, `MixedSchema`, `RelationshipSchema`, the conditions registered as macros), the relations (`RelationOne`, `RelationMany`…) a `RelationshipSchema` holds, and the `Relations` trait of the resource helpers |
+| Descriptors | `src/Descriptors/` | What this package adds to the descriptors of `ark4ne/laravel-api-revisions`: `Schemas\` (`DecimalSchema`, `FloatSchema`, `JsonSchema`, `MixedSchema`, `RelationshipSchema`, the conditions registered as macros), the relations (`RelationOne`, `RelationMany`…) a `RelationshipSchema` holds, and the `Relations` trait of the resource helpers |
 | Compilation | `src/Compilation/` | `Definitions` (repository and memory cache), `DefinitionCompiler` (the definition of a class at a revision), `CompiledDefinitions` (file cache), `Projection` (the shapes and the projector of the base), `ResourceCheck` and `ResourceChecker` (the checks) |
 | Context | `src/Context/` | `JsonApiContext`, `IncludeTree`, `SparseFieldsets` |
 | Loading | `src/Loading/` | `LoadPlanner`, `LoadPlan`, `LoadedRelations` |
@@ -231,7 +231,9 @@ resource may write `Schema::string()` itself.
   read its request and its place in the includes.
 - **Types of this package**: `DecimalSchema`, `JsonSchema` and `MixedSchema`, registered in the `TypeRegistry` of the
   base (`Descriptors\Schemas\SchemaTypes`), as an application registers its own (`$this->money()`,
-  `JsonApiResource::__call()`).
+  `JsonApiResource::__call()`). `Descriptors\Schemas\FloatSchema` (`$this->float()`) is not a custom type: it
+  declares the float of the base (`Kind::Float`) and only rounds its value (`precision()`, `truncate()`,
+  `describer.precision`), so the conversions and the export of the base see a float.
 - **A relationship is a field of the base**: `RelationshipSchema` (custom type `jsonapi.relationship`) holds a
   `Relation`, which carries what is JSON:API: the related resource (explicit class, or resolved through
   `#[UseResource]` / `Model::toResource()`), the cardinality, links and meta closures, the load plan, filters and
