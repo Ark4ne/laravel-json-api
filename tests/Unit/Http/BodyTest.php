@@ -12,6 +12,7 @@ use Ark4ne\JsonApi\Http\Body;
 use Ark4ne\JsonApi\Http\Rules\Linkage;
 use Test\app\Http\Resources\UserResource;
 use Test\TestCase;
+use Test\Unit\Compilation\Fixtures\OverriddenTypeResource;
 use Test\Unit\Http\Fixtures\OrphanFormRequest;
 
 final class BodyTest extends TestCase
@@ -68,13 +69,25 @@ final class BodyTest extends TestCase
         self::assertSame([], $data->children()['type']->declaredRules());
     }
 
-    public function test_a_to_many_linkage_is_a_required_list_of_identifiers(): void
+    public function test_a_to_many_linkage_is_a_list_of_identifiers_possibly_empty(): void
     {
         $data = Body::toMany('tags')->children()['data'];
 
-        self::assertTrue($data->isRequired());
+        // Not `required`, which refuses an empty list: the linkage rule asks for it.
+        self::assertFalse($data->isRequired());
         self::assertFalse($data->isNullable());
+        self::assertEquals([new Linkage()], $data->declaredRules());
         self::assertInstanceOf(ListSchema::class, $data);
+    }
+
+    public function test_the_type_is_the_one_the_resource_renders(): void
+    {
+        $data = self::data(Body::resource(OverriddenTypeResource::class));
+        $linkage = Body::toOne(OverriddenTypeResource::class)->children()['data'];
+
+        self::assertSame(['in:stories'], $data->children()['type']->declaredRules());
+        self::assertInstanceOf(ObjectSchema::class, $linkage);
+        self::assertSame(['in:stories'], $linkage->children()['type']->declaredRules());
     }
 
     public function test_a_form_request_without_resource_cannot_declare_its_resource_object(): void

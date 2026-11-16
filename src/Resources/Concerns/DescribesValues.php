@@ -147,7 +147,7 @@ trait DescribesValues
      */
     protected function array(string|Closure|null $source = null): ListSchema
     {
-        return self::described(new ListSchema(new MixedSchema(), self::read($source)));
+        return self::described(new ListSchema(self::described(new MixedSchema()), self::read($source)));
     }
 
     /**

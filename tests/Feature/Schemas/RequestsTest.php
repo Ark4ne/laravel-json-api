@@ -117,6 +117,20 @@ final class RequestsTest extends TestCase
             ->assertJsonPath('clears_author', true);
     }
 
+    public function test_a_to_many_relationship_is_cleared_by_an_empty_list(): void
+    {
+        $this->patchJson('schemas/articles', ['data' => ['type' => 'articles', 'id' => '7', 'relationships' => ['tags' => ['data' => []]]]])
+            ->assertOk()
+            ->assertJsonPath('tags', []);
+    }
+
+    public function test_a_to_many_relationship_sent_holds_its_linkage(): void
+    {
+        $this->patchJson('schemas/articles', ['data' => ['type' => 'articles', 'id' => '7', 'relationships' => ['tags' => ['meta' => ['a' => 1]]]]])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['data.relationships.tags.data']);
+    }
+
     public function test_the_helpers_validate_the_type_of_the_resource_its_id_and_the_linkage(): void
     {
         $this->patchJson('schemas/articles', ['data' => [

@@ -35,7 +35,7 @@ use Ark4ne\JsonApi\Http\Rules\Linkage;
 final class Body
 {
     /**
-     * The document of a resource object: `data.type` is the type of `$resource`, `data.attributes` and
+     * The document of a resource object: `data.type` is the type `$resource` renders, `data.attributes` and
      * `data.relationships` hold the members given, required when one of them is.
      *
      * @param class-string<DefinitionSource> $resource
@@ -48,7 +48,7 @@ final class Body
      */
     public static function resource(string $resource, array $attributes = [], array $relationships = [], ?Descriptor $id = null): array
     {
-        $data = ['type' => self::type(Definitions::declaredType($resource))];
+        $data = ['type' => self::type(Definitions::for($resource)->type)];
         if ($id !== null) {
             $data['id'] = $id;
         }
@@ -80,7 +80,8 @@ final class Body
      */
     public static function toMany(string ...$related): ObjectSchema
     {
-        return Schema::object(['data' => Schema::list(self::identifier($related))->required()]);
+        // Sent with its relationship, and possibly empty: `required` refuses an empty list.
+        return Schema::object(['data' => Schema::list(self::identifier($related))->rules(new Linkage())]);
     }
 
     /**
@@ -106,7 +107,7 @@ final class Body
     {
         $types = array_map(
             static fn(string $related): string => is_subclass_of($related, DefinitionSource::class)
-                ? Definitions::declaredType($related)
+                ? Definitions::for($related)->type
                 : $related,
             array_values($related),
         );

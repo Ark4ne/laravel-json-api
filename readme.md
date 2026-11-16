@@ -1224,7 +1224,7 @@ member added since given its default. `include` and `fields` stay validated at t
 the descriptor of `data.id` (`Schema::string()->required()` to update a resource), `data.attributes` and
 `data.relationships` are required when one of their members is. `Body::toOne()` and `Body::toMany()` declare a
 relationship object and the types its linkage accepts (resource classes or types); `{"data": null}` clears a to-one
-relationship. A request that is not a `JsonApiFormRequest` calls `Body::resource(PostResource::class, …)`.
+relationship, `{"data": []}` a to-many one. A request that is not a `JsonApiFormRequest` calls `Body::resource(PostResource::class, …)`.
 
 ## Checking the revisions
 

@@ -11,8 +11,8 @@ use Illuminate\Support\Arr;
 
 /**
  * Validates that a relationship object sent holds its resource linkage (`data`), which may be `null` (a to-one
- * relationship cleared): Laravel's `required` refuses a `null`, its `present` a relationship that is not sent.
- * Declared on the linkage by `Http\Body::toOne()`.
+ * relationship cleared) or an empty list (a to-many one): Laravel's `required` refuses both, its `present` a
+ * relationship that is not sent. Declared on the linkage by `Http\Body::toOne()` and `Http\Body::toMany()`.
  *
  * Its message is the translation `jsonapi::validation.linkage.missing` (`vendor:publish --tag=jsonapi-lang`).
  *

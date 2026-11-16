@@ -78,8 +78,8 @@ final class RelationRaw extends Relation
     }
 
     /**
-     * The wrapped relationship, through its contract: the descriptors do not depend on the resources. Its conditions
-     * (`applyWhen()`) are those of this descriptor: `passes()`.
+     * The wrapped relationship, through its contract: the descriptors do not depend on the resources. The conditions
+     * set on this descriptor (`can()`, `whenLoaded()`…) are read by the resource before it: `passes()`.
      */
     public function relationship(): DescribesRelationship
     {

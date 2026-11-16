@@ -94,6 +94,10 @@ trait Renderable
         foreach ($this->valuesPlan($context)->relationships($model, $context) as $name => [$key, $relation]) {
             $definition = $definitions[$name] ?? null;
             if ($relation instanceof RelationRaw) {
+                // Its own conditions (`can()`, `whenLoaded()`…): those of a relation are read with its value.
+                if (!$relation->passes($context->request, $model, $key)) {
+                    continue;
+                }
                 $relationship = $relation->relationship();
                 if (!$relationship instanceof Relationship) {
                     continue;

@@ -36,7 +36,7 @@ trait ConditionallyLoadsAttributes
      */
     protected function whenInFields(Request $request, string $attribute, Descriptor|Closure $value): Descriptor
     {
-        $descriptor = $value instanceof Closure ? new MixedSchema($value) : $value;
+        $descriptor = $value instanceof Closure ? self::computed($value) : $value;
 
         // Read for each resource rendered: the hook runs once per response.
         return $descriptor->when(function () use ($request, $attribute): bool {
@@ -59,7 +59,7 @@ trait ConditionallyLoadsAttributes
      */
     protected function whenInIncludes(Request $request, string $relationship, Descriptor|Closure $value): Descriptor
     {
-        $descriptor = $value instanceof Closure ? new MixedSchema($value) : $value;
+        $descriptor = $value instanceof Closure ? self::computed($value) : $value;
 
         // Read for each resource rendered, where it is rendered: the includes of its place in the document.
         return $descriptor->when(function () use ($relationship): bool {
@@ -163,7 +163,7 @@ trait ConditionallyLoadsAttributes
             $descriptor = match (true) {
                 $member instanceof Descriptor => $member,
                 $member instanceof DescribesRelationship => new RelationshipSchema($member),
-                $member instanceof Closure => new MixedSchema($member),
+                $member instanceof Closure => self::computed($member),
                 default => throw DefinitionException::notASchema(static::class, 'applyWhen', $name, get_debug_type($member)),
             };
 
@@ -171,5 +171,13 @@ trait ConditionallyLoadsAttributes
         }
 
         return new MergeValue($grouped);
+    }
+
+    /**
+     * A closure computing a value of any type, nullable as a closure of a hook is (`describer.nullable`).
+     */
+    private static function computed(Closure $value): MixedSchema
+    {
+        return (new MixedSchema($value))->nullable(Definitions::configuration()->nullable);
     }
 }

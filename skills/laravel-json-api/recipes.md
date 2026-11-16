@@ -611,7 +611,7 @@ final class BookStoreRequest extends JsonApiFormRequest implements Revisioned
 
 `$this->resourceObject(attributes: …, relationships: …, id: …)` is `Body::resource($resource, …)`, for a request that
 is not a `JsonApiFormRequest`. `Body::toOne(…)` and `Body::toMany(…)` declare a relationship object and the types its
-linkage accepts (resource classes or types); `{"data": null}` clears a to-one relationship. `id:` takes the
+linkage accepts (resource classes or types); `{"data": null}` clears a to-one relationship, `{"data": []}` a to-many one. `id:` takes the
 descriptor of `data.id` (`Schema::string()->required()` to update a resource). The controller reads
 `$request->jsonApi()`: `attribute('title')`, `ids('author')`.
 

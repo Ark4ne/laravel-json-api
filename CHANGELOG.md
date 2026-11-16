@@ -50,12 +50,12 @@ replaces them.
 - A `JsonApiFormRequest` may use the `RevisionedRequest` of `ark4ne/laravel-api-revisions`: its `body()` is validated
   in the shape of the client's revision and `jsonApi()` reads the head's.
 - `Http\Body`: the body of a JSON:API write request as descriptors, for the `body()` of such a request.
-  `Body::resource($resource, attributes: […], relationships: […], id: …)` declares `data.type` (the type of the
-  resource), `data.id`, `data.attributes` and `data.relationships`; `Body::toOne(UserResource::class)` and
+  `Body::resource($resource, attributes: […], relationships: […], id: …)` declares `data.type` (the type the
+  resource renders), `data.id`, `data.attributes` and `data.relationships`; `Body::toOne(UserResource::class)` and
   `Body::toMany('tags', 'labels')` declare a relationship object and the types its linkage accepts. A
   `JsonApiFormRequest` writes `$this->resourceObject(attributes: …, relationships: …)`.
-- `Http\Rules\Linkage`: a relationship object sent holds its `data`, which may be `null`
-  (`jsonapi::validation.linkage.missing`).
+- `Http\Rules\Linkage`: a relationship object sent holds its `data`, which may be `null` or an
+  empty list (`jsonapi::validation.linkage.missing`).
 - `Compilation\ResourceCheck`, tagged in the check of `ark4ne/laravel-api-revisions` (`revision:check`,
   `assertRevisionsAreConsistent()`): at each revision, an attribute or a relationship named `id` or `type`
   (`jsonapi-reserved-name`), an attribute and a relationship sharing a name (`jsonapi-name-collision`), a relationship
