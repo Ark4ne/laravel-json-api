@@ -19,6 +19,7 @@ final class MixedSchema extends Descriptor
 {
     public function normalize(mixed $value): mixed
     {
+        // The pipeline of the base handles a `null` before any type: given anyway, it is refused, as its contract says.
         return $value ?? new InvalidValue(null, Kind::Any, null);
     }
 

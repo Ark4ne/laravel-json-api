@@ -24,6 +24,7 @@ final class JsonSchema extends Descriptor
     public function normalize(mixed $value): mixed
     {
         if (!is_string($value)) {
+            // A `null` never comes from the pipeline of the base: given anyway, it is refused, as its contract says.
             return $value ?? new InvalidValue(null, Kind::Custom, null);
         }
 

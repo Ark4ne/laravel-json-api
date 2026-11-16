@@ -38,6 +38,9 @@ final class Definitions
     /** @var array<class-string<DefinitionSource>, array<string, true>> The fields of the code of a resource, by class */
     private static array $fieldsOfTheCode = [];
 
+    /** @var array<class-string, array<string, mixed>> What a resource declares on a probe, by class */
+    private static array $declarations = [];
+
     private static ?Configuration $configuration = null;
 
     private static ?CompiledDefinitions $compiled = null;
@@ -229,6 +232,25 @@ final class Definitions
     }
 
     /**
+     * What a resource declares on a probe standing for its model (the descriptors of its hooks of values), described
+     * once per class: it only depends on the code and on the configuration, whatever the revision compiled.
+     *
+     * @internal Read by the resources.
+     *
+     * @template T of array<string, mixed>
+     *
+     * @param class-string $class
+     * @param Closure(): T $describe
+     *
+     * @return T
+     */
+    public static function declaration(string $class, Closure $describe): array
+    {
+        /** @var T */
+        return self::$declarations[$class] ??= $describe();
+    }
+
+    /**
      * The type a resource declares without `toType()` (`#[JsonApiType]`, otherwise the naming convention): what its
      * default `toType()` returns.
      *
@@ -279,6 +301,7 @@ final class Definitions
         self::$declaredTypes = [];
         self::$lifetimes = [];
         self::$fieldsOfTheCode = [];
+        self::$declarations = [];
         self::$compiledRead = false;
         self::$head = null;
     }

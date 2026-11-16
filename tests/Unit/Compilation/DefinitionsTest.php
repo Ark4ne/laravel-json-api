@@ -21,6 +21,7 @@ use Test\app\Revisions\TeacherResource;
 use Test\app\Schemas\ArticleResource;
 use Test\Unit\Compilation\Fixtures\AttributeTypedResource;
 use Test\Unit\Compilation\Fixtures\BlogPostResource;
+use Test\Unit\Compilation\Fixtures\CountedHooksResource;
 use Test\Unit\Compilation\Fixtures\FailingHookResource;
 use Test\Unit\Compilation\Fixtures\TypedResource;
 
@@ -67,6 +68,25 @@ final class DefinitionsTest extends TestCase
         $this->expectExceptionMessage('Needs a real model.');
 
         Definitions::for(FailingHookResource::class);
+    }
+
+    public function test_the_hooks_of_a_resource_run_once_for_its_definitions_at_every_revision(): void
+    {
+        Definitions::configure(Configuration::defaults()->withRevisions(ApiRevision::class));
+        CountedHooksResource::runs();
+
+        self::assertNotNull(Definitions::for(CountedHooksResource::class)->attribute('title'));
+        self::assertNotNull(Definitions::for(CountedHooksResource::class, ApiRevision::Initial)->attribute('name'));
+        self::assertSame(['parent'], array_keys(Definitions::loadConstraints(CountedHooksResource::class)));
+        self::assertSame(['parent'], array_keys(Definitions::loadConstraints(CountedHooksResource::class, ApiRevision::Initial)));
+
+        self::assertSame([1, 1], CountedHooksResource::runs());
+
+        // What the hooks read from the configuration may change with it.
+        Definitions::configure(Configuration::defaults()->withRevisions(ApiRevision::class));
+        Definitions::for(CountedHooksResource::class);
+
+        self::assertSame([1, 1], CountedHooksResource::runs());
     }
 
     public function test_the_configuration_is_used_to_compile(): void

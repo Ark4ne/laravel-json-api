@@ -70,12 +70,30 @@ trait DeclaresSchema
      */
     public static function describeRevisioned(DeclarationKind $kind, mixed $subject): array
     {
-        $resource = static::newDefinitionSource(Probe::root());
-        if (!$subject instanceof CompilationProbe) {
-            $resource->resource = $subject;
+        if ($subject instanceof CompilationProbe) {
+            return self::probeSchema();
         }
 
+        $resource = static::newDefinitionSource(Probe::root());
+        $resource->resource = $subject;
+
         return $resource->describeSchema(new Request());
+    }
+
+    /**
+     * The declaration of the class, on a stand-in of its model: its hooks run once, whatever the number of revisions
+     * compiled from it.
+     *
+     * @return array{attributes: ObjectSchema, relationships: ObjectSchema, meta: ObjectSchema, documentMeta: ObjectSchema}
+     *
+     * @throws DefinitionException when a member is not a descriptor of the base
+     */
+    private static function probeSchema(): array
+    {
+        return Definitions::declaration(
+            static::class,
+            static fn(): array => static::newDefinitionSource(Probe::root())->describeSchema(new Request()),
+        );
     }
 
     /**
@@ -220,7 +238,7 @@ trait DeclaresSchema
      */
     public static function describeRelationshipsAt(Shape $relationships): array
     {
-        $declared = static::newDefinitionSource(Probe::root())->describeSchema(new Request())['relationships']->children();
+        $declared = self::probeSchema()['relationships']->children();
 
         $described = [];
         foreach ($relationships->fields as $key => $field) {
@@ -243,7 +261,7 @@ trait DeclaresSchema
      */
     public static function sparseAttributes(): array
     {
-        $attributes = static::newDefinitionSource(Probe::root())->describeSchema(new Request())['attributes']->children();
+        $attributes = self::probeSchema()['attributes']->children();
 
         return array_keys(array_filter($attributes, Conditions::isOnlyInFields(...)));
     }
