@@ -21,8 +21,6 @@ final readonly class ResourcePlan
     /**
      * @param Closure(mixed, JsonApiContext): void $bind Sets the model the template instance stands for, and the
      *                                                context it is rendered in (its place in the includes)
-     * @param MemberFieldsets|null $restrict Leaves out of the attributes the members of their objects the sparse
-     *                                       fieldset does not keep; `null` when it restricts none
      * @param array<string, array{string, Relation<mixed>, list<Closure(mixed, mixed): mixed>}> $relationships
      *        By name at the revision: the name of the code, the relation in force (its related resource resolved)
      *        and the conditions of the field
@@ -32,7 +30,6 @@ final readonly class ResourcePlan
         private ProjectionPlan $attributes,
         private ProjectionPlan $meta,
         private ProjectionPlan $documentMeta,
-        private ?MemberFieldsets $restrict = null,
         private array $relationships = [],
     ) {}
 
@@ -70,9 +67,7 @@ final readonly class ResourcePlan
     {
         ($this->bind)($model, $context);
 
-        $attributes = $this->attributes->run($model);
-
-        return new ProjectedValues($this->restrict === null ? $attributes : $this->restrict->restrict($attributes));
+        return new ProjectedValues($this->attributes->run($model));
     }
 
     /**

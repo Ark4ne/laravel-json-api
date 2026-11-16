@@ -1015,7 +1015,8 @@ A condition on the type of the items is not read for each item: filter the list 
 'position' => $this->struct(['lat' => $this->float(), 'lng' => $this->float()], 'coordinates'), // those of `coordinates`
 ```
 
-`fields[users]=address.city` keeps one member of the object.
+`fields[users]=address.city` keeps one member of the object, `fields[users]=tags.name` one member of each object of
+a list; the members left out are never read.
 
 # Versioned resources
 

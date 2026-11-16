@@ -107,6 +107,16 @@ final class ResourceDefinitionTest extends TestCase
         self::assertSame(['name', 'address', 'address.city', 'address.geo', 'address.geo.lat'], $definition->fields());
     }
 
+    public function test_fields_list_the_members_of_the_objects_of_a_list_under_its_name(): void
+    {
+        $definition = ResourceDefinition::of(PostResource::class, 'post')->values(self::shape([
+            'tags' => Schema::list(Schema::object(['name' => Schema::string(), 'meta' => Schema::object(['color' => Schema::string()])])),
+            'scores' => Schema::list(Schema::int()),
+        ]), null, null);
+
+        self::assertSame(['tags', 'tags.name', 'tags.meta', 'tags.meta.color', 'scores'], $definition->fields());
+    }
+
     public function test_the_sparse_attributes_are_named(): void
     {
         $definition = $this->definition()->sparse('title');

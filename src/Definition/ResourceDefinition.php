@@ -231,7 +231,8 @@ final readonly class ResourceDefinition
     }
 
     /**
-     * The dotted names of the fields of a shape and of the members of their objects (`address`, `address.city`).
+     * The dotted names of the fields of a shape and of the members of their objects (`address`, `address.city`), those of
+     * the objects of a list under the name of the list (`tags.name`).
      *
      * @return list<string>
      */
@@ -242,7 +243,8 @@ final readonly class ResourceDefinition
             $paths[] = $path = $prefix . $field->name;
             // The children of a head object carry their own names at the revision; those of a `was()` schema only
             // their type.
-            array_push($paths, ...($field->children === null ? self::members($field->type, "{$path}.") : self::paths($field->children, "{$path}.")));
+            $children = $field->children ?? $field->items?->children;
+            array_push($paths, ...($children === null ? self::members($field->type, "{$path}.") : self::paths($children, "{$path}.")));
         }
 
         return $paths;
@@ -253,6 +255,10 @@ final readonly class ResourceDefinition
      */
     private static function members(TypeDefinition $type, string $prefix): array
     {
+        if ($type->kind === Kind::List && $type->items !== null) {
+            return self::members($type->items, $prefix);
+        }
+
         $paths = [];
         if ($type->kind === Kind::Object) {
             foreach ($type->children as $name => $child) {

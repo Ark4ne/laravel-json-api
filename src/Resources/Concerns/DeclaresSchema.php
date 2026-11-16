@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
+use Ark4ne\ApiRevisions\Compilation\FieldDefinition;
 use Ark4ne\ApiRevisions\Compilation\Probe as CompilationProbe;
 use Ark4ne\ApiRevisions\Compilation\Shape;
 use Ark4ne\ApiRevisions\Definition\Lifetime;
@@ -21,7 +22,6 @@ use Ark4ne\JsonApi\Descriptors\Schemas\Conditions;
 use Ark4ne\JsonApi\Descriptors\Schemas\MixedSchema;
 use Ark4ne\JsonApi\Descriptors\Schemas\RelationshipSchema;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
-use Ark4ne\JsonApi\Rendering\MemberFieldsets;
 use Ark4ne\JsonApi\Rendering\ResourcePlan;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Ark4ne\JsonApi\Support\Memo;
@@ -180,22 +180,19 @@ trait DeclaresSchema
                     ?? throw DefinitionException::cannotCompile(static::class, new LogicException("The shape has no [{$object}] object."));
 
                 // The sparse fieldset is written in the names of the revision: it keeps the fields it allows, and a field
-                // only in fields (`whenInFields()`) when it names it.
+                // only in fields (`whenInFields()`) when it names it. It may name the members of an object
+                // (`fields[users]=address.city`): the plan keeps them as paths of head keys, the others are never read.
                 $keys = [];
-                $kept = [];
+                $requested = $context->fields->of($type);
                 $attributes = $schema['attributes']->children();
                 foreach ($children('attributes')->fields as $key => $field) {
-                    $requested = isset($attributes[$key]) && Conditions::isOnlyInFields($attributes[$key])
+                    $kept = isset($attributes[$key]) && Conditions::isOnlyInFields($attributes[$key])
                         ? $context->fields->requests($type, $field->name)
                         : $context->fields->allows($type, $field->name);
-                    if ($requested) {
-                        $keys[] = $key;
-                        $kept[] = $field;
+                    if ($kept) {
+                        array_push($keys, ...($requested === null ? [$key] : self::fieldPaths($key, $field, $requested)));
                     }
                 }
-
-                // The fieldset may name the members of an object (`fields[users]=address.city`).
-                $restrict = $context->fields->restricts($type) ? MemberFieldsets::of($kept, $context->fields, $type) : null;
 
                 // The relationships of the revision: the relation in force at it, its guessed resource the one of the
                 // definition (guessed once, when compiled). The conditions of the field (`->when()`, `applyWhen()`)
@@ -226,11 +223,74 @@ trait DeclaresSchema
                     $projector->plan($children('attributes'), $schema['attributes']->children(), $keys),
                     $projector->plan($children('meta'), $schema['meta']->children()),
                     $projector->plan($children('documentMeta'), $schema['documentMeta']->children()),
-                    $restrict,
                     $relationships,
                 );
             },
         );
+    }
+
+    /**
+     * The paths of head keys the plan keeps of the attribute `$key`, from the fields requested in the names of the
+     * revision: the attribute whole when it or one of its parents is requested, otherwise the members named
+     * (`address.city`, `*` going through the items of a list: `tags.*.name`). A member unknown at the revision is
+     * left out.
+     *
+     * @param list<string> $requested
+     *
+     * @return list<string>
+     */
+    private static function fieldPaths(string $key, FieldDefinition $field, array $requested): array
+    {
+        $paths = [];
+        foreach ($requested as $path) {
+            if ($path === $field->name || str_starts_with($field->name, "{$path}.")) {
+                return [$key];
+            }
+            if (str_starts_with($path, "{$field->name}.")) {
+                $member = self::memberPath($field, explode('.', substr($path, strlen($field->name) + 1)));
+                if ($member !== null) {
+                    $paths[] = "{$key}.{$member}";
+                }
+            }
+        }
+
+        return $paths;
+    }
+
+    /**
+     * @param list<string> $names The names at the revision of the members below `$field`
+     *
+     * @return string|null The path of head keys, `null` when a member is unknown at the revision
+     */
+    private static function memberPath(FieldDefinition $field, array $names): ?string
+    {
+        $path = [];
+        while ($names !== []) {
+            if ($field->children !== null) {
+                $name = array_shift($names);
+                $member = null;
+                foreach ($field->children->fields as $headKey => $child) {
+                    if ($child->name === $name) {
+                        $member = $child;
+                        $path[] = $headKey;
+
+                        break;
+                    }
+                }
+                if ($member === null) {
+                    return null;
+                }
+                $field = $member;
+            } elseif ($field->items?->children !== null) {
+                $path[] = '*';
+                $field = $field->items;
+            } else {
+                // A value without members planned one by one (a scalar, a converted object): the base keeps it whole.
+                return implode('.', [...$path, ...$names]);
+            }
+        }
+
+        return implode('.', $path);
     }
 
     /**

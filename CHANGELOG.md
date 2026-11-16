@@ -63,8 +63,9 @@ replaces them.
   `assertRevisionsAreConsistent()`): at each revision, an attribute or a relationship named `id` or `type`
   (`jsonapi-reserved-name`), an attribute and a relationship sharing a name (`jsonapi-name-collision`), a relationship
   to a resource that does not exist there (`jsonapi-absent-resource`).
-- `Rendering\MemberFieldsets`: the sparse fieldset applied to the members of the objects of a resource declared on
-  the base (`fields[users]=address.city`), by their names at the revision.
+- A sparse fieldset naming the members of an object (`fields[users]=address.city`) or of the objects of a list
+  (`fields[users]=tags.name`) of a resource declared on the base keeps them in its projection plan: a member left
+  out is never read nor converted.
 - `Rendering\ProjectedValues`: the members a `ResourcePlan` rendered, which the `ValueResolver` gives as they are.
 - `Definitions::for($class, $revision)` gives the attributes, the meta and the document meta of such a resource from
   its shape at the revision (names, types, nullability, presence), and its `fieldNames`: `Fields`, `Includes` and the

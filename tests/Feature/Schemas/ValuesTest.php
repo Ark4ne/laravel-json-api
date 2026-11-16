@@ -158,6 +158,32 @@ final class ValuesTest extends TestCase
             ->assertJsonPath('data.attributes', ['address' => ['town' => 'Paris']]);
     }
 
+    public function test_a_member_of_an_object_left_out_by_the_sparse_fieldset_is_never_evaluated(): void
+    {
+        CountedMembersResource::$sources = 0;
+        $resource = static fn(): CountedMembersResource => CountedMembersResource::make(['id' => 1, 'city' => 'Paris', 'tags' => [['name' => 'a', 'color' => 'red']]]);
+
+        $this->render($resource(), null, 'fields[counted-members]=address.city')
+            ->assertJsonPath('data.attributes', ['address' => ['city' => 'Paris']]);
+
+        self::assertSame(0, CountedMembersResource::$sources);
+
+        $this->render($resource(), null, 'fields[counted-members]=address')
+            ->assertJsonPath('data.attributes.address', ['city' => 'Paris', 'computed' => 'PARIS']);
+
+        self::assertSame(1, CountedMembersResource::$sources);
+    }
+
+    public function test_a_sparse_fieldset_names_the_members_of_the_objects_of_a_list(): void
+    {
+        $resource = static fn(): CountedMembersResource => CountedMembersResource::make(['id' => 1, 'city' => 'Paris', 'tags' => [['name' => 'a', 'color' => 'red'], ['name' => 'b', 'color' => 'blue']]]);
+
+        $this->render($resource(), null, 'fields[counted-members]=tags.name')
+            ->assertJsonPath('data.attributes', ['tags' => [['name' => 'a'], ['name' => 'b']]]);
+        $this->render($resource(), null, 'fields[counted-members]=tags')
+            ->assertJsonPath('data.attributes', ['tags' => [['name' => 'a', 'color' => 'red'], ['name' => 'b', 'color' => 'blue']]]);
+    }
+
     public function test_a_condition_on_the_includes_is_read_where_each_resource_is_rendered(): void
     {
         $node = ['id' => 1, 'child' => ['id' => 2, 'child' => ['id' => 3, 'child' => null]]];
@@ -260,6 +286,32 @@ final class RatedResource extends JsonApiResource
             'rating' => $this->float()->precision(1)->was(ApiRevision::Initial, schema: Schema::string()),
             'score' => $this->float()->precision(1)->truncate(),
             'raw' => $this->float(),
+        ];
+    }
+}
+
+/**
+ * Counts the runs of the computed source of a member of its object.
+ *
+ * @extends JsonApiResource<array<string, mixed>>
+ */
+#[JsonApiType('counted-members')]
+final class CountedMembersResource extends JsonApiResource
+{
+    public static int $sources = 0;
+
+    public function toAttributes(Request $request): iterable
+    {
+        return [
+            'address' => Schema::object([
+                'city' => Schema::string(),
+                'computed' => Schema::string(function (): string {
+                    self::$sources++;
+
+                    return is_string($this->resource['city'] ?? null) ? strtoupper($this->resource['city']) : '';
+                }),
+            ]),
+            'tags' => Schema::list(Schema::object(['name' => Schema::string(), 'color' => Schema::string()])),
         ];
     }
 }
