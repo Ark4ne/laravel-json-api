@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Ark4ne\JsonApi\Definition;
 
 use Ark4ne\ApiRevisions\Revisions\Revision;
+use Ark4ne\ApiRevisions\Revisions\RevisionOrder;
+use Ark4ne\JsonApi\Exceptions\DefinitionException;
 
 /**
  * The revisions a resource exists for (`#[JsonApiSince]`, `#[JsonApiUntil]`), bounds included: every revision and the
@@ -20,21 +22,36 @@ final readonly class Lifetime
     /**
      * Whether it covers no revision: its `since` is newer than its `until`.
      *
-     * @throws \Ark4ne\JsonApi\Exceptions\DefinitionException when the revisions are cases of two enums
+     * @throws DefinitionException when the revisions are cases of two enums
      */
     public function isEmpty(): bool
     {
-        return $this->since !== null && $this->until !== null && RevisionOrder::compare($this->since, $this->until) > 0;
+        return $this->since !== null && $this->until !== null && self::compare($this->since, $this->until) > 0;
     }
 
     /**
      * Whether the resource exists at `$revision` (`null` for the head).
      *
-     * @throws \Ark4ne\JsonApi\Exceptions\DefinitionException when the revisions are cases of two enums
+     * @throws DefinitionException when the revisions are cases of two enums
      */
     public function covers(?Revision $revision): bool
     {
-        return ($this->since === null || RevisionOrder::atLeast($revision, $this->since))
-            && ($this->until === null || RevisionOrder::atMost($revision, $this->until));
+        // The head is newer than every revision: at least any `since`, never at most an `until`.
+        return ($this->since === null || $revision === null || self::compare($revision, $this->since) >= 0)
+            && ($this->until === null || ($revision !== null && self::compare($revision, $this->until) <= 0));
+    }
+
+    /**
+     * Negative when `$a` is older than `$b`, zero when they are the same, positive when `$a` is newer.
+     *
+     * @throws DefinitionException when the revisions are cases of two enums
+     */
+    private static function compare(Revision $a, Revision $b): int
+    {
+        if ($a::class !== $b::class) {
+            throw DefinitionException::mixedRevisions($a::class, $b::class);
+        }
+
+        return RevisionOrder::index($a) <=> RevisionOrder::index($b);
     }
 }

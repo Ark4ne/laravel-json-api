@@ -568,50 +568,52 @@ every reported line and `WriterResource`, run `php artisan jsonapi:check`.
 
 ## Write request across revisions
 
-The body a client sends changes with its revision too. Each key whose rules changed declares its history with
-`Revised`, as a field does; the `JsonApiFormRequest` resolves it at the revision of the request, resolved by
-the `revision` middleware. Here `Authors` renamed `name` to `title` and capped the summary. The body is not
-translated: an old client still sends `name`, which the controller reads.
+The body a client sends changes with its revision too. The request uses the `RevisionedRequest` of
+`ark4ne/laravel-api-revisions` and declares its body in `body()` with descriptors, as a resource declares its
+attributes: each member that changed declares its history. The body is validated in the names of the revision of the
+client (resolved by the `revision` middleware) and read in those of the head: an old client sends `name`, the
+controller reads `title`. Here `Authors` renamed `name` to `title` and capped the summary.
 
 ```php
 namespace App\Recipes\Library;
 
+use Ark4ne\ApiRevisions\Laravel\Requests\RevisionedRequest;
+use Ark4ne\ApiRevisions\Schema\Revisioned;
+use Ark4ne\ApiRevisions\Schema\Schema;
+use Ark4ne\JsonApi\Http\Body;
 use Ark4ne\JsonApi\Http\JsonApiFormRequest;
-use Ark4ne\JsonApi\Http\Rules\Revised;
 
-final class BookStoreRequest extends JsonApiFormRequest
+final class BookStoreRequest extends JsonApiFormRequest implements Revisioned
 {
+    use RevisionedRequest;
+
     protected string $resource = BookResource::class;
 
     /**
-     * @return array<string, mixed>
+     * @return array<string, \Ark4ne\ApiRevisions\Schema\Descriptor<mixed>>
      */
-    public function rules(): array
+    protected function body(): array
     {
-        return [
-            'data.type' => ['required', 'in:books'],
-            'data.attributes.title' => Revised::rules(['required', 'string'])->since(LibraryRevision::Authors),
-            'data.attributes.summary' => Revised::rules(['nullable', 'string', 'max:500'])
-                ->was(LibraryRevision::Initial, rules: ['nullable', 'string']),
-            // Revisions
-            'data.attributes.name' => Revised::rules(['required', 'string'])->until(LibraryRevision::Initial),
-        ];
-    }
-
-    /** The title, under its name at the revision of the client. */
-    public function title(): string
-    {
-        $document = $this->jsonApi();
-
-        return (string) ($document->attribute('title') ?? $document->attribute('name'));
+        // `data.type` is the type of the resource: `books`.
+        return $this->resourceObject(
+            attributes: [
+                'title' => Schema::string()->required()->was(LibraryRevision::Initial, name: 'name'),
+                'summary' => Schema::string()->nullable()->max(500)
+                    ->was(LibraryRevision::Initial, schema: Schema::string()->nullable()),
+            ],
+            relationships: [
+                'author' => Body::toOne(AuthorResource::class),
+            ],
+        );
     }
 }
 ```
 
-`Revised::rules($head)`, then `->was(X, rules: …)` (the rules up to `X`, included), `->since(X)`, `->until(X)`. A
-plain `FormRequest` adds `use Http\Concerns\UseRevisedRules;`, which resolves them in its `validationRules()`
-(`Revised::resolve(parent::validationRules(), LibraryRevision::current())`). A `Revised` is the whole value of its key; a key left out of a revision
-leaves out the plain rules of its members (`tags.*`).
+`$this->resourceObject(attributes: …, relationships: …, id: …)` is `Body::resource($resource, …)`, for a request that
+is not a `JsonApiFormRequest`. `Body::toOne(…)` and `Body::toMany(…)` declare a relationship object and the types its
+linkage accepts (resource classes or types); `{"data": null}` clears a to-one relationship. `id:` takes the
+descriptor of `data.id` (`Schema::string()->required()` to update a resource). The controller reads
+`$request->jsonApi()`: `attribute('title')`, `ids('author')`.
 
 ## Checking resources in tests
 

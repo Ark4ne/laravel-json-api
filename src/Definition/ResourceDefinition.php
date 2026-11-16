@@ -29,8 +29,6 @@ final readonly class ResourceDefinition
      *                                its shape
      * @param Revision|null $since The oldest revision the resource exists at (`#[JsonApiSince]`), `null` for every one
      * @param Revision|null $until The newest revision the resource exists at (`#[JsonApiUntil]`), `null` for the head
-     * @param list<Revision> $boundaries The revisions where the shape of the resource changes, oldest first: the shape
-     *                                   of a revision is that of the oldest boundary at least as new, otherwise the head
      * @param array<string, string> $fieldNames For a resource declaring revisions: the name each attribute and
      *                                          relationship of the code (the keys of its hooks) has at the revision it
      *                                          describes, for those existing at it (the head included, without its
@@ -49,7 +47,6 @@ final readonly class ResourceDefinition
         public ?Revision $revision = null,
         public ?Revision $since = null,
         public ?Revision $until = null,
-        public array $boundaries = [],
         public array $fieldNames = [],
     ) {}
 
@@ -139,16 +136,6 @@ final readonly class ResourceDefinition
     }
 
     /**
-     * Replaces the revisions where its shape changes: each once, oldest first.
-     *
-     * @throws \Ark4ne\JsonApi\Exceptions\DefinitionException when the revisions are cases of two enums
-     */
-    public function boundaries(Revision ...$boundaries): self
-    {
-        return $this->copy(boundaries: RevisionOrder::sorted(...$boundaries));
-    }
-
-    /**
      * Whether the resource exists at `$revision` (`null` for the head): within its lifetime, bounds included.
      *
      * @throws \Ark4ne\JsonApi\Exceptions\DefinitionException when the revisions are cases of two enums
@@ -156,17 +143,6 @@ final readonly class ResourceDefinition
     public function existsAt(?Revision $revision): bool
     {
         return (new Lifetime($this->since, $this->until))->covers($revision);
-    }
-
-    /**
-     * The revision whose definition describes the shape of the resource at `$revision`: the oldest boundary at least as
-     * new, `null` for the head shape. A revision newer than every boundary reads the head in one comparison.
-     *
-     * @throws \Ark4ne\JsonApi\Exceptions\DefinitionException when the revisions are cases of two enums
-     */
-    public function boundaryOf(?Revision $revision): ?Revision
-    {
-        return RevisionOrder::boundaryOf($this->boundaries, $revision);
     }
 
     public function attribute(string $name): ?AttributeDefinition
@@ -217,7 +193,6 @@ final readonly class ResourceDefinition
      *     revision?: Revision|null,
      *     since?: Revision|null,
      *     until?: Revision|null,
-     *     boundaries?: list<Revision>,
      *     fieldNames?: array<string, string>,
      * } $properties
      */
@@ -262,7 +237,6 @@ final readonly class ResourceDefinition
      * @param Revision|false|null $revision `null` to keep the current one, `false` for the head
      * @param Revision|false|null $since `null` to keep the current one, `false` for none
      * @param Revision|false|null $until `null` to keep the current one, `false` for none
-     * @param list<Revision>|null $boundaries
      * @param array<string, string>|null $fieldNames
      */
     private function copy(
@@ -276,7 +250,6 @@ final readonly class ResourceDefinition
         Revision|false|null $revision = null,
         Revision|false|null $since = null,
         Revision|false|null $until = null,
-        ?array $boundaries = null,
         ?array $fieldNames = null,
     ): self {
         return new self(
@@ -292,7 +265,6 @@ final readonly class ResourceDefinition
             revision: $revision === false ? null : $revision ?? $this->revision,
             since: $since === false ? null : $since ?? $this->since,
             until: $until === false ? null : $until ?? $this->until,
-            boundaries: $boundaries ?? $this->boundaries,
             fieldNames: $fieldNames ?? $this->fieldNames,
         );
     }

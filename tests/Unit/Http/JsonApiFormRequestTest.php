@@ -16,7 +16,6 @@ use Test\Unit\Http\Fixtures\PostFormRequest;
 use Test\Unit\Http\Fixtures\PostUpdateFormRequest;
 use Test\Unit\Http\Fixtures\PostWriteFormRequest;
 use Test\Unit\Http\Fixtures\ResourcelessFormRequest;
-use Test\Unit\Http\Fixtures\RevisedPostFormRequest;
 
 final class JsonApiFormRequestTest extends TestCase
 {
@@ -181,53 +180,6 @@ final class JsonApiFormRequestTest extends TestCase
 
         self::useRevision(null);
         self::assertSame(['include', 'fields'], array_keys($this->errors(RevisedPostRequest::create('/posts?include=writer&fields[writers]=name'))));
-    }
-
-    public function test_the_body_is_validated_with_the_rules_of_the_revision_of_the_request(): void
-    {
-        $request = RevisedPostFormRequest::create('/posts', 'POST', ['data' => ['attributes' => [
-            'title' => 'Too long',
-            'code' => 'ABC',
-            'tags' => [1, 2],
-        ]]]);
-        self::useRevision(ApiRevision::Initial);
-
-        // max:5 up to Initial; summary not yet required; tags integers then.
-        self::assertSame(['data.attributes.title'], array_keys($this->errors($request)));
-    }
-
-    public function test_the_validated_body_holds_the_keys_of_the_revision_of_the_request(): void
-    {
-        $body = ['data' => ['attributes' => ['title' => 'Old', 'summary' => 'Summary', 'code' => 'ABC', 'tags' => [1]]]];
-        $initial = RevisedPostFormRequest::create('/posts', 'POST', $body);
-        self::useRevision(ApiRevision::Initial);
-
-        self::assertSame(['title' => 'Old', 'code' => 'ABC', 'tags' => [1]], $this->validate($initial)->jsonApi()->attributes());
-
-        self::useRevision(null);
-        $head = $this->resolve(RevisedPostFormRequest::class, '/posts', 'POST', ['data' => ['attributes' => [
-            'title' => 'New title', 'summary' => 'Summary', 'code' => 'ABC', 'tags' => ['a'],
-        ]]]);
-
-        self::assertSame(['title' => 'New title', 'summary' => 'Summary', 'tags' => ['a']], $head->jsonApi()->attributes());
-    }
-
-    public function test_the_body_is_validated_with_the_head_rules_without_revision(): void
-    {
-        $errors = $this->errors(RevisedPostFormRequest::class, '/posts', 'POST', ['data' => ['attributes' => [
-            'title' => 'A title too long',
-            'tags' => [1],
-        ]]]);
-
-        self::assertSame(['data.attributes.title', 'data.attributes.summary', 'data.attributes.tags.0'], array_keys($errors));
-    }
-
-    public function test_a_key_removed_after_a_revision_is_required_up_to_it(): void
-    {
-        $request = RevisedPostFormRequest::create('/posts', 'POST', ['data' => ['attributes' => ['title' => 'Old']]]);
-        self::useRevision(ApiRevision::Initial);
-
-        self::assertSame(['data.attributes.code'], array_keys($this->errors($request)));
     }
 
     public function test_a_form_request_without_resource_throws(): void

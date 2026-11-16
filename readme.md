@@ -1321,68 +1321,49 @@ fn() => …)` renders at another one.
 
 ## Write requests across revisions
 
-The rules of a body change with the revision too. Declare the history of each key that changed with
-`Http\Rules\Revised`, the head written plainly, bounds included:
+The body a client sends changes with its revision too. The request uses the `RevisionedRequest` of
+`ark4ne/laravel-api-revisions` and declares its body with descriptors, as a resource declares its attributes: each
+member that changed declares its history.
 
 ```php
-use Ark4ne\JsonApi\Http\Rules\Revised;
+use Ark4ne\ApiRevisions\Laravel\Requests\RevisionedRequest;
+use Ark4ne\ApiRevisions\Schema\Revisioned;
+use Ark4ne\ApiRevisions\Schema\Schema;
+use Ark4ne\JsonApi\Http\Body;
 
-class PostStoreRequest extends JsonApiFormRequest
+class PostStoreRequest extends JsonApiFormRequest implements Revisioned
 {
+    use RevisionedRequest;
+
     protected string $resource = PostResource::class;
 
-    public function rules(): array
+    protected function body(): array
     {
-        return [
-            'data.attributes.title' => Revised::rules('required|string|max:255')
-                ->was(ApiRevision::Initial, rules: 'required|string|max:80'),  // up to Initial, included
-            'data.attributes.label' => Revised::rules('required|string')->since(ApiRevision::Labels),
-            // Revisions
-            'data.attributes.name' => Revised::rules('required|string')->until(ApiRevision::Initial),
-        ];
+        return $this->resourceObject(
+            attributes: [
+                'title' => Schema::string()->required()->max(255)
+                    ->was(ApiRevision::Labels, name: 'label')
+                    ->was(ApiRevision::Initial, name: 'name', schema: Schema::string()->required()->max(80)),
+                'summary' => Schema::string()->nullable()->since(ApiRevision::Labels, default: ''),
+            ],
+            relationships: [
+                'author' => Body::toOne(UserResource::class),
+                'tags' => Body::toMany(TagResource::class),
+            ],
+        );
     }
 }
 ```
 
-A `JsonApiFormRequest` resolves them at the revision of the request: a key absent from it is left out, its member
-neither validated nor returned by `validated()` and `jsonApi()`. The body is not translated: an old client sends the
-names of its revision, which the controller reads. A declaration that cannot apply throws a `DefinitionException`: a
-`since()` newer than the `until()`, a `was()` outside them or at the `until()` (the head rules would never apply), the
-same `was()` twice, revisions of two enums.
+The body is validated in the names of the revision of the client, and its errors point at the members it sent; the
+controller reads it in the names of the head (`$request->jsonApi()->attribute('title')`, `->ids('author')`), a
+member added since given its default. `include` and `fields` stay validated at the revision of the request.
 
-Any other form request uses the trait `Http\Concerns\UseRevisedRules`, which resolves them at the revision of
-the request:
-
-```php
-use Ark4ne\JsonApi\Http\Concerns\UseRevisedRules;
-use Ark4ne\JsonApi\Http\Rules\Revised;
-use Illuminate\Foundation\Http\FormRequest;
-
-class ProfileUpdateRequest extends FormRequest
-{
-    use UseRevisedRules;
-
-    public function rules(): array
-    {
-        return [
-            'label' => Revised::rules('required|string')->since(ApiRevision::Labels),
-            'name' => Revised::rules('required|string')->until(ApiRevision::Initial),
-        ];
-    }
-}
-```
-
-The trait implements `validationRules()` with `Revised::resolve(parent::validationRules(), $revision)`, `$revision`
-being the current one (`ApiRevision::current()`). A form request defining its own `validationRules()` hides the method of the trait
-(PHP gives the class precedence): call `Revised::resolve()` there instead.
-
-A `Revised` is the whole value of its key: `Revised::rules(['bail', 'string'])`, never `['bail', Revised::rules('string')]`
-(it throws). A key left out of a revision leaves out the plain rules of its members too: `tags` absent leaves out
-`tags.*`; a member declared with its own `Revised` follows its own lifetime. A `Revised` keyed `include` or `fields`
-replaces the preconfigured rule where it exists; where it does not, the preconfigured rule validates.
-
-Tools read the history without a request: `head()`, `lifetime()` (`since`, `until`), `history()` (each `was()` as a
-`RulesRevision`, oldest first), and `at($revision)` / `existsAt($revision)`.
+`resourceObject()` declares the resource object of the resource of the request: `data.type` is its type, `id:` takes
+the descriptor of `data.id` (`Schema::string()->required()` to update a resource), `data.attributes` and
+`data.relationships` are required when one of their members is. `Body::toOne()` and `Body::toMany()` declare a
+relationship object and the types its linkage accepts (resource classes or types); `{"data": null}` clears a to-one
+relationship. A request that is not a `JsonApiFormRequest` calls `Body::resource(PostResource::class, …)`.
 
 ## Checking the revisions
 

@@ -154,7 +154,7 @@ declared on the fields that changed. Bounds are inclusive.
 | `#[Definition\JsonApiSince(X)]`, `#[Definition\JsonApiUntil(X)]` | A new type is a new resource; every relationship reaching it needs a `was()` to the old one |
 | `ApiRevision::current()` | Guards of a change of meaning, anywhere: `->isAtMost(X)`, `->isAtLeast(X)`, `->isBefore(X)`, `->isAfter(X)`; `ApiRevision::using(X, fn() => …)` renders at `X` |
 | `Definitions::for(PostResource::class, X)`, `Definitions::exists(PostResource::class, X)` | The definition at a revision (names, values, relationships of `X`), whether the resource exists at it |
-| `Http\Rules\Revised::rules($head)->was(X, rules: …)->since(X)->until(X)` | The rules of one key of a form request across revisions; resolved at the revision of the request by `JsonApiFormRequest`, by the trait `Http\Concerns\UseRevisedRules` in a plain `FormRequest`, by `Revised::resolve($rules, $revision)` elsewhere; a key absent from the revision is left out |
+| `use Ark4ne\ApiRevisions\Laravel\Requests\RevisionedRequest;` + `body()` | The body of a form request across revisions, declared with descriptors: validated in the names of the revision of the client, read in those of the head. `$this->resourceObject(attributes: …, relationships: …, id: …)` in a `JsonApiFormRequest` (`Http\Body::resource($resource, …)` elsewhere) declares the resource object, `Http\Body::toOne(…)` / `Body::toMany(…)` a relationship object and the types of its linkage |
 | `#[Resources\Attributes\JsonApiRoutes(…)]` at a revision | The links of the relationships of that revision, by their names at it (`posts.relationships.writer`); a relationship absent from it gets none |
 
 - A `schema:` of another type needs a conversion the base knows, or a `down:`; a relationship to another resource
@@ -214,7 +214,7 @@ only, in the diagnostics of the `JsonApiContext`.
 - `Http\JsonApiFormRequest`: `protected string $resource = PostResource::class;` validates `include` and `fields`
   (query string only) against the definitions at the revision of the request (set by a middleware, which runs first);
   your `rules()` are added, a rule keyed `include` or `fields` replaces
-  the preset one; a `Rules\Revised` among them is resolved at the revision of the request. `$request->jsonApi()` returns a `Http\ResourceDocument` of the validated body: `type()`, `id()`,
+  the preset one; a body that changes across revisions is declared in `body()` (`RevisionedRequest`). `$request->jsonApi()` returns a `Http\ResourceDocument` of the validated body: `type()`, `id()`,
   `attributes()`, `attribute($name)`, `hasAttribute($name)`, `relationships()`, `relationship($name)` (the linkage),
   `hasRelationship($name)`, `ids($name)`, `meta()`.
 - `Http\Rules\Includes(PostResource::class, maxDepth: 2, revision: $revision)` and

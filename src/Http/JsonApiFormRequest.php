@@ -11,7 +11,6 @@ use Ark4ne\JsonApi\Definition\RelatedResource;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Http\Rules\Fields;
 use Ark4ne\JsonApi\Http\Rules\Includes;
-use Ark4ne\JsonApi\Http\Rules\Revised;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -32,9 +31,9 @@ use Illuminate\Foundation\Http\FormRequest;
  * restricts are those of its revision. The `revision` middleware of `ark4ne/laravel-api-revisions` runs first, global
  * or on the route: a form request is resolved, and validated, with the controller, after every middleware.
  *
- * The rules of `rules()` that change across the revisions are declared with `Rules\Revised`; they are resolved at the
- * revision of the request too (`Revised::resolve()`), a key absent from it is left out. A `Revised` keyed `include` or
- * `fields` absent from the revision leaves the preconfigured rule: the query is always validated.
+ * A body that changes across the revisions is declared with the `RevisionedRequest` of `ark4ne/laravel-api-revisions`
+ * (`body()`, helped by `Http\Body` and `resourceObject()`): validated in the names of the revision of the client, read
+ * in those of the head.
  *
  * `jsonApi()` reads the resource object of the body (`ResourceDocument`) from the validated data.
  */
@@ -117,7 +116,7 @@ abstract class JsonApiFormRequest extends FormRequest
         $rules = [
             'include' => new Includes($this->resource, revision: $revision),
             'fields' => new Fields($this->resource, $revision),
-            ...Revised::resolve($own, $revision),
+            ...$own,
         ];
 
         foreach (self::PARAMETERS as $parameter) {

@@ -418,7 +418,7 @@ with an enum, named in `config/revisions.php` and read from the declarations.
 | Topic | Rule |
 | --- | --- |
 | Classes | `final` by default. Extensible base classes, listed in the architecture test: `JsonApiResource`, `JsonApiCollection`, `Descriptors\Describer` and `Descriptors\Relations\Relation` (abstract roots of the descriptors, extended by the package only), `Descriptors\Values\Value`, `Descriptors\Values\ValueDateTime` (base of `ValueDate` and `ValueTime`), `Http\JsonApiFormRequest` |
-| Traits | Used only in `src/Resources/`; `Http\Concerns\UseRevisedRules` is declared for the form requests of the application, used by no class of the package |
+| Traits | Used only in `src/Resources/` |
 | Global state | No singleton, no mutable static property; the only static state is `Compilation\Definitions` (pure cache, configuration set once at boot) and `Support\Memo` (pure memos, flushed after every Octane operation) |
 | Facades and helpers | Only in `src/Laravel/` |
 | Types | `declare(strict_types=1)`, every signature typed, PHPStan max; `mixed` only for free values, documented |

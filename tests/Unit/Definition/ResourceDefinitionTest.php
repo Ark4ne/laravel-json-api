@@ -122,24 +122,15 @@ final class ResourceDefinitionTest extends TestCase
         self::assertSame(ApiRevision::Labels, $definition->until);
     }
 
-    public function test_the_boundaries_list_the_declared_revisions_once(): void
-    {
-        $definition = $this->definition()->boundaries(ApiRevision::Labels, ApiRevision::Initial, ApiRevision::Labels);
-
-        self::assertSame([ApiRevision::Initial, ApiRevision::Labels], $definition->boundaries);
-    }
-
     public function test_the_revision_is_kept_by_the_other_replacements(): void
     {
         $definition = $this->definition()
             ->revision(ApiRevision::Labels)
             ->lifetime(new Lifetime(until: ApiRevision::Labels))
-            ->boundaries(ApiRevision::Labels)
             ->attributes();
 
         self::assertSame(ApiRevision::Labels, $definition->revision);
         self::assertSame(ApiRevision::Labels, $definition->until);
-        self::assertSame([ApiRevision::Labels], $definition->boundaries);
     }
 
     public function test_a_definition_with_revisions_survives_var_export(): void
@@ -147,7 +138,6 @@ final class ResourceDefinitionTest extends TestCase
         $definition = $this->definition()
             ->revision(ApiRevision::Initial)
             ->lifetime(new Lifetime(ApiRevision::Initial, ApiRevision::Labels))
-            ->boundaries(ApiRevision::Initial)
             ->fieldNames(['display_name' => 'name']);
 
         self::assertEquals($definition, eval('return ' . var_export($definition, true) . ';'));
@@ -167,7 +157,6 @@ final class ResourceDefinitionTest extends TestCase
         ]);
 
         self::assertNull($definition->revision);
-        self::assertSame([], $definition->boundaries);
         self::assertSame([], $definition->fieldNames);
     }
 

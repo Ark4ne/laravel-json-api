@@ -133,6 +133,12 @@ replaces them.
   `when()`, `whenHas()`, `merge()` and `mergeWhen()` on a resource, `Relation::was()`.
 - **Breaking**: the configuration keys `describer.datetime`, `describer.precision`, `describer.strict` and
   `describer.types`: still set, they throw an `InvalidConfigurationException` naming what replaces them.
+- `Http\Rules\Revised`, `Http\Rules\RulesRevision` and the trait `Http\Concerns\UseRevisedRules` of 2.1 (never
+  released): a body that changes across the revisions is declared in the `body()` of a request using the
+  `RevisionedRequest` of `ark4ne/laravel-api-revisions`, with `Http\Body`.
+- `ResourceDefinition::$boundaries`, `boundaries()` and `boundaryOf()`, and `Definition\RevisionOrder`, of 2.1 too:
+  the shape of a resource at a revision is the one `ark4ne/laravel-api-revisions` compiles. A compiled file written
+  by 2.1 is not read: run `php artisan jsonapi:cache` again.
 
 - **Breaking**: `Definition\Revision` (and its `description()`), `JsonApi::useRevision()`, `JsonApi::revision()`,
   `Context\RequestedRevision`, `$this->requestedRevision()`, `JsonApiContext::REVISION` and `revisionOf()`,

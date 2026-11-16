@@ -103,7 +103,7 @@ final class SkillTest extends SkillTestCase
     {
         $reference = self::read('reference.md');
 
-        foreach (['Ark4ne\\ApiRevisions\\Revisions\\Revision', 'IsRevision', "->middleware('revision')", 'ApiRevision::current()', 'Definitions::for(', 'Revised::rules(', 'Revised::resolve(', 'Concerns\\UseRevisedRules'] as $name) {
+        foreach (['Ark4ne\\ApiRevisions\\Revisions\\Revision', 'IsRevision', "->middleware('revision')", 'ApiRevision::current()', 'Definitions::for(', 'RevisionedRequest', 'resourceObject(', 'Body::toOne(', 'Body::toMany('] as $name) {
             self::assertStringContainsString($name, $reference, $name);
         }
     }
@@ -286,22 +286,26 @@ final class SkillTest extends SkillTestCase
         self::runRecipe('recipes.md', 'Write request across revisions');
 
         Route::post('recipes/books', static function (): array {
-            $request = self::formRequest('App\Recipes\Library\BookStoreRequest');
-            self::assertTrue(method_exists($request, 'title'));
+            $document = self::formRequest('App\Recipes\Library\BookStoreRequest')->jsonApi();
 
-            return ['title' => $request->title(), 'attributes' => $request->jsonApi()->attributes()];
+            return ['attributes' => $document->attributes(), 'author' => $document->ids('author')];
         })->middleware('revision');
 
         $long = str_repeat('a', 501);
-        $this->postJson('recipes/books', ['data' => ['type' => 'books', 'attributes' => ['title' => 'Notes', 'summary' => 'Short']]])
-            ->assertOk()->assertExactJson(['title' => 'Notes', 'attributes' => ['title' => 'Notes', 'summary' => 'Short']]);
+        $author = ['author' => ['data' => ['type' => 'authors', 'id' => '3']]];
+        $this->postJson('recipes/books', ['data' => ['type' => 'books', 'attributes' => ['title' => 'Notes', 'summary' => 'Short'], 'relationships' => $author]])
+            ->assertOk()->assertExactJson(['attributes' => ['title' => 'Notes', 'summary' => 'Short'], 'author' => ['3']]);
         $this->postJson('recipes/books', ['data' => ['type' => 'books', 'attributes' => ['name' => 'Notes', 'summary' => $long]]])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['data.attributes.title', 'data.attributes.summary']);
+        $this->postJson('recipes/books', ['data' => ['type' => 'writers', 'attributes' => ['title' => 'Notes'], 'relationships' => ['author' => ['data' => ['type' => 'books', 'id' => '3']]]]])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['data.type', 'data.relationships.author.data.type']);
 
+        // An old client sends the names of its revision; the controller reads those of the head.
         $initial = ['Api-Version' => '2026-09-01'];
         $this->postJson('recipes/books', ['data' => ['type' => 'books', 'attributes' => ['name' => 'Notes', 'summary' => $long]]], $initial)
-            ->assertOk()->assertExactJson(['title' => 'Notes', 'attributes' => ['summary' => $long, 'name' => 'Notes']]);
+            ->assertOk()->assertExactJson(['attributes' => ['title' => 'Notes', 'summary' => $long], 'author' => []]);
         $this->postJson('recipes/books', ['data' => ['type' => 'books', 'attributes' => ['title' => 'Notes']]], $initial)
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['data.attributes.name']);
