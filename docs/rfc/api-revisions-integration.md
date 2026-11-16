@@ -244,6 +244,15 @@ feature tests unchanged). What was done differently from the plan above, and wha
 - The skills are updated where their tests run code (`reference.md`, the recipes, two examples of the upgrade
   skill); the README, `docs/architecture.md` and the prose of the upgrade skill still describe 2.x (EJ7).
 
+### EJ7 — documentation (2026-11-16)
+
+Rewritten for 3.0: the README (configuration, hooks, conditions, value helpers, types of the application, enums,
+typed arrays, objects, history of a field, write requests, checks), `docs/architecture.md` (layers, definition,
+compilation, descriptors, rendering, revisions), `CLAUDE.md`, the skill `laravel-json-api` and the prose of the
+upgrade skill, whose target is 3.0. Left for the release: the section "From 1.x to 2.0" of `UPGRADE.md` still gives
+2.0 code (an application on 1.x reads it, then "From 2.0 to 3.0"), the two superseded RFCs to delete, and the
+benchmark figures of the README.
+
 ### EJ5 — stories
 
 | Story | Content |

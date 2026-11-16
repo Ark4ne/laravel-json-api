@@ -10,7 +10,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Route;
 
 /**
- * The upgrade skill shipped with the package (`skills/laravel-json-api-upgrade/`): every 2.0 port of its examples
+ * The upgrade skill shipped with the package (`skills/laravel-json-api-upgrade/`): every 3.0 port of its examples
  * runs and renders a valid document, the files link to each other, and the mapping names everything 1.x exposed to an
  * application.
  */

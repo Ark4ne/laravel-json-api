@@ -1,7 +1,7 @@
-# Examples: 1.x code and its 2.0 port
+# Examples: 1.x code and its 3.0 port
 
-Each example shows the 1.x code (`php skip`, it does not run in 2.0), then its 2.0 port. The package's test suite
-runs every 2.0 block in a Laravel application, renders its resources on models built in memory and validates the
+Each example shows the 1.x code (`php skip`, it does not run in 3.0), then its 3.0 port. The package's test suite
+runs every 3.0 block in a Laravel application, renders its resources on models built in memory and validates the
 documents against the JSON:API 1.1 schema. In an application each class goes to its own file; the namespaces here
 only keep the examples apart. Mapping tables: [mapping.md](mapping.md).
 
@@ -36,7 +36,7 @@ class UserResource extends JsonApiResource
 }
 ```
 
-2.0:
+3.0:
 
 ```php
 namespace App\Upgrade\Users;
@@ -119,7 +119,7 @@ class AuthorResource extends JsonApiResource
 }
 ```
 
-2.0:
+3.0:
 
 ```php
 namespace App\Upgrade\Library;
@@ -313,7 +313,7 @@ class AuthorShowRequest extends FormRequest
 'custom' => ['jsonapi' => ['includes' => ['invalid_includes' => 'Unknown relationship ":relation".']]],
 ```
 
-2.0 (uses the resources of [Relationships](#relationships)):
+3.0 (uses the resources of [Relationships](#relationships)):
 
 ```php
 namespace App\Upgrade\Library;
@@ -374,7 +374,7 @@ $document = (new TagCollection($tags))->toArray($request, true);
 if (Includes::include($request, 'posts') && Fields::has($request, 'label', 'tag')) { /* … */ }
 ```
 
-2.0:
+3.0:
 
 ```php
 namespace App\Upgrade\Tags;
@@ -437,7 +437,7 @@ if ($context->include->has('posts') && $context->fields->allows('tag', 'label'))
 $schema = PostResource::schema();               // Skeleton
 $schema->relationships['author']->type;
 
-// 2.0
+// 3.0
 ResourceAssertions::assertValid(PostResource::class, strict: true);
 $definition = PostResource::definition();       // ResourceDefinition
 $definition->relationship('author')?->related;  // list of resource classes
