@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Test\Feature\Values;
 
+use Ark4ne\ApiRevisions\Definition\Kind;
 use Ark4ne\ApiRevisions\Schema\TypeRegistry;
-use Ark4ne\JsonApi\Definition\ValueType;
 use Illuminate\Http\Request;
 use Test\app\Values\MoneySchema;
 use Test\Feature\FeatureTestCase;
@@ -39,9 +39,10 @@ final class ValueTypeTest extends FeatureTestCase
         self::assertSame(['price' => '12.50', 'prices' => ['1.00', '0.05']], $resource->toArray(new Request())['attributes'] ?? null);
         $price = $definition->attribute('price');
         self::assertNotNull($price);
-        self::assertSame(ValueType::String, $price->type);
-        self::assertSame('money', $price->format);
-        self::assertSame('money', $definition->attribute('prices')?->items?->format);
+        self::assertSame(Kind::Custom, $price->type->kind);
+        self::assertSame('money', $price->type->name);
+        self::assertSame(Kind::List, $definition->attribute('prices')?->type->kind);
+        self::assertSame('money', $definition->attribute('prices')->type->items?->name);
     }
 
     public function test_a_call_that_is_not_a_registered_type_goes_to_the_model(): void

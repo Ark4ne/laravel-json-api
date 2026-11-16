@@ -248,5 +248,5 @@ only, in the diagnostics of the `JsonApiContext`.
 - `Testing\ResourceAssertions::assertValid(PostResource::class, strict: false, revision: null)`: fails on the
   diagnostics of the definition, as `jsonapi:check` does; at a revision, those of the definition there. `assertValidAtEveryRevision(PostResource::class)` checks every revision;
   `definitionAt(PostResource::class, ApiRevision::Labels)` returns the definition of a revision, for snapshot tests.
-- `PostResource::definition()`: the compiled definition (type, attributes with their `ValueType`, relationships with
+- `PostResource::definition()`: the compiled definition (type, attributes and meta as the `Shape`s of `ark4ne/laravel-api-revisions`, relationships with
   their related classes), the public contract read by tools such as `laravel-openapi-generator`.

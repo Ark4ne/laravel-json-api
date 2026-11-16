@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Test\Unit\Compilation;
 
+use Ark4ne\ApiRevisions\Compilation\FieldDefinition;
+use Ark4ne\ApiRevisions\Definition\Kind;
 use Ark4ne\JsonApi\Compilation\DefinitionCompiler;
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Configuration\Linkage;
-use Ark4ne\JsonApi\Definition\AttributeDefinition;
 use Ark4ne\JsonApi\Definition\Cardinality;
 use Ark4ne\JsonApi\Definition\ResourceDefinition;
-use Ark4ne\JsonApi\Definition\ValueType;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Ark4ne\JsonApi\Support\Diagnostic;
@@ -48,7 +48,7 @@ final class DefinitionCompilerTest extends TestCase
         return Configuration::defaults()->withRevisions(ApiRevision::class);
     }
 
-    private function attribute(ResourceDefinition $definition, string $name): AttributeDefinition
+    private function attribute(ResourceDefinition $definition, string $name): FieldDefinition
     {
         $attribute = $definition->attribute($name);
         self::assertNotNull($attribute, "Attribute [$name] is missing.");
@@ -99,7 +99,7 @@ final class DefinitionCompilerTest extends TestCase
     {
         self::assertSame(
             ['title', 'name', 'count', 'ratio', 'active', 'published-at', 'state', 'tags', 'full-name', 'secret', 'content', 'address', 'grouped'],
-            array_keys($this->compile(TypedResource::class)->attributes),
+            $this->compile(TypedResource::class)->attributes?->names(),
         );
     }
 
@@ -107,16 +107,16 @@ final class DefinitionCompilerTest extends TestCase
     {
         $definition = $this->compile(TypedResource::class);
 
-        self::assertSame(ValueType::String, $this->attribute($definition, 'title')->type);
-        self::assertSame(ValueType::Integer, $this->attribute($definition, 'count')->type);
-        self::assertSame(ValueType::Number, $this->attribute($definition, 'ratio')->type);
-        self::assertSame(ValueType::Boolean, $this->attribute($definition, 'active')->type);
-        self::assertSame(ValueType::Date, $this->attribute($definition, 'published-at')->type);
-        self::assertSame(ValueType::Enum, $this->attribute($definition, 'state')->type);
-        self::assertSame(State::class, $this->attribute($definition, 'state')->enum);
-        self::assertSame(ValueType::Array, $this->attribute($definition, 'tags')->type);
-        self::assertSame(ValueType::String, $this->attribute($definition, 'tags')->items?->type);
-        self::assertSame(ValueType::Struct, $this->attribute($definition, 'address')->type);
+        self::assertSame(Kind::String, $this->attribute($definition, 'title')->type->kind);
+        self::assertSame(Kind::Int, $this->attribute($definition, 'count')->type->kind);
+        self::assertSame(Kind::Float, $this->attribute($definition, 'ratio')->type->kind);
+        self::assertSame(Kind::Bool, $this->attribute($definition, 'active')->type->kind);
+        self::assertSame(Kind::Date, $this->attribute($definition, 'published-at')->type->kind);
+        self::assertSame(Kind::Enum, $this->attribute($definition, 'state')->type->kind);
+        self::assertSame(State::class, $this->attribute($definition, 'state')->type->enum);
+        self::assertSame(Kind::List, $this->attribute($definition, 'tags')->type->kind);
+        self::assertSame(Kind::String, $this->attribute($definition, 'tags')->type->items?->kind);
+        self::assertSame(Kind::Object, $this->attribute($definition, 'address')->type->kind);
     }
 
     public function test_nullable_defaults_to_the_configuration_unless_the_descriptor_says_otherwise(): void
@@ -131,9 +131,9 @@ final class DefinitionCompilerTest extends TestCase
     {
         $address = $this->attribute($this->compile(TypedResource::class), 'address');
 
-        self::assertSame(['city', 'geo'], array_keys($address->children));
-        self::assertSame(ValueType::Struct, $address->children['geo']->type);
-        self::assertSame(ValueType::Number, $address->children['geo']->children['lat']->type);
+        self::assertSame(['city', 'geo'], $address->children?->names());
+        self::assertSame(Kind::Object, $address->children->field('geo')?->type->kind);
+        self::assertSame(Kind::Float, $address->children->field('geo')->children?->field('lat')?->type->kind);
     }
 
     public function test_conditions_mark_an_attribute_conditional(): void
@@ -149,15 +149,16 @@ final class DefinitionCompilerTest extends TestCase
         $definition = $this->compile(TypedResource::class);
 
         self::assertTrue($this->attribute($definition, 'content')->conditional);
-        self::assertTrue($this->attribute($definition, 'content')->sparse);
-        self::assertFalse($this->attribute($definition, 'title')->sparse);
+        self::assertSame(['content'], $definition->sparse);
+        self::assertTrue($definition->isSparse('content'));
+        self::assertFalse($definition->isSparse('title'));
     }
 
     public function test_the_members_of_apply_when_are_kept_and_conditional(): void
     {
         $grouped = $this->attribute($this->compile(TypedResource::class), 'grouped');
 
-        self::assertSame(ValueType::Integer, $grouped->type);
+        self::assertSame(Kind::Int, $grouped->type->kind);
         self::assertTrue($grouped->conditional);
     }
 
@@ -200,17 +201,15 @@ final class DefinitionCompilerTest extends TestCase
         self::assertSame('author', $author->source);
     }
 
-    public function test_the_links_are_named_and_the_meta_described_like_attributes(): void
+    public function test_the_links_are_named_and_the_meta_are_shapes_like_the_attributes(): void
     {
         $definition = $this->compile(TypedResource::class);
 
-        self::assertSame(['self'], array_keys($definition->links));
-        self::assertSame(ValueType::Mixed, $definition->links['self']->type);
-        self::assertTrue($definition->links['self']->computed);
-        self::assertSame(['created-at'], array_keys($definition->meta));
-        self::assertSame(ValueType::Date, $definition->meta['created-at']->type);
-        self::assertSame(['version'], array_keys($definition->documentMeta));
-        self::assertSame(ValueType::Integer, $definition->documentMeta['version']->type);
+        self::assertSame(['self'], $definition->links);
+        self::assertSame(['created-at'], $definition->meta?->names());
+        self::assertSame(Kind::DateTime, $definition->meta->field('created-at')?->type->kind);
+        self::assertSame(['version'], $definition->documentMeta?->names());
+        self::assertSame(Kind::Int, $definition->documentMeta->field('version')?->type->kind);
     }
 
     public function test_a_link_that_is_a_descriptor_gives_an_error(): void
@@ -252,8 +251,9 @@ final class DefinitionCompilerTest extends TestCase
         self::assertSame([DefinitionCompiler::INVALID_DECLARATION], $this->codes($definition));
         self::assertSame(DiagnosticLevel::Error, $definition->diagnostics[0]->level);
         self::assertStringContainsString('[title] of toAttributes()', $definition->diagnostics[0]->message);
-        self::assertSame([], $definition->attributes);
-        self::assertSame(['self'], array_keys($definition->links));
+        self::assertNull($definition->attributes);
+        self::assertNull($definition->meta);
+        self::assertSame(['self'], $definition->links);
     }
 
     public function test_a_failing_hook_gives_an_error(): void
@@ -327,11 +327,13 @@ final class DefinitionCompilerTest extends TestCase
         $this->compile(stdClass::class);
     }
 
-    public function test_the_compiled_definition_survives_var_export(): void
+    public function test_the_compiled_definition_survives_var_export_without_its_values_and_serialize_with_them(): void
     {
         $definition = $this->compile(TypedResource::class);
+        $exported = $definition->values(null, null, null);
 
-        self::assertEquals($definition, eval('return ' . var_export($definition, true) . ';'));
+        self::assertEquals($exported, eval('return ' . var_export($exported, true) . ';'));
+        self::assertEquals($definition, unserialize(serialize($definition)));
     }
 
     public function test_load_constraints_give_the_closures_left_out_of_the_definition(): void
@@ -411,12 +413,12 @@ final class DefinitionCompilerTest extends TestCase
         $head = $this->compile(ProfileResource::class, self::revised());
 
         self::assertSame(ApiRevision::Initial, $initial->revision);
-        self::assertSame(['name', 'email', 'full_name'], array_keys($initial->attributes));
+        self::assertSame(['name', 'email', 'full_name'], $initial->attributes?->names());
         self::assertSame(['comments'], array_keys($initial->relationships));
-        self::assertSame(['label', 'email', 'full_name'], array_keys($labels->attributes));
+        self::assertSame(['label', 'email', 'full_name'], $labels->attributes?->names());
         self::assertSame(['remarks'], array_keys($labels->relationships));
         self::assertNull($head->revision);
-        self::assertSame(['display_name', 'email', 'tag_names'], array_keys($head->attributes));
+        self::assertSame(['display_name', 'email', 'tag_names'], $head->attributes?->names());
         self::assertEquals($head, $this->compile(ProfileResource::class, self::revised(), ApiRevision::UsersReplaceTeachers));
     }
 

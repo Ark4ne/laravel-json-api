@@ -93,7 +93,7 @@ final class ResourceAssertionsTest extends TestCase
 
         self::assertSame('profiles', $definition->type);
         self::assertSame(ApiRevision::Initial, $definition->revision);
-        self::assertArrayHasKey('name', $definition->attributes);
+        self::assertNotNull($definition->attribute('name'));
         self::assertSame('profiles', ResourceAssertions::definitionAt(ProfileResource::class)->type);
     }
 

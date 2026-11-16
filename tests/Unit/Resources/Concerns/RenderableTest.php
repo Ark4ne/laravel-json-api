@@ -105,7 +105,7 @@ final class RenderableTest extends TestCase
 
         self::assertSame(['self', 'related'], array_keys($links));
         self::assertSame('https://example.com', $links['self']);
-        self::assertSame(['self', 'related'], array_keys(Definitions::for($resource::class, ApiRevision::Initial)->links));
+        self::assertSame(['self', 'related'], Definitions::for($resource::class, ApiRevision::Initial)->links);
     }
 
     private function context(?ApiRevision $revision): JsonApiContext

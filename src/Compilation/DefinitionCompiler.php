@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Compilation;
 
+use Ark4ne\ApiRevisions\Compilation\FieldDefinition;
 use Ark4ne\ApiRevisions\Compilation\Shape;
 use Ark4ne\ApiRevisions\Revisions\Revision;
 use Ark4ne\ApiRevisions\Revisions\RevisionOrder;
@@ -11,16 +12,15 @@ use Ark4ne\ApiRevisions\Revisions\Unrevisioned;
 use Ark4ne\ApiRevisions\Schema\DeclarationKind;
 use Ark4ne\ApiRevisions\Schema\Descriptor;
 use Ark4ne\JsonApi\Configuration\Configuration;
-use Ark4ne\JsonApi\Definition\AttributeDefinition;
 use Ark4ne\JsonApi\Definition\DefinitionSource;
 use Ark4ne\JsonApi\Definition\JsonApiSince;
 use Ark4ne\JsonApi\Definition\JsonApiUntil;
 use Ark4ne\JsonApi\Definition\Lifetime;
 use Ark4ne\JsonApi\Definition\RelationshipDefinition;
 use Ark4ne\JsonApi\Definition\ResourceDefinition;
-use Ark4ne\JsonApi\Definition\ValueType;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Support\Diagnostic;
+use Ark4ne\JsonApi\Support\DiagnosticLevel;
 use Ark4ne\JsonApi\Support\Diagnostics;
 use Ark4ne\JsonApi\Support\Probe;
 use Closure;
@@ -35,8 +35,9 @@ use Throwable;
  *
  * - What is JSON:API is read by running the hooks on a probe: the type, the links, the relationships (related
  *   resources, linkage, loads), the routes and the lifetime.
- * - The values (attributes, meta of the resource object, meta of the document) are those of the shape
- *   `ark4ne/laravel-api-revisions` compiles for the resource at the revision: names, types, nullability, conditions.
+ * - The values (attributes, meta of the resource object, meta of the document) are the shapes
+ *   `ark4ne/laravel-api-revisions` compiles for the resource at the revision, given as they are: names, types,
+ *   nullability, conditions.
  * - The rules of JSON:API on its fields (reserved names, one name space, a relationship to a resource absent from a
  *   revision) are checked by `ResourceCheck`, with the history of the fields: `ResourceChecker`.
  * - The hooks run with a neutral request: a member declared under an `if` on the request or the model is seen only
@@ -102,28 +103,56 @@ final readonly class DefinitionCompiler
             $relationships = self::object($shape, 'relationships');
             $described = $class::describeRelationshipsAt($relationships);
 
-            // What the shape does not hold: the fields rendered only when the sparse fieldset names them.
-            $names = SchemaAttributes::names($attributes);
-            $sparse = array_flip(array_intersect_key($names, array_flip($class::sparseAttributes())));
+            $names = self::names($attributes);
 
             $definition = $definition
-                ->attributes(...array_map(
-                    static fn(AttributeDefinition $attribute): AttributeDefinition => isset($sparse[$attribute->name]) ? $attribute->sparse() : $attribute,
-                    SchemaAttributes::of($attributes),
-                ))
+                ->values($attributes, self::object($shape, 'meta'), self::object($shape, 'documentMeta'))
+                // What the shape does not hold: the fields rendered only when the sparse fieldset names them.
+                ->sparse(...array_values(array_intersect_key($names, array_flip($class::sparseAttributes()))))
                 ->relationships(...array_map(static fn(array $relationship): RelationshipDefinition => $relationship[0], $described))
-                ->meta(...SchemaAttributes::of(self::object($shape, 'meta')))
-                ->documentMeta(...SchemaAttributes::of(self::object($shape, 'documentMeta')))
-                ->fieldNames([...$names, ...SchemaAttributes::names($relationships)]);
+                ->fieldNames([...$names, ...self::names($relationships)]);
         } catch (Throwable $e) {
-            $diagnostics->error(
-                self::INVALID_DECLARATION,
-                "The values of the resource cannot be compiled ({$e->getMessage()}): its attributes, relationships and "
-                . 'meta are missing from the definition.',
-            );
+            $diagnostics->error(self::INVALID_DECLARATION, self::notCompiled($e));
         }
 
         return $definition->diagnostics(...$diagnostics);
+    }
+
+    /**
+     * A definition read from the compiled file with its values: the shapes of its attributes and meta at its revision,
+     * which the file does not hold (those `ark4ne/laravel-api-revisions` caches, or compiles on first use). One that
+     * already has them, or whose resource does not exist at its revision, is returned as it is; shapes that cannot be
+     * compiled are reported as by `compile()`.
+     */
+    public function withValues(ResourceDefinition $definition): ResourceDefinition
+    {
+        $at = $definition->revision ?? $this->head();
+        if ($definition->attributes !== null || !$definition->existsAt($at)) {
+            return $definition;
+        }
+
+        try {
+            $shape = $this->projection->shapes->for($definition->class, DeclarationKind::Response, $at);
+
+            return $definition->values(self::object($shape, 'attributes'), self::object($shape, 'meta'), self::object($shape, 'documentMeta'));
+        } catch (Throwable $e) {
+            return $definition->diagnostics(
+                ...$definition->diagnostics,
+                ...[new Diagnostic(DiagnosticLevel::Error, self::INVALID_DECLARATION, self::notCompiled($e))],
+            );
+        }
+    }
+
+    /**
+     * The name each field of the code has at the revision of a shape, for those visible at it.
+     *
+     * @internal
+     *
+     * @return array<string, string>
+     */
+    public static function names(Shape $shape): array
+    {
+        return array_map(static fn(FieldDefinition $field): string => $field->name, $shape->fields);
     }
 
     /**
@@ -251,7 +280,7 @@ final readonly class DefinitionCompiler
      *
      * @param iterable<array-key, mixed> $members
      *
-     * @return list<AttributeDefinition>
+     * @return list<string>
      */
     private static function links(iterable $members): array
     {
@@ -267,12 +296,17 @@ final readonly class DefinitionCompiler
                     throw new LogicException("[{$name}] is a descriptor: a link is a URL, a link object or a closure returning one");
                 }
 
-                $link = AttributeDefinition::of($name, ValueType::Mixed)->nullable();
-                $links[] = $member instanceof Closure ? $link->computed() : $link;
+                $links[] = $name;
             }
         }
 
         return $links;
+    }
+
+    private static function notCompiled(Throwable $e): string
+    {
+        return "The values of the resource cannot be compiled ({$e->getMessage()}): its attributes, relationships and "
+            . 'meta are missing from the definition.';
     }
 
     /**

@@ -100,6 +100,6 @@ final readonly class ResourceCheck implements Check
      */
     private static function names(?Shape $shape): array
     {
-        return $shape === null ? [] : SchemaAttributes::names($shape);
+        return $shape === null ? [] : DefinitionCompiler::names($shape);
     }
 }

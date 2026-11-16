@@ -31,7 +31,7 @@ final class DefinableTest extends TestCase
         $definition = PostResource::definition();
 
         self::assertSame('post', $definition->type);
-        self::assertSame(['state', 'title', 'content'], array_keys($definition->attributes));
+        self::assertSame(['state', 'title', 'content'], $definition->attributes?->names());
         self::assertSame(['user', 'comments'], array_keys($definition->relationships));
     }
 

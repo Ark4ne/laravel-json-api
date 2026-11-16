@@ -111,8 +111,15 @@ replaces them.
   `ark4ne/laravel-api-revisions`, served by `$this->money()`.
 - **Breaking**: `Definitions::for($class, $revision)` gives one definition per revision (its `revision` is the one
   asked, `null` for the head, the newest revision), built from the shape of the base; it throws when the values of
-  the resource cannot be compiled. `Definitions::compile()` and `jsonapi:check` report it as a diagnostic. The
-  attributes no longer name their `source` nor whether they are `computed`.
+  the resource cannot be compiled. `Definitions::compile()` and `jsonapi:check` report it as a diagnostic.
+- **Breaking**: the values of a definition are the model of `ark4ne/laravel-api-revisions`:
+  `ResourceDefinition::$attributes`, `$meta` and `$documentMeta` are the `Shape`s of the resource at the revision
+  (`null` where it has none), `attribute($name)` the `FieldDefinition` of that name at the revision; `$links` is the
+  list of the names of the links; `$sparse` and `isSparse()` name the attributes rendered only when requested.
+  `values()` and `sparse()` replace `attributes()`, `meta()` and `documentMeta()`. `Definition\AttributeDefinition`
+  and `Definition\ValueType` are removed.
+- **Breaking**: the compiled file (`jsonapi:cache`) holds the definitions without their shapes, given back on the
+  first `Definitions::for()` from those of the base; a file written by another version is ignored.
 - **Breaking**: `jsonapi:check` and `ResourceAssertions` run the check of `ark4ne/laravel-api-revisions` on the
   resources (`Compilation\ResourceChecker`): the history of their fields and its conversions are checked again, with
   the codes of the base (`conversion-missing`, `definition-error`…), and the rules of JSON:API are those of

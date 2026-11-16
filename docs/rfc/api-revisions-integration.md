@@ -220,8 +220,10 @@ feature tests unchanged). What was done differently from the plan above, and wha
   `ApiRevision::current()`).
 - **The default attributes** (a resource without `toAttributes()`) are outside the declaration: rendered as they
   are, neither exported nor locked by the base.
-- **D10 is not done**: `Definition\AttributeDefinition`, `ValueType` and `Compilation\SchemaAttributes` stay, as
-  the adapter from the shapes of the base; the attributes lost `source` and `computed`. `ResourceDefinition` still
+- **D10** (done after): `Definition\AttributeDefinition`, `ValueType` and `Compilation\SchemaAttributes` are
+  removed; `ResourceDefinition::$attributes`, `$meta` and `$documentMeta` are the shapes of the base, `$links` the
+  names of the links, `$sparse` the attributes rendered only when requested. The compiled file holds the definitions
+  without their shapes. `ResourceDefinition` still
   has `boundaries` (always empty) and `Definition\RevisionOrder` its 2.1 helpers, used by `Http\Rules\Revised`:
   they go with US 5.3.
 - **Checks** (US 6.2 not done): the compiler reports `invalid-declaration`, `reserved-name`, `name-collision` and

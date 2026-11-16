@@ -26,6 +26,13 @@ final class Definitions
     /** @var array<class-string<DefinitionSource>, array<string, ResourceDefinition>> By class, then revision name */
     private static array $definitions = [];
 
+    /**
+     * Those read from the compiled file, without their values, until asked for.
+     *
+     * @var array<class-string<DefinitionSource>, array<string, ResourceDefinition>> By class, then revision name
+     */
+    private static array $preloaded = [];
+
     /** @var array<class-string<DefinitionSource>, array<string, array<string, array<string, Closure>>>> By class, then revision name */
     private static array $constraints = [];
 
@@ -105,14 +112,17 @@ final class Definitions
 
     /**
      * Fills the cache with definitions compiled beforehand, keyed as in the compiled file
-     * (`CompiledDefinitions::key()`): by class for the head, `class@Case` for a revision.
+     * (`CompiledDefinitions::key()`): by class for the head, `class@Case` for a revision. One given without its values
+     * (as the compiled file holds it) takes the shapes of its resource when it is asked for.
      *
      * @param array<string, ResourceDefinition> $definitions
      */
     public static function preload(array $definitions): void
     {
         foreach ($definitions as $definition) {
-            self::$definitions[$definition->class][($definition->revision ?? self::head())->name] = $definition;
+            $name = ($definition->revision ?? self::head())->name;
+            self::$preloaded[$definition->class][$name] = $definition;
+            unset(self::$definitions[$definition->class][$name]);
         }
     }
 
@@ -137,7 +147,9 @@ final class Definitions
 
         // Read once per class and revision: the rendering asks for each resource.
         return self::$definitions[$class][$name] ??= self::usable(
-            self::compiler()->compile($class, $revision === $head ? null : $revision),
+            isset(self::$preloaded[$class][$name])
+                ? self::compiler()->withValues(self::$preloaded[$class][$name])
+                : self::compiler()->compile($class, $revision === $head ? null : $revision),
         );
     }
 
@@ -276,7 +288,7 @@ final class Definitions
     }
 
     /**
-     * The head definition of every resource in the cache, by class.
+     * The head definition of every resource asked for or compiled since the last flush, by class.
      *
      * @return array<class-string<DefinitionSource>, ResourceDefinition>
      */
@@ -297,6 +309,7 @@ final class Definitions
     public static function flush(): void
     {
         self::$definitions = [];
+        self::$preloaded = [];
         self::$constraints = [];
         self::$declaredTypes = [];
         self::$lifetimes = [];

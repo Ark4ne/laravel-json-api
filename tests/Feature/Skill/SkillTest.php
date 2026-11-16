@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Test\Feature\Skill;
 
+use Ark4ne\ApiRevisions\Definition\Kind;
 use Ark4ne\ApiRevisions\Laravel\Http\ResolveRevision;
-use Ark4ne\JsonApi\Definition\ValueType;
 use Ark4ne\JsonApi\Descriptors\Relations;
 use Ark4ne\JsonApi\Descriptors\Schemas\Conditions;
 use Ark4ne\JsonApi\Descriptors\Schemas\RelationshipSchema;
@@ -207,8 +207,9 @@ final class SkillTest extends SkillTestCase
 
         $response->assertJsonPath('data.attributes', ['name' => 'Book', 'price' => '12.50', 'price-history' => ['10.00', '12.50']]);
         $definition = self::resource('App\Recipes\Shop\ProductResource', $product)::definition();
-        self::assertSame(ValueType::String, $definition->attribute('price')?->type);
-        self::assertSame('money', $definition->attribute('price')->format);
+        self::assertSame(Kind::Custom, $definition->attribute('price')?->type->kind);
+        self::assertSame('money', $definition->attribute('price')->type->name);
+        self::assertSame('string', $definition->attribute('price')->type->fragment['type'] ?? null);
     }
 
     public function test_the_polymorphic_recipe(): void

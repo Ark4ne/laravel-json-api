@@ -56,8 +56,22 @@ refused where it would be a value. `php artisan jsonapi:check` names every membe
 ### Definitions
 
 `Definitions::for($class, $revision)` gives one definition per revision; `ResourceDefinition::$revision` is `null` for
-the head (the newest revision). The attributes no longer hold `source` and `computed`. `jsonapi:cache` writes every
-revision: run it again after the upgrade.
+the head (the newest revision). Its values are the model of `ark4ne/laravel-api-revisions`: `$attributes`, `$meta`
+and `$documentMeta` are `Shape`s (`null` where the resource has no values), `attribute($name)` a `FieldDefinition`
+read by its name at the revision. `Definition\AttributeDefinition` and `ValueType` are removed:
+
+| 2.0 | 3.0 |
+| --- | --- |
+| `array_keys($definition->attributes)` | `$definition->attributes?->names()` |
+| `$attribute->type === ValueType::String` | `$attribute->type->kind === Kind::String` (`Ark4ne\ApiRevisions\Definition\Kind`) |
+| `$attribute->format`, `->enum`, `->items`, `->children` | `$attribute->type->format`, `->enum`, `->items`, `->children` |
+| a custom type: its `ValueType` and `format` | `Kind::Custom`, `$attribute->type->name` and its JSON Schema `->fragment` |
+| `$attribute->sparse` | `$definition->isSparse($name)` |
+| `$definition->links` (definitions by name) | `$definition->links`, the names |
+| `$attribute->source`, `->computed` | removed |
+
+`jsonapi:cache` writes every revision, without the shapes (those of the base): run it again after the upgrade; a file
+of 2.0 is ignored.
 
 `php artisan jsonapi:check` and `ResourceAssertions` run the check of `ark4ne/laravel-api-revisions` on the
 resources: the history of their fields is checked with its codes, and the diagnostics `reserved-name`,

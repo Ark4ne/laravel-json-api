@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Test\Unit\Compilation;
 
+use Ark4ne\ApiRevisions\Definition\Kind;
 use Ark4ne\JsonApi\Compilation\CompiledDefinitions;
 use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Compilation\Projection;
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Definition\ResourceDefinition;
-use Ark4ne\JsonApi\Definition\ValueType;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Closure;
 use PHPUnit\Framework\TestCase;
@@ -125,11 +125,64 @@ final class DefinitionsTest extends TestCase
 
     public function test_preloaded_definitions_are_not_compiled_again(): void
     {
-        $predefined = ResourceDefinition::of(TypedResource::class, 'preloaded');
+        $predefined = ResourceDefinition::of(TypedResource::class, 'preloaded')->links('preloaded');
 
         Definitions::preload([TypedResource::class => $predefined]);
 
-        self::assertSame($predefined, Definitions::for(TypedResource::class));
+        self::assertSame('preloaded', Definitions::for(TypedResource::class)->type);
+        self::assertSame(['preloaded'], Definitions::for(TypedResource::class)->links);
+        self::assertSame(Definitions::for(TypedResource::class), Definitions::for(TypedResource::class));
+    }
+
+    public function test_a_preloaded_definition_takes_the_shapes_of_its_resource_when_asked_for(): void
+    {
+        Definitions::configure(Configuration::defaults()->withRevisions(ApiRevision::class));
+        $compiled = Definitions::compile(ArticleResource::class, ApiRevision::Initial);
+        $head = Definitions::compile(ArticleResource::class);
+
+        Definitions::preload([
+            ArticleResource::class => $head->values(null, null, null),
+            ArticleResource::class . '@Initial' => $compiled->values(null, null, null),
+        ]);
+
+        self::assertEquals($compiled, Definitions::for(ArticleResource::class, ApiRevision::Initial));
+        self::assertSame(['name', 'views'], Definitions::for(ArticleResource::class, ApiRevision::Initial)->attributes?->names());
+        self::assertSame(['title', 'views', 'summary'], Definitions::for(ArticleResource::class)->attributes?->names());
+        self::assertContains('name', Definitions::for(ArticleResource::class, ApiRevision::Initial)->fields());
+    }
+
+    public function test_a_preloaded_definition_whose_shapes_cannot_be_compiled_throws(): void
+    {
+        Definitions::preload([FailingHookResource::class => ResourceDefinition::of(FailingHookResource::class, 'stale')]);
+
+        $this->expectException(DefinitionException::class);
+        $this->expectExceptionMessage('Needs a real model.');
+
+        Definitions::for(FailingHookResource::class);
+    }
+
+    public function test_the_compiled_file_holds_no_shape_and_the_definitions_read_from_it_have_theirs(): void
+    {
+        Definitions::configure(Configuration::defaults()->withRevisions(ApiRevision::class));
+        $compiled = Definitions::compile(ArticleResource::class, ApiRevision::Initial);
+        $file = new CompiledDefinitions($this->file);
+        $file->write([CompiledDefinitions::key($compiled) => $compiled]);
+
+        self::assertStringNotContainsString('ApiRevisions\\Compilation', (string) file_get_contents($this->file));
+        self::assertNull($file->read()[CompiledDefinitions::key($compiled)]->attributes);
+
+        Definitions::configure(Configuration::defaults()->withRevisions(ApiRevision::class), $file);
+
+        self::assertEquals($compiled, Definitions::for(ArticleResource::class, ApiRevision::Initial));
+    }
+
+    public function test_a_compiled_file_of_another_version_is_ignored(): void
+    {
+        file_put_contents($this->file, '<?php return [' . var_export(TypedResource::class, true) . ' => \\Ark4ne\\JsonApi\\Definition\\AttributeDefinition::__set_state([])];');
+
+        Definitions::configure(Configuration::defaults(), new CompiledDefinitions($this->file));
+
+        self::assertSame('typed', Definitions::for(TypedResource::class)->type);
     }
 
     public function test_the_compiled_file_is_not_read_when_configuring(): void
@@ -214,13 +267,13 @@ final class DefinitionsTest extends TestCase
         $labels = Definitions::for(ProfileResource::class, ApiRevision::Labels);
         $head = Definitions::for(ProfileResource::class);
 
-        self::assertSame(['name', 'email', 'full_name'], array_keys($initial->attributes));
+        self::assertSame(['name', 'email', 'full_name'], $initial->attributes?->names());
         self::assertSame(['comments'], array_keys($initial->relationships));
         self::assertSame(ApiRevision::Initial, $initial->revision);
-        self::assertSame(['label', 'email', 'full_name'], array_keys($labels->attributes));
+        self::assertSame(['label', 'email', 'full_name'], $labels->attributes?->names());
         self::assertSame(['remarks'], array_keys($labels->relationships));
         self::assertSame(ApiRevision::Labels, $labels->revision);
-        self::assertSame(['display_name', 'email', 'tag_names'], array_keys($head->attributes));
+        self::assertSame(['display_name', 'email', 'tag_names'], $head->attributes?->names());
         self::assertNull($head->revision);
     }
 
@@ -239,8 +292,8 @@ final class DefinitionsTest extends TestCase
         $initial = Definitions::for(TeacherResource::class, ApiRevision::Initial);
 
         self::assertSame($initial, Definitions::for(TeacherResource::class, ApiRevision::Initial));
-        self::assertSame(['label'], array_keys($initial->attributes));
-        self::assertSame(['label'], array_keys(Definitions::for(TeacherResource::class, ApiRevision::Labels)->attributes));
+        self::assertSame(['label'], $initial->attributes?->names());
+        self::assertSame(['label'], Definitions::for(TeacherResource::class, ApiRevision::Labels)->attributes?->names());
     }
 
     public function test_a_revision_newer_than_every_declaration_reads_the_head(): void
@@ -261,7 +314,7 @@ final class DefinitionsTest extends TestCase
         $initial = Definitions::for(TypedResource::class, ApiRevision::Initial);
 
         self::assertSame(ApiRevision::Initial, $initial->revision);
-        self::assertSame(array_keys($definition->attributes), array_keys($initial->attributes));
+        self::assertSame($definition->attributes?->names(), $initial->attributes?->names());
         self::assertSame($definition->fieldNames, $initial->fieldNames);
     }
 
@@ -314,7 +367,7 @@ final class DefinitionsTest extends TestCase
         $head = ResourceDefinition::of(ProfileResource::class, 'preloaded');
         Definitions::preload([ProfileResource::class => $head]);
 
-        self::assertSame($head, Definitions::for(ProfileResource::class));
+        self::assertSame('preloaded', Definitions::for(ProfileResource::class)->type);
         // A revision missing from the file is compiled.
         self::assertSame('profiles', Definitions::for(ProfileResource::class, ApiRevision::Initial)->type);
     }
@@ -324,11 +377,12 @@ final class DefinitionsTest extends TestCase
         Definitions::configure(Configuration::defaults()->withRevisions(ApiRevision::class));
 
         $head = ResourceDefinition::of(ProfileResource::class, 'head');
-        $initial = $head->revision(ApiRevision::Initial);
+        $initial = ResourceDefinition::of(ProfileResource::class, 'initial')->revision(ApiRevision::Initial);
         Definitions::preload([ProfileResource::class => $head, ProfileResource::class . '@Initial' => $initial]);
 
-        self::assertSame($initial, Definitions::for(ProfileResource::class, ApiRevision::Initial));
-        self::assertSame($head, Definitions::for(ProfileResource::class, ApiRevision::UsersReplaceTeachers));
+        self::assertSame('initial', Definitions::for(ProfileResource::class, ApiRevision::Initial)->type);
+        self::assertSame(ApiRevision::Initial, Definitions::for(ProfileResource::class, ApiRevision::Initial)->attributes?->revision);
+        self::assertSame('head', Definitions::for(ProfileResource::class, ApiRevision::UsersReplaceTeachers)->type);
         self::assertSame(ApiRevision::Labels, Definitions::for(ProfileResource::class, ApiRevision::Labels)->revision);
     }
 
@@ -353,23 +407,27 @@ final class DefinitionsTest extends TestCase
         $head = Definitions::for(ArticleResource::class, ApiRevision::UsersReplaceTeachers);
 
         self::assertSame('articles', $initial->type);
-        self::assertSame(['name', 'views'], array_keys($initial->attributes));
-        self::assertSame(ValueType::String, $initial->attributes['views']->type);
-        self::assertSame(['published'], array_keys($initial->meta));
-        self::assertSame(['legacy'], array_keys($initial->documentMeta));
+        self::assertSame(['name', 'views'], $initial->attributes?->names());
+        self::assertSame(Kind::String, $initial->attribute('views')?->type->kind);
+        self::assertSame(ApiRevision::Initial, $initial->attributes->revision);
+        self::assertSame(['published'], $initial->meta?->names());
+        self::assertSame(['legacy'], $initial->documentMeta?->names());
         self::assertSame(['title' => 'name', 'views' => 'views'], $initial->fieldNames);
 
-        self::assertSame(['title', 'views', 'summary'], array_keys($head->attributes));
-        self::assertSame(ValueType::Integer, $head->attributes['views']->type);
-        self::assertTrue($head->attributes['summary']->nullable);
-        self::assertSame([], $head->documentMeta);
+        self::assertSame(['title', 'views', 'summary'], $head->attributes?->names());
+        self::assertSame(Kind::Int, $head->attribute('views')?->type->kind);
+        self::assertTrue($head->attribute('summary')?->nullable);
+        self::assertSame([], $head->documentMeta?->names());
+        // By the name at the revision, not by the key of the code.
+        self::assertNull($initial->attribute('title'));
+        self::assertSame('title', $initial->attribute('name')?->headKey);
     }
 
     public function test_the_head_of_a_resource_declared_on_the_base_is_its_newest_revision(): void
     {
         Definitions::configure(Configuration::defaults()->withRevisions(ApiRevision::class));
 
-        self::assertSame(['title', 'views', 'summary'], array_keys(Definitions::for(ArticleResource::class)->attributes));
+        self::assertSame(['title', 'views', 'summary'], Definitions::for(ArticleResource::class)->attributes?->names());
         self::assertSame(Definitions::for(ArticleResource::class), Definitions::for(ArticleResource::class));
     }
 

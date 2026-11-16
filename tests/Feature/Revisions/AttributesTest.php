@@ -87,8 +87,8 @@ final class AttributesTest extends RevisionsTestCase
         self::assertIsArray($meta);
         self::assertIsArray($documentMeta);
 
-        self::assertSame(array_keys($definition->attributes), array_keys($attributes));
-        self::assertSame(array_keys($definition->meta), array_keys($meta));
-        self::assertSame(array_keys($definition->documentMeta), array_keys($documentMeta));
+        self::assertSame($definition->attributes?->names(), array_keys($attributes));
+        self::assertSame($definition->meta?->names(), array_keys($meta));
+        self::assertSame($definition->documentMeta?->names(), array_keys($documentMeta));
     }
 }

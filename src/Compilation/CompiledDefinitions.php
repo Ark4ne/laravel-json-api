@@ -5,13 +5,15 @@ declare(strict_types=1);
 namespace Ark4ne\JsonApi\Compilation;
 
 use Ark4ne\JsonApi\Definition\ResourceDefinition;
+use Error;
 use RuntimeException;
 
 /**
  * The file of compiled definitions (`bootstrap/cache/jsonapi.php`): a PHP file returning the definitions exported with
  * `var_export()`, read through OPcache (docs/architecture.md §4).
  *
- * Keyed by class for the head, `class@Case` for the definition of a revision (`key()`); a file of 2.0 has heads only.
+ * Keyed by class for the head, `class@Case` for the definition of a revision (`key()`). It holds what is JSON:API of
+ * each definition, not its values; a file written by another version of the package is ignored.
  */
 final readonly class CompiledDefinitions
 {
@@ -42,12 +44,18 @@ final readonly class CompiledDefinitions
             return [];
         }
 
-        /** @var array<string, ResourceDefinition> */
-        return require $this->path;
+        try {
+            /** @var array<string, ResourceDefinition> */
+            return require $this->path;
+        } catch (Error) {
+            // Written by another version of the package (a class or a property it no longer has): compiled again.
+            return [];
+        }
     }
 
     /**
-     * Writes the file atomically (temporary file, then rename).
+     * Writes the file atomically (temporary file, then rename). The definitions are written without their values: the
+     * shapes are those `ark4ne/laravel-api-revisions` compiles or caches, given back by `Definitions::for()`.
      *
      * @param array<string, ResourceDefinition> $definitions
      */
@@ -69,6 +77,7 @@ final readonly class CompiledDefinitions
             throw new RuntimeException("Cannot write in the directory [{$directory}].");
         }
 
+        $definitions = array_map(static fn(ResourceDefinition $definition): ResourceDefinition => $definition->values(null, null, null), $definitions);
         $content = "<?php\n\ndeclare(strict_types=1);\n\nreturn " . var_export($definitions, true) . ";\n";
 
         if (

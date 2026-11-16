@@ -182,11 +182,14 @@ final class ValuesTest extends TestCase
 
     public function test_a_field_only_in_fields_is_sparse_in_the_definition(): void
     {
-        $attributes = Definitions::for(SparseResource::class, ApiRevision::UsersReplaceTeachers)->attributes;
+        $definition = Definitions::for(SparseResource::class, ApiRevision::UsersReplaceTeachers);
 
-        self::assertTrue($attributes['secret']->sparse);
-        self::assertTrue($attributes['secret']->conditional);
-        self::assertFalse($attributes['name']->sparse);
+        self::assertSame(['secret'], $definition->sparse);
+        self::assertTrue($definition->isSparse('secret'));
+        self::assertTrue($definition->attribute('secret')?->conditional);
+        self::assertFalse($definition->isSparse('name'));
+        // In the names of the revision.
+        self::assertSame(['hidden'], Definitions::for(SparseResource::class, ApiRevision::Initial)->sparse);
     }
 
     /**

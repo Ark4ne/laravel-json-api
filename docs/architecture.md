@@ -75,7 +75,7 @@ Support ← Configuration ← Definition ← Descriptors ← Compilation ← Con
 | --- | --- | --- |
 | Support | `src/Support/` | Building blocks without internal dependency: `Arr`, `Values`, `Probe`, `Diagnostics` |
 | Configuration | `src/Configuration/` | `Configuration`: typed, validated, readonly view of `config/jsonapi.php` |
-| Definition | `src/Definition/` | Public immutable model: `ResourceDefinition`, `AttributeDefinition`, `RelationshipDefinition`, `ValueType`, `Cardinality`, `Lifetime`; the `DefinitionSource` contract, `#[JsonApiSince]` / `#[JsonApiUntil]` |
+| Definition | `src/Definition/` | Public immutable model: `ResourceDefinition` (its values are the `Shape`s of the base), `RelationshipDefinition`, `Cardinality`, `Lifetime`; the `DefinitionSource` contract, `#[JsonApiSince]` / `#[JsonApiUntil]` |
 | Descriptors | `src/Descriptors/` | What this package adds to the descriptors of `ark4ne/laravel-api-revisions`: `Schemas\` (`DecimalSchema`, `FloatSchema`, `JsonSchema`, `MixedSchema`, `RelationshipSchema`, the conditions registered as macros), the relations (`RelationOne`, `RelationMany`…) a `RelationshipSchema` holds, and the `Relations` trait of the resource helpers |
 | Compilation | `src/Compilation/` | `Definitions` (repository and memory cache), `DefinitionCompiler` (the definition of a class at a revision), `CompiledDefinitions` (file cache), `Projection` (the shapes and the projector of the base), `ResourceCheck` and `ResourceChecker` (the checks) |
 | Context | `src/Context/` | `JsonApiContext`, `IncludeTree`, `SparseFieldsets` |
@@ -108,53 +108,44 @@ Support ← Configuration ← Definition ← Descriptors ← Compilation ← Con
 **public contract** of the package for the tools that read resources (validation rules, `jsonapi:check`,
 `laravel-openapi-generator`). Patterns: **Immutable Value Object**, **Named Constructor**.
 
+The values are not modelled twice: a definition gives them as the model of `ark4ne/laravel-api-revisions`, the
+`Shape` of each hook at its revision.
+
 ```php
-final readonly class AttributeDefinition
-{
-    private function __construct(
-        public string $name,
-        public ValueType $type,
-        public bool $nullable,
-        public ?string $format = null,
-        /** @var class-string<UnitEnum>|null */
-        public ?string $enum = null,
-        public ?AttributeDefinition $items = null,
-        /** @var array<string, AttributeDefinition> */
-        public array $children = [],
-        public bool $conditional = false,
-        public bool $sparse = false,
-    ) {}
+$definition = PostResource::definition();      // or Definitions::for(PostResource::class, ApiRevision::Labels)
 
-    public static function of(string $name, ValueType $type): self { /* … */ }
-
-    public function nullable(bool $nullable = true): self { return $this->copy(nullable: $nullable); }
-}
+$definition->attributes;                       // ?Shape: fields in the head order, under their names at the revision
+$definition->attribute('title');               // ?FieldDefinition, by its name at the revision
+$definition->attribute('title')->type;         // TypeDefinition: Kind, format, enum, items, children, fragment…
+$definition->attribute('title')->nullable;     // and ->conditional, ->headKey, ->lifetime…
+$definition->isSparse('title');                // rendered only when the sparse fieldset names it
+$definition->meta; $definition->documentMeta;  // ?Shape
+$definition->links;                            // list<string>: the names of the links of the resource object
 ```
 
 | Object | Content |
 | --- | --- |
-| `ResourceDefinition` | Resource class, `type`, attributes, relationships, declared links and meta of the resource object, top-level meta of the document (`documentMeta`, `toDocumentMeta()`), the routes of its links (`routes`, `RouteNames` of `#[JsonApiRoutes]`), the revision it describes (`revision`, `null` for the head), the lifetime of the resource (`since`, `until`, `#[JsonApiSince]` / `#[JsonApiUntil]`) the revisions where its shape changes (`boundaries`) and, for a revision, the name each field of the code has at it (`fieldNames`), diagnostics of its compilation |
-| `AttributeDefinition` | Name, dotted path inside structs, `ValueType`, nullable, format, enum class, item type, children (structs), conditional, sparse (`whenInFields`: out unless requested) |
+| `ResourceDefinition` | Resource class, `type`, the shapes of the attributes, of the meta of the resource object and of the top-level meta of the document (`documentMeta`, `toMeta()`; `null` where the resource has no values), relationships, the names of the links of the resource object, the attributes only rendered when requested (`sparse`), the routes of its links (`routes`, `RouteNames` of `#[JsonApiRoutes]`), the revision it describes (`revision`, `null` for the head), the lifetime of the resource (`since`, `until`, `#[JsonApiSince]` / `#[JsonApiUntil]`) and, for a revision, the name each field of the code has at it (`fieldNames`), diagnostics of its compilation |
 | `RelationshipDefinition` | Name, related resource classes (`related`: one, given or guessed from the model when compiled (`$this->one('user')`, `GuessedResource`), or those of `morphs`, the resource class of each model class of a polymorphic relationship; none for native resources, whose class is `native`), `Cardinality::One` / `Many`, `LoadDefinition`, `linkage`, declared links (and the names of those declared by name, `namedLinks`) and meta, conditional, source |
 | `LoadDefinition` | Relation paths eager-loaded when the relationship is included, and those loaded with a constraint closure |
-| `ValueType` | The type of a value as the tools need it: `string`, `integer`, `number`, `boolean`, `date`, `enum`, `array`, `struct`, `mixed`, or a custom type of the registry |
 
 Rules:
 
 1. **`final readonly` classes**, private constructor, named constructors, `copy()` for every change.
-2. **No closure, no model, no request** inside a definition: it must be serializable with `var_export` (every class has
-   `__set_state()`). What depends on runtime (a closure retriever, a constrained eager-load) is recorded as a flag
+2. **No closure, no model, no request** inside a definition: it is serializable, and without its values exported with
+   `var_export` (every class of this package has `__set_state()`): the compiled file holds what is JSON:API, the
+   shapes are those the base compiles or caches, given back on the first `Definitions::for()`. What depends on runtime (a closure retriever, a constrained eager-load) is recorded as a flag
    (`computed`, `LoadDefinition::$constrained`) and resolved from the resource at runtime
    (`Definitions::loadConstraints()`).
 3. **No nesting.** A relationship references its related resource by class only; the related definition is read with
    `Definitions::for()`. Cycles (`post.author.posts`) cost nothing.
-4. **Values come from the shape.** The attributes and meta of a definition are those of the shape the base compiles
-   for the resource at the revision (`Compilation\SchemaAttributes`, an adapter to `AttributeDefinition`): names,
-   types, nullability, formats, conditions. A definition is always complete.
+4. **Values are the shapes.** The attributes and meta of a definition are the shapes the base compiles for the
+   resource at the revision, as they are: names, types, nullability, conditions, history. A definition read with
+   `Definitions::for()` is always complete.
 5. **Semver.** The definition model is the public API of the package for the tools: removing or changing a public
    property or method is a major version. An **additive** public property is a minor one, provided it has a default
-   and is an optional key of `__set_state()`, so that a compiled file of the previous minor is still read. The cases
-   of `ValueType` stay major (below).
+   and is an optional key of `__set_state()`, so that a compiled file of the previous minor is still read. A compiled file
+   of another major is ignored (the definitions are compiled again).
 
 ### The public contract for the tools
 
@@ -167,8 +158,8 @@ What a tool (`laravel-openapi-generator`, `jsonapi:check`…) may read without r
 - `Ark4ne\ApiRevisions\Revisions\Revision` (the contract of `ark4ne/laravel-api-revisions`) and the cases of the
   application enum a definition names
   (`revision`, `since`, `until`);
-- the cases of `ValueType`: a new case is a major version, so a tool may match them exhaustively; a custom value type
-  declares one of them;
+- the model of the values of `ark4ne/laravel-api-revisions` (`Shape`, `FieldDefinition`, `TypeDefinition`, `Kind`),
+  under its own semver: a custom type is `Kind::Custom`, its `name` and its JSON Schema `fragment`;
 - `Http\Rules\Includes::resource()` and `Http\Rules\Fields::resource()`, the resource a rule validates against, and
   their `revision()`, the revision it validates at;
 - what `ark4ne/laravel-api-revisions` exposes for any `Revisioned` class, a resource (its `Response` declaration) or a
@@ -177,7 +168,7 @@ What a tool (`laravel-openapi-generator`, `jsonapi:check`…) may read without r
 What the definition leaves to the runtime:
 
 - the `id` is always rendered as a string (`ResourceObject::identify()`): there is no type to read;
-- a value declared by a closure is `ValueType::Mixed`: a tool that wants more renders the resource on a sample of
+- a value declared by a closure has the type of its descriptor; a `mixed()` one is a custom type `mixed`: a tool that wants more renders the resource on a sample of
   its model, through its public API (`toResponse()`, `resolve()`);
 - the links and meta of a relationship object are closures: the definition tells whether they exist (`hasLinks`,
   `hasMeta`, `hasIdentifierMeta`) and the names of the links declared by name (`namedLinks`), not their content;
@@ -468,7 +459,7 @@ with an enum, named in `config/revisions.php` and read from the declarations.
    `normalize()` (an `InvalidValue` for what it refuses) and its `type()`.
 2. Register it in `Descriptors\Schemas\SchemaTypes` and add the helper to `Resources\Concerns\DescribesValues`. An
    application registers its own in the `TypeRegistry` of the base, its helper being `JsonApiResource::__call()`.
-3. Unit test what it normalizes and refuses, and the definition it produces (`Compilation\SchemaAttributes`).
+3. Unit test what it normalizes and refuses, and the type it declares (`toType()`).
 
 ### Add a condition
 
