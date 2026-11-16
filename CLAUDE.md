@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `ark4ne/laravel-json-api` is a Laravel package that serializes resources as [JSON:API](https://jsonapi.org/format/)
 documents, with a concise way of writing resources (`toAttributes`, `toRelationships`, `$this->string()`,
-`$this->one()`…), typed values, sparse fieldsets, includes and their validation.
+`$this->one()`…), typed values, API revisions, sparse fieldsets, includes and their validation.
 
 - **Architecture, patterns and conventions: `docs/architecture.md` — read it before writing any code.**
 - `ark4ne/openapi-writer` and `ark4ne/laravel-openapi-generator` are **models** for the architecture and the tooling,
@@ -51,12 +51,18 @@ The resource **describes**, the definition is **compiled once**, the renderer **
   everywhere). Enforced by `phpat` (`tests/Architecture/ArchitectureTest.php`).
 - Only `src/Laravel/` may use facades, global helpers (`config()`, `app()`, `request()`…) or the container. Enforced
   by `disallowed-calls`.
-- Definitions (`src/Definition/`) are `final readonly`, serializable, built once per resource class by running its
-  hooks on a `Probe`; they are the public contract read by the rules and by external tools.
+- Values, their history across the API revisions, the shapes and the projection are those of
+  `ark4ne/laravel-api-revisions` ("the base", `docs/rfc/api-revisions-integration.md`): a resource is one of its
+  `Revisioned` responses, its helpers return its descriptors. This package adds what is JSON:API.
+- Definitions (`src/Definition/`) are `final readonly`, serializable, built once per resource class and revision by
+  running its hooks on a `Probe`; they are the public contract read by the rules and by external tools.
+- The hooks of values and relationships run once per response, on a template instance (`Rendering\ResourcePlan`):
+  every member is a descriptor or a closure, a condition is a closure read for each resource.
 - A `JsonApiContext` (fields, include, path, configuration, diagnostics) is passed explicitly: no static state, no
   singleton (the only static caches are `Compilation\Definitions` and `Support\Memo`, pure memos of what only depends
   on the code, flushed after every Octane operation).
-- Descriptors are immutable fluent builders; conditions are rules (`Closure(Request, model, attribute): bool`); value types live in a registry.
+- Descriptors are immutable fluent builders; conditions are closures (`Closure($value, $model): bool`); the types
+  of this package and of the applications live in the `TypeRegistry` of the base.
 - Classes are `final` (except the base classes listed in the architecture test); traits used only in `src/Resources/` and `src/Descriptors/Relations.php`;
   `declare(strict_types=1)`; PHPStan max.
 
