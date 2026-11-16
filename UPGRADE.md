@@ -57,7 +57,18 @@ refused where it would be a value. `php artisan jsonapi:check` names every membe
 
 `Definitions::for($class, $revision)` gives one definition per revision; `ResourceDefinition::$revision` is `null` for
 the head (the newest revision). The attributes no longer hold `source` and `computed`. `jsonapi:cache` writes every
-revision: run it again after the upgrade. The history of the fields is checked by `php artisan revision:check`.
+revision: run it again after the upgrade.
+
+`php artisan jsonapi:check` and `ResourceAssertions` run the check of `ark4ne/laravel-api-revisions` on the
+resources: the history of their fields is checked with its codes, and the diagnostics `reserved-name`,
+`name-collision` and `unavailable-resource` are `jsonapi-reserved-name`, `jsonapi-name-collision` and
+`jsonapi-absent-resource`. They are no longer among `ResourceDefinition::$diagnostics`: a tool reading them there
+calls `Compilation\ResourceChecker`. `php artisan revision:check` checks every declaring class of the application,
+requests included, and its lock.
+
+A body that changes across the revisions is declared in the `body()` of a request using `RevisionedRequest`
+(`$this->resourceObject(attributes: …, relationships: …)`, `Http\Body`): see the README, "Write requests across
+revisions".
 
 ## From 1.x to 2.0
 

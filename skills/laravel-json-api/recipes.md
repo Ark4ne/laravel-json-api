@@ -563,7 +563,7 @@ final class BookResource extends JsonApiResource
 ```
 
 Checked like any resource: `php artisan jsonapi:check` checks every revision, and a relationship reaching a resource
-absent from one (`revision-unavailable-resource`). To retire `Initial`: delete the case, run `composer stan`, delete
+absent from one (`jsonapi-absent-resource`). To retire `Initial`: delete the case, run `composer stan`, delete
 every reported line and `WriterResource`, run `php artisan jsonapi:check`.
 
 ## Write request across revisions

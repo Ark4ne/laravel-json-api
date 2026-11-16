@@ -1302,7 +1302,7 @@ final class TeacherResource extends JsonApiResource { /* the old resource, as it
 Every relationship reaching the new resource needs a `was()` to the old one for the older revisions (the
 `instructor` above). Rendering a resource at a revision it does not exist at throws
 `RenderingException::notInRevision()`, and `php artisan jsonapi:check` reports a relationship that would do so
-(`revision-unavailable-resource`), a resource of a morph map included. The same model reached as two old types is
+(`jsonapi-absent-resource`), a resource of a morph map included. The same model reached as two old types is
 included once per type.
 
 ## Guards
@@ -1367,8 +1367,13 @@ relationship. A request that is not a `JsonApiFormRequest` calls `Body::resource
 
 ## Checking the revisions
 
-`php artisan jsonapi:check` checks every revision: the declarations (`revision-*` diagnostics), the shape of each
-revision and the references between resources; `--revision=Labels` checks one. In the test suite:
+`php artisan jsonapi:check` checks the resources at every revision: their definition, then the check of
+`ark4ne/laravel-api-revisions` on them, which reads the history of their fields (a conversion that is missing, a
+`was()` outside the lifetime of its field…) and the rules of JSON:API this package adds to it: a field named `id` or
+`type` (`jsonapi-reserved-name`), an attribute and a relationship sharing a name (`jsonapi-name-collision`), a
+relationship to a resource absent from the revision (`jsonapi-absent-resource`). `--revision=Labels` keeps the
+findings of one revision. `php artisan revision:check` runs the same check on every declaring class of the
+application (requests included) and compares them with the lock. In the test suite:
 
 ```php
 ResourceAssertions::assertValidAtEveryRevision(UserResource::class);
@@ -1386,7 +1391,7 @@ Bounds are inclusive so that retiring the oldest revision is mechanical:
 2. Run `composer stan` (Larastan): it reports every declaration that served only its clients, `was(Initial)`,
    `until(Initial)`, `#[JsonApiUntil(Initial)]`.
 3. Delete every reported line, and every resource `#[JsonApiUntil(Initial)]`.
-4. Run `php artisan jsonapi:check`: a `since()` naming the new oldest case is reported (`revision-noop`), delete it.
+4. Run `php artisan jsonapi:check`, which reports what the removal left inconsistent.
 
 ## A contract test in the application
 

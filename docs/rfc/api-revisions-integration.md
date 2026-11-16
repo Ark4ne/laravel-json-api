@@ -257,7 +257,7 @@ feature tests unchanged). What was done differently from the plan above, and wha
 | Story | Content |
 |---|---|
 | **US 6.1** ✅ | `Compilation\ResourceCheck`, a `Check` of the base tagged by the service provider: `jsonapi-reserved-name`, `jsonapi-name-collision`, `jsonapi-absent-resource`, revision by revision, on the resources declared on the base. |
-| **US 6.2** | `jsonapi:check` delegating to `revision:check`; `ResourceAssertions` on the base's testing helpers; the 2.1 `RevisionChecks` / `RevisionAudit` removed (with US 2.4). |
+| **US 6.2** ✅ | `Compilation\ResourceChecker`: the definition of each resource at its head (type, lifetime, links), then the `Checker` of the base over the resources asked for (`ListedClasses`), its findings turned into those of this package and named by revision. `jsonapi:check` gives it the checks of `revision:check` but those of the lock (built-in, `NativeCondition`, the tagged ones); `ResourceAssertions` the built-in ones and `ResourceCheck`. The compiler no longer checks reserved names, collisions and absent resources. Not a call of `revision:check` itself: it reads every declaring class and the lock, `jsonapi:check` the resources asked for. Base requirement R15: a `Checker` built by the container cannot be given another finder, so the command lists the checks itself. |
 
 ### Performance of the engine on the base (measured 2026-11-15)
 

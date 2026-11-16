@@ -48,13 +48,14 @@ final readonly class ResourceCheck implements Check
             $attributes = $shape->field('attributes')?->children;
             $relationships = $shape->field('relationships')?->children;
 
-            foreach ([$attributes, $relationships] as $fields) {
-                foreach ($fields->fields ?? [] as $field) {
+            // A field is named by its key of the code, under its object: as the checks of the base name it.
+            foreach (['attributes' => $attributes, 'relationships' => $relationships] as $object => $fields) {
+                foreach ($fields->fields ?? [] as $key => $field) {
                     if (in_array($field->name, self::RESERVED, true)) {
                         $context->error(
                             self::RESERVED_NAME,
                             "[{$field->name}] is reserved by JSON:API for the identification of the resource: rename the member.",
-                            $field->headKey,
+                            "{$object}.{$key}",
                             $revision,
                         );
                     }
@@ -65,7 +66,7 @@ final readonly class ResourceCheck implements Check
                 $context->error(
                     self::NAME_COLLISION,
                     "[{$name}] names an attribute and a relationship: they share one name space, bound one of them with until() / since().",
-                    $key,
+                    "attributes.{$key}",
                     $revision,
                 );
             }
@@ -85,7 +86,7 @@ final readonly class ResourceCheck implements Check
                         $context->error(
                             self::ABSENT_RESOURCE,
                             "[{$field->name}] relates to [{$related}], which does not exist at this revision: give it a was() to the resource of the revision, or bound it with since() / until().",
-                            $key,
+                            "relationships.{$key}",
                             $revision,
                         );
                     }

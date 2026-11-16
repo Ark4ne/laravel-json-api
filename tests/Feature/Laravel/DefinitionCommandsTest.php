@@ -17,6 +17,7 @@ use Test\app\Revisions\MemberResource;
 use Test\app\Revisions\ProfileResource;
 use Test\app\Revisions\TeacherResource;
 use Test\Unit\Compilation\Fixtures\FailingHookResource;
+use Test\Unit\Compilation\Fixtures\InconsistentHistoryResource;
 use Test\Unit\Compilation\Fixtures\TypedResource;
 use Test\Unit\Compilation\References\BoundedReferencesResource;
 use Test\Unit\Compilation\References\ForgottenWasResource;
@@ -190,8 +191,9 @@ final class DefinitionCommandsTest extends TestCase
         $output = Artisan::output();
 
         self::assertSame(Command::FAILURE, $status);
-        self::assertStringContainsString('invalid-declaration', $output);
-        self::assertStringContainsString('Needs a real model.', $output);
+        self::assertStringContainsString('[error] definition-error: Needs a real model.', $output);
+        // The check of the base names it: the finding of the definition does not repeat it.
+        self::assertStringNotContainsString('invalid-declaration', $output);
     }
 
     public function test_check_fails_on_a_class_that_is_not_a_resource(): void
@@ -215,8 +217,8 @@ final class DefinitionCommandsTest extends TestCase
         $output = Artisan::output();
 
         self::assertSame(Command::FAILURE, $status);
-        self::assertStringContainsString('[error] [Labels] unavailable-resource (members)', $output);
-        self::assertStringContainsString('[error] [Initial] unavailable-resource (members)', $output);
+        self::assertStringContainsString('[error] [Labels] jsonapi-absent-resource (relationships.members)', $output);
+        self::assertStringContainsString('[error] [Initial] jsonapi-absent-resource (relationships.members)', $output);
 
         $this->command('jsonapi:check', ['resources' => [BoundedReferencesResource::class]])->assertSuccessful();
     }
@@ -226,7 +228,7 @@ final class DefinitionCommandsTest extends TestCase
         $this->command('jsonapi:check', ['resources' => [ForgottenWasResource::class], '--revision' => 'UsersReplaceTeachers'])
             ->assertSuccessful();
         $this->command('jsonapi:check', ['resources' => [ForgottenWasResource::class], '--revision' => 'Labels'])
-            ->expectsOutputToContain('does not exist at [Labels]')
+            ->expectsOutputToContain('[Labels] jsonapi-absent-resource')
             ->assertFailed();
     }
 
@@ -250,7 +252,25 @@ final class DefinitionCommandsTest extends TestCase
         $output = Artisan::output();
 
         self::assertSame(Command::FAILURE, $status);
-        self::assertStringContainsString('invalid-declaration', $output);
+        self::assertStringContainsString('definition-error', $output);
         self::assertStringNotContainsString('SKIPPED', $output);
+    }
+
+    public function test_check_at_a_revision_leaves_out_the_findings_of_the_others(): void
+    {
+        Artisan::call('jsonapi:check', ['resources' => [ForgottenWasResource::class], '--revision' => 'Labels']);
+        $output = Artisan::output();
+
+        self::assertStringContainsString('[Labels] jsonapi-absent-resource', $output);
+        self::assertStringNotContainsString('[Initial]', $output);
+    }
+
+    public function test_check_runs_the_check_of_the_base_on_the_history_of_the_fields(): void
+    {
+        $status = Artisan::call('jsonapi:check', ['resources' => [InconsistentHistoryResource::class]]);
+        $output = Artisan::output();
+
+        self::assertSame(Command::FAILURE, $status, $output);
+        self::assertStringContainsString('[error] [Initial] conversion-missing (attributes.code)', $output);
     }
 }

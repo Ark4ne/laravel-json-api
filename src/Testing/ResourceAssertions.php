@@ -6,6 +6,7 @@ namespace Ark4ne\JsonApi\Testing;
 
 use Ark4ne\ApiRevisions\Revisions\Revision;
 use Ark4ne\JsonApi\Compilation\Definitions;
+use Ark4ne\JsonApi\Compilation\ResourceChecker;
 use Ark4ne\JsonApi\Definition\DefinitionSource;
 use Ark4ne\JsonApi\Definition\ResourceDefinition;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
@@ -22,15 +23,19 @@ use PHPUnit\Framework\Assert;
 final class ResourceAssertions
 {
     /**
-     * Fails when the definition of the resource cannot be compiled or has an error; with `$strict`, also on a warning.
-     * At the head by default; at a revision, the resource must exist at it. The history of its fields is checked by
-     * `ark4ne/laravel-api-revisions` (`revision:check`).
+     * Fails when the resource has an error at the revision (the head by default); with `$strict`, also on a warning:
+     * its definition cannot be compiled, a hook failed, or the check of `ark4ne/laravel-api-revisions`
+     * (`Compilation\ResourceChecker`: the history of its fields, the rules of JSON:API) reports it there. The resource
+     * must exist at the revision.
      *
      * @param class-string<DefinitionSource> $class
      */
     public static function assertValid(string $class, bool $strict = false, ?Revision $revision = null): void
     {
-        self::assertNoFailure($class, $strict, self::definitionAt($class, $revision)->diagnostics);
+        // Fails when the resource does not exist at the revision.
+        self::definitionAt($class, $revision);
+
+        self::assertNoFailure($class, $strict, self::check($class, $revision ?? Definitions::head()));
     }
 
     /**
@@ -40,20 +45,7 @@ final class ResourceAssertions
      */
     public static function assertValidAtEveryRevision(string $class, bool $strict = false): void
     {
-        try {
-            $definitions = Definitions::compiler()->compileEvery($class);
-        } catch (DefinitionException $e) {
-            Assert::fail($e->getMessage());
-        }
-
-        $diagnostics = [];
-        foreach ($definitions as $definition) {
-            foreach ($definition->diagnostics as $diagnostic) {
-                $diagnostics[$diagnostic->key()] ??= $diagnostic;
-            }
-        }
-
-        self::assertNoFailure($class, $strict, array_values($diagnostics));
+        self::assertNoFailure($class, $strict, self::check($class, null));
     }
 
     /**
@@ -69,6 +61,16 @@ final class ResourceAssertions
         } catch (DefinitionException $e) {
             Assert::fail($e->getMessage());
         }
+    }
+
+    /**
+     * @param class-string<DefinitionSource> $class
+     *
+     * @return list<Diagnostic>
+     */
+    private static function check(string $class, ?Revision $only): array
+    {
+        return (new ResourceChecker(Definitions::compiler()))->check([$class], $only)[$class] ?? [];
     }
 
     /**

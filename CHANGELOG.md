@@ -111,6 +111,15 @@ replaces them.
   asked, `null` for the head, the newest revision), built from the shape of the base; it throws when the values of
   the resource cannot be compiled. `Definitions::compile()` and `jsonapi:check` report it as a diagnostic. The
   attributes no longer name their `source` nor whether they are `computed`.
+- **Breaking**: `jsonapi:check` and `ResourceAssertions` run the check of `ark4ne/laravel-api-revisions` on the
+  resources (`Compilation\ResourceChecker`): the history of their fields and its conversions are checked again, with
+  the codes of the base (`conversion-missing`, `definition-error`…), and the rules of JSON:API are those of
+  `Compilation\ResourceCheck`. `reserved-name`, `name-collision` and `unavailable-resource` become
+  `jsonapi-reserved-name`, `jsonapi-name-collision` and `jsonapi-absent-resource`, name their field under its object
+  (`attributes.title`, `relationships.author`) and are no longer in `ResourceDefinition::$diagnostics`, which keeps
+  `invalid-declaration` and `hook-failure`; a class that is not a resource is the finding `invalid-resource`.
+  `jsonapi:check` runs the checks the application tags too (`RevisionsServiceProvider::CHECKS`), not those of the
+  lock (`revision:check`).
 - **Breaking**: `jsonapi:cache` writes one definition per resource and revision; `jsonapi:check` checks each
   revision the resource exists at and leaves the history of the fields to `revision:check`.
 - `make:jsonapi-resource` writes `$this->enum(State::class)`.
@@ -136,6 +145,7 @@ replaces them.
 - `Http\Rules\Revised`, `Http\Rules\RulesRevision` and the trait `Http\Concerns\UseRevisedRules` of 2.1 (never
   released): a body that changes across the revisions is declared in the `body()` of a request using the
   `RevisionedRequest` of `ark4ne/laravel-api-revisions`, with `Http\Body`.
+- **Breaking**: `DefinitionCompiler::RESERVED_NAME`, `NAME_COLLISION`, `UNAVAILABLE_RESOURCE` and `RESERVED_NAMES`.
 - `ResourceDefinition::$boundaries`, `boundaries()` and `boundaryOf()`, and `Definition\RevisionOrder`, of 2.1 too:
   the shape of a resource at a revision is the one `ark4ne/laravel-api-revisions` compiles. A compiled file written
   by 2.1 is not read: run `php artisan jsonapi:cache` again.

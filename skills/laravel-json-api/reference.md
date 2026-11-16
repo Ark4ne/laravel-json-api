@@ -188,23 +188,26 @@ The revision enum, the format of a date and time and the strictness of the value
 | Command | Effect |
 | --- | --- |
 | `php artisan make:jsonapi-resource PostResource [--model=Post] [--force]` | Writes a resource from the casts, fillable attributes and relations of the model (`vendor:publish --tag=jsonapi-stubs` for its stub) |
-| `php artisan jsonapi:check [resources…] [--strict] [--revision=Case]` | Prints the diagnostics of the definitions at every revision (`[error] [Labels] code (subject): …`); fails on an error (on a warning too with `--strict`); `--revision` checks one revision only. The history of the fields is checked by `php artisan revision:check` (`ark4ne/laravel-api-revisions`) |
+| `php artisan jsonapi:check [resources…] [--strict] [--revision=Case]` | Prints the findings about the resources at every revision (`[error] [Labels] code (subject): …`): their definition, and the check of `ark4ne/laravel-api-revisions` on them (the history of the fields, the conversions, the rules of JSON:API). Fails on an error (on a warning too with `--strict`); `--revision` keeps one revision. `php artisan revision:check` runs the same check on every declaring class, with the lock |
 | `php artisan jsonapi:cache` | Compiles every definition into `bootstrap/cache/jsonapi.php` (run by `php artisan optimize`) |
 | `php artisan jsonapi:clear` | Removes the compiled definitions (run by `optimize:clear`) |
 
 ## Diagnostics
 
-Collected when a definition is compiled and printed by `jsonapi:check` / `ResourceAssertions::assertValid()`: an error
+Found when a definition is compiled or by the check of `ark4ne/laravel-api-revisions` (its own codes,
+`conversion-missing`, `definition-error`…, are documented there), and printed by `jsonapi:check` /
+`ResourceAssertions::assertValid()`: an error
 fails the check, a warning fails it with `--strict` / `strict: true`. The last two are found while rendering, in debug
 only, in the diagnostics of the `JsonApiContext`.
 
 | Code | Level | Cause and fix |
 | --- | --- | --- |
-| `invalid-declaration` | error | The values cannot be compiled: a plain value or a member without name in a hook, a hook throwing on the probe (an `if` on the model, a call on a relation), a relationship to a class that is not a resource, an invalid history. `Definitions::for()` and the rendering throw |
+| `definition-error` (or the code of the base) | error | The values cannot be compiled: a plain value or a member without name in a hook, a hook throwing on the probe (an `if` on the model, a call on a relation), a relationship to a class that is not a resource, an invalid history. `Definitions::for()` and the rendering throw; the definition holds it as `invalid-declaration` |
 | `hook-failure` | error | `toLinks()` threw on the probe, or holds a descriptor |
-| `reserved-name` | error | An attribute or a relationship named `id` or `type` at the revision |
-| `name-collision` | error | An attribute and a relationship with one name at the revision: bound them with `until()` / `since()` |
-| `unavailable-resource` | error | A relationship reaches, at the revision, a resource absent from it (`#[JsonApiSince]` without `was()` for the older revisions) |
+| `invalid-resource` | error | The class is not a resource, its type cannot be read, or it exists at no revision |
+| `jsonapi-reserved-name` | error | An attribute or a relationship named `id` or `type` at the revision |
+| `jsonapi-name-collision` | error | An attribute and a relationship with one name at the revision: bound them with `until()` / `since()` |
+| `jsonapi-absent-resource` | error | A relationship reaches, at the revision, a resource absent from it (`#[JsonApiSince]` without `was()` for the older revisions) |
 | `missing-route` | error | The `self` route of `#[JsonApiRoutes]` does not exist |
 | `load-conflict` | warning | Two relationships load the same relation with different `withLoad()` constraints |
 | `filter-on-unloaded` | warning | `->filters()` on a relation that is not loaded, read resource by resource: let it load |

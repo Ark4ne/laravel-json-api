@@ -40,7 +40,7 @@ final class ResourceAssertionsTest extends TestCase
     public function test_a_resource_with_an_error_is_not_valid_and_the_message_lists_it(): void
     {
         $this->expectException(AssertionFailedError::class);
-        $this->expectExceptionMessage('invalid-declaration');
+        $this->expectExceptionMessage('[error] definition-error: Needs a real model.');
 
         ResourceAssertions::assertValid(FailingHookResource::class);
     }
@@ -60,7 +60,7 @@ final class ResourceAssertionsTest extends TestCase
         ResourceAssertions::assertValid(ForgottenWasResource::class, revision: ApiRevision::UsersReplaceTeachers);
 
         $this->expectException(AssertionFailedError::class);
-        $this->expectExceptionMessage('unavailable-resource (members)');
+        $this->expectExceptionMessage('[error] [Labels] jsonapi-absent-resource (relationships.members)');
 
         ResourceAssertions::assertValid(ForgottenWasResource::class, revision: ApiRevision::Labels);
     }
@@ -80,7 +80,7 @@ final class ResourceAssertionsTest extends TestCase
         ResourceAssertions::assertValidAtEveryRevision(TypedResource::class, strict: true);
 
         $this->expectException(AssertionFailedError::class);
-        $this->expectExceptionMessage('[error] [Labels] unavailable-resource (members)');
+        $this->expectExceptionMessage('[error] [Initial] jsonapi-absent-resource (relationships.members)');
 
         ResourceAssertions::assertValidAtEveryRevision(ForgottenWasResource::class);
     }

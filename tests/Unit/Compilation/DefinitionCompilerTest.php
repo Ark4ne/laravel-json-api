@@ -33,7 +33,6 @@ use Test\Unit\Compilation\Fixtures\EmptyLifetimeResource;
 use Test\Unit\Compilation\Fixtures\FailingHookResource;
 use Test\Unit\Compilation\Fixtures\OverriddenTypeResource;
 use Test\Unit\Compilation\Fixtures\PrefixedTypeNaming;
-use Test\Unit\Compilation\Fixtures\ReservedNameResource;
 use Test\Unit\Compilation\Fixtures\TypedResource;
 
 final class DefinitionCompilerTest extends TestCase
@@ -255,47 +254,6 @@ final class DefinitionCompilerTest extends TestCase
         self::assertStringContainsString('[title] of toAttributes()', $definition->diagnostics[0]->message);
         self::assertSame([], $definition->attributes);
         self::assertSame(['self'], array_keys($definition->links));
-    }
-
-    public function test_a_member_named_id_or_type_gives_an_error(): void
-    {
-        $definition = $this->compile(ReservedNameResource::class);
-
-        self::assertSame([DefinitionCompiler::RESERVED_NAME, DefinitionCompiler::RESERVED_NAME], $this->codes($definition));
-        self::assertSame(['id', 'type'], array_map(static fn(Diagnostic $diagnostic) => $diagnostic->subject, $definition->diagnostics));
-    }
-
-    public function test_an_attribute_and_a_relationship_of_the_same_name_give_an_error(): void
-    {
-        $resource = new class (null) extends JsonApiResource {
-            public function toAttributes(Request $request): iterable
-            {
-                return ['author' => $this->string()];
-            }
-
-            protected function toRelationships(Request $request): iterable
-            {
-                return ['author' => $this->one(UserResource::class)];
-            }
-        };
-
-        self::assertSame([DefinitionCompiler::NAME_COLLISION], $this->codes($this->compile($resource::class)));
-    }
-
-    public function test_a_relationship_to_a_resource_absent_from_the_revision_gives_an_error(): void
-    {
-        $resource = new class (null) extends JsonApiResource {
-            protected function toRelationships(Request $request): iterable
-            {
-                return ['member' => $this->one(MemberResource::class)];
-            }
-        };
-
-        self::assertSame([], $this->codes($this->compile($resource::class, self::revised())));
-        self::assertSame(
-            [DefinitionCompiler::UNAVAILABLE_RESOURCE],
-            $this->codes($this->compile($resource::class, self::revised(), ApiRevision::Initial)),
-        );
     }
 
     public function test_a_failing_hook_gives_an_error(): void

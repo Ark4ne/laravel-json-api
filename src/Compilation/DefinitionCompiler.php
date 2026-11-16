@@ -37,28 +37,18 @@ use Throwable;
  *   resources, linkage, loads), the routes and the lifetime.
  * - The values (attributes, meta of the resource object, meta of the document) are those of the shape
  *   `ark4ne/laravel-api-revisions` compiles for the resource at the revision: names, types, nullability, conditions.
+ * - The rules of JSON:API on its fields (reserved names, one name space, a relationship to a resource absent from a
+ *   revision) are checked by `ResourceCheck`, with the history of the fields: `ResourceChecker`.
  * - The hooks run with a neutral request: a member declared under an `if` on the request or the model is seen only
  *   when the probe takes that branch. Conditions belong to `->when()` and `applyWhen()`.
  */
 final readonly class DefinitionCompiler
 {
-    /** An attribute or a relationship is named `id` or `type`, reserved by the specification. */
-    public const RESERVED_NAME = 'reserved-name';
-
     /** A hook threw on the probe; the definition misses what it declares. */
     public const HOOK_FAILURE = 'hook-failure';
 
     /** The values of the resource cannot be compiled (a member that is not a descriptor, an invalid history). */
     public const INVALID_DECLARATION = 'invalid-declaration';
-
-    /** An attribute and a relationship have the same name at one revision. */
-    public const NAME_COLLISION = 'name-collision';
-
-    /** A relationship reaches a resource that does not exist at the revision. */
-    public const UNAVAILABLE_RESOURCE = 'unavailable-resource';
-
-    /** The names JSON:API reserves for the resource identification. */
-    public const RESERVED_NAMES = ['id', 'type'];
 
     public function __construct(
         private Configuration $configuration,
@@ -131,38 +121,6 @@ final readonly class DefinitionCompiler
                 "The values of the resource cannot be compiled ({$e->getMessage()}): its attributes, relationships and "
                 . 'meta are missing from the definition.',
             );
-        }
-
-        // What JSON:API asks of the fields of a resource.
-        foreach (array_keys(array_intersect_key($definition->attributes, $definition->relationships)) as $name) {
-            $diagnostics->error(
-                self::NAME_COLLISION,
-                "[{$name}] names an attribute and a relationship: they share one name space, bound one of them with until() / since().",
-                $name,
-            );
-        }
-
-        foreach ($definition->relationships as $relationship) {
-            foreach ($relationship->related as $related) {
-                if (!$this->lifetime($related)->covers($at)) {
-                    $diagnostics->error(
-                        self::UNAVAILABLE_RESOURCE,
-                        "[{$relationship->name}] relates to [{$related}], which does not exist at [{$at->name}]: give it a was() to "
-                        . 'the resource of the revision, or bound it with since() / until().',
-                        $relationship->name,
-                    );
-                }
-            }
-        }
-
-        foreach ([...array_keys($definition->attributes), ...array_keys($definition->relationships)] as $name) {
-            if (in_array($name, self::RESERVED_NAMES, true)) {
-                $diagnostics->error(
-                    self::RESERVED_NAME,
-                    "[{$name}] is reserved by JSON:API for the resource identification: rename the member.",
-                    $name,
-                );
-            }
         }
 
         return $definition->diagnostics(...$diagnostics);

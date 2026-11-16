@@ -4,9 +4,15 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Laravel\Commands;
 
-use Ark4ne\ApiRevisions\Revisions\Revision;
+use Ark4ne\ApiRevisions\Checking\Check;
+use Ark4ne\ApiRevisions\Checking\Checker;
+use Ark4ne\ApiRevisions\Compilation\Compiler;
+use Ark4ne\ApiRevisions\Configuration\Configuration as BaseConfiguration;
+use Ark4ne\ApiRevisions\Laravel\Checking\NativeCondition;
+use Ark4ne\ApiRevisions\Laravel\RevisionsServiceProvider;
 use Ark4ne\JsonApi\Compilation\DefinitionCompiler;
 use Ark4ne\JsonApi\Compilation\Definitions;
+use Ark4ne\JsonApi\Compilation\ResourceChecker;
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Definition\DefinitionSource;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
@@ -17,16 +23,15 @@ use Illuminate\Console\Command;
 use Illuminate\Routing\Router;
 
 /**
- * Compiles the definitions of the resources at every revision and prints their diagnostics, grouped by resource, with
- * the revision whose shape shows them; then checks that their relationships reach, at every revision, resources
- * existing at it (`revision-unavailable-resource`, `RevisionAudit`).
+ * Checks the resources and prints their findings, grouped by resource, with the revision showing them
+ * (`Compilation\ResourceChecker`): what this package compiles (the type, the lifetime, the links), and the check of
+ * `ark4ne/laravel-api-revisions` on them, the one `revision:check` runs on every declaring class: its own checks (the
+ * history of the fields, the conversions), `Compilation\ResourceCheck` (the rules of JSON:API) and those the
+ * application tags. The lock is left to `revision:check`, which reads every class.
  *
- * Fails when a definition cannot be compiled or has an error, or when the `self` route of `#[JsonApiRoutes]` does not
- * exist; with `--strict`, also on the first warning. `--revision=Labels` (the name of a case) restricts the check to
- * the shape of that revision, its declarations and its references: every case of that name the resource may be
- * rendered at; a resource declaring no revision is checked at its head shape, the one it has at every revision. A
- * resource absent from that revision, or declaring its revisions with an enum without that case, is skipped; no
- * resource knowing the revision fails.
+ * Fails on an error, or when the `self` route of `#[JsonApiRoutes]` does not exist; with `--strict`, also on the first
+ * warning. `--revision=Labels` (the name of a case) keeps the findings of that revision and those of no revision in
+ * particular; a resource absent from it is skipped.
  */
 final class CheckDefinitionsCommand extends Command
 {
@@ -42,7 +47,7 @@ final class CheckDefinitionsCommand extends Command
     /** @var string */
     protected $description = 'Check the JSON:API resource definitions and print their diagnostics';
 
-    public function handle(Configuration $configuration, ResourceFinder $finder, Router $router): int
+    public function handle(Configuration $configuration, ResourceFinder $finder, Router $router, BaseConfiguration $base): int
     {
         /** @var list<string> $requested */
         $requested = $this->argument('resources');
@@ -62,46 +67,52 @@ final class CheckDefinitionsCommand extends Command
                 return self::FAILURE;
             }
         }
-        $failed = false;
 
+        $skipped = [];
         foreach ($classes as $class) {
             try {
-                if (!is_subclass_of($class, DefinitionSource::class)) {
-                    throw DefinitionException::notADefinitionSource($class);
+                if ($at !== null && is_subclass_of($class, DefinitionSource::class) && !$compiler->lifetime($class)->covers($at)) {
+                    $skipped[] = $class;
                 }
+            } catch (DefinitionException) {
+                // Reported by the check.
+            }
+        }
 
-                if ($at !== null && !$compiler->lifetime($class)->covers($at)) {
-                    $this->components->twoColumnDetail($class, '<fg=gray;options=bold>SKIPPED</>');
+        // The checks of `revision:check` but those of the lock, which need every class.
+        $checks = [...Checker::builtIn(), new NativeCondition()];
+        foreach ($this->laravel->tagged(RevisionsServiceProvider::CHECKS) as $check) {
+            if ($check instanceof Check) {
+                $checks[] = $check;
+            }
+        }
+        $checker = new ResourceChecker($compiler, $checks, new Compiler($base));
+        $found = $checker->check(array_values(array_diff($classes, $skipped)), $at);
+        $failed = false;
 
-                    continue;
-                }
-
-                $definitions = $at === null ? $compiler->compileEvery($class) : [$compiler->compile($class, $at)];
-                $definition = $definitions[0];
-                $diagnostics = [];
-                foreach ($definitions as $compiled) {
-                    foreach ($compiled->diagnostics as $diagnostic) {
-                        $diagnostics[$diagnostic->key()] ??= $diagnostic;
-                    }
-                }
-                $diagnostics = array_values($diagnostics);
-
-                $self = $definition->routes?->self;
-                if ($self !== null && !$router->has($self)) {
-                    // Every rendering of the resource would throw.
-                    $diagnostics[] = new Diagnostic(
-                        DiagnosticLevel::Error,
-                        self::MISSING_ROUTE,
-                        "The route [{$self}] of #[JsonApiRoutes] does not exist.",
-                        'self',
-                    );
-                }
-            } catch (DefinitionException $e) {
-                $this->components->twoColumnDetail($class, '<fg=red;options=bold>ERROR</>');
-                $this->line("  ⇂ {$e->getMessage()}");
-                $failed = true;
+        // The resources in the order given, then what the check found elsewhere (the revision enum).
+        foreach ([...$classes, ...array_diff(array_keys($found), $classes)] as $class) {
+            if (in_array($class, $skipped, true)) {
+                $this->components->twoColumnDetail($class, '<fg=gray;options=bold>SKIPPED</>');
 
                 continue;
+            }
+
+            $diagnostics = $found[$class] ?? [];
+
+            try {
+                $self = is_subclass_of($class, DefinitionSource::class) ? $class::declaredRoutes()?->self : null;
+            } catch (DefinitionException) {
+                $self = null;
+            }
+            if ($self !== null && !$router->has($self)) {
+                // Every rendering of the resource would throw.
+                $diagnostics[] = new Diagnostic(
+                    DiagnosticLevel::Error,
+                    self::MISSING_ROUTE,
+                    "The route [{$self}] of #[JsonApiRoutes] does not exist.",
+                    'self',
+                );
             }
 
             $levels = array_map(static fn(Diagnostic $diagnostic): DiagnosticLevel => $diagnostic->level, $diagnostics);
