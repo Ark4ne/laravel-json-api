@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Http;
 
+use Ark4ne\ApiRevisions\Schema\Descriptor;
 use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Context\CurrentRevision;
+use Ark4ne\JsonApi\Definition\RelatedResource;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Http\Rules\Fields;
 use Ark4ne\JsonApi\Http\Rules\Includes;
@@ -52,6 +54,27 @@ abstract class JsonApiFormRequest extends FormRequest
     public function jsonApi(): ResourceDocument
     {
         return ResourceDocument::fromArray($this->validated());
+    }
+
+    /**
+     * The body of a request using the `RevisionedRequest` of `ark4ne/laravel-api-revisions`, for its `body()`: the
+     * resource object of the resource of the request (`Body::resource()`).
+     *
+     * @param array<string, Descriptor<mixed>> $attributes
+     * @param array<string, Descriptor<mixed>> $relationships Their relationship objects: `Body::toOne()`, `Body::toMany()`
+     * @param Descriptor<mixed>|null $id The `data.id`; not accepted when `null`
+     *
+     * @return array<string, Descriptor<mixed>>
+     *
+     * @throws DefinitionException when the request names no resource
+     */
+    protected function resourceObject(array $attributes = [], array $relationships = [], ?Descriptor $id = null): array
+    {
+        if (!isset($this->resource)) {
+            throw DefinitionException::formRequestWithoutResource(static::class);
+        }
+
+        return Body::resource(RelatedResource::resolve($this->resource), $attributes, $relationships, $id);
     }
 
     /**

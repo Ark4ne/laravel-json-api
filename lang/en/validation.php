@@ -15,4 +15,7 @@ return [
         'invalid_includes' => '":include" doesn\'t have relationship ":relation".',
         'invalid_depth' => '":include" is deeper than the maximum include depth of :depth.',
     ],
+    'linkage' => [
+        'missing' => 'The :attribute field must be present, it may be null.',
+    ],
 ];

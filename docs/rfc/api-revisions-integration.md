@@ -249,7 +249,7 @@ feature tests unchanged). What was done differently from the plan above, and wha
 | Story | Content |
 |---|---|
 | **US 5.1** ✅ | A `JsonApiFormRequest` using the base's `RevisionedRequest` (and implementing `Revisioned`) works as it is: `body()` declares `data.type` and `data.attributes` with descriptors; the body is validated in the names of the client's revision, the errors point at the members it sent, `jsonApi()` reads the head shape (renamed, converted, defaults written), and `include` / `fields` stay validated at the revision. Covered by `tests/Feature/Schemas/RequestsTest.php`; no code needed. |
-| **US 5.2** | Helpers for a JSON:API body (`data.type` from the resource, relationships linkage as descriptors), so `body()` declares attributes and relationships only. |
+| **US 5.2** ✅ | Helpers for a JSON:API body: `Http\Body::resource()` (`data.type` from the resource, `data.id`, attributes and relationships required when one of their members is), `Body::toOne()` / `toMany()` (the relationship object, its linkage of the types of the related resources; `Http\Rules\Linkage` for a to-one linkage sent and possibly `null`), `JsonApiFormRequest::resourceObject()`. A relationship has its history as any field (`->was(R, name:)`). Not done: the linkage derived from the relationships of the resource (the types are given), a relationship whose related type changed at a revision. |
 | **US 5.3** | `Http\Rules\Revised`, `RulesRevision`, `Http\Concerns\UseRevisedRules` removed; README and skill rewritten on `RevisionedRequest`. |
 
 ### EJ6 — stories
