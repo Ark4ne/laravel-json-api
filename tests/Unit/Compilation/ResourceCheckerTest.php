@@ -6,6 +6,7 @@ namespace Test\Unit\Compilation;
 
 use Ark4ne\ApiRevisions\Checking\Checker;
 use Ark4ne\JsonApi\Compilation\DefinitionCompiler;
+use Ark4ne\JsonApi\Compilation\ListedClasses;
 use Ark4ne\JsonApi\Compilation\ResourceCheck;
 use Ark4ne\JsonApi\Compilation\ResourceChecker;
 use Ark4ne\JsonApi\Configuration\Configuration;
@@ -17,6 +18,7 @@ use stdClass;
 use Test\app\Revisions\ApiRevision;
 use Test\Unit\Compilation\Fixtures\FailingHookResource;
 use Test\Unit\Compilation\Fixtures\InconsistentHistoryResource;
+use Test\Unit\Compilation\Fixtures\RecordingCheck;
 use Test\Unit\Compilation\Fixtures\ReservedNameResource;
 use Test\Unit\Compilation\Fixtures\TypedResource;
 use Test\Unit\Compilation\References\BoundedReferencesResource;
@@ -143,18 +145,29 @@ final class ResourceCheckerTest extends TestCase
         self::assertStringStartsWith('[error] jsonapi-reserved-name (attributes.id): ', $found[1]);
     }
 
-    public function test_the_checks_may_be_given(): void
+    public function test_the_checker_of_the_base_may_be_given_and_runs_on_the_resources_as_a_subset(): void
     {
+        RecordingCheck::reset();
         $checker = new ResourceChecker(
             new DefinitionCompiler(Configuration::defaults()->withRevisions(ApiRevision::class)),
-            Checker::builtIn(),
+            new Checker(ApiRevision::class, new ListedClasses([]), [new RecordingCheck()]),
         );
 
-        self::assertSame([], $checker->check([ReservedNameResource::class])[ReservedNameResource::class]);
-        self::assertNotSame([], (new ResourceChecker(
+        // Its checks only: not those of this package it was not given.
+        self::assertSame([], $checker->check([ReservedNameResource::class, stdClass::class])[ReservedNameResource::class]);
+        self::assertSame([ReservedNameResource::class], RecordingCheck::$classes);
+        self::assertTrue(RecordingCheck::$subset);
+    }
+
+    public function test_without_checker_the_checks_of_the_base_and_of_json_api_run(): void
+    {
+        self::assertNotSame([], self::checker()->check([ReservedNameResource::class])[ReservedNameResource::class]);
+
+        $checker = new ResourceChecker(
             new DefinitionCompiler(Configuration::defaults()->withRevisions(ApiRevision::class)),
-            [new ResourceCheck()],
-        ))->check([ReservedNameResource::class])[ReservedNameResource::class]);
+            new Checker(ApiRevision::class, new ListedClasses([]), [...Checker::builtIn(), new ResourceCheck()]),
+        );
+        self::assertNotSame([], $checker->check([ReservedNameResource::class])[ReservedNameResource::class]);
     }
 
     /**

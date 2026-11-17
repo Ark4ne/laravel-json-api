@@ -530,7 +530,8 @@ plugs JSON:API into it.
 `id` or `type` (`jsonapi-reserved-name`), an attribute and a relationship sharing a name
 (`jsonapi-name-collision`), a relationship to a resource absent from the revision (`jsonapi-absent-resource`).
 `revision:check` runs it with the others on every declaring class. `Compilation\ResourceChecker` runs the `Checker`
-of the base on the resources it is given, after compiling their definition at every revision they exist at (type, lifetime, links, relationships): what
+of the base (`jsonapi:check`: the one the container binds, with the lock and the tagged checks) on the resources it
+is given only (`Checker::forClasses()`), after compiling their definition at every revision they exist at (type, lifetime, links, relationships): what
 `jsonapi:check` and `Testing\ResourceAssertions` print.
 
 ### Request bodies

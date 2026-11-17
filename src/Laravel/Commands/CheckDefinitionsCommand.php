@@ -4,12 +4,7 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Laravel\Commands;
 
-use Ark4ne\ApiRevisions\Checking\Check;
 use Ark4ne\ApiRevisions\Checking\Checker;
-use Ark4ne\ApiRevisions\Compilation\Compiler;
-use Ark4ne\ApiRevisions\Configuration\Configuration as BaseConfiguration;
-use Ark4ne\ApiRevisions\Laravel\Checking\NativeCondition;
-use Ark4ne\ApiRevisions\Laravel\RevisionsServiceProvider;
 use Ark4ne\JsonApi\Compilation\DefinitionCompiler;
 use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Compilation\ResourceChecker;
@@ -26,8 +21,8 @@ use Illuminate\Routing\Router;
  * Checks the resources and prints their findings, grouped by resource, with the revision showing them
  * (`Compilation\ResourceChecker`): what this package compiles (the type, the lifetime, the links), and the check of
  * `ark4ne/laravel-api-revisions` on them, the one `revision:check` runs on every declaring class: its own checks (the
- * history of the fields, the conversions), `Compilation\ResourceCheck` (the rules of JSON:API) and those the
- * application tags. The lock is left to `revision:check`, which reads every class.
+ * history of the fields, the conversions, the lock), `Compilation\ResourceCheck` (the rules of JSON:API) and those the
+ * application tags, run on the resources checked only (`Checker::forClasses()`).
  *
  * Fails on an error, or when the `self` route of `#[JsonApiRoutes]` does not exist; with `--strict`, also on the first
  * warning. `--revision=Labels` (the name of a case) keeps the findings of that revision and those of no revision in
@@ -47,7 +42,7 @@ final class CheckDefinitionsCommand extends Command
     /** @var string */
     protected $description = 'Check the JSON:API resource definitions and print their diagnostics';
 
-    public function handle(Configuration $configuration, ResourceFinder $finder, Router $router, BaseConfiguration $base): int
+    public function handle(Configuration $configuration, ResourceFinder $finder, Router $router): int
     {
         /** @var list<string> $requested */
         $requested = $this->argument('resources');
@@ -79,14 +74,8 @@ final class CheckDefinitionsCommand extends Command
             }
         }
 
-        // The checks of `revision:check` but those of the lock, which need every class.
-        $checks = [...Checker::builtIn(), new NativeCondition()];
-        foreach ($this->laravel->tagged(RevisionsServiceProvider::CHECKS) as $check) {
-            if ($check instanceof Check) {
-                $checks[] = $check;
-            }
-        }
-        $checker = new ResourceChecker($compiler, $checks, new Compiler($base));
+        // The check of `revision:check` (its checks, those the application tags, the lock), on these resources only.
+        $checker = new ResourceChecker($compiler, $this->laravel->make(Checker::class));
         $found = $checker->check(array_values(array_diff($classes, $skipped)), $at);
         $failed = false;
 

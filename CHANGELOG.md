@@ -127,8 +127,10 @@ replaces them.
   (`attributes.title`, `relationships.author`) and are no longer in `ResourceDefinition::$diagnostics`, which keeps
   `invalid-declaration` and `hook-failure`; a class that is not a resource is the finding `invalid-resource`.
   The definitions are compiled at every revision the resource exists at: a finding of an older revision names it.
-  `jsonapi:check` runs the checks the application tags too (`RevisionsServiceProvider::CHECKS`), not those of the
-  lock (`revision:check`).
+  `jsonapi:check` runs the `Checker` the container binds (that of `revision:check`: its checks, those the
+  application tags with `RevisionsServiceProvider::CHECKS`, the lock) on the resources checked only
+  (`Checker::forClasses()`): a locked class outside them is not reported as gone. `ResourceChecker` takes that
+  `Checker`.
 - **Breaking**: `jsonapi:cache` writes one definition per resource and revision; `jsonapi:check` checks each
   revision the resource exists at and leaves the history of the fields to `revision:check`.
 - `make:jsonapi-resource` writes `$this->enum(State::class)`.

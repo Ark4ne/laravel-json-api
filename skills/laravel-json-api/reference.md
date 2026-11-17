@@ -189,7 +189,7 @@ The revision enum, the format of a date and time and the strictness of the value
 | Command | Effect |
 | --- | --- |
 | `php artisan make:jsonapi-resource PostResource [--model=Post] [--force]` | Writes a resource from the casts, fillable attributes and relations of the model (`vendor:publish --tag=jsonapi-stubs` for its stub) |
-| `php artisan jsonapi:check [resources…] [--strict] [--revision=Case]` | Prints the findings about the resources at every revision (`[error] [Labels] code (subject): …`): their definition, and the check of `ark4ne/laravel-api-revisions` on them (the history of the fields, the conversions, the rules of JSON:API). Fails on an error (on a warning too with `--strict`); `--revision` keeps one revision. `php artisan revision:check` runs the same check on every declaring class, with the lock |
+| `php artisan jsonapi:check [resources…] [--strict] [--revision=Case]` | Prints the findings about the resources at every revision (`[error] [Labels] code (subject): …`): their definition, and the check of `ark4ne/laravel-api-revisions` on them (the history of the fields, the conversions, the rules of JSON:API, the lock). Fails on an error (on a warning too with `--strict`); `--revision` keeps one revision. `php artisan revision:check` runs the same check on every declaring class, with the lock |
 | `php artisan jsonapi:cache` | Compiles every definition into `bootstrap/cache/jsonapi.php` (run by `php artisan optimize`) |
 | `php artisan jsonapi:clear` | Removes the compiled definitions (run by `optimize:clear`) |
 

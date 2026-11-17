@@ -1101,7 +1101,7 @@ a new revision, write **`was(<the revision that was the newest until now>)`**:
   calls): each `was()` says what differs from the next newer shape, an argument left out keeps it.
 - `schema:` is the type the field had: a descriptor without source, since **the model has one version**. The value
   is read once, as the head reads it, then converted down: by the base when it knows the conversion (an integer to a
-  string, a date and time to a string…), otherwise by `down:`, a closure receiving the value of the newer shape and
+  string, a date and time to a string or to a date…), otherwise by `down:`, a closure receiving the value of the newer shape and
   the model. `php artisan jsonapi:check` reports a conversion that is missing (`conversion-missing`).
 
 ```php

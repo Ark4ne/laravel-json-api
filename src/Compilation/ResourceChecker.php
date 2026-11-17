@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Compilation;
 
-use Ark4ne\ApiRevisions\Checking\Check;
 use Ark4ne\ApiRevisions\Checking\Checker;
-use Ark4ne\ApiRevisions\Compilation\Compiler;
 use Ark4ne\ApiRevisions\Revisions\Revision;
 use Ark4ne\ApiRevisions\Revisions\Unrevisioned;
 use Ark4ne\ApiRevisions\Schema\Revisioned;
@@ -32,21 +30,15 @@ final readonly class ResourceChecker
     /** The class is not a resource, or its definition cannot be compiled at all (its type, its lifetime). */
     public const INVALID_RESOURCE = 'invalid-resource';
 
-    /** @var list<Check> */
-    private array $checks;
-
     /**
-     * @param list<Check>|null $checks The checks run on each resource; those of `ark4ne/laravel-api-revisions` and
-     *                                 `ResourceCheck` when `null`
-     * @param Compiler $compiler The compiler of the base the shapes are checked with
+     * @param Checker|null $checker The check of `ark4ne/laravel-api-revisions` (that of `revision:check`, its enum,
+     *                              checks and compiler), run on the resources asked for only (`forClasses()`); one
+     *                              with its built-in checks and `ResourceCheck` when `null`
      */
     public function __construct(
         private DefinitionCompiler $definitions,
-        ?array $checks = null,
-        private Compiler $compiler = new Compiler(),
-    ) {
-        $this->checks = $checks ?? [...Checker::builtIn(), new ResourceCheck()];
-    }
+        private ?Checker $checker = null,
+    ) {}
 
     /**
      * The findings about each class, and about the revision enum under its own name when it has some.
@@ -83,7 +75,8 @@ final readonly class ResourceChecker
         }
 
         $checked = [];
-        foreach ((new Checker($enum, new ListedClasses($resources), $this->checks, $this->compiler))->run() as $diagnostic) {
+        $checker = $this->checker ?? new Checker($enum, new ListedClasses([]), [...Checker::builtIn(), new ResourceCheck()]);
+        foreach ($checker->forClasses(new ListedClasses($resources))->run() as $diagnostic) {
             $revision = $diagnostic->revision;
             if ($revision !== null && array_key_exists($revision, $names)) {
                 $revision = $names[$revision];

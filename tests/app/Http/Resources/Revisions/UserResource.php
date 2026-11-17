@@ -7,7 +7,6 @@ namespace Test\app\Http\Resources\Revisions;
 use Ark4ne\ApiRevisions\Schema\Schema;
 use Ark4ne\JsonApi\Resources\Attributes\JsonApiType;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
-use DateTimeInterface;
 use Illuminate\Http\Request;
 use Test\app\Models\User;
 use Test\app\Revisions\ApiRevision;
@@ -30,8 +29,8 @@ final class UserResource extends JsonApiResource
                 ->was(ApiRevision::Initial, name: 'name'),
             'email' => Schema::string()->nullable()->whenHas(),
             'born_at' => Schema::dateTime('created_at')->nullable()->whenHas()
-                // No automatic conversion from a date and time to a date: the same instant, serialized as a date.
-                ->was(ApiRevision::Initial, schema: Schema::date(), down: static fn(DateTimeInterface $at): DateTimeInterface => $at),
+                // Converted by the base: the same instant, serialized as a date.
+                ->was(ApiRevision::Initial, schema: Schema::date()),
             // Revisions
             'full_name' => Schema::string(fn() => "{$this->resource->name} <{$this->resource->email}>")
                 ->until(ApiRevision::Labels),

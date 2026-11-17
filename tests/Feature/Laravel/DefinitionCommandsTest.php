@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Test\Feature\Laravel;
 
+use Ark4ne\ApiRevisions\Checking\Checker;
 use Ark4ne\JsonApi\Compilation\Definitions;
+use Ark4ne\JsonApi\Compilation\ListedClasses;
 use Ark4ne\JsonApi\Laravel\JsonApiServiceProvider;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
@@ -18,6 +20,7 @@ use Test\app\Revisions\ProfileResource;
 use Test\app\Revisions\TeacherResource;
 use Test\Unit\Compilation\Fixtures\FailingHookResource;
 use Test\Unit\Compilation\Fixtures\InconsistentHistoryResource;
+use Test\Unit\Compilation\Fixtures\RecordingCheck;
 use Test\Unit\Compilation\Fixtures\TypedResource;
 use Test\Unit\Compilation\References\BoundedReferencesResource;
 use Test\Unit\Compilation\References\ForgottenWasResource;
@@ -221,6 +224,17 @@ final class DefinitionCommandsTest extends TestCase
         self::assertStringContainsString('[error] [Initial] jsonapi-absent-resource (relationships.members)', $output);
 
         $this->command('jsonapi:check', ['resources' => [BoundedReferencesResource::class]])->assertSuccessful();
+    }
+
+    public function test_check_runs_the_checker_of_the_base_on_the_resources_given(): void
+    {
+        RecordingCheck::reset();
+        app()->instance(Checker::class, new Checker(ApiRevision::class, new ListedClasses([]), [new RecordingCheck()]));
+
+        $this->command('jsonapi:check', ['resources' => [TypedResource::class]])->assertSuccessful();
+
+        self::assertSame([TypedResource::class], RecordingCheck::$classes);
+        self::assertTrue(RecordingCheck::$subset);
     }
 
     public function test_check_may_be_restricted_to_one_revision(): void
