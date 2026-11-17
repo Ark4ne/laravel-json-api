@@ -68,7 +68,7 @@ Modifiers of every value (each returns a copy):
 | Modifier | Effect |
 | --- | --- |
 | `->nullable(bool $nullable = true)` | `null` renders `null` (the default, `describer.nullable`); not nullable, `null` is a value error |
-| `->when(Closure $condition)` | Rendered only when the closure returns `true`; it receives `($value, $model)` |
+| `->when(Closure $condition)` | Rendered only when the closure returns `true`; it receives `($model, $attribute)` and runs before the value is read: the value is never computed when it fails |
 | `->unless(Closure $condition)` | Left out when the closure returns a truthy value |
 | `->whenNotNull()` | Left out when `null` |
 | `->whenFilled()` | Left out when empty |

@@ -64,7 +64,7 @@ final class ApplyWhenTest extends FeatureTestCase
             protected function toRelationships(Request $request): iterable
             {
                 return [
-                    'author' => $this->one(UserResource::class)->when(fn(mixed $value, mixed $model): bool => $this->condition && $model === $this->resource),
+                    'author' => $this->one(UserResource::class)->when(fn(mixed $model): bool => $this->condition && $model === $this->resource),
                 ];
             }
         };

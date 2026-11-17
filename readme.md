@@ -357,7 +357,7 @@ class UserResource extends JsonApiResource
             // $this->resource is a User; the descriptor is a StringSchema
             'name' => $this->string(),
             // the closure of a helper receives the User; a condition, the value and the User
-            'email' => $this->string(fn(User $user) => $user->email)->when(fn($value, User $user) => $user->isAdmin()),
+            'email' => $this->string(fn(User $user) => $user->email)->when(fn(User $user) => $user->isAdmin()),
             // a relationship is a RelationshipSchema<User>
         ];
     }

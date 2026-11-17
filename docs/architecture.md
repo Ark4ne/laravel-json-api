@@ -217,8 +217,8 @@ The helpers of a resource return the descriptors of `ark4ne/laravel-api-revision
 resource may write `Schema::string()` itself.
 
 - **Immutable.** Every fluent method returns a clone: a descriptor can be shared or reused without side effects.
-- **Conditions are closures** read for each resource: `->when(Closure($value, $model))`, `whenHas()`,
-  `whenLoaded()` of the base; `unless()`, `whenNotNull()`, `whenFilled()`, `whenAppended()` and `whenInFields()`
+- **Conditions are closures** read for each resource, before the value: `->when(Closure($model, $attribute))`, `unless()`,
+  `whenHas()`, `whenLoaded()` of the base; `whenNotNull()`, `whenFilled()`, `whenAppended()` and `whenInFields()`
   (which also marks the field sparse) are macros this package registers (`Descriptors\Schemas\Conditions`).
   `whenInFields($request, …)`, `whenInIncludes($request, …)` and `applyWhen()` are helpers of the resource: they
   read its request and its place in the includes.

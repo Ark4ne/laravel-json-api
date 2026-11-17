@@ -41,8 +41,8 @@ php artisan make:jsonapi-resource PostResource --model=Post                     
    is typed, read only when the member is requested, and known to the definition; a closure is a value of any type.
 2. **No `if` on the request or the model in a hook.** The definition is compiled once, on a probe standing for the
    model, with an empty request: a member added under an `if` is missing from it, so `fields` and `include` cannot
-   name it. Write conditions with `->when(fn($value, $model) => …)`, `->unless()`, `->whenNotNull()`, `->whenHas()`
-   or `$this->applyWhen(fn() => …, [...])`: a condition is a closure, read for each resource. Laravel's
+   name it. Write conditions with `->when(fn() => …)` (it receives `($model, $attribute)` and runs before the value is
+   read), `->unless()`, `->whenNotNull()`, `->whenHas()` or `$this->applyWhen(fn() => …, [...])`: a condition is a closure, read for each resource. Laravel's
    `$this->when()` and `$this->mergeWhen()` give plain values and are refused.
 3. **Name every member.** A hook returns members keyed by name. `id` and `type` are reserved: never declare them
    as attributes.

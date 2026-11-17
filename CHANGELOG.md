@@ -30,16 +30,16 @@ replaces them.
   related resources, converted to itself (a relationship to another resource at an old revision is
   `->was(R, schema: Schema::relationship(…))`). `relationAt($field)` gives the relation in force at a revision.
   A relationship of another resource is held too: `Schema::relationship(CommentResource::relationship(fn() => …))`.
-  Its conditions (`->when(fn($value, $model) => …)`) are read for each resource: the relationship is left out when one
+  Its conditions (`->when(fn($model) => …)`) are read for each resource: the relationship is left out when one
   fails.
 - `applyWhen()` groups descriptors of `ark4ne/laravel-api-revisions` too: each member takes the condition as a
   `->when()`, attributes and relationships alike.
 - `$this->whenInFields($request, 'name', $descriptor)` and `$this->whenInIncludes($request, 'posts', $descriptor)`
   take a descriptor of `ark4ne/laravel-api-revisions` and give it the condition, read where each resource is rendered
   (the includes of its place in the document).
-- `->unless()`, `->whenNotNull()` and `->whenFilled()` on every descriptor of `ark4ne/laravel-api-revisions`
-  (`Descriptors\Schemas\Conditions`, macros registered by the service provider); their closures receive
-  `($value, $model)`. `->whenInFields()`: the attribute is rendered only when the sparse fieldset names it, in its
+- `->whenNotNull()` and `->whenFilled()` on every descriptor of `ark4ne/laravel-api-revisions`
+  (`Descriptors\Schemas\Conditions`, macros registered by the service provider), `->unless()` being the one of the base;
+  `->whenNotNull()` and `->whenFilled()` read the source (its key, or its closure) before the value, as in 2.0. `->whenInFields()`: the attribute is rendered only when the sparse fieldset names it, in its
   name at the revision (sparse in the definition). `->whenAppended(?string $attribute = null)`: only when the model
   appends the accessor the descriptor reads, or the one named.
 - `JsonApiResource` implements `Revisioned` and `HasLifetime` of `ark4ne/laravel-api-revisions`
@@ -97,8 +97,8 @@ replaces them.
   response, on a template whose `$this->resource` is set to each model before its values are read. A member is a
   descriptor or a closure under its name: a plain value, a member without name, Laravel's `$this->when()` /
   `$this->mergeWhen()` are refused (`DefinitionException`). The default attributes and the links stay plain values.
-- **Breaking**: a condition is a closure read for each resource: `->when(Closure($value, $model))`,
-  `->unless(Closure)`, `applyWhen(Closure, array)`; `$this->whenInFields()` and `$this->whenInIncludes()` take a
+- **Breaking**: a condition is a closure read for each resource: `->when(Closure($model, $attribute))`,
+  `->unless(Closure)`, run before the value is read (a value whose condition fails is never computed, as in 2.0), `applyWhen(Closure, array)`; `$this->whenInFields()` and `$this->whenInIncludes()` take a
   descriptor or a closure and return a descriptor.
 - **Breaking**: `->was(R, name:, schema:, down:)`, `->since()` and `->until()` are those of
   `ark4ne/laravel-api-revisions` (`value:` is `schema:`; a relationship to another resource is

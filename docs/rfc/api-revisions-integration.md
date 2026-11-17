@@ -37,7 +37,7 @@ is a major version: 2.0 contracts may change where this RFC says so, each change
 | D5 | **One selection function, the base's** (`ShapeSelector`). A resource is one `Revisioned` response whose top level is one object per hook (`attributes`, `relationships`, `meta`, `documentMeta`): the base's cache, check, lock, export and changelog see it as any other class. |
 | D6 | **The base renders the values.** Attributes and meta go through the base's projection plan (its R9): source, normalization, conditions, down conversions, serialization. This package no longer casts a value. Relationships are resolved by this package (`RelationshipSource`), under the names and the visibility the shape gives. |
 | D7 | **A hook runs once per class and per response**, on a template instance whose `resource` is set to each model before its fields are evaluated: a closure reading `$this->resource` or capturing `$request` works as before. A plain value in a hook (`'name' => $this->resource->name`) can no longer work and is refused at compilation (`DefinitionException`): a value is a descriptor or a closure. |
-| D8 | **Conditions.** Those of the base: `when(Closure($value, $model))`, `whenHas()`, `whenLoaded()`. Those of JSON:API (`whenInFields()`, `whenInIncludes()`, `can()`, `whenAppended()`…) are macros this package registers on the base's descriptors (its R10); the request and the context are captured when the hook runs (D7). The 2.0 signature `Closure(Request, model, attribute)` is removed. |
+| D8 | **Conditions.** Those of the base: `when(Closure($model, $attribute))`, `unless()`, `whenHas()`, `whenLoaded()`, run before the value is read: a value whose condition fails is never computed, as in 2.0 (amended 2026-11-17, base D93; the first version passed the value, which forced it to be computed first). Those of JSON:API (`whenInFields()`, `whenInIncludes()`, `can()`, `whenAppended()`…) are macros this package registers on the base's descriptors (its R10); the request and the context are captured when the hook runs (D7). The 2.0 signature `Closure(Request, model, attribute)` is removed. |
 | D9 | **Sparse fieldsets and includes choose the fields before the plan is built**: one plan per class, revision and requested fieldset, built once per response from the cached shape. A field not requested is never evaluated. |
 | D10 | **The definition for tools.** `ResourceDefinition` keeps what is JSON:API (`type`, relationships, links, meta flags, routes, lifetime, diagnostics) and gives the attributes as the base's model (`Shape`, `FieldDefinition`, `TypeDefinition`). `AttributeDefinition` and `ValueType` are removed. `Definitions::for($class, $revision)`, `exists()`, `lifetime()` stay. |
 | D11 | **The revision of a request is the base's**: middleware `revision`, resolvers, `ApiRevision::current()` / `using()`. The context reads it once, when it is built, and carries it explicitly. |
@@ -182,7 +182,7 @@ everything above; to be done in this order, as one branch of work ending green.
    JSON:API modifiers — `links()`, `meta()`, `withLoad()`, `whenIncluded()`, `can()`… — forwarded to the relation it
    holds). `JsonApiResource::__call()` serves the custom types of the base's `TypeRegistry`.
 2. **Hook helpers.** `applyWhen(Closure $condition, array $members)` returns the members, each with
-   `->when($condition)` (closure `($value, $model)`), spread by the hook (`...$this->applyWhen()`); `mergeWhen()`,
+   `->when($condition)` (closure `($model, $attribute)`), spread by the hook (`...$this->applyWhen()`); `mergeWhen()`,
    `when()`, `whenHas()`, `whenInFields()` and `whenInIncludes()` as hook helpers are removed (they give plain
    values): `->when()`, `->whenHas()`, `->whenInFields()` on the descriptor. `describer.when-has` applies
    `->whenHas()` when the hook declares the field.
@@ -322,7 +322,7 @@ as the 2.0 resources (872.9 KB).
 
 | # | Question | Proposal |
 |---|---|---|
-| Q1 | `applyWhen()` / `mergeWhen()` with a condition evaluated in the hook: per resource in 2.0, once per response with D7. | `applyWhen()` takes a closure `($value, $model)` applied to each member as a `when()`; `mergeWhen()` is removed. |
+| Q1 | `applyWhen()` / `mergeWhen()` with a condition evaluated in the hook: per resource in 2.0, once per response with D7. | `applyWhen()` takes a closure applied to each member as a `when()`; `mergeWhen()` is removed. |
 | Q2 | Closures of links and meta of a relationship: same template rule as D7? | Yes: every closure of a hook is evaluated with the template set to its model. |
 | Q3 | Sparse fieldsets, `include` written with old names: translated here, as in 2.1? | Yes: they are JSON:API; read from the shape's names. |
 | Q4 | Octane: the template instance and the plans live for one response. | Held by the `JsonApiContext` of the response, never static. |

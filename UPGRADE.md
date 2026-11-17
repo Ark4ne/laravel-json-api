@@ -31,10 +31,10 @@ The helpers keep their names and return the descriptors of the base. What change
 | `'name' => $this->resource->name` (a plain value) | `'name' => $this->string()`, or a closure: `'name' => fn() => $this->resource->name` |
 | `toResourceMeta()` returning `['version' => 3]` | `['version' => fn() => 3]`, or `$this->integer(fn() => 3)` |
 | a member without name (`$this->string('email')`) | `'email' => $this->string()` |
-| `$this->when($condition, $value)`, `$this->whenHas('email')` in a hook | `$this->string()->when(fn($value, $model) => …)`, `->whenHas()` |
+| `$this->when($condition, $value)`, `$this->whenHas('email')` in a hook | `$this->string()->when(fn() => …)`, `->whenHas()` |
 | `$this->mergeWhen($condition, [...])` | `$this->applyWhen(fn() => $condition, [...])` |
 | `$this->applyWhen($bool, [...])` | `$this->applyWhen(fn() => $bool, [...])`: a closure, read for each resource |
-| `->when(true)`, `->when(fn(Request $request, $model, string $attribute) => …)` | `->when(fn($value, $model) => …)`; the request is the one of the hook (`use ($request)`) |
+| `->when(true)`, `->when(fn(Request $request, $model, string $attribute) => …)` | `->when(fn($model, string $attribute) => …)`, run before the value as in 2.0; the request is the one of the hook (`use ($request)`) |
 | `$this->whenInFields($request, 'name', $value)` | the value is a descriptor or a closure: `$this->whenInFields($request, 'name', fn() => $value)` |
 | `$this->enum()->of(State::class)`, `$this->enum()` | `$this->enum(State::class)` (a backed enum) |
 | `$this->struct(fn() => ['city' => $this->string()])` | `$this->struct(['city' => $this->string()])`; with a source, the members are read on its value |

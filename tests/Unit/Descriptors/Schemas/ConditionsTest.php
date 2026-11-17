@@ -36,32 +36,21 @@ final class ConditionsTest extends TestCase
     public function test_a_macro_the_application_registered_first_keeps_its_name(): void
     {
         DescriptorMacros::flush();
-        DescriptorMacros::register('unless', static fn(Descriptor $descriptor): Descriptor => $descriptor->describe('mine'));
+        DescriptorMacros::register('whenNotNull', static fn(Descriptor $descriptor): Descriptor => $descriptor->describe('mine'));
 
         Conditions::register();
 
-        self::assertSame('mine', Schema::string()->unless(static fn(): bool => true)->toType()->description);
+        self::assertSame('mine', Schema::string()->whenNotNull()->toType()->description);
     }
 
-    public function test_unless_renders_the_field_when_the_condition_does_not_hold(): void
+    public function test_unless_is_the_one_of_the_base(): void
     {
-        $visible = Schema::string('name')->unless(static fn(mixed $value, array $subject): mixed => $subject['hidden']);
+        self::assertNotContains('unless', Conditions::MACROS);
+
+        $visible = Schema::string('name')->unless(static fn(array $subject): bool => $subject['hidden'] === true);
 
         self::assertSame(['name' => 'Ada'], self::project(['name' => $visible], ['name' => 'Ada', 'hidden' => false]));
         self::assertSame([], self::project(['name' => $visible], ['name' => 'Ada', 'hidden' => true]));
-    }
-
-    public function test_unless_receives_the_value_and_the_subject(): void
-    {
-        $short = Schema::string('name')->unless(static fn(string $value): bool => strlen($value) > 3);
-
-        self::assertSame(['name' => 'Ada'], self::project(['name' => $short], ['name' => 'Ada']));
-        self::assertSame([], self::project(['name' => $short], ['name' => 'Grace']));
-    }
-
-    public function test_unless_makes_the_field_conditional(): void
-    {
-        self::assertTrue(Schema::string()->unless(static fn(): bool => false)->isConditional());
     }
 
     public function test_when_not_null_leaves_out_a_null_value(): void
@@ -70,6 +59,22 @@ final class ConditionsTest extends TestCase
 
         self::assertSame([], self::project($descriptors, ['nickname' => null]));
         self::assertSame(['nickname' => ''], self::project($descriptors, ['nickname' => '']));
+    }
+
+    public function test_when_not_null_reads_the_source_before_the_value_as_in_2_0(): void
+    {
+        $runs = 0;
+        $descriptors = ['nickname' => Schema::string(static function () use (&$runs): ?string {
+            $runs++;
+
+            return null;
+        })->nullable()->whenNotNull()];
+
+        self::assertSame([], self::project($descriptors, ['id' => 1]));
+        // Read once by the condition; the value is never read when it fails.
+        self::assertSame(1, $runs);
+        self::assertSame(['label' => 'a'], self::project(['label' => Schema::string('name.first')->whenNotNull()], ['name' => ['first' => 'a']]));
+        self::assertSame([], self::project(['label' => Schema::string('name.first')->nullable()->whenNotNull()], ['name' => ['first' => null]]));
     }
 
     /**

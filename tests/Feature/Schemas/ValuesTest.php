@@ -197,6 +197,21 @@ final class ValuesTest extends TestCase
             ->assertJsonMissingPath('data.attributes');
     }
 
+    public function test_a_value_is_never_computed_when_its_condition_fails(): void
+    {
+        GuardedResource::$sources = 0;
+
+        $this->render(GuardedResource::make(['id' => 1, 'name' => 'Ada', 'visible' => false]), null)
+            ->assertJsonPath('data.attributes', ['name' => 'Ada']);
+
+        self::assertSame(0, GuardedResource::$sources);
+
+        $this->render(GuardedResource::make(['id' => 1, 'name' => 'Ada', 'visible' => true]), null)
+            ->assertJsonPath('data.attributes', ['name' => 'Ada', 'computed' => 'ADA', 'hidden' => 'ADA']);
+
+        self::assertSame(2, GuardedResource::$sources);
+    }
+
     public function test_a_condition_on_the_includes_is_read_where_each_resource_is_rendered(): void
     {
         $node = ['id' => 1, 'child' => ['id' => 2, 'child' => ['id' => 3, 'child' => null]]];
@@ -268,6 +283,32 @@ final class CountedResource extends JsonApiResource
 
                 return is_string($this->resource['name'] ?? null) ? strtoupper($this->resource['name']) : '';
             }),
+        ];
+    }
+}
+
+/**
+ * Counts the runs of the sources its conditions guard.
+ *
+ * @extends JsonApiResource<array<string, mixed>>
+ */
+#[JsonApiType('guarded')]
+final class GuardedResource extends JsonApiResource
+{
+    public static int $sources = 0;
+
+    public function toAttributes(Request $request): iterable
+    {
+        $upper = function (): string {
+            self::$sources++;
+
+            return is_string($this->resource['name'] ?? null) ? strtoupper($this->resource['name']) : '';
+        };
+
+        return [
+            'name' => Schema::string(),
+            'computed' => Schema::string($upper)->when(fn(): bool => $this->resource['visible'] === true),
+            'hidden' => Schema::string($upper)->unless(static fn(array $model): bool => $model['visible'] !== true),
         ];
     }
 }

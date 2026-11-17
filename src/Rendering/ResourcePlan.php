@@ -51,7 +51,7 @@ final readonly class ResourcePlan
             ($this->bind)($model, $context);
 
             foreach ($conditions as $condition) {
-                if ($condition(null, $model) !== true) {
+                if ($condition($model, $key) !== true) {
                     continue 2;
                 }
             }

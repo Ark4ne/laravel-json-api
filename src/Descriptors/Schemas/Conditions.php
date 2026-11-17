@@ -13,15 +13,16 @@ use ReflectionFunction;
 
 /**
  * The conditions this package adds to the descriptors of `ark4ne/laravel-api-revisions`, as macros: beside its
- * `when()`, `whenHas()` and `whenLoaded()`, `->unless()`, `->whenNotNull()`, `->whenFilled()`, `->whenInFields()` and
+ * `when()`, `unless()`, `whenHas()` and `whenLoaded()`, `->whenNotNull()`, `->whenFilled()`, `->whenInFields()` and
  * `->whenAppended()`.
  *
- * Each one is built with `when()`: a closure receives the normalized value and the subject, `($value, $model)`.
+ * Each one is built with `when()`, whose closure receives the subject and the attribute read, `($subject, $attribute)`,
+ * and runs before the value is read: when it fails, the value is never computed (as in 2.0).
  */
 final class Conditions
 {
     /** The macros registered: each one is the public static method of its name. */
-    public const MACROS = ['unless', 'whenNotNull', 'whenFilled', 'whenInFields', 'whenAppended'];
+    public const MACROS = ['whenNotNull', 'whenFilled', 'whenInFields', 'whenAppended'];
 
     private function __construct() {}
 
@@ -39,22 +40,8 @@ final class Conditions
     }
 
     /**
-     * Renders the field unless the condition holds: the opposite of `when()`, which passes only on `true`.
-     *
-     * @template TDescriptor of Descriptor<mixed>
-     *
-     * @param TDescriptor $descriptor
-     * @param Closure $condition `($value, $model)`; any truthy value leaves the field out
-     *
-     * @return TDescriptor
-     */
-    public static function unless(Descriptor $descriptor, Closure $condition): Descriptor
-    {
-        return $descriptor->when(static fn(mixed $value, mixed $subject): bool => !(bool) $condition($value, $subject));
-    }
-
-    /**
-     * Renders the field only when its value is not `null`.
+     * Renders the field only when its source is not `null`: the key it reads on the subject, or its closure, run once
+     * more for the value when the condition passes (as in 2.0).
      *
      * @template TDescriptor of Descriptor<mixed>
      *
@@ -64,11 +51,14 @@ final class Conditions
      */
     public static function whenNotNull(Descriptor $descriptor): Descriptor
     {
-        return $descriptor->when(static fn(mixed $value): bool => $value !== null);
+        $source = $descriptor->source()->closure;
+
+        return $descriptor->when(static fn(mixed $subject, string $attribute): bool => self::read($source, $subject, $attribute) !== null);
     }
 
     /**
-     * Renders the field only when its value is filled: neither `null`, a blank string nor an empty list.
+     * Renders the field only when its source is filled: neither `null`, a blank string nor an empty list. Read as by
+     * `whenNotNull()`.
      *
      * @template TDescriptor of Descriptor<mixed>
      *
@@ -78,7 +68,9 @@ final class Conditions
      */
     public static function whenFilled(Descriptor $descriptor): Descriptor
     {
-        return $descriptor->when(static fn(mixed $value): bool => filled($value));
+        $source = $descriptor->source()->closure;
+
+        return $descriptor->when(static fn(mixed $subject, string $attribute): bool => filled(self::read($source, $subject, $attribute)));
     }
 
     /**
@@ -130,6 +122,17 @@ final class Conditions
         $path = $descriptor->source()->path;
         $attribute ??= count($path) === 1 ? $path[0] : throw DefinitionException::unnamedAccessor();
 
-        return $descriptor->when(static fn(mixed $value, mixed $subject): bool => $subject instanceof Model && $subject->hasAppended($attribute));
+        return $descriptor->when(static fn(mixed $subject): bool => $subject instanceof Model && $subject->hasAppended($attribute));
+    }
+
+    /**
+     * The raw value of a source, before the field is rendered: its closure, given what the subject holds under the
+     * attribute and the subject, as the base calls it; otherwise the attribute (a key or a dotted path) of the subject.
+     */
+    private static function read(?Closure $source, mixed $subject, string $attribute): mixed
+    {
+        $value = data_get($subject, $attribute);
+
+        return $source === null ? $value : $source($value, $subject);
     }
 }
