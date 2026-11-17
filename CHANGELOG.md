@@ -65,7 +65,8 @@ replaces them.
   to a resource that does not exist there (`jsonapi-absent-resource`).
 - A sparse fieldset naming the members of an object (`fields[users]=address.city`) or of the objects of a list
   (`fields[users]=tags.name`) of a resource declared on the base keeps them in its projection plan: a member left
-  out is never read nor converted.
+  out is never read nor converted. At a revision where a `was(schema:)` is in force, the members are those of its
+  schema, in `ResourceDefinition::fields()` (the `Fields` rule) as in the plan, the value being converted whole.
 - `Rendering\ProjectedValues`: the members a `ResourcePlan` rendered, which the `ValueResolver` gives as they are.
 - `Definitions::for($class, $revision)` gives the attributes, the meta and the document meta of such a resource from
   its shape at the revision (names, types, nullability, presence), and its `fieldNames`: `Fields`, `Includes` and the

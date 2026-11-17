@@ -241,9 +241,9 @@ final readonly class ResourceDefinition
         $paths = [];
         foreach ($shape->fields as $field) {
             $paths[] = $path = $prefix . $field->name;
-            // The children of a head object carry their own names at the revision; those of a `was()` schema only
-            // their type.
-            $children = $field->children ?? $field->items?->children;
+            // The children of a head object carry their own names at the revision; those of a `was()` schema in
+            // force only their type (the children of the field are those of the head then).
+            $children = $field->schemaChange === null ? $field->children ?? $field->items?->children : null;
             array_push($paths, ...($children === null ? self::members($field->type, "{$path}.") : self::paths($children, "{$path}.")));
         }
 

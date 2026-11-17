@@ -117,6 +117,20 @@ final class ResourceDefinitionTest extends TestCase
         self::assertSame(['tags', 'tags.name', 'tags.meta', 'tags.meta.color', 'scores'], $definition->fields());
     }
 
+    public function test_fields_list_the_members_of_the_schema_an_object_had_at_the_revision(): void
+    {
+        $place = Schema::object(['city' => Schema::string()])
+            ->was(ApiRevision::Initial, schema: Schema::object(['town' => Schema::string()]), down: static fn(mixed $place): mixed => $place);
+
+        $initial = ResourceDefinition::of(PostResource::class, 'post')
+            ->values(self::shape(['place' => $place], ApiRevision::Initial), null, null)
+            ->revision(ApiRevision::Initial);
+        $head = ResourceDefinition::of(PostResource::class, 'post')->values(self::shape(['place' => $place]), null, null);
+
+        self::assertSame(['place', 'place.town'], $initial->fields());
+        self::assertSame(['place', 'place.city'], $head->fields());
+    }
+
     public function test_the_sparse_attributes_are_named(): void
     {
         $definition = $this->definition()->sparse('title');

@@ -7,6 +7,7 @@ namespace Ark4ne\JsonApi\Resources\Concerns;
 use Ark4ne\ApiRevisions\Compilation\FieldDefinition;
 use Ark4ne\ApiRevisions\Compilation\Probe as CompilationProbe;
 use Ark4ne\ApiRevisions\Compilation\Shape;
+use Ark4ne\ApiRevisions\Definition\Kind;
 use Ark4ne\ApiRevisions\Definition\Lifetime;
 use Ark4ne\ApiRevisions\Schema\DeclarationKind;
 use Ark4ne\ApiRevisions\Schema\Descriptor;
@@ -266,6 +267,10 @@ trait DeclaresSchema
     {
         $path = [];
         while ($names !== []) {
+            if ($field->schemaChange !== null) {
+                // A `was()` schema in force: the value is converted whole, its children are those of the head.
+                return self::convertedPath($field, $path, $names);
+            }
             if ($field->children !== null) {
                 $name = array_shift($names);
                 $member = null;
@@ -291,6 +296,27 @@ trait DeclaresSchema
         }
 
         return implode('.', $path);
+    }
+
+    /**
+     * The path of a member of a value a `was()` schema converts whole: the head key of the value, when its type at
+     * the revision has the member; `null` otherwise.
+     *
+     * @param list<string> $path
+     * @param list<string> $names
+     */
+    private static function convertedPath(FieldDefinition $field, array $path, array $names): ?string
+    {
+        $type = $field->type;
+        foreach ($names as $name) {
+            $type = $type->kind === Kind::List ? $type->items : $type;
+            $type = $type?->children[$name] ?? null;
+            if ($type === null) {
+                return null;
+            }
+        }
+
+        return implode('.', [...$path, ...$names]);
     }
 
     /**

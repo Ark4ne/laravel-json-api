@@ -184,6 +184,19 @@ final class ValuesTest extends TestCase
             ->assertJsonPath('data.attributes', ['tags' => [['name' => 'a', 'color' => 'red'], ['name' => 'b', 'color' => 'blue']]]);
     }
 
+    public function test_a_sparse_fieldset_names_the_members_of_the_schema_an_object_had_at_the_revision(): void
+    {
+        $resource = static fn(): PlacedResource => PlacedResource::make(['id' => 1, 'city' => 'Paris']);
+
+        $this->render($resource(), null, 'fields[placed]=place.city')
+            ->assertJsonPath('data.attributes', ['place' => ['city' => 'Paris']]);
+        $this->render($resource(), ApiRevision::Initial, 'fields[placed]=place.town')
+            ->assertJsonPath('data.attributes', ['place' => ['town' => 'Paris']]);
+        // `city` is a member of the head only.
+        $this->render($resource(), ApiRevision::Initial, 'fields[placed]=place.city')
+            ->assertJsonMissingPath('data.attributes');
+    }
+
     public function test_a_condition_on_the_includes_is_read_where_each_resource_is_rendered(): void
     {
         $node = ['id' => 1, 'child' => ['id' => 2, 'child' => ['id' => 3, 'child' => null]]];
@@ -312,6 +325,26 @@ final class CountedMembersResource extends JsonApiResource
                 }),
             ]),
             'tags' => Schema::list(Schema::object(['name' => Schema::string(), 'color' => Schema::string()])),
+        ];
+    }
+}
+
+/**
+ * An object whose schema changed: `town` at `Initial`.
+ *
+ * @extends JsonApiResource<array<string, mixed>>
+ */
+#[JsonApiType('placed')]
+final class PlacedResource extends JsonApiResource
+{
+    public function toAttributes(Request $request): iterable
+    {
+        return [
+            'place' => Schema::object(['city' => Schema::string()])->was(
+                ApiRevision::Initial,
+                schema: Schema::object(['town' => Schema::string()]),
+                down: static fn(mixed $place): array => ['town' => is_array($place) ? $place['city'] ?? null : null],
+            ),
         ];
     }
 }
