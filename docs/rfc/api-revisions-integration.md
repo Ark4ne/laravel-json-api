@@ -248,9 +248,12 @@ feature tests unchanged). What was done differently from the plan above, and wha
   its shapes (it compiled the revised resources without their enum, so their oldest revision was compiled on first
   use): reading the definitions costs 0.75 ms instead of 3.5 ms, at the head and at the oldest revision alike
   (×1.01), but the first rendering then takes 8.8 ms instead of 6.7 ms: the classes the compilation loaded are
-  loaded by the rendering instead. Definitions and first rendering together: ×0.94 of compiling on first use. Not
-  verified: that no hook runs on a probe with both caches (`Definitions::loadConstraints()` still runs the
-  relationships hook on a probe once per class).
+  loaded by the rendering instead. Definitions and first rendering together: ×0.94 of compiling on first use.
+  Verified after D10 (`CachedDefinitionsTest`): with both caches, rendering a document with includes runs no hook on
+  a probe. `Definitions::loadConstraints()` ran the hooks of every class on a probe; it now does only for a resource
+  whose definition declares a constrained load (`LoadDefinition::$constrained`), the closures being code that no
+  file can hold. Measured: definitions 1.09 ms instead of 3.18 ms (×0.34), definitions and first rendering ×0.97 of
+  compiling on first use.
 - The skills are updated where their tests run code (`reference.md`, the recipes, two examples of the upgrade
   skill); the README, `docs/architecture.md` and the prose of the upgrade skill still describe 2.x (EJ7).
 

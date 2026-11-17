@@ -119,6 +119,9 @@ replaces them.
   and `Definition\ValueType` are removed.
 - **Breaking**: the compiled file (`jsonapi:cache`) holds the definitions without their shapes, given back on the
   first `Definitions::for()` from those of the base; a file written by another version is ignored.
+- With the compiled files of `jsonapi:cache` and `revision:cache`, no hook of a resource runs on a probe: the
+  constraints of its loads are read from its hooks only when its definition declares one (`withLoad()` with a
+  closure).
 - **Breaking**: `jsonapi:check` and `ResourceAssertions` run the check of `ark4ne/laravel-api-revisions` on the
   resources (`Compilation\ResourceChecker`): the history of their fields and its conversions are checked again, with
   the codes of the base (`conversion-missing`, `definition-error`…), and the rules of JSON:API are those of

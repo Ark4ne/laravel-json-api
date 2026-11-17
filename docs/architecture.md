@@ -205,7 +205,9 @@ definitions), **Repository** (`Definitions`).
 | Compiled | `bootstrap/cache/jsonapi.php` (`var_export`, served by OPcache): one definition per resource and revision; the shapes are compiled by the base (`revision:cache`) | Until `jsonapi:clear` | `php artisan jsonapi:cache`, called by `php artisan optimize` |
 
 Without the compiled cache, PHP-FPM compiles each used class once per request; with it, a definition costs one
-OPcache read.
+OPcache read, and with the shapes of `revision:cache` no hook runs on a probe. The one exception is a resource whose
+definition declares a constrained load (`LoadDefinition::$constrained`): the closures of its loads are code, read
+from its hooks on a probe once per process (`Definitions::loadConstraints()`).
 
 ## 5. Descriptors
 

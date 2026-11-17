@@ -228,19 +228,46 @@ final class Definitions
 
     /**
      * The constraint closures of the eager-loads of a resource (`withLoad(['comments' => fn($q) => …])`), by
-     * relationship name (that of `$revision`) then by relation path.
+     * relationship name (that of `$revision`) then by relation path. Closures cannot be compiled: they are read from
+     * the hooks of the resource, run on a probe, only when its definition declares a constrained load.
      *
      * @internal Read by the `LoadPlanner`.
      *
      * @param class-string<DefinitionSource> $class
      *
      * @return array<string, array<string, Closure>>
+     *
+     * @throws DefinitionException when the class is not a resource or cannot be compiled
      */
     public static function loadConstraints(string $class, ?Revision $revision = null): array
     {
         $revision ??= self::head();
 
-        return self::$constraints[$class][$revision->name] ??= self::compiler()->loadConstraints($class, $revision);
+        return self::$constraints[$class][$revision->name] ??= self::constrains($class, $revision)
+            ? self::compiler()->loadConstraints($class, $revision)
+            : [];
+    }
+
+    /**
+     * Whether a relationship of the resource at `$revision` loads a relation with a constraint.
+     *
+     * @param class-string<DefinitionSource> $class
+     *
+     * @throws DefinitionException when the class is not a resource or cannot be compiled
+     */
+    private static function constrains(string $class, Revision $revision): bool
+    {
+        if (!self::exists($class, $revision)) {
+            return false;
+        }
+
+        foreach (self::for($class, $revision)->relationships as $relationship) {
+            if ($relationship->load->constrained !== []) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
