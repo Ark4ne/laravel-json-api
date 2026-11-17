@@ -1,7 +1,7 @@
-# Examples: 1.x code and its 2.0 port
+# Examples: 1.x code and its 3.0 port
 
-Each example shows the 1.x code (`php skip`, it does not run in 2.0), then its 2.0 port. The package's test suite
-runs every 2.0 block in a Laravel application, renders its resources on models built in memory and validates the
+Each example shows the 1.x code (`php skip`, it does not run in 3.0), then its 3.0 port. The package's test suite
+runs every 3.0 block in a Laravel application, renders its resources on models built in memory and validates the
 documents against the JSON:API 1.1 schema. In an application each class goes to its own file; the namespaces here
 only keep the examples apart. Mapping tables: [mapping.md](mapping.md).
 
@@ -31,12 +31,12 @@ class UserResource extends JsonApiResource
 
     protected function toMeta(Request $request): ?iterable
     {
-        return ['copyright' => 'Copyright 2026 Example'];
+        return ['copyright' => fn() => 'Copyright 2026 Example'];        // a closure or a descriptor, never a plain value
     }
 }
 ```
 
-2.0:
+3.0:
 
 ```php
 namespace App\Upgrade\Users;
@@ -70,7 +70,7 @@ final class UserResource extends JsonApiResource
         return [
             'name' => $this->string(),
             'registered-at' => $this->datetime('created_at'),               // date() is a date without time now
-            'score' => $this->float()->precision(1)->truncate(),            // 2.0 rounds: truncate() keeps 1.x
+            'score' => $this->float()->precision(1)->truncate(),            // precision() rounds now: truncate() keeps 4.2
             'uuid' => $this->string(fn(User $user) => $user->uuid()),       // $this->uuid() is a value helper now
             $this->applyWhen(fn() => (bool) $this->resource->verified, [   // kept in the definition
                 'email' => $this->string(),
@@ -80,7 +80,7 @@ final class UserResource extends JsonApiResource
 
     protected function toDocumentMeta(Request $request): ?iterable
     {
-        return ['copyright' => 'Copyright 2026 Example'];
+        return ['copyright' => fn() => 'Copyright 2026 Example'];        // a closure or a descriptor, never a plain value
     }
 }
 ```
@@ -119,7 +119,7 @@ class AuthorResource extends JsonApiResource
 }
 ```
 
-2.0:
+3.0:
 
 ```php
 namespace App\Upgrade\Library;
@@ -208,8 +208,8 @@ final class PublisherResource extends JsonApiResource
 
 ## Custom value
 
-A value of the application receives the configuration instead of reading `Support\Config`, and tells the definition
-its type. Registered under a name, it is a helper of every resource.
+A value of the application is a descriptor of `ark4ne/laravel-api-revisions`: it normalizes the raw value and tells
+its type. Registered under a name in its `TypeRegistry`, it is a helper of every resource.
 
 1.x:
 
@@ -228,38 +228,36 @@ class PercentValue extends Value
 'ratio' => new PercentValue('ratio'),
 ```
 
-2.0:
+Now:
 
 ```php
 namespace App\Upgrade\Stats;
 
-use Ark4ne\JsonApi\Configuration\Configuration;
-use Ark4ne\JsonApi\Definition\ValueType;
-use Ark4ne\JsonApi\Descriptors\Values\Value;
-use Ark4ne\JsonApi\Laravel\JsonApi;
+use Ark4ne\ApiRevisions\Definition\Kind;
+use Ark4ne\ApiRevisions\Definition\TypeDefinition;
+use Ark4ne\ApiRevisions\Schema\Descriptor;
+use Ark4ne\ApiRevisions\Schema\InvalidValue;
+use Ark4ne\ApiRevisions\Schema\TypeRegistry;
 use Ark4ne\JsonApi\Resources\Attributes\JsonApiType;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 
 /**
- * @extends Value<mixed>
+ * @extends Descriptor<string>
  */
-final class PercentValue extends Value
+final class PercentSchema extends Descriptor
 {
-    public function value(mixed $of, Request $request, Configuration $configuration): string
+    public function normalize(mixed $value): mixed
     {
-        return round(((float) $of) * 100, $configuration->precision ?? 0) . '%';
+        return is_numeric($value)
+            ? round(((float) $value) * 100) . '%'
+            : new InvalidValue($value, Kind::Custom, '0%');
     }
 
-    protected function valueType(): ValueType
+    protected function type(): TypeDefinition
     {
-        return ValueType::String;
-    }
-
-    protected function valueFormat(Configuration $configuration): ?string
-    {
-        return 'percent';
+        return TypeDefinition::custom('percent', ['type' => 'string', 'format' => 'percent']);
     }
 }
 
@@ -271,7 +269,7 @@ final class Campaign extends Model
 /**
  * @extends JsonApiResource<Campaign>
  *
- * @method PercentValue percent(string|\Closure|null $attribute = null)
+ * @method PercentSchema percent(string|\Closure|null $source = null)
  */
 #[JsonApiType('campaigns')]
 final class CampaignResource extends JsonApiResource
@@ -284,8 +282,8 @@ final class CampaignResource extends JsonApiResource
     }
 }
 
-// In the boot() of a service provider (or `describer.types` of config/jsonapi.php):
-JsonApi::valueType('percent', PercentValue::class);
+// In the boot() of a service provider:
+TypeRegistry::register('percent', PercentSchema::class);
 ```
 
 ## Validation of the query
@@ -315,7 +313,7 @@ class AuthorShowRequest extends FormRequest
 'custom' => ['jsonapi' => ['includes' => ['invalid_includes' => 'Unknown relationship ":relation".']]],
 ```
 
-2.0 (uses the resources of [Relationships](#relationships)):
+3.0 (uses the resources of [Relationships](#relationships)):
 
 ```php
 namespace App\Upgrade\Library;
@@ -376,7 +374,7 @@ $document = (new TagCollection($tags))->toArray($request, true);
 if (Includes::include($request, 'posts') && Fields::has($request, 'label', 'tag')) { /* … */ }
 ```
 
-2.0:
+3.0:
 
 ```php
 namespace App\Upgrade\Tags;
@@ -439,7 +437,7 @@ if ($context->include->has('posts') && $context->fields->allows('tag', 'label'))
 $schema = PostResource::schema();               // Skeleton
 $schema->relationships['author']->type;
 
-// 2.0
+// 3.0
 ResourceAssertions::assertValid(PostResource::class, strict: true);
 $definition = PostResource::definition();       // ResourceDefinition
 $definition->relationship('author')?->related;  // list of resource classes

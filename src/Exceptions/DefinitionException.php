@@ -6,11 +6,64 @@ namespace Ark4ne\JsonApi\Exceptions;
 
 use Ark4ne\JsonApi\Support\Diagnostic;
 use Ark4ne\JsonApi\Support\Diagnostics;
+use Ark4ne\JsonApi\Support\RevisionLabel;
 use LogicException;
 use Throwable;
+use UnitEnum;
 
 final class DefinitionException extends LogicException implements JsonApiException
 {
+    /**
+     * Two revisions of different enums were compared: an application declares its revisions with one enum.
+     *
+     * @param class-string<UnitEnum> $a
+     * @param class-string<UnitEnum> $b
+     */
+    public static function mixedRevisions(string $a, string $b): self
+    {
+        return new self("Revisions of two enums cannot be compared: [{$a}] and [{$b}]. Declare every revision with one enum.");
+    }
+
+    /**
+     * A resource exists from a revision newer than the one it exists up to: it exists at no revision.
+     */
+    public static function emptyLifetime(string $class, string $since, string $until): self
+    {
+        return new self("[{$class}] exists since [{$since}] and until [{$until}], an older revision: it exists at no revision. Fix #[JsonApiSince] or #[JsonApiUntil].");
+    }
+
+    /**
+     * The definition of a resource was read at a revision it does not exist at (`#[JsonApiSince]`, `#[JsonApiUntil]`).
+     */
+    public static function notInRevision(string $class, ?UnitEnum $revision): self
+    {
+        return new self(
+            "[{$class}] does not exist at the revision [" . RevisionLabel::of($revision) . ']: see its #[JsonApiSince] and '
+            . '#[JsonApiUntil].',
+        );
+    }
+
+    /**
+     * A member of a hook is neither a descriptor nor a closure, or has no name: a plain value is evaluated when the
+     * hook runs, once per response, and cannot be declared.
+     */
+    public static function notASchema(string $class, string $hook, string $name, string $given): self
+    {
+        return new self(
+            "[{$name}] of {$hook}() in [{$class}] must be a descriptor (\$this->string(), \$this->one()…) or a closure, "
+            . "under its name, {$given} given: a value is declared, never written (the hook runs once per response). "
+            . 'A condition belongs to the descriptor (->when(), ->whenHas()) or to applyWhen().',
+        );
+    }
+
+    /**
+     * `whenAppended()` on a descriptor reading no key of the model: the accessor must be named.
+     */
+    public static function unnamedAccessor(): self
+    {
+        return new self("whenAppended() needs the accessor: read it (Schema::string('full_name')) or name it (->whenAppended('full_name')).");
+    }
+
     /**
      * The class is not a resource: it does not implement `DefinitionSource`.
      */
@@ -33,22 +86,6 @@ final class DefinitionException extends LogicException implements JsonApiExcepti
     public static function notAGate(string $class): self
     {
         return new self("[{$class}] is not a gate: it does not implement Illuminate\\Contracts\\Auth\\Access\\Gate.");
-    }
-
-    /**
-     * A value type was named that is neither registered nor a `Value` class.
-     */
-    public static function unknownValueType(string $type): self
-    {
-        return new self("[{$type}] is not a value type: register it (JsonApi::valueType()) or give a Value class.");
-    }
-
-    /**
-     * A value type was given by its class where an instance is needed: its descriptor needs more than an attribute.
-     */
-    public static function valueTypeNeedsInstance(string $class): self
-    {
-        return new self("[{$class}] cannot be built from its class alone: give an instance (->of(\$this->struct(fn() => [...]))).");
     }
 
     /**
@@ -85,15 +122,6 @@ final class DefinitionException extends LogicException implements JsonApiExcepti
     public static function emptyMorphMap(): self
     {
         return new self('A polymorphic relationship needs the resource of each model class it relates to.');
-    }
-
-    /**
-     * `merge()` or `mergeWhen()` was given members that are neither an array, an iterable, `Arrayable` nor
-     * `JsonSerializable`.
-     */
-    public static function notMergeable(string $type): self
-    {
-        return new self("merge() and mergeWhen() merge an array, an iterable, an Arrayable or a JsonSerializable, [{$type}] given.");
     }
 
     /**

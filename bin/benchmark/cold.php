@@ -6,20 +6,22 @@ declare(strict_types=1);
  * The first rendering of a request in a new process, as under PHP-FPM: one post with 3 includes, its definitions
  * compiled on first use, or read from a compiled file (`jsonapi:cache`). Prints the measures as JSON.
  *
- * Usage: php bin/benchmark/cold.php <compile|render> <compiled file|none>
- * - compile: writes the definitions of the benchmark resources to the compiled file;
+ * Usage: php bin/benchmark/cold.php <compile|render> <compiled file|none> [package|head|oldest]
+ * - compile: writes the definitions of the benchmark resources to the compiled file, every revision of the revised
+ *   ones included;
  * - render: reads the definitions of the 3 resources (compiled, or read from the compiled file when given), renders
- *   once (cold), then once more in the same process (warm).
+ *   once (cold), then once more in the same process (warm). `head` and `oldest` render the revised resources
+ *   (`Revised/`) at the head or at their oldest revision.
  *
  * Run by `composer benchmark -- --cold` (bin/benchmark.php).
  */
 
+use Ark4ne\ApiRevisions\Revisions\RevisionScope;
 use Ark4ne\JsonApi\Compilation\CompiledDefinitions;
 use Ark4ne\JsonApi\Compilation\Definitions;
 use Benchmark\Models\Post;
-use Benchmark\Package\CommentResource;
-use Benchmark\Package\PostResource;
-use Benchmark\Package\UserResource;
+use Benchmark\Package;
+use Benchmark\Revised;
 use Illuminate\Http\Request;
 use Orchestra\Testbench\Foundation\Application;
 
@@ -28,6 +30,7 @@ $start = hrtime(true);
 $arguments = array_values(array_filter((array) ($_SERVER['argv'] ?? []), is_string(...)));
 $action = $arguments[1] ?? 'render';
 $file = ($arguments[2] ?? 'none') === 'none' ? null : $arguments[2];
+$set = $arguments[3] ?? 'package';
 
 $root = dirname(__DIR__, 2);
 require "{$root}/vendor/autoload.php";
@@ -39,11 +42,25 @@ spl_autoload_register(static function (string $class): void {
     }
 });
 
-$app = Application::create(options: [
-    'extra' => ['providers' => [Ark4ne\JsonApi\Laravel\JsonApiServiceProvider::class], 'dont-discover' => ['*']],
-]);
+// The revised resources are those of an application whose revision enum is `Revised\Revision`.
+$app = Application::create(
+    resolvingCallback: static function ($app) use ($set, $file): void {
+        // Before the providers boot: the configuration is loaded by then.
+        $app->booting(static function () use ($app, $set, $file): void {
+            if ($set !== 'package') {
+                $app['config']->set('revisions.enum', Revised\Revision::class);
+            }
+            if ($file !== null) {
+                // The shapes `revision:cache` would write to bootstrap/cache/revisions.php.
+                $app['config']->set('revisions.cache_path', "{$file}.shapes.php");
+            }
+        });
+    },
+    options: ['extra' => ['providers' => [Ark4ne\JsonApi\Laravel\JsonApiServiceProvider::class], 'dont-discover' => ['*']]],
+);
 
-$resources = [PostResource::class, UserResource::class, CommentResource::class];
+$package = [Package\PostResource::class, Package\UserResource::class, Package\CommentResource::class];
+$revised = [Revised\PostResource::class, Revised\UserResource::class, Revised\CommentResource::class];
 
 if ($action === 'compile') {
     if ($file === null) {
@@ -51,14 +68,29 @@ if ($action === 'compile') {
         exit(2);
     }
 
-    (new CompiledDefinitions($file))->write(array_combine(
-        $resources,
-        array_map(static fn(string $class) => Definitions::compile($class), $resources),
-    ));
-    echo json_encode(['compiled' => count($resources)], JSON_THROW_ON_ERROR) . PHP_EOL;
+    // As `jsonapi:cache` writes them: the head of each resource, then each older revision it exists at; and the
+    // shapes of the same revisions, as `revision:cache` writes them.
+    $compiler = new Ark4ne\JsonApi\Compilation\DefinitionCompiler(Definitions::configuration());
+    $shapes = new Ark4ne\ApiRevisions\Compilation\Compiler($app->make(Ark4ne\ApiRevisions\Configuration\Configuration::class));
+    $head = $compiler->head();
+    $definitions = [];
+    $compiled = [];
+    foreach ($set === 'package' ? $package : $revised as $class) {
+        foreach ($compiler->compileEvery($class) as $definition) {
+            $definitions[CompiledDefinitions::key($definition)] = $definition;
+            $compiled[] = $shapes->compile($class, Ark4ne\ApiRevisions\Schema\DeclarationKind::Response, $definition->revision ?? $head);
+        }
+    }
+    Ark4ne\ApiRevisions\Compilation\CompiledShapes::write("{$file}.shapes.php", $compiled);
+    (new CompiledDefinitions($file))->write($definitions);
+    echo json_encode(['compiled' => count($definitions)], JSON_THROW_ON_ERROR) . PHP_EOL;
 
     exit(0);
 }
+
+$resources = $set === 'package' ? $package : $revised;
+$revision = $set === 'oldest' ? Revised\Revision::Oldest : null;
+$include = $set === 'package' ? 'user,comments,comments.user' : Revised\Revision::include($revision);
 
 // The compiled file the service provider would give from bootstrap/cache/jsonapi.php.
 Definitions::configure(Definitions::configuration(), $file === null ? null : new CompiledDefinitions($file));
@@ -67,17 +99,19 @@ $app['config']->set('database.default', 'benchmark');
 $app['config']->set('database.connections.benchmark', ['driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '']);
 benchmark_database(1);
 
-$render = static function () use ($app): string {
-    $request = Request::create('/posts/1', 'GET', ['include' => 'user,comments,comments.user']);
+$render = static function () use ($app, $resources, $revision, $include): string {
+    $request = Request::create('/posts/1', 'GET', ['include' => $include]);
+    // What the `revision` middleware does for the request; `null` leaves the head.
+    RevisionScope::get()->setBase($revision);
     $app->instance('request', $request);
 
-    return (string) PostResource::make(Post::query()->findOrFail(1))->toResponse($request)->getContent();
+    return (string) $resources[0]::make(Post::query()->findOrFail(1))->toResponse($request)->getContent();
 };
 
 $booted = hrtime(true);
 // What the first rendering does first: the definitions of the document, measured apart from the rendering.
 foreach ($resources as $resource) {
-    Definitions::for($resource);
+    Definitions::for($resource, $revision);
 }
 $defined = hrtime(true);
 $document = $render();

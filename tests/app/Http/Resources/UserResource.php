@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Test\app\Http\Resources;
 
+use Ark4ne\ApiRevisions\Schema\Schema;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -17,32 +18,31 @@ class UserResource extends JsonApiResource
 {
     public function toAttributes(Request $request): iterable
     {
+        $always = static fn(): bool => true;
+        $never = static fn(): bool => false;
+
         return [
-            'name' => $this->string(),
-            'email' => $this->string(),
-            'only-with-fields' => $this->string(fn() => 'huge-data-set')->whenInFields(),
-            $this->applyWhen(fn() => true, [
-                'with-apply-conditional-raw' => 'huge-data-set',
-                'with-apply-conditional-closure' => fn() => 'huge-data-set',
-                'with-apply-conditional-value' => $this->string(fn() => 'huge-data-set'),
-            ]),
-            'struct-set' => $this->struct(fn() => [
-                $this->string('name'),
-                'email' => $this->resource->email,
-                'casted' => $this->string(fn() => 'string'),
-                $this->applyWhen(fn() => true, [
-                    'with-apply-conditional-raw' => 'huge-data-set',
+            'name' => Schema::string()->nullable()->whenHas(),
+            'email' => Schema::string()->nullable()->whenHas(),
+            'only-with-fields' => Schema::string(fn() => 'huge-data-set')->whenInFields(),
+            'with-apply-conditional-raw' => Schema::string(fn() => 'huge-data-set')->when($always),
+            'with-apply-conditional-closure' => Schema::string(fn() => 'huge-data-set')->when($always),
+            'with-apply-conditional-value' => Schema::string(fn() => 'huge-data-set')->when($always),
+            'struct-set' => Schema::object([
+                'name' => Schema::string()->nullable(),
+                'email' => Schema::string()->nullable(),
+                'casted' => Schema::string(fn() => 'string'),
+                'with-apply-conditional-raw' => Schema::string(fn() => 'huge-data-set')->when($always),
+                'closure' => Schema::string(fn() => 'closure'),
+                'missing' => Schema::mixed(fn() => 'value')->when($never),
+                'sub-struct' => Schema::object([
+                    'int' => Schema::float(fn() => 200),
+                    'float' => Schema::float(fn() => 1.1),
                 ]),
-                'closure' => fn() => 'closure',
-                'missing' => $this->mixed(fn() => 'value')->when(false),
-                'sub-struct' => $this->struct(fn() => [
-                    'int' => $this->float(fn() => 200),
-                    'float' => $this->float(fn() => 1.1),
-                ]),
-                'third-struct' => $this->struct(fn() => [
-                    'int' => $this->float(fn() => 300),
-                    'float' => $this->float(fn() => 3.1),
-                ])->when(false),
+                'third-struct' => Schema::object([
+                    'int' => Schema::float(fn() => 300),
+                    'float' => Schema::float(fn() => 3.1),
+                ])->when($never),
             ]),
         ];
     }
@@ -50,8 +50,8 @@ class UserResource extends JsonApiResource
     protected function toResourceMeta(Request $request): ?iterable
     {
         return [
-            'created_at' => $this->datetime(),
-            'updated_at' => $this->datetime(),
+            'created_at' => Schema::dateTime()->nullable()->whenHas(),
+            'updated_at' => Schema::dateTime()->nullable()->whenHas(),
         ];
     }
 

@@ -18,9 +18,6 @@ use Test\app\Http\Resources\UserResource;
 #[JsonApiRoutes(self: 'posts.show', relationship: 'posts.relationships', related: false)]
 final class GenericRoutedPostResource extends JsonApiResource
 {
-    /**
-     * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Relations\Relation<\Test\app\Models\Post>>
-     */
     protected function toRelationships(Request $request): iterable
     {
         return [

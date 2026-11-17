@@ -6,7 +6,6 @@ namespace Test\Unit\Rendering\Stages;
 
 use Ark4ne\JsonApi\Context\JsonApiContext;
 use Ark4ne\JsonApi\Definition\Cardinality;
-use Ark4ne\JsonApi\Descriptors\Values\ValueInteger;
 use Ark4ne\JsonApi\Rendering\IncludedRegistry;
 use Ark4ne\JsonApi\Rendering\ResolvedRelationship;
 use Ark4ne\JsonApi\Rendering\ResourceObject;
@@ -85,8 +84,8 @@ final class RelationshipsStageTest extends TestCase
             'friends' => new FakeRelationship(ResolvedRelationship::toMany(
                 [$friend],
                 ['related' => static fn() => '/users/1/friends'],
-                ['count' => new ValueInteger('friends'), 'hidden' => new MissingValue()],
-                [['position' => new ValueInteger('position')]],
+                ['count' => static fn(): int => 4, 'hidden' => new MissingValue()],
+                [['position' => 3]],
             )),
         ]), Contexts::of());
 

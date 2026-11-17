@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Laravel\Commands;
 
+use Ark4ne\ApiRevisions\Checking\Checker;
 use Ark4ne\JsonApi\Compilation\DefinitionCompiler;
+use Ark4ne\JsonApi\Compilation\Definitions;
+use Ark4ne\JsonApi\Compilation\ResourceChecker;
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Definition\DefinitionSource;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
@@ -15,10 +18,15 @@ use Illuminate\Console\Command;
 use Illuminate\Routing\Router;
 
 /**
- * Compiles the definitions of the resources and prints their diagnostics, grouped by resource.
+ * Checks the resources and prints their findings, grouped by resource, with the revision showing them
+ * (`Compilation\ResourceChecker`): what this package compiles (the type, the lifetime, the links), and the check of
+ * `ark4ne/laravel-api-revisions` on them, the one `revision:check` runs on every declaring class: its own checks (the
+ * history of the fields, the conversions, the lock), `Compilation\ResourceCheck` (the rules of JSON:API) and those the
+ * application tags, run on the resources checked only (`Checker::forClasses()`).
  *
- * Fails when a definition cannot be compiled or has an error, or when the `self` route of `#[JsonApiRoutes]` does not
- * exist; with `--strict`, also on the first warning.
+ * Fails on an error, or when the `self` route of `#[JsonApiRoutes]` does not exist; with `--strict`, also on the first
+ * warning. `--revision=Labels` (the name of a case) keeps the findings of that revision and those of no revision in
+ * particular; a resource absent from it is skipped.
  */
 final class CheckDefinitionsCommand extends Command
 {
@@ -28,7 +36,8 @@ final class CheckDefinitionsCommand extends Command
     /** @var string */
     protected $signature = 'jsonapi:check
         {resources?* : Resource classes to check (default: every resource found in definitions.paths)}
-        {--strict : Fail on warnings too}';
+        {--strict : Fail on warnings too}
+        {--revision= : Check only this revision (the name of a case of the revision enum)}';
 
     /** @var string */
     protected $description = 'Check the JSON:API resource definitions and print their diagnostics';
@@ -39,33 +48,60 @@ final class CheckDefinitionsCommand extends Command
         $requested = $this->argument('resources');
         $classes = $requested !== [] ? $requested : $finder->find();
         $strict = (bool) $this->option('strict');
-        $compiler = new DefinitionCompiler($configuration);
-        $failed = false;
+        /** @var string|null $only */
+        $only = $this->option('revision');
+        $compiler = new DefinitionCompiler($configuration, Definitions::projection());
+        $at = null;
+        if ($only !== null) {
+            foreach ($compiler->head()::cases() as $case) {
+                $at = $case->name === $only ? $case : $at;
+            }
+            if ($at === null) {
+                $this->components->error("No revision is named [{$only}].");
 
+                return self::FAILURE;
+            }
+        }
+
+        $skipped = [];
         foreach ($classes as $class) {
             try {
-                if (!is_subclass_of($class, DefinitionSource::class)) {
-                    throw DefinitionException::notADefinitionSource($class);
+                if ($at !== null && is_subclass_of($class, DefinitionSource::class) && !$compiler->lifetime($class)->covers($at)) {
+                    $skipped[] = $class;
                 }
+            } catch (DefinitionException) {
+                // Reported by the check.
+            }
+        }
 
-                $definition = $compiler->compile($class);
-                $diagnostics = $definition->diagnostics;
-                $self = $definition->routes?->self;
-                if ($self !== null && !$router->has($self)) {
-                    // Every rendering of the resource would throw.
-                    $diagnostics[] = new Diagnostic(
-                        DiagnosticLevel::Error,
-                        self::MISSING_ROUTE,
-                        "The route [{$self}] of #[JsonApiRoutes] does not exist.",
-                        'self',
-                    );
-                }
-            } catch (DefinitionException $e) {
-                $this->components->twoColumnDetail($class, '<fg=red;options=bold>ERROR</>');
-                $this->line("  ⇂ {$e->getMessage()}");
-                $failed = true;
+        // The check of `revision:check` (its checks, those the application tags, the lock), on these resources only.
+        $checker = new ResourceChecker($compiler, $this->laravel->make(Checker::class));
+        $found = $checker->check(array_values(array_diff($classes, $skipped)), $at);
+        $failed = false;
+
+        // The resources in the order given, then what the check found elsewhere (the revision enum).
+        foreach ([...$classes, ...array_diff(array_keys($found), $classes)] as $class) {
+            if (in_array($class, $skipped, true)) {
+                $this->components->twoColumnDetail($class, '<fg=gray;options=bold>SKIPPED</>');
 
                 continue;
+            }
+
+            $diagnostics = $found[$class] ?? [];
+
+            try {
+                $self = is_subclass_of($class, DefinitionSource::class) ? $class::declaredRoutes()?->self : null;
+            } catch (DefinitionException) {
+                $self = null;
+            }
+            if ($self !== null && !$router->has($self)) {
+                // Every rendering of the resource would throw.
+                $diagnostics[] = new Diagnostic(
+                    DiagnosticLevel::Error,
+                    self::MISSING_ROUTE,
+                    "The route [{$self}] of #[JsonApiRoutes] does not exist.",
+                    'self',
+                );
             }
 
             $levels = array_map(static fn(Diagnostic $diagnostic): DiagnosticLevel => $diagnostic->level, $diagnostics);
@@ -82,11 +118,7 @@ final class CheckDefinitionsCommand extends Command
 
             foreach ($diagnostics as $diagnostic) {
                 // One line per diagnostic, never wrapped: the output is meant to be searched and copied.
-                $this->line(
-                    "  ⇂ [{$diagnostic->level->value}] {$diagnostic->code}"
-                    . ($diagnostic->subject === null ? '' : " ({$diagnostic->subject})")
-                    . ": {$diagnostic->message}",
-                );
+                $this->line("  ⇂ {$diagnostic->describe()}");
             }
         }
 

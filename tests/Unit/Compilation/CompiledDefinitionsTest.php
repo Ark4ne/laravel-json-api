@@ -7,9 +7,10 @@ namespace Test\Unit\Compilation;
 use Ark4ne\JsonApi\Compilation\CompiledDefinitions;
 use Ark4ne\JsonApi\Compilation\DefinitionCompiler;
 use Ark4ne\JsonApi\Configuration\Configuration;
+use Ark4ne\JsonApi\Definition\ResourceDefinition;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
-use Test\Unit\Compilation\Fixtures\EagerResource;
+use Test\Unit\Compilation\Fixtures\BlogPostResource;
 use Test\Unit\Compilation\Fixtures\TypedResource;
 
 final class CompiledDefinitionsTest extends TestCase
@@ -37,18 +38,22 @@ final class CompiledDefinitionsTest extends TestCase
         self::assertSame([], $this->file->read());
     }
 
-    public function test_written_definitions_are_read_back_equal(): void
+    public function test_written_definitions_are_read_back_without_their_values(): void
     {
         $compiler = new DefinitionCompiler(Configuration::defaults());
         $definitions = [
             TypedResource::class => $compiler->compile(TypedResource::class),
-            EagerResource::class => $compiler->compile(EagerResource::class),
+            BlogPostResource::class => $compiler->compile(BlogPostResource::class),
         ];
 
         $this->file->write($definitions);
 
         self::assertTrue($this->file->exists());
-        self::assertEquals($definitions, $this->file->read());
+        // Without their values: the shapes are those of the base.
+        self::assertEquals(
+            array_map(static fn(ResourceDefinition $definition): ResourceDefinition => $definition->values(null, null, null), $definitions),
+            $this->file->read(),
+        );
     }
 
     public function test_the_file_is_plain_php_returning_an_array(): void

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Test\Feature\Loading;
 
+use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Exceptions\RenderingException;
 use Ark4ne\JsonApi\Http\Rules\Fields;
@@ -103,7 +104,7 @@ class MorphTest extends FeatureTestCase
 
     public function test_an_empty_map_is_an_error_of_the_definition(): void
     {
-        $definition = EmptyMorphResource::definition();
+        $definition = Definitions::compile(EmptyMorphResource::class);
 
         self::assertSame([], $definition->relationships);
         self::assertCount(1, $definition->diagnostics);

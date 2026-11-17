@@ -19,15 +19,16 @@ trait Relationships
      *
      * @param \Illuminate\Http\Request $request
      *
-     * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Relations\Relation<T>|Relationship<*>|\Illuminate\Http\Resources\PotentiallyMissing>|iterable<array-key, \Ark4ne\JsonApi\Descriptors\Relations\Relation<T>|\Illuminate\Http\Resources\MergeValue|\Illuminate\Http\Resources\MissingValue>
+     * @return iterable<array-key, mixed> Relationships by name (`$this->one()`, `$this->many()`, `$this->morph()`…, or
+     *         those of a resource: `AvatarResource::relationship(fn() => …)`), and the groups of `applyWhen()`
      *
      * ```
      * return [
+     *     'author' => $this->one(UserResource::class),
+     *     'comments' => $this->many(CommentResource::class)->whenIncluded(),
+     *     // read by a closure
      *     'avatar' => AvatarResource::relationship(fn() => $this->avatar),
-     *     // as collection
      *     'posts' => PostResource::relationship(fn() => $this->posts)->asCollection(),
-     *     // with laravel conditional relationships
-     *     'comments' => CommentResource::relationship(fn() => $this->when($this->canComments(), fn() => $this->comments))->asCollection(),
      * ];
      * ```
      */

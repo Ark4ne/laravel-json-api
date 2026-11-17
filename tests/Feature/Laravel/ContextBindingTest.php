@@ -4,9 +4,14 @@ declare(strict_types=1);
 
 namespace Test\Feature\Laravel;
 
+use Ark4ne\ApiRevisions\Laravel\RevisionsServiceProvider;
+use Ark4ne\ApiRevisions\Schema\TypeRegistry;
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Context\JsonApiContext;
+use Ark4ne\JsonApi\Descriptors\Schemas\SchemaTypes;
 use Illuminate\Http\Request;
+use Orchestra\Testbench\Attributes\DefineEnvironment;
+use Test\app\Revisions\ApiRevision;
 use Test\TestCase;
 
 final class ContextBindingTest extends TestCase
@@ -48,21 +53,55 @@ final class ContextBindingTest extends TestCase
         self::assertSame($first, app(JsonApiContext::class));
     }
 
+    public function test_a_revision_becoming_current_after_the_first_resolution_is_seen(): void
+    {
+        $request = new Request(['include' => 'posts']);
+        app()->instance('request', $request);
+        $head = app(JsonApiContext::class);
+
+        self::useRevision(ApiRevision::Labels);
+        $labels = app(JsonApiContext::class);
+
+        self::assertSame(ApiRevision::UsersReplaceTeachers, $head->revision);
+        self::assertSame(ApiRevision::Labels, $labels->revision);
+        self::assertSame(['posts'], $labels->include->paths());
+        self::assertSame($head->diagnostics, $labels->diagnostics);
+        self::assertSame($labels, app(JsonApiContext::class));
+    }
+
+    public function test_the_configuration_holds_the_revision_enum_of_the_application(): void
+    {
+        self::assertSame(ApiRevision::class, app(Configuration::class)->revisions);
+        self::assertTrue(app()->providerIsLoaded(RevisionsServiceProvider::class));
+    }
+
+    public function test_the_types_of_the_package_are_registered_in_the_base(): void
+    {
+        foreach (array_keys(SchemaTypes::TYPES) as $name) {
+            self::assertTrue(TypeRegistry::has($name), $name);
+        }
+    }
+
+    #[DefineEnvironment('withoutRevisions')]
+    public function test_an_application_without_revision_enum_has_none_and_renders_the_head(): void
+    {
+        self::assertNull(app(Configuration::class)->revisions);
+        self::assertNull(app(JsonApiContext::class)->revision);
+    }
+
     public function test_a_published_configuration_missing_a_nested_key_takes_the_default_of_the_package(): void
     {
-        putenv('APP_DEBUG=true');
-
         try {
-            // A configuration published before `describer.strict` existed.
+            // A configuration published before `relationship.linkage` existed.
             config()->set('jsonapi', ['describer' => ['nullable' => false]]);
             app()->forgetInstance(Configuration::class);
 
             $configuration = app(Configuration::class);
 
             self::assertFalse($configuration->nullable);
-            self::assertTrue($configuration->strict);
+            self::assertSame(Configuration::defaults()->linkage, $configuration->linkage);
+            self::assertSame(Configuration::defaults()->whenHas, $configuration->whenHas);
         } finally {
-            putenv('APP_DEBUG');
             app()->forgetInstance(Configuration::class);
         }
     }

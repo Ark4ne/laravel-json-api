@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Test\Unit\Resources;
 
-use Ark4ne\JsonApi\Exceptions\RenderingException;
+use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Http\Request;
 use Test\Support\Stub;
@@ -47,12 +47,12 @@ class JsonApiResourceTest extends TestCase
 
             public function toResourceMeta(Request $request): iterable
             {
-                return ['self' => $this->resource->getKey()];
+                return ['self' => $this->string(fn(): mixed => $this->resource->getKey())];
             }
 
             public function toDocumentMeta(Request $request): iterable
             {
-                return ['hash' => 'azerty'];
+                return ['hash' => $this->string(static fn(): string => 'azerty')];
             }
         };
 
@@ -112,10 +112,10 @@ class JsonApiResourceTest extends TestCase
                     'str' => 'abc',
                 ];
 
-                return \collect($data)->merge([
-                    'data' => \collect($data)->merge([
-                        'data' => \collect($data),
-                    ])->all(),
+                return \collect([
+                    'int' => $this->integer(static fn(): int => 123),
+                    'str' => $this->string(static fn(): string => 'abc'),
+                    'data' => static fn() => \collect($data)->merge(['data' => \collect($data)]),
                 ]);
             }
 
@@ -140,10 +140,10 @@ class JsonApiResourceTest extends TestCase
                     'str' => 'abc',
                 ];
 
-                return \collect($data)->merge([
-                    'data' => \collect($data)->merge([
-                        'data' => \collect($data),
-                    ])->all(),
+                return \collect([
+                    'int' => $this->integer(static fn(): int => 123),
+                    'str' => $this->string(static fn(): string => 'abc'),
+                    'data' => static fn() => \collect($data)->merge(['data' => \collect($data)]),
                 ]);
             }
         };
@@ -194,7 +194,7 @@ class JsonApiResourceTest extends TestCase
         self::assertEquals($expected, $actual);
     }
 
-    public function test_attributes_without_names_throw_instead_of_rendering_a_list(): void
+    public function test_attributes_without_names_are_refused(): void
     {
         $resource = new class (Stub::model(['id' => 1])) extends JsonApiResource {
             public function toType(Request $request): string
@@ -208,8 +208,8 @@ class JsonApiResourceTest extends TestCase
             }
         };
 
-        $this->expectException(RenderingException::class);
-        $this->expectExceptionMessage('The [attributes] of [my-model:1] must be a JSON object');
+        $this->expectException(DefinitionException::class);
+        $this->expectExceptionMessage('[0] of toAttributes()');
 
         $resource->toArray(new Request());
     }

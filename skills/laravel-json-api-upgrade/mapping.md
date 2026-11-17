@@ -1,12 +1,12 @@
-# Mapping: 1.x → 2.0
+# Mapping: 1.x → 3.0
 
-Everything 1.x exposed to an application, and what replaces it in 2.0. Ported code: [examples.md](examples.md). How
-2.0 works and what each helper and key does: the `laravel-json-api` skill
+Everything 1.x exposed to an application, and what replaces it in 3.0. Ported code: [examples.md](examples.md). How
+3.0 works and what each helper and key does: the `laravel-json-api` skill
 (`vendor/ark4ne/laravel-json-api/skills/laravel-json-api/`). The package's `UPGRADE.md` explains each change.
 
 ## Requirements
 
-| | 1.x | 2.0 |
+| | 1.x | 3.0 |
 | --- | --- | --- |
 | PHP | 8.1+ | 8.3+ |
 | Laravel | 10 → 13 | 12.46+, 13 |
@@ -17,73 +17,74 @@ Upgrade PHP and Laravel first. Replace the provider wherever `bootstrap/provider
 ## Configuration
 
 `config/jsonapi.php` is validated at boot: an old key or a wrong value throws an `InvalidConfigurationException`
-naming the key. Move the 1.x file aside, publish the 2.0 one
+naming the key. Move the 1.x file aside, publish the 3.0 one
 (`php artisan vendor:publish --provider="Ark4ne\JsonApi\Laravel\JsonApiServiceProvider" --tag=config`) and carry
 the values over.
 
-| 1.x key | 2.0 key | Conversion |
+| 1.x key | 3.0 key | Conversion |
 | --- | --- | --- |
 | `describer.nullable` | `describer.nullable` | Same value |
-| `describer.date` | `describer.datetime` | Same format; it is the format of `datetime()`, `date()` renders `Y-m-d` |
-| `describer.precision` | `describer.precision` | Same value; the value is rounded now (`->truncate()` floors) |
+| `describer.date` | `date_time_format` of `config/revisions.php` | Same format; it is the format of `datetime()`, `date()` renders `Y-m-d` |
+| `describer.precision` | `describer.precision` | Same value; a float is rounded where 1.x floored it (`->truncate()` on a float keeps the digits of 1.x) |
 | `describer.when-has` | `describer.when-has` | Same value |
 | `relationship.when-included` | `relationship.linkage` | `true` → `'included'`; `false` → remove the key (`'always'`) |
 
 New keys worth setting during the upgrade: `fields.relationships` (`'keep'` keeps the relationships out of
 `fields[type]`, as 1.x did), `document.jsonapi` (`false` leaves the top-level `jsonapi` member out),
-`describer.strict`, `type.naming`, `include.max-depth`, `definitions.paths`.
+`type.naming`, `include.max-depth`, `definitions.paths`. The format of a date and time and what a value its type
+refuses does are `date_time_format` and `strict_values` of `config/revisions.php` (`ark4ne/laravel-api-revisions`).
 
 ## Classes and namespaces
 
-| 1.x | 2.0 |
+| 1.x | 3.0 |
 | --- | --- |
 | `Requests\Rules\Includes`, `Requests\Rules\Fields` | `Http\Rules\Includes`, `Http\Rules\Fields` (`final`: compose, do not extend); or a `Http\JsonApiFormRequest` |
 | `Requests\Rules\Traits\UseTrans` | Removed: the messages are translations `jsonapi::validation.*` |
 | `Support\Includes::include($request, 'posts')`, `Support\Includes::get()` | `app(JsonApiContext::class)->include->has('posts')` (`Context\JsonApiContext`, `IncludeTree`); in a resource, `whenInIncludes()` |
 | `Support\Fields::has($request, 'title', 'post')`, `Support\Fields::get()` | `app(JsonApiContext::class)->fields->allows('post', 'title')` (`SparseFieldsets`); in a resource, `whenInFields()` |
 | `Support\With`, `Support\Supported`, `Support\Traits\HasLocalCache` | Removed |
-| `Support\Config` (`Config::$precision`, `Config::$date`…) | `Configuration\Configuration`, given to `Value::value()` (`$configuration->precision`, `datetimeFormat`, `nullable`) |
+| `Support\Config` (`Config::$precision`, `Config::$date`…) | `Configuration\Configuration` (`nullable`…); the values are configured in `config/revisions.php` |
 | `Support\FakeModel` | `Support\Probe`, internal: read `PostResource::definition()` |
 | `Resources\Skeleton`, `PostResource::schema()`, `JsonApiCollection::schema()` | `PostResource::definition()`: a `Definition\ResourceDefinition` |
 | `Resources\Resourceable` | Removed: a relationship points to a `JsonApiResource` or a `JsonApiCollection` |
 | `Resources\Concerns\PrepareData` (`prepareData()`) | Removed |
 | `Asserts\AssertJsonApiResource` | `Testing\ResourceAssertions::assertValid(PostResource::class)`, or `php artisan jsonapi:check` |
-| `Asserts\EagerSetAttribute`, `Asserts\FailGenerateSchema` | Diagnostics of the definition (`eager-attribute`…), a `DefinitionException` |
-| `Descriptors\Values\ValueDate` (date and time) | `Descriptors\Values\ValueDateTime`; `ValueDate` is a date without time |
+| `Asserts\EagerSetAttribute`, `Asserts\FailGenerateSchema` | A `DefinitionException` (a plain value is refused), the findings of `jsonapi:check` |
+| `Descriptors\Values\ValueDate` (date and time) | `Ark4ne\ApiRevisions\Schema\DateTimeSchema` (`$this->datetime()`); `DateSchema` is a date without time. `Descriptors\Values\*` are removed |
 | Octane listener on `RequestReceived` | Removed: each request has its own context |
 
 ## Methods of the resources
 
-| 1.x | 2.0 |
+| 1.x | 3.0 |
 | --- | --- |
 | `toMeta()` (document meta) | `toDocumentMeta()`, on resources and collections; `toMeta()` throws a `DefinitionException` |
 | `toArray($request, true)` / `toArray($request, false)` | `toResponse($request)->getData(true)` for the document; `toArray($request)` is the resource object alone, without second argument |
 | `with()` returning `included` and the meta | `included` and document meta are in the response only; `with()` / `additional()` still merge |
 | `whenIncluded($request, $type, $value)` (resource) | `whenInIncludes($request, $relationship, $value)` |
 | `whenInFields($request, $attribute, $value)` | Unchanged |
-| `mergeWhen()`, `mergeUnless()` | `applyWhen(fn() => …, [...])`: their members are hidden from the definition |
+| `mergeWhen()`, `mergeUnless()`, `$this->when($condition, $value)` | `applyWhen(fn() => …, [...])`, `->when(fn() => …)` on the descriptor: a condition is a closure, read for each resource |
 | `resolveResourceData()` | Removed |
 | `collection()` returning an anonymous subclass, `$preserveKeys` | A `JsonApiCollection`; keys are not preserved; override `collection()` to return a collection class |
-| A hook returning members without names | Throws a `RenderingException`: name each member |
+| A hook returning members without names, or plain values | Throws a `DefinitionException`: each member is a descriptor or a closure, under its name |
 | `toId()` of another signature | `toId(Request $request): int\|string\|null` is a hook: rename yours |
 
 ## Values
 
-| 1.x | 2.0 |
+| 1.x | 3.0 |
 | --- | --- |
 | `->date(` (date and time) | `->datetime(`; `date()` renders `Y-m-d` |
-| `->precision(` (floored) | Rounded; add `->truncate()` to floor |
-| `->nullable(false)` on a date given `null` | `null`, or a `RenderingException` with `describer.strict` (was `1970-01-01T00:00:00+00:00`) |
-| `enum()->of(State::class)` | Validates the value: a value out of the cases throws a `RenderingException` |
-| `value(mixed $of, Request $request)` (custom value) | `value(mixed $of, Request $request, Configuration $configuration)`; `valueType()` and `valueFormat()` describe it |
+| `->precision(` (floored) | `->precision(1)` rounds (`4.29` gives `4.3`); `->precision(1)->truncate()` keeps the digits of 1.x (`4.2`) |
+| `->nullable(false)` on a date given `null` | A value error of `ark4ne/laravel-api-revisions`: it throws in debug, is reported otherwise (`revisions.strict_values`); was `1970-01-01T00:00:00+00:00` |
+| `enum()->of(State::class)` | `enum(State::class)`, a backed enum; a value out of the cases is a value error |
+| `value(mixed $of, Request $request)` (custom value) | A `Descriptor` of `ark4ne/laravel-api-revisions` (`normalize()`, `type()`), registered with `TypeRegistry::register('percent', PercentSchema::class)` |
 | `$this->uuid()`, `ulid()`, `decimal()`, `json()`, `time()`, `datetime()` reaching a model method | Value helpers now: call the model (`$this->resource->uuid()`) |
 | `float()` called from outside the resource | `protected`, like every value helper |
-| `$this->name` (eager value) | `$this->string()`: eager values are `mixed` with an `eager-attribute` warning |
+| `$this->name` (eager value) | `$this->string()`, or a closure (`fn() => $this->resource->name`): a plain value is refused |
 | `$title->nullable(false);` on its own line | Descriptors are immutable: `$title = $title->nullable(false);` |
 
 ## Relationships
 
-| 1.x | 2.0 |
+| 1.x | 3.0 |
 | --- | --- |
 | `PostResource::relationship(fn() => $this->posts)->asCollection()` | `$this->many(PostResource::class)`: loaded in batch, known to the definition (`relationship()` still works) |
 | `->withLinks(` | `->links(` (also `links(self: …, related: …)`) |
@@ -100,7 +101,7 @@ New keys worth setting during the upgrade: `fields.relationships` (`'keep'` keep
 
 ## Validation
 
-| 1.x translation key | 2.0 translation key |
+| 1.x translation key | 3.0 translation key |
 | --- | --- |
 | `validation.custom.jsonapi.fields.invalid` | `jsonapi::validation.fields.invalid` |
 | `validation.custom.jsonapi.fields.invalid_fields` | `jsonapi::validation.fields.invalid_fields` |
@@ -115,7 +116,7 @@ Publish them with `php artisan vendor:publish --tag=jsonapi-lang` and edit `lang
 
 Clients must expect, for the same resources:
 
-| 1.x | 2.0 |
+| 1.x | 3.0 |
 | --- | --- |
 | No `jsonapi` member | `"jsonapi": {"version": "1.1"}` (`document.jsonapi: false` to leave it out) |
 | `"id": 1` | `"id": "1"`, in resource objects and linkage |

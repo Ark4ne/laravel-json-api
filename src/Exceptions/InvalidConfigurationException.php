@@ -18,10 +18,10 @@ final class InvalidConfigurationException extends InvalidArgumentException imple
     }
 
     /**
-     * A key of 1.x renamed in 2.0, still set: its value would be ignored.
+     * A key of 2.x still set, which nothing reads any more: its value would be ignored.
      */
-    public static function renamed(string $key, string $now): self
+    public static function removed(string $key, string $instead): self
     {
-        return new self("The configuration key [jsonapi.{$key}] is renamed [jsonapi.{$now}].");
+        return new self("The configuration key [jsonapi.{$key}] is no longer read: {$instead}.");
     }
 }

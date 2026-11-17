@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Test\Feature\GuessedResources\Fixtures;
 
+use Ark4ne\ApiRevisions\Schema\Schema;
 use Ark4ne\JsonApi\Resources\Attributes\JsonApiModel;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Http\Request;
@@ -18,11 +19,11 @@ class GuessedPostResource extends JsonApiResource
 {
     public function toAttributes(Request $request): iterable
     {
-        return ['title' => $this->string()];
+        return ['title' => Schema::string()->nullable()->whenHas()];
     }
 
     /**
-     * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Relations\Relation<\Test\Feature\GuessedResources\Fixtures\Article>>
+     * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Schemas\RelationshipSchema<\Test\Feature\GuessedResources\Fixtures\Article>>
      */
     protected function toRelationships(Request $request): iterable
     {

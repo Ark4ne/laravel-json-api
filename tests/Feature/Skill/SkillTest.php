@@ -4,18 +4,25 @@ declare(strict_types=1);
 
 namespace Test\Feature\Skill;
 
-use Ark4ne\JsonApi\Definition\ValueType;
-use Ark4ne\JsonApi\Descriptors\Describer;
+use Ark4ne\ApiRevisions\Definition\Kind;
+use Ark4ne\ApiRevisions\Laravel\Http\ResolveRevision;
 use Ark4ne\JsonApi\Descriptors\Relations;
-use Ark4ne\JsonApi\Descriptors\Relations\Relation;
-use Ark4ne\JsonApi\Descriptors\Values;
+use Ark4ne\JsonApi\Descriptors\Schemas\Conditions;
+use Ark4ne\JsonApi\Descriptors\Schemas\RelationshipSchema;
+use Ark4ne\JsonApi\Resources\Concerns\DescribesValues;
 use Ark4ne\JsonApi\Resources\JsonApiCollection;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
+use Ark4ne\JsonApi\Testing\ResourceAssertions;
 use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Testing\TestResponse;
+use Orchestra\Testbench\Attributes\DefineEnvironment;
 use ReflectionClass;
 use ReflectionMethod;
+use Symfony\Component\HttpFoundation\Response;
+use Test\Support\JsonApiSchema;
 
 /**
  * The agent skill shipped with the package (`skills/laravel-json-api/`): every recipe runs and renders a valid
@@ -26,9 +33,7 @@ final class SkillTest extends SkillTestCase
 {
     /** Public methods of the descriptors that the resources do not call: read by the package. */
     private const INTERNAL = [
-        'valueFor', 'passes', 'isConditional', 'retriever', 'isSparse', 'isNullable', 'autoWhenHas', 'resolveFor',
-        'appliesAutoWhenHas', 'definition', 'related', 'resolveRelated', 'morphs', 'defaultLinkage',
-        'loadConstraints', 'load', 'members', 'value', '__construct',
+        'relation', 'relationAt', 'normalize', 'morphs', 'defaultLinkage', '__construct',
     ];
 
     protected static function skill(): string
@@ -45,7 +50,7 @@ final class SkillTest extends SkillTestCase
     {
         $reference = self::read('reference.md');
         $helpers = [
-            ...(new ReflectionClass(Values::class))->getMethods(),
+            ...(new ReflectionClass(DescribesValues::class))->getMethods(),
             ...(new ReflectionClass(Relations::class))->getMethods(),
         ];
 
@@ -55,25 +60,20 @@ final class SkillTest extends SkillTestCase
             }
         }
 
-        $modifiers = glob(dirname(__DIR__, 3) . '/src/Descriptors/Values/*.php');
-        self::assertIsArray($modifiers);
-        $classes = [Describer::class, Relation::class, ...array_map(
-            static fn(string $file): string => 'Ark4ne\JsonApi\Descriptors\Values\\' . basename($file, '.php'),
-            $modifiers,
-        )];
-
-        foreach ($classes as $class) {
-            self::assertTrue(class_exists($class), $class);
-            foreach ((new ReflectionClass($class))->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
-                if (
-                    !$method->isStatic()
-                    && !str_contains((string) $method->getDocComment(), '@internal')
-                    && !in_array($method->name, self::INTERNAL, true)
-                    && $method->getDeclaringClass()->getName() === $class
-                ) {
-                    self::assertStringContainsString("->{$method->name}(", $reference, "{$class}::{$method->name}()");
-                }
+        // The modifiers of a relationship, and the conditions this package adds to every descriptor.
+        foreach ((new ReflectionClass(RelationshipSchema::class))->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
+            if (
+                !$method->isStatic()
+                && !str_contains((string) $method->getDocComment(), '@internal')
+                && !in_array($method->name, self::INTERNAL, true)
+                && $method->getDeclaringClass()->getName() === RelationshipSchema::class
+            ) {
+                self::assertStringContainsString("->{$method->name}(", $reference, "RelationshipSchema::{$method->name}()");
             }
+        }
+
+        foreach (Conditions::MACROS as $macro) {
+            self::assertStringContainsString("->{$macro}(", $reference, "{$macro}()");
         }
     }
 
@@ -96,6 +96,15 @@ final class SkillTest extends SkillTestCase
 
         foreach ($attributes as $file) {
             self::assertStringContainsString('#[Resources\Attributes\\' . basename($file, '.php') . '(', $reference, $file);
+        }
+    }
+
+    public function test_the_reference_names_every_entry_point_of_the_revisions(): void
+    {
+        $reference = self::read('reference.md');
+
+        foreach (['Ark4ne\\ApiRevisions\\Revisions\\Revision', 'IsRevision', "->middleware('revision')", 'ApiRevision::current()', 'Definitions::for(', 'RevisionedRequest', 'resourceObject(', 'Body::toOne(', 'Body::toMany('] as $name) {
+            self::assertStringContainsString($name, $reference, $name);
         }
     }
 
@@ -198,8 +207,9 @@ final class SkillTest extends SkillTestCase
 
         $response->assertJsonPath('data.attributes', ['name' => 'Book', 'price' => '12.50', 'price-history' => ['10.00', '12.50']]);
         $definition = self::resource('App\Recipes\Shop\ProductResource', $product)::definition();
-        self::assertSame(ValueType::String, $definition->attribute('price')?->type);
-        self::assertSame('money', $definition->attribute('price')->format);
+        self::assertSame(Kind::Custom, $definition->attribute('price')?->type->kind);
+        self::assertSame('money', $definition->attribute('price')->type->name);
+        self::assertSame('string', $definition->attribute('price')->type->fragment['type'] ?? null);
     }
 
     public function test_the_polymorphic_recipe(): void
@@ -236,6 +246,99 @@ final class SkillTest extends SkillTestCase
         $response->assertJsonPath('meta', ['total' => 2]);
         $response->assertJsonPath('data.0.attributes', ['name' => 'Ada', 'role' => 'lead']);
         $response->assertJsonPath('data.1.attributes', ['name' => 'Alan']);
+    }
+
+    #[DefineEnvironment('libraryRevisions')]
+    public function test_the_versioned_resources_recipe(): void
+    {
+        self::runRecipe('recipes.md', 'Versioned resources');
+
+        $author = self::model('App\Recipes\Library\Author', ['id' => 3, 'name' => 'Ada']);
+        $book = self::model('App\Recipes\Library\Book', [
+            'id' => 1,
+            'title' => 'Notes on the Analytical Engine',
+            'summary' => 'The first published algorithm, with its notes.',
+            'legacy_code' => 'AE-1843',
+        ])->setRelation('author', $author);
+        $resource = self::resource('App\Recipes\Library\BookResource', $book);
+        // No diagnostic, as `jsonapi:check --strict` would say, at every revision.
+        ResourceAssertions::assertValidAtEveryRevision($resource::class, strict: true);
+
+        $head = $this->renderAtVersion($resource, null, 'include=author');
+        $head->assertJsonPath('data.attributes', ['title' => 'Notes on the Analytical Engine', 'summary' => 'The first published...']);
+        $head->assertJsonPath('data.relationships.author.data', ['type' => 'authors', 'id' => '3']);
+        $head->assertJsonPath('included.0.attributes', ['display_name' => 'Ada']);
+
+        $initial = $this->renderAtVersion($resource, '2026-09-01', 'include=writer&fields[books]=name,writer');
+        $initial->assertJsonPath('data.attributes', ['name' => 'Notes on the Analytical Engine']);
+        $initial->assertJsonPath('data.relationships.writer.data', ['type' => 'writers', 'id' => '3']);
+        $initial->assertJsonPath('included.0.attributes', ['name' => 'Ada']);
+
+        $this->renderAtVersion($resource, '2026-09-01')->assertJsonPath(
+            'data.attributes',
+            ['name' => 'Notes on the Analytical Engine', 'summary' => 'The first published algorithm, with its notes.', 'legacy_code' => 'AE-1843'],
+        );
+    }
+
+    #[DefineEnvironment('libraryRevisions')]
+    public function test_the_write_request_across_revisions_recipe(): void
+    {
+        self::runRecipe('recipes.md', 'Versioned resources');
+        self::runRecipe('recipes.md', 'Write request across revisions');
+
+        Route::post('recipes/books', static function (): array {
+            $document = self::formRequest('App\Recipes\Library\BookStoreRequest')->jsonApi();
+
+            return ['attributes' => $document->attributes(), 'author' => $document->ids('author')];
+        })->middleware('revision');
+
+        $long = str_repeat('a', 501);
+        $author = ['author' => ['data' => ['type' => 'authors', 'id' => '3']]];
+        $this->postJson('recipes/books', ['data' => ['type' => 'books', 'attributes' => ['title' => 'Notes', 'summary' => 'Short'], 'relationships' => $author]])
+            ->assertOk()->assertExactJson(['attributes' => ['title' => 'Notes', 'summary' => 'Short'], 'author' => ['3']]);
+        $this->postJson('recipes/books', ['data' => ['type' => 'books', 'attributes' => ['name' => 'Notes', 'summary' => $long]]])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['data.attributes.title', 'data.attributes.summary']);
+        $this->postJson('recipes/books', ['data' => ['type' => 'writers', 'attributes' => ['title' => 'Notes'], 'relationships' => ['author' => ['data' => ['type' => 'books', 'id' => '3']]]]])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['data.type', 'data.relationships.author.data.type']);
+
+        // An old client sends the names of its revision; the controller reads those of the head.
+        $initial = ['Api-Version' => '2026-09-01'];
+        $this->postJson('recipes/books', ['data' => ['type' => 'books', 'attributes' => ['name' => 'Notes', 'summary' => $long]]], $initial)
+            ->assertOk()->assertExactJson(['attributes' => ['title' => 'Notes', 'summary' => $long], 'author' => []]);
+        $this->postJson('recipes/books', ['data' => ['type' => 'books', 'attributes' => ['title' => 'Notes']]], $initial)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['data.attributes.name']);
+    }
+
+    /**
+     * The revisions of the recipe are those of the application: `'enum' => LibraryRevision::class`.
+     *
+     * @param \Illuminate\Foundation\Application $app
+     */
+    protected function libraryRevisions($app): void
+    {
+        // The enum of the recipe is declared before the application boots: its configuration names it.
+        self::runRecipe('recipes.md', 'Versioned resources');
+
+        $app['config']->set('revisions.enum', 'App\Recipes\Library\LibraryRevision');
+    }
+
+    /**
+     * A resource rendered for a request going through the `revision` middleware, with its `Api-Version` header.
+     *
+     * @return TestResponse<\Symfony\Component\HttpFoundation\Response>
+     */
+    private function renderAtVersion(Responsable $resource, ?string $version, string $query = ''): TestResponse
+    {
+        $request = Request::create("/?{$query}", server: $version === null ? [] : ['HTTP_API_VERSION' => $version]);
+        app(ResolveRevision::class)->handle($request, static fn(): Response => new Response());
+
+        $response = $resource->toResponse($request);
+        self::assertSame([], JsonApiSchema::errors((string) $response->getContent()));
+
+        return TestResponse::fromBaseResponse($response);
     }
 
     /**

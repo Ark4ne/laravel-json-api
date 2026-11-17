@@ -4,36 +4,26 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Exceptions;
 
+use Ark4ne\JsonApi\Support\RevisionLabel;
 use LogicException;
 use UnitEnum;
 
 final class RenderingException extends LogicException implements JsonApiException
 {
     /**
-     * A value declared not nullable (`nullable(false)`) has no value to render for `null` (a date), with
-     * `describer.strict` enabled.
-     */
-    public static function nullNotNullable(string $attribute): self
-    {
-        return new self(
-            "[{$attribute}] is not nullable but null was given: make it nullable, or give it a value.",
-        );
-    }
-
-    /**
-     * A value declared as a case of an enum (`enum()->of(State::class)`) is not one of its cases.
+     * A resource is rendered at a revision it does not exist at (`#[JsonApiSince]`, `#[JsonApiUntil]`): as the primary
+     * data, or reached through a relationship lacking the `was()` to the resource of that revision.
      *
-     * @param class-string<UnitEnum> $enum
+     * @param UnitEnum|null $revision The revision, `null` for the head
      */
-    public static function notAnEnumCase(mixed $value, string $enum): self
+    public static function notInRevision(string $class, ?UnitEnum $revision): self
     {
-        $given = match (true) {
-            $value instanceof UnitEnum => $value::class . '::' . $value->name,
-            is_scalar($value) => var_export($value, true),
-            default => get_debug_type($value),
-        };
+        $revision = RevisionLabel::of($revision);
 
-        return new self("[{$given}] is not a case of [{$enum}].");
+        return new self(
+            "[{$class}] does not exist at the revision [{$revision}]: see its #[JsonApiSince] and #[JsonApiUntil], and give "
+            . 'the relationships reaching it a was() to the resource of that revision.',
+        );
     }
 
     /**
@@ -43,30 +33,6 @@ final class RenderingException extends LogicException implements JsonApiExceptio
     public static function noIdentifier(string $resource): self
     {
         return new self("[{$resource}] has no identifier: give its resource an id, or implement toId().");
-    }
-
-    /**
-     * A value of a `string()`, `integer()` or `float()` has no scalar form (an array, an object without `__toString()`).
-     */
-    public static function notCastable(mixed $value, string $type): self
-    {
-        return new self('[' . get_debug_type($value) . "] cannot be rendered as {$type}: give a scalar value.");
-    }
-
-    /**
-     * A date value is neither a date, a timestamp nor a string.
-     */
-    public static function notADate(mixed $value): self
-    {
-        return new self('[' . get_debug_type($value) . '] is not a date: give a DateTimeInterface, a timestamp or a string.');
-    }
-
-    /**
-     * A `json()` value is a string that does not decode.
-     */
-    public static function invalidJson(string $attribute, string $error): self
-    {
-        return new self("[{$attribute}] is not valid JSON: {$error}.");
     }
 
     /**

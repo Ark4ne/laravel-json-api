@@ -4,11 +4,22 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Laravel;
 
+use Ark4ne\ApiRevisions\Compilation\Shapes;
+use Ark4ne\ApiRevisions\Configuration\Configuration as SchemaConfiguration;
+use Ark4ne\ApiRevisions\Laravel\Resources\EloquentSourceReader;
+use Ark4ne\ApiRevisions\Laravel\RevisionsConfig;
+use Ark4ne\ApiRevisions\Laravel\RevisionsServiceProvider;
+use Ark4ne\ApiRevisions\Projection\Projector;
+use Ark4ne\ApiRevisions\Projection\ValueErrorHandler;
 use Ark4ne\JsonApi\Compilation\CompiledDefinitions;
 use Ark4ne\JsonApi\Compilation\Definitions;
+use Ark4ne\JsonApi\Compilation\Projection;
+use Ark4ne\JsonApi\Compilation\ResourceCheck;
 use Ark4ne\JsonApi\Configuration\Configuration;
+use Ark4ne\JsonApi\Context\CurrentRevision;
 use Ark4ne\JsonApi\Context\JsonApiContext;
-use Ark4ne\JsonApi\Descriptors\ValueTypes;
+use Ark4ne\JsonApi\Descriptors\Schemas\Conditions;
+use Ark4ne\JsonApi\Descriptors\Schemas\SchemaTypes;
 use Ark4ne\JsonApi\Exceptions\InvalidConfigurationException;
 use Ark4ne\JsonApi\Http\Errors\ErrorRenderer;
 use Ark4ne\JsonApi\Http\Errors\ErrorRenderers;
@@ -18,6 +29,9 @@ use Ark4ne\JsonApi\Laravel\Commands\CheckDefinitionsCommand;
 use Ark4ne\JsonApi\Laravel\Commands\ClearDefinitionsCommand;
 use Ark4ne\JsonApi\Laravel\Commands\MakeResourceCommand;
 use Ark4ne\JsonApi\Laravel\Rendering\RouteLinksStage;
+use Ark4ne\JsonApi\Support\Memo;
+use Illuminate\Container\Container;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
@@ -31,7 +45,10 @@ use WeakMap;
  * - Gives `bootstrap/cache/jsonapi.php` to `Definitions`, which reads it on first use: nothing is compiled nor read at
  *   boot.
  * - Adds `RouteLinksStage` before the stages of `rendering.stages`: the links of `#[JsonApiRoutes]`.
- * - Binds one `JsonApiContext` per request object, built from it on first use.
+ * - Registers the provider of `ark4ne/laravel-api-revisions`, reads its revision enum (`revisions.enum`) and adds
+ *   the types and the conditions of this package to its registries (`Descriptors\Schemas\SchemaTypes`,
+ *   `Conditions`).
+ * - Binds one `JsonApiContext` per request object and current revision, built on first use.
  * - Binds the `ErrorRenderers` of the package and those of `errors.renderers` (built by the container, checked at
  *   boot), with the `jsonapi` member and `app.debug`, used by `JsonApi::renderErrors()`; an application binds its
  *   own to replace them all.
@@ -40,6 +57,8 @@ use WeakMap;
  * - Aliases the content negotiation middleware `jsonapi` (`NegotiateContent`), applied by the routes that name it,
  *   unless the application already has a `jsonapi` alias.
  * - Loads the messages of the validation rules (`jsonapi::validation.*`), published by `--tag=jsonapi-lang`.
+ * - Under Octane, flushes `Support\Memo` after every request, task and tick: nothing memoized outlives an operation.
+ *   The definitions are kept: they only depend on the code.
  */
 final class JsonApiServiceProvider extends ServiceProvider
 {
@@ -49,9 +68,25 @@ final class JsonApiServiceProvider extends ServiceProvider
 
     private const LANG = __DIR__ . '/../../lang';
 
+    /**
+     * The events Octane dispatches when an operation ends, named as strings: Octane is not a dependency.
+     */
+    public const OCTANE_TERMINATED = [
+        'Laravel\\Octane\\Events\\RequestTerminated',
+        'Laravel\\Octane\\Events\\TaskTerminated',
+        'Laravel\\Octane\\Events\\TickTerminated',
+    ];
+
     public function register(): void
     {
         $this->mergeConfigFrom(self::CONFIG, 'jsonapi');
+
+        // Typed values and revisions: a hard dependency, registered here for an application without package discovery.
+        $this->app->register(RevisionsServiceProvider::class);
+        SchemaTypes::register();
+        Conditions::register();
+        // The rules of JSON:API in the check of the base (`revision:check`).
+        $this->app->tag([ResourceCheck::class], RevisionsServiceProvider::CHECKS);
 
         $this->app->singleton(Configuration::class, static function (Application $app): Configuration {
             /** @var array<array-key, mixed> $jsonapi */
@@ -62,6 +97,13 @@ final class JsonApiServiceProvider extends ServiceProvider
             // `mergeConfigFrom()` merges the top-level keys only: a file published before a nested key existed
             // (`describer.strict`) takes the default of the package for it.
             $configuration = Configuration::fromArray(array_replace_recursive($package, $jsonapi));
+
+            /** @var RevisionsConfig $revisions */
+            $revisions = $app->make(RevisionsConfig::class);
+
+            if ($revisions->revisioned) {
+                $configuration = $configuration->withRevisions($revisions->enum);
+            }
 
             // The links of `#[JsonApiRoutes]` need the routes of the application.
             return $configuration->prependRenderingStages(RouteLinksStage::class);
@@ -96,8 +138,8 @@ final class JsonApiServiceProvider extends ServiceProvider
                 ->with(...$renderers);
         });
 
-        // One context per request object, built on first use: a new request (HTTP, Octane, test) gets its own, and the
-        // weak map lets the old ones go with their request.
+        // One context per request object and revision, built on first use: a new request (HTTP, Octane, test) gets its
+        // own, and the weak map lets the old ones go with their request.
         /** @var WeakMap<Request, JsonApiContext> $contexts */
         $contexts = new WeakMap();
         $this->app->bind(JsonApiContext::class, static function (Application $app) use ($contexts): JsonApiContext {
@@ -106,7 +148,16 @@ final class JsonApiServiceProvider extends ServiceProvider
             /** @var Configuration $configuration */
             $configuration = $app->make(Configuration::class);
 
-            return $contexts[$request] ??= JsonApiContext::fromRequest($request, $configuration);
+            $context = $contexts[$request] ??= JsonApiContext::fromRequest(
+                $request,
+                $configuration,
+                projection: Definitions::projection(),
+            );
+            $revision = CurrentRevision::of($configuration);
+
+            // Moved to the revision that became current after the first resolution (the `revision` middleware, a
+            // `using()`), its diagnostics kept.
+            return $context->revision === $revision ? $context : $contexts[$request] = $context->withRevision($revision);
         });
     }
 
@@ -117,7 +168,6 @@ final class JsonApiServiceProvider extends ServiceProvider
         /** @var CompiledDefinitions $compiled */
         $compiled = $this->app->make(CompiledDefinitions::class);
 
-        ValueTypes::validate($configuration, JsonApi::reservedValueTypeNames());
         // Checked at boot: `JsonApi::renderErrors()` leaves to Laravel the exceptions it cannot render.
         foreach ($configuration->errorRenderers as $renderer) {
             if (!is_subclass_of($renderer, ErrorRenderer::class)) {
@@ -125,6 +175,29 @@ final class JsonApiServiceProvider extends ServiceProvider
             }
         }
         Definitions::configure($configuration, $compiled);
+        // The container of each call: Octane runs each request in a clone of the application, and the projector is
+        // scoped to it.
+        Definitions::projectWith(static function (): Projection {
+            $container = Container::getInstance();
+            // A container without the application (a test replacing it): shapes compiled on first use.
+            if (!$container->bound(ValueErrorHandler::class)) {
+                return new Projection();
+            }
+
+            $shapes = $container->make(Shapes::class);
+
+            // The projector of the application, reading the Eloquent models.
+            return new Projection($shapes, new Projector(
+                $container->make(SchemaConfiguration::class),
+                reader: new EloquentSourceReader(),
+                shapes: $shapes,
+                values: $container->make(ValueErrorHandler::class),
+            ));
+        });
+
+        $this->app->make(Dispatcher::class)->listen(self::OCTANE_TERMINATED, static function (): void {
+            Memo::flush();
+        });
 
         // Opt-in: applied by the routes that name it; an alias `jsonapi` of the application is kept.
         $router = $this->app->make(Router::class);

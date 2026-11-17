@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Test\Feature\GuessedResources;
 
+use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Descriptors\Relations\GuessedResource;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Illuminate\Http\Request;
@@ -112,10 +113,16 @@ final class GuessedResourceTest extends FeatureTestCase
 
     public function test_an_unguessable_relationship_is_an_error_of_the_definition(): void
     {
-        $diagnostics = UnguessableResource::definition()->diagnostics;
+        $diagnostics = Definitions::compile(UnguessableResource::class)->diagnostics;
 
         self::assertCount(1, $diagnostics);
         self::assertStringContainsString('pass the resource class', $diagnostics[0]->message);
+
+        // No definition to read or render with.
+        $this->expectException(DefinitionException::class);
+        $this->expectExceptionMessage('pass the resource class');
+
+        UnguessableResource::definition();
     }
 
     public function test_a_subclass_keeps_the_model_of_its_parent(): void

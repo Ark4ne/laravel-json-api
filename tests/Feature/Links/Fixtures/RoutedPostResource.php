@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Test\Feature\Links\Fixtures;
 
+use Ark4ne\ApiRevisions\Schema\Schema;
 use Ark4ne\JsonApi\Resources\Attributes\JsonApiRoutes;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Http\Request;
@@ -18,11 +19,11 @@ final class RoutedPostResource extends JsonApiResource
 {
     public function toAttributes(Request $request): iterable
     {
-        return ['title' => $this->string()];
+        return ['title' => Schema::string()->nullable()->whenHas()];
     }
 
     /**
-     * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Relations\Relation<\Test\app\Models\Post>>
+     * @return iterable<string, \Ark4ne\JsonApi\Descriptors\Schemas\RelationshipSchema<\Test\app\Models\Post>>
      */
     protected function toRelationships(Request $request): iterable
     {

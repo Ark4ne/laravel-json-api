@@ -67,6 +67,7 @@ trait ToResponse
         $context = JsonApiContext::fromRequest(
             $request instanceof Request ? $request : new Request(),
             Definitions::configuration(),
+            projection: Definitions::projection(),
         );
 
         return $this->serverInclude === []

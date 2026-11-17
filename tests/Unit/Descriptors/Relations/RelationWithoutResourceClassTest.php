@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Test\Unit\Descriptors\Relations;
 
 use Ark4ne\JsonApi\Descriptors\Relations;
+use Ark4ne\JsonApi\Descriptors\Relations\Relation;
+use Closure;
 use PHPUnit\Framework\TestCase;
 use Test\app\Http\Resources\CommentResource;
 use Test\app\Http\Resources\UserResource;
@@ -63,13 +65,31 @@ final class RelationWithoutResourceClassTest extends TestCase
 }
 
 /**
+ * Gives the relation each helper holds.
+ *
  * @internal
  */
 final class RelationsStub
 {
     /** @use Relations<mixed> */
     use Relations {
-        one as public;
-        many as public;
+        one as private oneSchema;
+        many as private manySchema;
+    }
+
+    /**
+     * @return Relation<mixed>
+     */
+    public function one(?string $for = null, string|Closure|null $relation = null): Relation
+    {
+        return $this->oneSchema($for, $relation)->relation();
+    }
+
+    /**
+     * @return Relation<mixed>
+     */
+    public function many(?string $for = null, string|Closure|null $relation = null): Relation
+    {
+        return $this->manySchema($for, $relation)->relation();
     }
 }

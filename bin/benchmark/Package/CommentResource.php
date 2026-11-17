@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Benchmark\Package;
 
-use Ark4ne\JsonApi\Descriptors\Relations\RelationOne;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Http\Request;
 
@@ -25,9 +24,6 @@ final class CommentResource extends JsonApiResource
         ];
     }
 
-    /**
-     * @return iterable<string, RelationOne<\Benchmark\Models\Comment>>
-     */
     protected function toRelationships(Request $request): iterable
     {
         return [

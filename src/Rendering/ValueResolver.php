@@ -5,9 +5,6 @@ declare(strict_types=1);
 namespace Ark4ne\JsonApi\Rendering;
 
 use Ark4ne\JsonApi\Context\JsonApiContext;
-use Ark4ne\JsonApi\Descriptors\Describer;
-use Ark4ne\JsonApi\Descriptors\Values\Value;
-use Ark4ne\JsonApi\Descriptors\Values\ValueStruct;
 use Closure;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Http\Resources\MergeValue;
@@ -15,13 +12,12 @@ use Illuminate\Http\Resources\MissingValue;
 use Illuminate\Http\Resources\PotentiallyMissing;
 
 /**
- * Resolves the members returned by a hook for one model, lazily (docs/architecture.md §8): sparse fieldset filter,
- * then conditions, then value. A member that is not requested is never resolved, struct members included.
+ * Resolves the members returned by a hook for one model (docs/architecture.md §8).
  *
- * - `applyWhen()` (`MergeValue`) merges its members; a `MissingValue` (`when()`, `mergeWhen()`) is left out.
- * - A descriptor gives its value when its conditions pass; `whenInFields()` only when it is explicitly requested.
- * - A struct is resolved member by member, each filtered by its dotted path.
- * - A closure is called; any other value is kept as is.
+ * - `ProjectedValues`, the members `ark4ne/laravel-api-revisions` rendered (attributes, meta), are given as they are.
+ * - The plain members (links, the default attributes of a model) are resolved lazily: a member the sparse fieldset
+ *   leaves out is never resolved, a `MergeValue` merges its members, a `MissingValue` is left out, a closure is
+ *   called, any other value is kept as is.
  */
 final readonly class ValueResolver
 {
@@ -33,6 +29,11 @@ final readonly class ValueResolver
      */
     public function resolve(iterable $members, mixed $model, JsonApiContext $context, ?string $type = null): array
     {
+        // Rendered by the base: already chosen by the sparse fieldset, decided and serialized.
+        if ($members instanceof ProjectedValues) {
+            return $members->values;
+        }
+
         return $this->members($members, $model, $context, $type, null);
     }
 
@@ -63,14 +64,14 @@ final readonly class ValueResolver
                 continue;
             }
 
-            $name = Describer::retrieveName($member, $key);
+            $name = $key;
             $path = $prefix === null ? (string) $name : "{$prefix}.{$name}";
 
-            if ($type !== null && !self::requested($member, $type, $path, $context)) {
+            if ($type !== null && !$context->fields->allows($type, $path)) {
                 continue;
             }
 
-            $value = $this->value($member, (string) $name, $path, $model, $context, $type);
+            $value = $member instanceof Closure ? $member() : $member;
 
             if (!self::isMissing($value)) {
                 $resolved[$name] = self::plain($value);
@@ -78,37 +79,6 @@ final readonly class ValueResolver
         }
 
         return $resolved;
-    }
-
-    private function value(
-        mixed $member,
-        string $name,
-        string $path,
-        mixed $model,
-        JsonApiContext $context,
-        ?string $type,
-    ): mixed {
-        if ($member instanceof ValueStruct) {
-            return $member->passes($context->request, $model, $name)
-                ? $this->members($member->members($model, $name), $model, $context, $type, $path)
-                : new MissingValue();
-        }
-
-        if ($member instanceof Describer) {
-            return $member->valueFor($context->request, $model, $name, $context->configuration);
-        }
-
-        return $member instanceof Closure ? $member() : $member;
-    }
-
-    /**
-     * A member is rendered when the sparse fieldset allows it; a member only in fields when it requests it explicitly.
-     */
-    private static function requested(mixed $member, string $type, string $path, JsonApiContext $context): bool
-    {
-        return $member instanceof Value && $member->isSparse()
-            ? $context->fields->requests($type, $path)
-            : $context->fields->allows($type, $path);
     }
 
     /**

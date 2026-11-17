@@ -16,8 +16,10 @@ use Illuminate\Routing\Router;
 use Illuminate\Routing\UrlGenerator;
 use PHPUnit\Framework\TestCase;
 use Test\app\Models\Post;
+use Test\app\Revisions\ApiRevision;
 use Test\Feature\Links\Fixtures\RoutedPostResource;
 use Test\Unit\Laravel\Rendering\Fixtures\GenericRoutedPostResource;
+use Test\Unit\Laravel\Rendering\Fixtures\RevisedRoutedPostResource;
 use Test\Unit\Rendering\Fixtures\Contexts;
 use Test\Unit\Rendering\Fixtures\FakeResource;
 
@@ -102,6 +104,25 @@ final class RouteLinksStageTest extends TestCase
             ['comments' => ['links' => ['self' => 'https://api.example.com/posts/1/relationships/comments']]],
             $object->relationships,
         );
+    }
+
+    public function test_the_relationships_get_the_links_of_the_revision_of_the_rendering(): void
+    {
+        $resource = new RevisedRoutedPostResource(new Post());
+
+        $initial = $this->stage->render(
+            ResourceObject::identify('post', 1),
+            $resource,
+            Contexts::at(ApiRevision::Initial),
+            new IncludedRegistry(ResourceObjectRenderer::default()),
+        );
+        $head = $this->render(ResourceObject::identify('post', 1), $resource);
+
+        self::assertSame(
+            ['remarks' => ['links' => ['self' => 'https://api.example.com/posts/1/relationships/remarks']]],
+            $initial->relationships,
+        );
+        self::assertSame(['comments', 'author'], array_keys($head->relationships));
     }
 
     private function render(ResourceObject $object, ?RenderableResource $resource = null, string $query = ''): ResourceObject

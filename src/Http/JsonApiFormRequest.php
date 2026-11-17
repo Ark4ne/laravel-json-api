@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Http;
 
+use Ark4ne\ApiRevisions\Schema\Descriptor;
+use Ark4ne\JsonApi\Compilation\Definitions;
+use Ark4ne\JsonApi\Context\CurrentRevision;
+use Ark4ne\JsonApi\Definition\RelatedResource;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Http\Rules\Fields;
 use Ark4ne\JsonApi\Http\Rules\Includes;
@@ -23,6 +27,14 @@ use Illuminate\Foundation\Http\FormRequest;
  * the preconfigured one, and stays `nullable` (`?include=` asks for no include). Both parameters are read from the query string only, as the rendering reads them: a member of
  * the body with the same name is neither validated nor returned by `validated()`.
  *
+ * Both are validated at the current revision (`Context\CurrentRevision`): the names an old client includes and
+ * restricts are those of its revision. The `revision` middleware of `ark4ne/laravel-api-revisions` runs first, global
+ * or on the route: a form request is resolved, and validated, with the controller, after every middleware.
+ *
+ * A body that changes across the revisions is declared with the `RevisionedRequest` of `ark4ne/laravel-api-revisions`
+ * (`body()`, helped by `Http\Body` and `resourceObject()`): validated in the names of the revision of the client, read
+ * in those of the head.
+ *
  * `jsonApi()` reads the resource object of the body (`ResourceDocument`) from the validated data.
  */
 abstract class JsonApiFormRequest extends FormRequest
@@ -41,6 +53,27 @@ abstract class JsonApiFormRequest extends FormRequest
     public function jsonApi(): ResourceDocument
     {
         return ResourceDocument::fromArray($this->validated());
+    }
+
+    /**
+     * The body of a request using the `RevisionedRequest` of `ark4ne/laravel-api-revisions`, for its `body()`: the
+     * resource object of the resource of the request (`Body::resource()`).
+     *
+     * @param array<string, Descriptor<mixed>> $attributes
+     * @param array<string, Descriptor<mixed>> $relationships Their relationship objects: `Body::toOne()`, `Body::toMany()`
+     * @param Descriptor<mixed>|null $id The `data.id`; not accepted when `null`
+     *
+     * @return array<string, Descriptor<mixed>>
+     *
+     * @throws DefinitionException when the request names no resource
+     */
+    protected function resourceObject(array $attributes = [], array $relationships = [], ?Descriptor $id = null): array
+    {
+        if (!isset($this->resource)) {
+            throw DefinitionException::formRequestWithoutResource(static::class);
+        }
+
+        return Body::resource(RelatedResource::resolve($this->resource), $attributes, $relationships, $id);
     }
 
     /**
@@ -75,11 +108,15 @@ abstract class JsonApiFormRequest extends FormRequest
             throw DefinitionException::formRequestWithoutResource(static::class);
         }
 
-        /** @var array<array-key, mixed> $rules */
+        $revision = CurrentRevision::of(Definitions::configuration());
+
+        /** @var array<array-key, mixed> $own */
+        $own = parent::validationRules();
+
         $rules = [
-            'include' => new Includes($this->resource),
-            'fields' => new Fields($this->resource),
-            ...parent::validationRules(),
+            'include' => new Includes($this->resource, revision: $revision),
+            'fields' => new Fields($this->resource, $revision),
+            ...$own,
         ];
 
         foreach (self::PARAMETERS as $parameter) {

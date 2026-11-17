@@ -6,6 +6,7 @@ namespace Ark4ne\JsonApi\Laravel\Commands;
 
 use Ark4ne\JsonApi\Descriptors\Relations\GuessedResource;
 use Ark4ne\JsonApi\Resources\Attributes\JsonApiModel;
+use BackedEnum;
 use Illuminate\Console\GeneratorCommand;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,7 +20,6 @@ use ReflectionMethod;
 use ReflectionNamedType;
 use Symfony\Component\Console\Input\InputOption;
 use Throwable;
-use UnitEnum;
 
 /**
  * Generates a resource in `app/Http/Resources`, described from its Eloquent model when there is one.
@@ -205,8 +205,8 @@ final class MakeResourceCommand extends GeneratorCommand
      */
     private function descriptor(string $cast): ?string
     {
-        if (is_subclass_of($cast, UnitEnum::class)) {
-            return '$this->enum()';
+        if (is_subclass_of($cast, BackedEnum::class)) {
+            return '$this->enum(\\' . ltrim($cast, '\\') . '::class)';
         }
 
         $parts = explode(':', $cast, 2);

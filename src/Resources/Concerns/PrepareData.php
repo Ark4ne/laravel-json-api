@@ -5,11 +5,7 @@ declare(strict_types=1);
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
 use Ark4ne\JsonApi\Configuration\Linkage;
-use Ark4ne\JsonApi\Descriptors\Relations\Relation;
-use Ark4ne\JsonApi\Descriptors\Values\Value;
-use Ark4ne\JsonApi\Resources\Relationship;
-use Ark4ne\JsonApi\Support\Values;
-use Illuminate\Support\Collection;
+use Ark4ne\JsonApi\Descriptors\Schemas\RelationshipSchema;
 
 trait PrepareData
 {
@@ -18,66 +14,21 @@ trait PrepareData
     protected ?bool $autoWhenIncluded = null;
 
     /**
-     * The members of a hook, the `MergeValue`s merged in place.
+     * The linkage of the relationships of the resource, as it says (`$autoWhenIncluded`): only when included
+     * (`true`), always for those that do not set theirs (`false`); `relationship.linkage` applies otherwise.
      *
-     * @param iterable<mixed> $data
+     * @template TSchema of RelationshipSchema<mixed>
      *
-     * @return array<array-key, mixed>
+     * @param TSchema $relationship
+     *
+     * @return TSchema
      */
-    protected function mergeValues(iterable $data): array
+    protected function autoWhenIncluded(RelationshipSchema $relationship): RelationshipSchema
     {
-        return Values::mergeValues($data);
-    }
-
-    /**
-     * Applies `whenHas()` to the descriptors, as the resource says (`$autoWhenHas`), otherwise as the configuration of
-     * the scope says. A descriptor that sets it itself keeps its choice.
-     *
-     * @template TKey as array-key
-     * @template TValue
-     * @param iterable<TKey, TValue> $data
-     *
-     * @return iterable<TKey, TValue>
-     */
-    protected function autoWhenHas(iterable $data, bool $byConfiguration): iterable
-    {
-        if (!($this->autoWhenHas ?? $byConfiguration)) {
-            return $data;
-        }
-
-        // Descriptors are immutable: the modified ones replace the originals.
-        return (new Collection($data))
-            ->map(static fn($value) => $value instanceof Value && $value->appliesAutoWhenHas(true)
-                ? $value->autoWhenHas()
-                : $value)
-            ->all();
-    }
-
-    /**
-     * Renders the linkage of every relationship only when included (`whenIncluded()`) when the resource says so
-     * (`$autoWhenIncluded = true`), always when it says not to (`false`, for the relationships that do not set theirs);
-     * `relationship.linkage` applies otherwise.
-     *
-     * @template TKey as array-key
-     * @template TValue
-     * @param iterable<TKey, TValue> $data
-     *
-     * @return iterable<TKey, TValue>
-     */
-    protected function autoWhenIncluded(iterable $data): iterable
-    {
-        if ($this->autoWhenIncluded === null) {
-            return $data;
-        }
-
-        $whenIncluded = $this->autoWhenIncluded;
-
-        return (new Collection($data))
-            ->map(static fn($relation) => match (true) {
-                !$relation instanceof Relation && !$relation instanceof Relationship => $relation,
-                $whenIncluded => $relation->whenIncluded(),
-                default => $relation->defaultLinkage(Linkage::Always),
-            })
-            ->all();
+        return match ($this->autoWhenIncluded) {
+            null => $relationship,
+            true => $relationship->whenIncluded(),
+            false => $relationship->defaultLinkage(Linkage::Always),
+        };
     }
 }

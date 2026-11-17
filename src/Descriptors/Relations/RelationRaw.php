@@ -9,7 +9,8 @@ use Ark4ne\JsonApi\Definition\RelationshipDefinition;
 use Closure;
 
 /**
- * A relationship of a resource (`PostResource::relationship()`) wrapped as a descriptor, for `applyWhen()`.
+ * A relationship of a resource (`PostResource::relationship()`) wrapped as a descriptor, for `applyWhen()` and for
+ * `Schema::relationship()`.
  *
  * @internal
  *
@@ -18,9 +19,9 @@ use Closure;
 final class RelationRaw extends Relation
 {
     /**
-     * @param class-string $related
+     * @param class-string|null $related
      */
-    private function __construct(string $related, Closure $relation)
+    private function __construct(?string $related, Closure $relation)
     {
         parent::__construct($related, $relation);
     }
@@ -32,6 +33,33 @@ final class RelationRaw extends Relation
     public static function wrap(string $related, Closure $relationship): self
     {
         return new self($related, $relationship);
+    }
+
+    /**
+     * The relationship `$relationship` as a descriptor: its related resources are read from its definition.
+     */
+    public static function of(DescribesRelationship $relationship): self
+    {
+        return new self(null, static fn(): DescribesRelationship => $relationship);
+    }
+
+    public function related(): ?string
+    {
+        if ($this->related !== null) {
+            return $this->related;
+        }
+
+        $definition = $this->relationship()->definition('related');
+
+        return $definition->related[0] ?? $definition->native;
+    }
+
+    /**
+     * @return array<class-string, class-string>
+     */
+    public function morphMap(): array
+    {
+        return $this->relationship()->definition('related')->morphs;
     }
 
     public function definition(string $name): RelationshipDefinition
@@ -50,8 +78,8 @@ final class RelationRaw extends Relation
     }
 
     /**
-     * The wrapped relationship, through its contract: the descriptors do not depend on the resources. Its conditions
-     * (`applyWhen()`) are those of this descriptor: `passes()`.
+     * The wrapped relationship, through its contract: the descriptors do not depend on the resources. The conditions
+     * set on this descriptor (`can()`, `whenLoaded()`…) are read by the resource before it: `passes()`.
      */
     public function relationship(): DescribesRelationship
     {

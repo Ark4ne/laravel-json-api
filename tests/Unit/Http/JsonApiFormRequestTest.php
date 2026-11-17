@@ -8,7 +8,9 @@ use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Ark4ne\JsonApi\Http\JsonApiFormRequest;
 use Illuminate\Routing\Redirector;
 use Illuminate\Validation\ValidationException;
+use Test\app\Http\Requests\Revisions\PostRequest as RevisedPostRequest;
 use Test\app\Http\Resources\PostResource;
+use Test\app\Revisions\ApiRevision;
 use Test\TestCase;
 use Test\Unit\Http\Fixtures\PostFormRequest;
 use Test\Unit\Http\Fixtures\PostUpdateFormRequest;
@@ -167,6 +169,17 @@ final class JsonApiFormRequestTest extends TestCase
         $errors = $this->errors(PostWriteFormRequest::class, '/posts', 'POST', ['data' => ['attributes' => []]]);
 
         self::assertSame(['data.attributes.title'], array_keys($errors));
+    }
+
+    public function test_the_include_and_the_fieldset_are_validated_at_the_revision_of_the_request(): void
+    {
+        $request = RevisedPostRequest::create('/posts?include=writer&fields[writers]=name');
+        self::useRevision(ApiRevision::Labels);
+
+        self::assertSame([], $this->errors($request));
+
+        self::useRevision(null);
+        self::assertSame(['include', 'fields'], array_keys($this->errors(RevisedPostRequest::create('/posts?include=writer&fields[writers]=name'))));
     }
 
     public function test_a_form_request_without_resource_throws(): void

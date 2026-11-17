@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Test\Unit\Rendering\Stages;
 
-use Ark4ne\JsonApi\Descriptors\Values\ValueString;
 use Ark4ne\JsonApi\Rendering\IncludedRegistry;
 use Ark4ne\JsonApi\Rendering\ResourceObject;
 use Ark4ne\JsonApi\Rendering\ResourceObjectRenderer;
@@ -18,7 +17,7 @@ final class AttributesStageTest extends TestCase
     public function test_the_attributes_are_restricted_by_the_fieldset_of_the_type(): void
     {
         $resource = new FakeResource('user', 1, [
-            'name' => new ValueString(null),
+            'name' => 'Ada',
             'email' => static fn() => 'ada@example.com',
         ], model: ['name' => 'Ada']);
         $context = Contexts::of('fields[user]=name');

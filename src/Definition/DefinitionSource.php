@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Definition;
 
+use Ark4ne\ApiRevisions\Compilation\Shape;
 use Ark4ne\JsonApi\Support\Probe;
+use Closure;
 use Illuminate\Http\Request;
 
 /**
@@ -23,11 +25,23 @@ interface DefinitionSource
     public static function newDefinitionSource(Probe $probe): static;
 
     /**
-     * The definition written by hand (`toDefinition()`), `null` to compile it from the hooks.
+     * The relationships of the resource at the revision of `$relationships` (the `relationships` object of its
+     * shape): each one defined under its name there, with the constraints of its eager-loads.
      *
      * @internal
+     *
+     * @return list<array{RelationshipDefinition, array<string, Closure>}>
      */
-    public static function predefinedDefinition(): ?ResourceDefinition;
+    public static function describeRelationshipsAt(Shape $relationships): array;
+
+    /**
+     * The attributes rendered only when the sparse fieldset names them (`whenInFields()`), by their name of the code.
+     *
+     * @internal
+     *
+     * @return list<string>
+     */
+    public static function sparseAttributes(): array;
 
     /**
      * The type the resource declares without `toType()`: that of `#[JsonApiType]`, `null` for none.
@@ -62,24 +76,6 @@ interface DefinitionSource
     public function describeType(Request $request, string $declared): string;
 
     /**
-     * The raw attributes (`toAttributes()`): descriptors, closures, values, `MergeValue`s.
-     *
-     * @return iterable<array-key, mixed>
-     *
-     * @internal
-     */
-    public function describeAttributes(Request $request): iterable;
-
-    /**
-     * The raw relationships (`toRelationships()`).
-     *
-     * @return iterable<array-key, mixed>
-     *
-     * @internal
-     */
-    public function describeRelationships(Request $request): iterable;
-
-    /**
      * The raw links of the resource object (`toLinks()`).
      *
      * @return iterable<array-key, mixed>
@@ -87,22 +83,4 @@ interface DefinitionSource
      * @internal
      */
     public function describeLinks(Request $request): iterable;
-
-    /**
-     * The raw meta of the resource object (`toResourceMeta()`).
-     *
-     * @return iterable<array-key, mixed>
-     *
-     * @internal
-     */
-    public function describeResourceMeta(Request $request): iterable;
-
-    /**
-     * The raw top-level meta of the document (`toDocumentMeta()`).
-     *
-     * @return iterable<array-key, mixed>
-     *
-     * @internal
-     */
-    public function describeDocumentMeta(Request $request): iterable;
 }

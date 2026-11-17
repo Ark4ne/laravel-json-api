@@ -6,6 +6,7 @@ namespace Ark4ne\JsonApi\Descriptors;
 
 use Ark4ne\JsonApi\Descriptors\Relations\RelationMany;
 use Ark4ne\JsonApi\Descriptors\Relations\RelationOne;
+use Ark4ne\JsonApi\Descriptors\Schemas\RelationshipSchema;
 use Ark4ne\JsonApi\Exceptions\DefinitionException;
 use Closure;
 
@@ -25,12 +26,12 @@ trait Relations
      *        The resource class; a name without namespace is the relation (`'author'`)
      * @param null|string|Closure(T):mixed $relation
      *
-     * @return \Ark4ne\JsonApi\Descriptors\Relations\RelationOne<T>
+     * @return RelationshipSchema<T>
      */
-    protected function one(?string $for = null, string|Closure|null $relation = null): RelationOne
+    protected function one(?string $for = null, string|Closure|null $relation = null): RelationshipSchema
     {
-        /** @var \Ark4ne\JsonApi\Descriptors\Relations\RelationOne<T> */
-        return new RelationOne(...self::declared($for, $relation));
+        /** @var RelationshipSchema<T> */
+        return new RelationshipSchema(new RelationOne(...self::declared($for, $relation)));
     }
 
     /**
@@ -41,12 +42,12 @@ trait Relations
      *        The resource class; a name without namespace is the relation (`'comments'`)
      * @param null|string|Closure(T):mixed $relation
      *
-     * @return \Ark4ne\JsonApi\Descriptors\Relations\RelationMany<T>
+     * @return RelationshipSchema<T>
      */
-    protected function many(?string $for = null, string|Closure|null $relation = null): RelationMany
+    protected function many(?string $for = null, string|Closure|null $relation = null): RelationshipSchema
     {
-        /** @var \Ark4ne\JsonApi\Descriptors\Relations\RelationMany<T> */
-        return new RelationMany(...self::declared($for, $relation));
+        /** @var RelationshipSchema<T> */
+        return new RelationshipSchema(new RelationMany(...self::declared($for, $relation)));
     }
 
     /**
@@ -60,12 +61,12 @@ trait Relations
      *                                                                                                     by model class
      * @param null|string|Closure(T):mixed $relation
      *
-     * @return \Ark4ne\JsonApi\Descriptors\Relations\RelationOne<T>
+     * @return RelationshipSchema<T>
      */
-    protected function morph(array $morphs, string|Closure|null $relation = null): RelationOne
+    protected function morph(array $morphs, string|Closure|null $relation = null): RelationshipSchema
     {
-        /** @var \Ark4ne\JsonApi\Descriptors\Relations\RelationOne<T> */
-        return (new RelationOne(self::firstMorph($morphs), $relation))->morphs($morphs);
+        /** @var RelationshipSchema<T> */
+        return new RelationshipSchema((new RelationOne(self::firstMorph($morphs), $relation))->morphs($morphs));
     }
 
     /**
@@ -75,12 +76,12 @@ trait Relations
      *                                                                                                     by model class
      * @param null|string|Closure(T):mixed $relation
      *
-     * @return \Ark4ne\JsonApi\Descriptors\Relations\RelationMany<T>
+     * @return RelationshipSchema<T>
      */
-    protected function morphMany(array $morphs, string|Closure|null $relation = null): RelationMany
+    protected function morphMany(array $morphs, string|Closure|null $relation = null): RelationshipSchema
     {
-        /** @var \Ark4ne\JsonApi\Descriptors\Relations\RelationMany<T> */
-        return (new RelationMany(self::firstMorph($morphs), $relation))->morphs($morphs);
+        /** @var RelationshipSchema<T> */
+        return new RelationshipSchema((new RelationMany(self::firstMorph($morphs), $relation))->morphs($morphs));
     }
 
     /**

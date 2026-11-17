@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Test\Feature;
 
+use Ark4ne\ApiRevisions\Schema\Schema;
 use Ark4ne\JsonApi\Filters\Filters;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Http\Request;
@@ -104,8 +105,8 @@ final class FilteredPostResource extends JsonApiResource
     public function toAttributes(Request $request): iterable
     {
         return [
-            'title' => $this->string(),
-            'is_public' => $this->bool(),
+            'title' => Schema::string(),
+            'is_public' => Schema::bool(),
         ];
     }
 }

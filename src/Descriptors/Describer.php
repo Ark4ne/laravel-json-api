@@ -16,7 +16,7 @@ use Illuminate\Http\Resources\MissingValue;
 abstract class Describer
 {
     /**
-     * @var array<Closure(Request, T, string): bool>
+     * @var array<Closure(Request, T, string, Describer<T>): bool> Each receives the descriptor it runs on
      */
     protected array $rules = [];
 
@@ -60,11 +60,12 @@ abstract class Describer
      */
     public function whenNotNull(): static
     {
-        return $this->when(fn(
-            Request $request,
-            mixed   $model,
-            string  $attribute,
-        ): bool => null !== $this->retrieveValue($model, $attribute));
+        return $this->withRule(static fn(
+            Request   $request,
+            mixed     $model,
+            string    $attribute,
+            Describer $describer,
+        ): bool => null !== $describer->retrieveValue($model, $attribute));
     }
 
     /**
@@ -74,11 +75,12 @@ abstract class Describer
      */
     public function whenFilled(): static
     {
-        return $this->when(fn(
-            Request $request,
-            mixed   $model,
-            string  $attribute,
-        ): bool => filled($this->retrieveValue($model, $attribute)));
+        return $this->withRule(static fn(
+            Request   $request,
+            mixed     $model,
+            string    $attribute,
+            Describer $describer,
+        ): bool => filled($describer->retrieveValue($model, $attribute)));
     }
 
     /**
@@ -115,7 +117,7 @@ abstract class Describer
     protected function check(Request $request, mixed $model, string $attribute): bool
     {
         foreach ($this->rules as $rule) {
-            if (!$rule($request, $model, $attribute)) {
+            if (!$rule($request, $model, $attribute, $this)) {
                 return false;
             }
         }
@@ -154,9 +156,11 @@ abstract class Describer
     }
 
     /**
-     * @param Closure(Request, T, string): bool $rule
+     * A copy of this descriptor with one more condition, receiving the descriptor it runs on.
+     *
+     * @param Closure(Request, T, string, Describer<T>): bool $rule
      */
-    private function withRule(Closure $rule): static
+    protected function withRule(Closure $rule): static
     {
         return $this->with('rules', [...$this->rules, $rule]);
     }

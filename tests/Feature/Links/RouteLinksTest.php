@@ -13,7 +13,6 @@ use Symfony\Component\Routing\Exception\RouteNotFoundException;
 use Test\app\Models\Post;
 use Test\Feature\FeatureTestCase;
 use Test\Feature\Links\Fixtures\OwnLinksPostResource;
-use Test\Feature\Links\Fixtures\PredefinedRoutedPostResource;
 use Test\Feature\Links\Fixtures\RoutedPostResource;
 use Test\Feature\Links\Fixtures\UnroutedPostResource;
 use Test\Support\JsonApiSchema;
@@ -89,11 +88,6 @@ final class RouteLinksTest extends FeatureTestCase
             new RouteNames('posts.show', 'posts.relationships.{relationship}', 'posts.{relationship}'),
             RoutedPostResource::definition()->routes,
         );
-    }
-
-    public function test_a_definition_written_by_hand_keeps_the_declared_routes(): void
-    {
-        self::assertSame('posts.show', PredefinedRoutedPostResource::definition()->routes?->self);
     }
 
     public function test_check_fails_on_a_self_route_that_does_not_exist(): void

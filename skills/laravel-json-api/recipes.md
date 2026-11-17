@@ -203,39 +203,39 @@ public function store(PostStoreRequest $request): PostResource
 
 ## Value type of the application
 
-A value type casts the raw value and tells the definition its `ValueType` and format. Registered under a name, it is
-a helper of every resource and an item type of `array()->of()`.
+A type of the application is a descriptor of `ark4ne/laravel-api-revisions`: it normalizes the raw value and tells
+its JSON Schema fragment. Registered under a name in the `TypeRegistry` of the base, it is a helper of every resource
+(`$this->money()`) and of `Schema::money()`, usable as the items of `arrayOf()`.
 
 ```php
 namespace App\Recipes\Shop;
 
-use Ark4ne\JsonApi\Configuration\Configuration;
-use Ark4ne\JsonApi\Definition\ValueType;
-use Ark4ne\JsonApi\Descriptors\Values\Value;
-use Ark4ne\JsonApi\Laravel\JsonApi;
+use Ark4ne\ApiRevisions\Definition\Kind;
+use Ark4ne\ApiRevisions\Definition\TypeDefinition;
+use Ark4ne\ApiRevisions\Schema\Descriptor;
+use Ark4ne\ApiRevisions\Schema\InvalidValue;
+use Ark4ne\ApiRevisions\Schema\TypeRegistry;
 use Ark4ne\JsonApi\Resources\Attributes\JsonApiType;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 
 /**
- * @extends Value<mixed>
+ * @extends Descriptor<string>
  */
-final class MoneyValue extends Value
+final class MoneySchema extends Descriptor
 {
-    public function value(mixed $of, Request $request, Configuration $configuration): string
+    public function normalize(mixed $value): mixed
     {
-        return number_format(((int) $of) / 100, 2, '.', '');
+        // A value the type refuses is a value error of the base: reported, and rendered as the fallback.
+        return is_numeric($value)
+            ? number_format(((int) $value) / 100, 2, '.', '')
+            : new InvalidValue($value, Kind::Custom, '0.00');
     }
 
-    protected function valueType(): ValueType
+    protected function type(): TypeDefinition
     {
-        return ValueType::String;
-    }
-
-    protected function valueFormat(Configuration $configuration): ?string
-    {
-        return 'money';
+        return TypeDefinition::custom('money', ['type' => 'string', 'format' => 'money']);
     }
 }
 
@@ -252,7 +252,7 @@ final class Product extends Model
 /**
  * @extends JsonApiResource<Product>
  *
- * @method MoneyValue money(string|\Closure|null $attribute = null)
+ * @method MoneySchema money(string|\Closure|null $source = null)
  */
 #[JsonApiType('products')]
 final class ProductResource extends JsonApiResource
@@ -262,13 +262,13 @@ final class ProductResource extends JsonApiResource
         return [
             'name' => $this->string(),
             'price' => $this->money('price_cents'),
-            'price-history' => $this->array('price_history')->of('money'),
+            'price-history' => $this->arrayOf($this->money(), 'price_history'),
         ];
     }
 }
 
-// In the boot() of a service provider (or `describer.types` of config/jsonapi.php):
-JsonApi::valueType('money', MoneyValue::class);
+// In the boot() of a service provider:
+TypeRegistry::register('money', MoneySchema::class);
 ```
 
 ## Polymorphic relationship
@@ -443,6 +443,177 @@ final readonly class PaymentRequiredErrorRenderer implements ErrorRenderer
     }
 }
 ```
+
+## Versioned resources
+
+Clients are pinned on a dated revision (`Api-Version: 2026-09-01`); the code holds the latest shape only, the head.
+The revisions are those of `ark4ne/laravel-api-revisions`: its enum contract, its `revision` middleware on the routes,
+`'enum' => LibraryRevision::class` and the `Api-Version` header resolver in `config/revisions.php`. Here the revision `Authors` renamed `name` to `title`, replaced the `writers` type by `authors`, removed
+`legacy_code` and shortened the summary. Every older shape is declared on the field that changed, with
+`was(<the revision that was the newest until then>)`.
+
+```php
+namespace App\Recipes\Library;
+
+use Ark4ne\ApiRevisions\Revisions\IsRevision;
+use Ark4ne\ApiRevisions\Revisions\Meta;
+use Ark4ne\ApiRevisions\Revisions\Revision;
+use Ark4ne\JsonApi\Definition\JsonApiSince;
+use Ark4ne\JsonApi\Definition\JsonApiUntil;
+use Ark4ne\JsonApi\Resources\Attributes\JsonApiType;
+use Ark4ne\JsonApi\Resources\JsonApiResource;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+
+/** The revisions clients can be pinned on; the last one of `order()` is the head, served without header. */
+enum LibraryRevision: string implements Revision
+{
+    use IsRevision;
+
+    #[Meta('First published revision')]
+    case Initial = '2026-09-01';
+    #[Meta('Books have a title and authors')]
+    case Authors = '2027-01-15';
+
+    public static function order(): array
+    {
+        return [self::Initial, self::Authors];
+    }
+}
+
+final class Author extends Model
+{
+    protected $guarded = [];
+}
+
+final class Book extends Model
+{
+    protected $guarded = [];
+
+    /**
+     * @return BelongsTo<Author, $this>
+     */
+    public function author(): BelongsTo
+    {
+        return $this->belongsTo(Author::class);
+    }
+}
+
+/**
+ * The new type, absent from the older revisions.
+ *
+ * @extends JsonApiResource<Author>
+ */
+#[JsonApiType('authors')]
+#[JsonApiSince(LibraryRevision::Authors)]
+final class AuthorResource extends JsonApiResource
+{
+    public function toAttributes(Request $request): iterable
+    {
+        return ['display_name' => $this->string('name')];
+    }
+}
+
+/**
+ * The old type, kept as it was for the older revisions.
+ *
+ * @extends JsonApiResource<Author>
+ */
+#[JsonApiType('writers')]
+#[JsonApiUntil(LibraryRevision::Initial)]
+final class WriterResource extends JsonApiResource
+{
+    public function toAttributes(Request $request): iterable
+    {
+        return ['name' => $this->string()];
+    }
+}
+
+/**
+ * @extends JsonApiResource<Book>
+ */
+#[JsonApiType('books')]
+final class BookResource extends JsonApiResource
+{
+    public function toAttributes(Request $request): iterable
+    {
+        return [
+            // Renamed: the old name, the head descriptor.
+            'title' => $this->string()->was(LibraryRevision::Initial, name: 'name'),
+            // A change of meaning without change of shape: a guard.
+            'summary' => $this->string(fn() => LibraryRevision::current()->isAtMost(LibraryRevision::Initial)
+                ? $this->resource->summary
+                : Str::limit((string) $this->resource->summary, 20)),
+            // Revisions
+            'legacy_code' => $this->string()->until(LibraryRevision::Initial),
+        ];
+    }
+
+    protected function toRelationships(Request $request): iterable
+    {
+        return [
+            // Renamed, to the old type: the value reads the same relation, `author`.
+            'author' => $this->one(AuthorResource::class)
+                ->was(LibraryRevision::Initial, name: 'writer', schema: $this->one(WriterResource::class)),
+        ];
+    }
+}
+```
+
+Checked like any resource: `php artisan jsonapi:check` checks every revision, and a relationship reaching a resource
+absent from one (`jsonapi-absent-resource`). To retire `Initial`: delete the case, run `composer stan`, delete
+every reported line and `WriterResource`, run `php artisan jsonapi:check`.
+
+## Write request across revisions
+
+The body a client sends changes with its revision too. The request uses the `RevisionedRequest` of
+`ark4ne/laravel-api-revisions` and declares its body in `body()` with descriptors, as a resource declares its
+attributes: each member that changed declares its history. The body is validated in the names of the revision of the
+client (resolved by the `revision` middleware) and read in those of the head: an old client sends `name`, the
+controller reads `title`. Here `Authors` renamed `name` to `title` and capped the summary.
+
+```php
+namespace App\Recipes\Library;
+
+use Ark4ne\ApiRevisions\Laravel\Requests\RevisionedRequest;
+use Ark4ne\ApiRevisions\Schema\Revisioned;
+use Ark4ne\ApiRevisions\Schema\Schema;
+use Ark4ne\JsonApi\Http\Body;
+use Ark4ne\JsonApi\Http\JsonApiFormRequest;
+
+final class BookStoreRequest extends JsonApiFormRequest implements Revisioned
+{
+    use RevisionedRequest;
+
+    protected string $resource = BookResource::class;
+
+    /**
+     * @return array<string, \Ark4ne\ApiRevisions\Schema\Descriptor<mixed>>
+     */
+    protected function body(): array
+    {
+        // `data.type` is the type of the resource: `books`.
+        return $this->resourceObject(
+            attributes: [
+                'title' => Schema::string()->required()->was(LibraryRevision::Initial, name: 'name'),
+                'summary' => Schema::string()->nullable()->max(500)
+                    ->was(LibraryRevision::Initial, schema: Schema::string()->nullable()),
+            ],
+            relationships: [
+                'author' => Body::toOne(AuthorResource::class),
+            ],
+        );
+    }
+}
+```
+
+`$this->resourceObject(attributes: …, relationships: …, id: …)` is `Body::resource($resource, …)`, for a request that
+is not a `JsonApiFormRequest`. `Body::toOne(…)` and `Body::toMany(…)` declare a relationship object and the types its
+linkage accepts (resource classes or types); `{"data": null}` clears a to-one relationship, `{"data": []}` a to-many one. `id:` takes the
+descriptor of `data.id` (`Schema::string()->required()` to update a resource). The controller reads
+`$request->jsonApi()`: `attribute('title')`, `ids('author')`.
 
 ## Checking resources in tests
 

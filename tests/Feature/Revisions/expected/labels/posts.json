@@ -1,0 +1,295 @@
+{
+    "jsonapi": {
+        "version": "1.1"
+    },
+    "data": [
+        {
+            "type": "posts",
+            "id": "1",
+            "attributes": {
+                "title": "Post 0 of user 1"
+            },
+            "relationships": {
+                "writer": {
+                    "data": {
+                        "type": "writers",
+                        "id": "1"
+                    }
+                },
+                "comments": {
+                    "data": [
+                        {
+                            "type": "comments",
+                            "id": "1"
+                        },
+                        {
+                            "type": "comments",
+                            "id": "2"
+                        },
+                        {
+                            "type": "comments",
+                            "id": "3"
+                        },
+                        {
+                            "type": "comments",
+                            "id": "4"
+                        },
+                        {
+                            "type": "comments",
+                            "id": "5"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "type": "posts",
+            "id": "4",
+            "attributes": {
+                "title": "Post 0 of user 2"
+            },
+            "relationships": {
+                "writer": {
+                    "data": {
+                        "type": "writers",
+                        "id": "2"
+                    }
+                },
+                "comments": {
+                    "data": [
+                        {
+                            "type": "comments",
+                            "id": "16"
+                        },
+                        {
+                            "type": "comments",
+                            "id": "17"
+                        },
+                        {
+                            "type": "comments",
+                            "id": "18"
+                        },
+                        {
+                            "type": "comments",
+                            "id": "19"
+                        },
+                        {
+                            "type": "comments",
+                            "id": "20"
+                        }
+                    ]
+                }
+            }
+        }
+    ],
+    "included": [
+        {
+            "type": "writers",
+            "id": "1",
+            "attributes": {
+                "name": "User 1",
+                "email": "user1@example.com"
+            }
+        },
+        {
+            "type": "comments",
+            "id": "1",
+            "attributes": {
+                "content": "Comment of user 2 on a post of user 1."
+            },
+            "relationships": {
+                "commenter": {
+                    "data": {
+                        "type": "commenters",
+                        "id": "2"
+                    }
+                }
+            }
+        },
+        {
+            "type": "commenters",
+            "id": "2",
+            "attributes": {
+                "name": "User 2"
+            }
+        },
+        {
+            "type": "comments",
+            "id": "2",
+            "attributes": {
+                "content": "Comment of user 3 on a post of user 1."
+            },
+            "relationships": {
+                "commenter": {
+                    "data": {
+                        "type": "commenters",
+                        "id": "3"
+                    }
+                }
+            }
+        },
+        {
+            "type": "commenters",
+            "id": "3",
+            "attributes": {
+                "name": "User 3"
+            }
+        },
+        {
+            "type": "comments",
+            "id": "3",
+            "attributes": {
+                "content": "Comment of user 4 on a post of user 1."
+            },
+            "relationships": {
+                "commenter": {
+                    "data": {
+                        "type": "commenters",
+                        "id": "4"
+                    }
+                }
+            }
+        },
+        {
+            "type": "commenters",
+            "id": "4",
+            "attributes": {
+                "name": "User 4"
+            }
+        },
+        {
+            "type": "comments",
+            "id": "4",
+            "attributes": {
+                "content": "Comment of user 5 on a post of user 1."
+            },
+            "relationships": {
+                "commenter": {
+                    "data": {
+                        "type": "commenters",
+                        "id": "5"
+                    }
+                }
+            }
+        },
+        {
+            "type": "commenters",
+            "id": "5",
+            "attributes": {
+                "name": "User 5"
+            }
+        },
+        {
+            "type": "comments",
+            "id": "5",
+            "attributes": {
+                "content": "Comment of user 6 on a post of user 1."
+            },
+            "relationships": {
+                "commenter": {
+                    "data": {
+                        "type": "commenters",
+                        "id": "6"
+                    }
+                }
+            }
+        },
+        {
+            "type": "commenters",
+            "id": "6",
+            "attributes": {
+                "name": "User 6"
+            }
+        },
+        {
+            "type": "writers",
+            "id": "2",
+            "attributes": {
+                "name": "User 2",
+                "email": "user2@example.com"
+            }
+        },
+        {
+            "type": "comments",
+            "id": "16",
+            "attributes": {
+                "content": "Comment of user 3 on a post of user 2."
+            },
+            "relationships": {
+                "commenter": {
+                    "data": {
+                        "type": "commenters",
+                        "id": "3"
+                    }
+                }
+            }
+        },
+        {
+            "type": "comments",
+            "id": "17",
+            "attributes": {
+                "content": "Comment of user 4 on a post of user 2."
+            },
+            "relationships": {
+                "commenter": {
+                    "data": {
+                        "type": "commenters",
+                        "id": "4"
+                    }
+                }
+            }
+        },
+        {
+            "type": "comments",
+            "id": "18",
+            "attributes": {
+                "content": "Comment of user 5 on a post of user 2."
+            },
+            "relationships": {
+                "commenter": {
+                    "data": {
+                        "type": "commenters",
+                        "id": "5"
+                    }
+                }
+            }
+        },
+        {
+            "type": "comments",
+            "id": "19",
+            "attributes": {
+                "content": "Comment of user 6 on a post of user 2."
+            },
+            "relationships": {
+                "commenter": {
+                    "data": {
+                        "type": "commenters",
+                        "id": "6"
+                    }
+                }
+            }
+        },
+        {
+            "type": "comments",
+            "id": "20",
+            "attributes": {
+                "content": "Comment of user 7 on a post of user 2."
+            },
+            "relationships": {
+                "commenter": {
+                    "data": {
+                        "type": "commenters",
+                        "id": "7"
+                    }
+                }
+            }
+        },
+        {
+            "type": "commenters",
+            "id": "7",
+            "attributes": {
+                "name": "User 7"
+            }
+        }
+    ]
+}

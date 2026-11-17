@@ -9,6 +9,7 @@ use Ark4ne\JsonApi\Context\IncludeTree;
 use Ark4ne\JsonApi\Context\JsonApiContext;
 use Illuminate\Http\Request;
 use PHPUnit\Framework\TestCase;
+use Test\app\Revisions\ApiRevision;
 
 final class JsonApiContextTest extends TestCase
 {
@@ -89,5 +90,40 @@ final class JsonApiContextTest extends TestCase
         self::assertSame('author', $included->path);
         self::assertTrue($included->includes('comments'));
         self::assertSame($context->diagnostics, $included->diagnostics);
+    }
+
+    public function test_the_context_is_built_at_the_revision_given(): void
+    {
+        $context = JsonApiContext::fromRequest(new Request(), Configuration::defaults(), ApiRevision::Labels);
+
+        self::assertSame(ApiRevision::Labels, $context->revision);
+    }
+
+    public function test_an_application_without_revisions_renders_the_head(): void
+    {
+        $context = JsonApiContext::fromRequest(new Request(), Configuration::defaults());
+
+        self::assertNull($context->revision);
+    }
+
+    public function test_entering_a_relationship_or_adding_includes_keeps_the_revision(): void
+    {
+        $context = JsonApiContext::fromRequest(new Request(), Configuration::defaults(), ApiRevision::Initial);
+
+        self::assertSame(ApiRevision::Initial, $context->withPath('posts')->revision);
+        self::assertSame(ApiRevision::Initial, $context->withInclude(IncludeTree::parse('posts'))->revision);
+    }
+
+    public function test_a_context_at_another_revision_keeps_the_rest_and_shares_the_diagnostics(): void
+    {
+        $context = JsonApiContext::fromRequest(new Request(['include' => 'posts']), Configuration::defaults())->withPath('posts');
+
+        $labels = $context->withRevision(ApiRevision::Labels);
+
+        self::assertNull($context->revision);
+        self::assertSame(ApiRevision::Labels, $labels->revision);
+        self::assertSame($context->diagnostics, $labels->diagnostics);
+        self::assertSame($context->include, $labels->include);
+        self::assertSame('posts', $labels->path);
     }
 }

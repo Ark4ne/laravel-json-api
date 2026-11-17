@@ -6,8 +6,6 @@ namespace Test\Architecture;
 
 use Ark4ne\JsonApi\Descriptors\Describer;
 use Ark4ne\JsonApi\Descriptors\Relations\Relation;
-use Ark4ne\JsonApi\Descriptors\Values\Value;
-use Ark4ne\JsonApi\Descriptors\Values\ValueDateTime;
 use Ark4ne\JsonApi\Http\JsonApiFormRequest;
 use Ark4ne\JsonApi\Resources\JsonApiCollection;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
@@ -25,6 +23,11 @@ use PHPat\Test\PHPat;
 final class ArchitectureTest
 {
     private const ROOT = 'Ark4ne\JsonApi';
+
+    /**
+     * `ark4ne/laravel-api-revisions`: typed values and revisions (docs/rfc/api-revisions-integration.md).
+     */
+    private const BASE = 'Ark4ne\ApiRevisions';
 
     /**
      * Layers from left to right: each one depends only on those to its left (docs/architecture.md §2).
@@ -52,8 +55,6 @@ final class ArchitectureTest
         JsonApiCollection::class,
         Describer::class,
         Relation::class,
-        Value::class,
-        ValueDateTime::class,
         JsonApiFormRequest::class,
     ];
 
@@ -84,6 +85,25 @@ final class ArchitectureTest
             ->shouldNotDependOn()
             ->classes(...self::layers(...array_slice(self::LAYERS, 1)))
             ->because('exceptions are usable by every layer.');
+    }
+
+    public function test_only_the_laravel_layer_uses_the_laravel_bridge_of_the_base(): ArchitectureRule
+    {
+        return PHPat::rule()
+            ->classes(Selector::inNamespace(self::ROOT))
+            ->excluding(self::layer('Laravel'), self::layer('Testing'))
+            ->shouldNotDependOn()
+            ->classes(Selector::inNamespace(self::BASE . '\\Laravel'))
+            ->because('the Laravel bridge of ark4ne/laravel-api-revisions is wired in src/Laravel/ only.');
+    }
+
+    public function test_the_layers_left_of_the_definition_do_not_know_the_base(): ArchitectureRule
+    {
+        return PHPat::rule()
+            ->classes(...self::layers('Support', 'Configuration'))
+            ->shouldNotDependOn()
+            ->classes(Selector::inNamespace(self::BASE))
+            ->because('the model of ark4ne/laravel-api-revisions is used from Definition rightwards.');
     }
 
     public function test_classes_are_final(): ArchitectureRule

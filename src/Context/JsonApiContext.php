@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Context;
 
+use Ark4ne\ApiRevisions\Revisions\Revision;
+use Ark4ne\JsonApi\Compilation\Projection;
 use Ark4ne\JsonApi\Configuration\Configuration;
 use Ark4ne\JsonApi\Support\Diagnostics;
 use Illuminate\Http\Request;
@@ -18,6 +20,10 @@ final readonly class JsonApiContext
 {
     /**
      * @param string $path The include path of the resources being rendered, empty for the primary resources
+     * @param Revision|null $revision The revision the request is rendered at; `null`, for a context built by hand, is
+     *                                the head
+     * @param Projection $projection What renders the values: the shapes and the projector of the base
+     * @param ResponseCache $cache What is built once for the response, shared by the contexts derived from this one
      */
     public function __construct(
         public Request $request,
@@ -26,19 +32,29 @@ final readonly class JsonApiContext
         public SparseFieldsets $fields,
         public Diagnostics $diagnostics,
         public string $path = '',
+        public ?Revision $revision = null,
+        public Projection $projection = new Projection(),
+        public ResponseCache $cache = new ResponseCache(),
     ) {}
 
     /**
-     * Parses the `include` and `fields` query parameters of the request: the body is never read.
+     * Parses the `include` and `fields` query parameters of the request, and reads the current revision
+     * (`CurrentRevision`) once, unless `$revision` is given: the body is never read.
      */
-    public static function fromRequest(Request $request, Configuration $configuration): self
-    {
+    public static function fromRequest(
+        Request $request,
+        Configuration $configuration,
+        ?Revision $revision = null,
+        Projection $projection = new Projection(),
+    ): self {
         return new self(
             $request,
             $configuration,
             IncludeTree::parse($request->query('include'), $configuration->maxIncludeDepth),
             SparseFieldsets::parse($request->query('fields')),
             new Diagnostics(),
+            revision: $revision ?? CurrentRevision::of($configuration),
+            projection: $projection,
         );
     }
 
@@ -54,6 +70,28 @@ final readonly class JsonApiContext
             $this->fields,
             $this->diagnostics,
             $this->path,
+            $this->revision,
+            $this->projection,
+            $this->cache,
+        );
+    }
+
+    /**
+     * The same context at another revision: the current revision changed after the context was built (the `revision`
+     * middleware, a `using()`). The diagnostics are shared.
+     */
+    public function withRevision(?Revision $revision): self
+    {
+        return new self(
+            $this->request,
+            $this->configuration,
+            $this->include,
+            $this->fields,
+            $this->diagnostics,
+            $this->path,
+            $revision,
+            $this->projection,
+            $this->cache,
         );
     }
 
@@ -69,6 +107,9 @@ final readonly class JsonApiContext
             $this->fields,
             $this->diagnostics,
             $this->path === '' ? $relationship : "{$this->path}.{$relationship}",
+            $this->revision,
+            $this->projection,
+            $this->cache,
         );
     }
 

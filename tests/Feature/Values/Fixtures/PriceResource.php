@@ -6,14 +6,14 @@ namespace Test\Feature\Values\Fixtures;
 
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Http\Request;
-use Test\app\Values\MoneyValue;
+use Test\app\Values\MoneySchema;
 
 /**
- * Uses the value type `money` the application registers.
+ * Uses the type `money` the application registers.
  *
  * @extends JsonApiResource<object{id: int, price: int, prices: list<int>}>
  *
- * @method MoneyValue<mixed> money(string|\Closure|null $attribute = null)
+ * @method MoneySchema money(string|\Closure|null $source = null)
  */
 final class PriceResource extends JsonApiResource
 {
@@ -26,7 +26,7 @@ final class PriceResource extends JsonApiResource
     {
         return [
             'price' => $this->money(),
-            'prices' => $this->array()->of('money'),
+            'prices' => $this->arrayOf($this->money()),
         ];
     }
 }

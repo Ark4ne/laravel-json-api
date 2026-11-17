@@ -8,7 +8,10 @@ return [
     | Describer
     |--------------------------------------------------------------------------
     |
-    | Config for described notation
+    | Defaults of the values of the resources ($this->string(), $this->date()…),
+    | rendered by ark4ne/laravel-api-revisions: the format of a date and time
+    | and the strictness of the values are its own (config/revisions.php:
+    | date_time_format, strict_values).
     |
     */
     'describer' => [
@@ -24,37 +27,14 @@ return [
 
         /*
         |--------------------------------------------------------------------------
-        | Datetime format
-        |--------------------------------------------------------------------------
-        |
-        | Default format of $this->datetime(); $this->date() renders Y-m-d.
-        |
-        */
-        'datetime' => DateTimeInterface::ATOM,
-
-        /*
-        |--------------------------------------------------------------------------
         | Decimal precision
         |--------------------------------------------------------------------------
         |
-        | Decimal precision for float value.
-        | 'null' for disable.
+        | Number of decimals a float ($this->float()) is rounded to, unless
+        | ->precision() gives one. null to leave the floats as they are.
         |
         */
         'precision' => null,
-
-        /*
-        |--------------------------------------------------------------------------
-        | Strict
-        |--------------------------------------------------------------------------
-        |
-        | A value that is not nullable (`nullable(false)`) and has no value to
-        | stand for null (a date) throws a RenderingException when strict, and
-        | renders null otherwise. Strict while debugging by default.
-        |
-        */
-        // @phpstan-ignore larastan.noEnvCallsOutsideOfConfig (the configuration file of the package, merged by Laravel)
-        'strict' => (bool) env('APP_DEBUG', false),
 
         /*
         |--------------------------------------------------------------------------
@@ -73,7 +53,6 @@ return [
         | - Applied :
         | 'name' => $this->string(),                // apply whenHas('name')
         | 'name' => $this->string('first_name'),    // apply whenHas('first_name')
-        | $this->string('first_name'),              // apply whenHas('first_name')
         |
         | - Not applied :
         | 'name' => $this->string(fn() => $this->name . ' ' . $this->first_name),
@@ -84,18 +63,6 @@ return [
         */
         'when-has' => false,
 
-        /*
-        |--------------------------------------------------------------------------
-        | Types
-        |--------------------------------------------------------------------------
-        |
-        | The value types of the application, by name: classes extending
-        | `Ark4ne\JsonApi\Descriptors\Values\Value`, written `$this->money()`
-        | in a resource, or `->of('money')` as the items of an array. Also
-        | registered with `JsonApi::valueType('money', MoneyValue::class)`.
-        |
-        */
-        'types' => [],
     ],
 
     'type' => [

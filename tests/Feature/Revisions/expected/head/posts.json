@@ -1,0 +1,321 @@
+{
+    "jsonapi": {
+        "version": "1.1"
+    },
+    "data": [
+        {
+            "type": "posts",
+            "id": "1",
+            "attributes": {
+                "title": "Post 0 of user 1"
+            },
+            "relationships": {
+                "user": {
+                    "data": {
+                        "type": "users",
+                        "id": "1"
+                    }
+                },
+                "comments": {
+                    "data": [
+                        {
+                            "type": "comments",
+                            "id": "1"
+                        },
+                        {
+                            "type": "comments",
+                            "id": "2"
+                        },
+                        {
+                            "type": "comments",
+                            "id": "3"
+                        },
+                        {
+                            "type": "comments",
+                            "id": "4"
+                        },
+                        {
+                            "type": "comments",
+                            "id": "5"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "type": "posts",
+            "id": "4",
+            "attributes": {
+                "title": "Post 0 of user 2"
+            },
+            "relationships": {
+                "user": {
+                    "data": {
+                        "type": "users",
+                        "id": "2"
+                    }
+                },
+                "comments": {
+                    "data": [
+                        {
+                            "type": "comments",
+                            "id": "16"
+                        },
+                        {
+                            "type": "comments",
+                            "id": "17"
+                        },
+                        {
+                            "type": "comments",
+                            "id": "18"
+                        },
+                        {
+                            "type": "comments",
+                            "id": "19"
+                        },
+                        {
+                            "type": "comments",
+                            "id": "20"
+                        }
+                    ]
+                }
+            }
+        }
+    ],
+    "included": [
+        {
+            "type": "users",
+            "id": "1",
+            "attributes": {
+                "display_name": "User 1",
+                "email": "user1@example.com",
+                "born_at": "2026-01-01T00:00:00+00:00"
+            },
+            "meta": {
+                "updated_at": "2026-01-01T00:00:00+00:00"
+            }
+        },
+        {
+            "type": "comments",
+            "id": "1",
+            "attributes": {
+                "content": "Comment of user 2 on a post of user 1."
+            },
+            "relationships": {
+                "user": {
+                    "data": {
+                        "type": "users",
+                        "id": "2"
+                    }
+                }
+            }
+        },
+        {
+            "type": "users",
+            "id": "2",
+            "attributes": {
+                "display_name": "User 2",
+                "email": "user2@example.com",
+                "born_at": "2026-01-01T00:00:00+00:00"
+            },
+            "meta": {
+                "updated_at": "2026-01-01T00:00:00+00:00"
+            }
+        },
+        {
+            "type": "comments",
+            "id": "2",
+            "attributes": {
+                "content": "Comment of user 3 on a post of user 1."
+            },
+            "relationships": {
+                "user": {
+                    "data": {
+                        "type": "users",
+                        "id": "3"
+                    }
+                }
+            }
+        },
+        {
+            "type": "users",
+            "id": "3",
+            "attributes": {
+                "display_name": "User 3",
+                "email": "user3@example.com",
+                "born_at": "2026-01-01T00:00:00+00:00"
+            },
+            "meta": {
+                "updated_at": "2026-01-01T00:00:00+00:00"
+            }
+        },
+        {
+            "type": "comments",
+            "id": "3",
+            "attributes": {
+                "content": "Comment of user 4 on a post of user 1."
+            },
+            "relationships": {
+                "user": {
+                    "data": {
+                        "type": "users",
+                        "id": "4"
+                    }
+                }
+            }
+        },
+        {
+            "type": "users",
+            "id": "4",
+            "attributes": {
+                "display_name": "User 4",
+                "email": "user4@example.com",
+                "born_at": "2026-01-01T00:00:00+00:00"
+            },
+            "meta": {
+                "updated_at": "2026-01-01T00:00:00+00:00"
+            }
+        },
+        {
+            "type": "comments",
+            "id": "4",
+            "attributes": {
+                "content": "Comment of user 5 on a post of user 1."
+            },
+            "relationships": {
+                "user": {
+                    "data": {
+                        "type": "users",
+                        "id": "5"
+                    }
+                }
+            }
+        },
+        {
+            "type": "users",
+            "id": "5",
+            "attributes": {
+                "display_name": "User 5",
+                "email": "user5@example.com",
+                "born_at": "2026-01-01T00:00:00+00:00"
+            },
+            "meta": {
+                "updated_at": "2026-01-01T00:00:00+00:00"
+            }
+        },
+        {
+            "type": "comments",
+            "id": "5",
+            "attributes": {
+                "content": "Comment of user 6 on a post of user 1."
+            },
+            "relationships": {
+                "user": {
+                    "data": {
+                        "type": "users",
+                        "id": "6"
+                    }
+                }
+            }
+        },
+        {
+            "type": "users",
+            "id": "6",
+            "attributes": {
+                "display_name": "User 6",
+                "email": "user6@example.com",
+                "born_at": "2026-01-01T00:00:00+00:00"
+            },
+            "meta": {
+                "updated_at": "2026-01-01T00:00:00+00:00"
+            }
+        },
+        {
+            "type": "comments",
+            "id": "16",
+            "attributes": {
+                "content": "Comment of user 3 on a post of user 2."
+            },
+            "relationships": {
+                "user": {
+                    "data": {
+                        "type": "users",
+                        "id": "3"
+                    }
+                }
+            }
+        },
+        {
+            "type": "comments",
+            "id": "17",
+            "attributes": {
+                "content": "Comment of user 4 on a post of user 2."
+            },
+            "relationships": {
+                "user": {
+                    "data": {
+                        "type": "users",
+                        "id": "4"
+                    }
+                }
+            }
+        },
+        {
+            "type": "comments",
+            "id": "18",
+            "attributes": {
+                "content": "Comment of user 5 on a post of user 2."
+            },
+            "relationships": {
+                "user": {
+                    "data": {
+                        "type": "users",
+                        "id": "5"
+                    }
+                }
+            }
+        },
+        {
+            "type": "comments",
+            "id": "19",
+            "attributes": {
+                "content": "Comment of user 6 on a post of user 2."
+            },
+            "relationships": {
+                "user": {
+                    "data": {
+                        "type": "users",
+                        "id": "6"
+                    }
+                }
+            }
+        },
+        {
+            "type": "comments",
+            "id": "20",
+            "attributes": {
+                "content": "Comment of user 7 on a post of user 2."
+            },
+            "relationships": {
+                "user": {
+                    "data": {
+                        "type": "users",
+                        "id": "7"
+                    }
+                }
+            }
+        },
+        {
+            "type": "users",
+            "id": "7",
+            "attributes": {
+                "display_name": "User 7",
+                "email": "user7@example.com",
+                "born_at": "2026-01-01T00:00:00+00:00"
+            },
+            "meta": {
+                "updated_at": "2026-01-01T00:00:00+00:00"
+            }
+        }
+    ]
+}

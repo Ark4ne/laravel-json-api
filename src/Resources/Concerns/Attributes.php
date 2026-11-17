@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Ark4ne\JsonApi\Resources\Concerns;
 
+use Ark4ne\JsonApi\Compilation\Definitions;
 use Ark4ne\JsonApi\Definition\DefinitionSource;
-use Closure;
+use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -25,17 +26,16 @@ trait Attributes
      *
      * @param \Illuminate\Http\Request $request
      *
-     * @return iterable<array-key, mixed|Closure|\Ark4ne\JsonApi\Descriptors\Values\Value>
+     * @return iterable<array-key, mixed> Descriptors (`$this->string()`…) or closures by name, and the groups of
+     *         `applyWhen()`
      *
      * ```
      * return [
-     *     'name' => fn() => $this->name,
-     *     // with laravel conditional attributes
-     *     'secret' => fn() => $this->when($request->user()->isAdmin(), 'secret-value'),
-     *     // with descriptors
      *     'email' => $this->string(),
      *     'age' => $this->integer()->whenInFields(),
-     *     'secret' => $this->string(fn(Model $model) => $model->secret)->when($request->user()->isAdmin()),
+     *     'secret' => $this->string(fn() => $this->resource->secret)->when(fn() => $request->user()?->isAdmin() ?? false),
+     *     // a value of any type
+     *     'name' => fn() => $this->resource->name,
      * ];
      * ```
      */
@@ -74,7 +74,11 @@ trait Attributes
 
         $keys[] = $model->getKeyName();
 
-        foreach ($this::definition()->relationships as $relationship) {
+        // The relationships of the revision of the rendering: a relationship `until()` or `since()` a revision has its
+        // foreign key left out where it is rendered only.
+        $revision = $this instanceof JsonApiResource ? $this->renderingContext?->revision : null;
+
+        foreach (Definitions::for(static::class, $revision)->relationships as $relationship) {
             $relation = $relationship->source !== null && is_callable($method = [$model, $relationship->source])
                 ? $method()
                 : null;

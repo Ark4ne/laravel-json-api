@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Test\Feature\Skill;
 
-use Ark4ne\JsonApi\Definition\ValueType;
+use Ark4ne\ApiRevisions\Definition\Kind;
 use Ark4ne\JsonApi\Resources\JsonApiResource;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Route;
 
 /**
- * The upgrade skill shipped with the package (`skills/laravel-json-api-upgrade/`): every 2.0 port of its examples
+ * The upgrade skill shipped with the package (`skills/laravel-json-api-upgrade/`): every 3.0 port of its examples
  * runs and renders a valid document, the files link to each other, and the mapping names everything 1.x exposed to an
  * application.
  */
@@ -116,8 +116,9 @@ final class UpgradeSkillTest extends SkillTestCase
         [$response] = $this->render($resource);
 
         $response->assertJsonPath('data.attributes', ['ratio' => '25%']);
-        self::assertSame(ValueType::String, $resource::definition()->attribute('ratio')?->type);
-        self::assertSame('percent', $resource::definition()->attribute('ratio')->format);
+        self::assertSame(Kind::Custom, $resource::definition()->attribute('ratio')?->type->kind);
+        self::assertSame('percent', $resource::definition()->attribute('ratio')->type->name);
+        self::assertSame('string', $resource::definition()->attribute('ratio')->type->fragment['type'] ?? null);
     }
 
     public function test_the_validation_of_the_query_example(): void
