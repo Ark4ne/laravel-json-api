@@ -7,13 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-Towards 3.0: typed values and revisions move to `ark4ne/laravel-api-revisions`
+3.0: typed values and revisions move to `ark4ne/laravel-api-revisions` 1.0
 (`docs/rfc/api-revisions-integration.md`). The revisions of 2.1.0 below were never released: what changes here
 replaces them.
 
 ### Added
 
-- `ark4ne/laravel-api-revisions` is required; `JsonApiServiceProvider` registers its provider.
+- `ark4ne/laravel-api-revisions` `^1.0` is required; `JsonApiServiceProvider` registers its provider.
 - `Context\CurrentRevision::of($configuration)`: the revision a rendering or a validation is made at, the current one
   of `ark4ne/laravel-api-revisions`; `null`, the head, for an application without revision enum.
 - `Configuration::$revisions` and `withRevisions()`: the revision enum of the application, given by the service

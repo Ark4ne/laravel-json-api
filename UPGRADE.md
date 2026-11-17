@@ -2,11 +2,11 @@
 
 ## From 2.0 to 3.0
 
-In progress (`docs/rfc/api-revisions-integration.md`); each step of the migration adds its changes here.
+The design behind these changes is `docs/rfc/api-revisions-integration.md`.
 
 ### Requirements
 
-`ark4ne/laravel-api-revisions` is required and installed with the package; `JsonApiServiceProvider` registers its
+`ark4ne/laravel-api-revisions` `^1.0` is required and installed with the package; `JsonApiServiceProvider` registers its
 provider. An application that declares no revision configures nothing: it keeps one shape, the head.
 
 ### Revisions (pre-release 2.1 only)

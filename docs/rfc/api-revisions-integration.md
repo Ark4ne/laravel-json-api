@@ -1,6 +1,7 @@
 # RFC — 3.0: JSON:API on `ark4ne/laravel-api-revisions`
 
-Status: **in progress** (direction decided by the maintainer 2026-11-14; EJ1 done 2026-11-15) · Target: **3.0.0** · Replaces:
+Status: **implemented** (direction decided by the maintainer 2026-11-14; EJ1–EJ7 delivered by 2026-11-17, on
+`ark4ne/laravel-api-revisions` 1.0.0) · Target: **3.0.0** · Replaces:
 the RFC of the versioned resources of 2.1 and its plan (never tagged, deleted with EJ7) · Depends on: `ark4ne/laravel-api-revisions` 1.0 with its consumer epic (its
 `docs/specs/consumers.md`)
 
@@ -302,8 +303,8 @@ as the 2.0 resources (872.9 KB).
 
 ### EJ1 — delivered
 
-- The base is required from a Composer `path` repository (`../../api/api-revisions`, as `1.0.x-dev`) until its 1.0.0
-  is tagged: **the CI of this repository cannot install it yet**. Remove the `repositories` entry with the tag.
+- The base was first required from a Composer `path` repository, as `1.0.x-dev`; since its 1.0.0 it is required
+  from Packagist as `^1.0`.
 - `Definition\Revision` is removed; every declaration takes the base's `Revision`. `Definition\RevisionOrder` is
   kept as `@internal` glue (the base's order, plus the `null` head of the shapes this package still selects) until
   EJ3. `Lifetime` moves with EJ3, where the resource implements the base's `HasLifetime`.

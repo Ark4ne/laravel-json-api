@@ -18,7 +18,7 @@
     ],
     "require": {
         "php": "^8.3",
-        "ark4ne/laravel-api-revisions": "^1.0@dev",
+        "ark4ne/laravel-api-revisions": "^1.0",
         "illuminate/collections": "^12.46 || ^13.0",
         "illuminate/console": "^12.46 || ^13.0",
         "illuminate/http": "^12.46 || ^13.0",
@@ -104,17 +104,5 @@
         "sort-packages": true
     },
     "minimum-stability": "stable",
-    "prefer-stable": true,
-    "repositories": {
-        "laravel-api-revisions": {
-            "type": "path",
-            "url": "../../api/api-revisions",
-            "options": {
-                "symlink": true,
-                "versions": {
-                    "ark4ne/laravel-api-revisions": "1.0.x-dev"
-                }
-            }
-        }
-    }
+    "prefer-stable": true
 }
