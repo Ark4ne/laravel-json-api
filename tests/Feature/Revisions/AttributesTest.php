@@ -10,7 +10,7 @@ use Test\app\Http\Resources\Revisions\UserResource;
 use Test\app\Revisions\ApiRevision;
 
 /**
- * The attributes and the meta of a resource at a revision (docs/rfc/versioned-resources-epics.md US 4.1).
+ * The attributes and the meta of a resource at a revision.
  */
 final class AttributesTest extends RevisionsTestCase
 {
@@ -69,7 +69,7 @@ final class AttributesTest extends RevisionsTestCase
     }
 
     /**
-     * The central invariant (docs/rfc/versioned-resources-epics.md §2): the definition and the document of a revision
+     * The central invariant: the definition and the document of a revision
      * agree on the names, one transformation serving both.
      */
     #[TestWith([null])]

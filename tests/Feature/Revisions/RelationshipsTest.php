@@ -9,8 +9,7 @@ use Test\app\Http\Resources\Revisions\PostResource;
 use Test\app\Revisions\ApiRevision;
 
 /**
- * The relationships and the included resources of a resource at a revision (docs/rfc/versioned-resources-epics.md
- * US 4.2).
+ * The relationships and the included resources of a resource at a revision.
  */
 final class RelationshipsTest extends RevisionsTestCase
 {

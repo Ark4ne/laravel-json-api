@@ -15,7 +15,7 @@ use Test\app\Revisions\ApiRevision;
 use Test\Feature\FeatureTestCase;
 
 /**
- * The revisions scenario (docs/rfc/versioned-resources-epics.md EV4): the resources of
+ * The revisions scenario: the resources of
  * `tests/app/Http/Resources/Revisions/`, served behind the middleware choosing the revision of the request.
  */
 abstract class RevisionsTestCase extends FeatureTestCase

@@ -15,8 +15,7 @@ use Test\app\Models\User;
 use Test\app\Revisions\ApiRevision;
 
 /**
- * The conditions of the fields and the helpers of a resource at a revision (docs/rfc/versioned-resources-epics.md
- * US 4.6): what reads the model follows the head, what reads the request follows the revision.
+ * The conditions of the fields and the helpers of a resource at a revision: what reads the model follows the head, what reads the request follows the revision.
  */
 final class ConditionsTest extends RevisionsTestCase
 {

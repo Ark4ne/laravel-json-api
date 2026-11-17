@@ -14,7 +14,7 @@ use Test\app\Revisions\ApiRevision;
 use Test\app\Revisions\MemberResource;
 
 /**
- * A resource rendered at a revision it does not exist at (docs/rfc/versioned-resources-epics.md US 4.4).
+ * A resource rendered at a revision it does not exist at.
  */
 final class LifetimeTest extends RevisionsTestCase
 {

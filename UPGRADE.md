@@ -86,6 +86,9 @@ revisions".
 
 ## From 1.x to 2.0
 
+> This section gives the code of 2.0. Upgrading from 1.x to 3.0, apply it, then "From 2.0 to 3.0" above, whose
+> tables replace what 3.0 changed again (values, value types, configuration of the dates, definitions).
+
 Coding agents can follow the `laravel-json-api-upgrade` skill shipped in the package
 (`vendor/ark4ne/laravel-json-api/skills/laravel-json-api-upgrade/`): the same changes as a procedure, with a mapping
 of every 1.x construct and tested examples.

@@ -12,7 +12,7 @@ use Test\app\Models\User;
 use Test\app\Revisions\ApiRevision;
 
 /**
- * The users of the revisions scenario (docs/rfc/versioned-resources-epics.md EV4): `display_name` ← `label` (`Labels`)
+ * The users of the revisions scenario: `display_name` ← `label` (`Labels`)
  * ← `name` (`Initial`), `born_at` a date-time ← a date (`Initial`), `full_name` until `Labels`; `posts` ← `post`, its first
  * post (`Initial`).
  *

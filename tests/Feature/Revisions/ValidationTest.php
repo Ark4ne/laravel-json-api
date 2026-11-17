@@ -15,7 +15,7 @@ use Test\app\Models\Post;
 use Test\app\Revisions\ApiRevision;
 
 /**
- * The query of an old client validated at its revision (docs/rfc/versioned-resources-epics.md US 5.3): the middleware
+ * The query of an old client validated at its revision: the middleware
  * setting the revision runs before the form request is resolved, with the controller.
  */
 final class ValidationTest extends RevisionsTestCase

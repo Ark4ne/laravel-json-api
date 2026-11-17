@@ -1,8 +1,7 @@
 # RFC — 3.0: JSON:API on `ark4ne/laravel-api-revisions`
 
 Status: **in progress** (direction decided by the maintainer 2026-11-14; EJ1 done 2026-11-15) · Target: **3.0.0** · Replaces:
-[`versioned-resources.md`](versioned-resources.md) and [`versioned-resources-epics.md`](versioned-resources-epics.md)
-(2.1, never tagged) · Depends on: `ark4ne/laravel-api-revisions` 1.0 with its consumer epic (its
+the RFC of the versioned resources of 2.1 and its plan (never tagged, deleted with EJ7) · Depends on: `ark4ne/laravel-api-revisions` 1.0 with its consumer epic (its
 `docs/specs/consumers.md`)
 
 ## 1. Goal
@@ -264,7 +263,8 @@ typed arrays, objects, history of a field, write requests, checks), `docs/archit
 compilation, descriptors, rendering, revisions), `CLAUDE.md`, the skill `laravel-json-api` and the prose of the
 upgrade skill, whose target is 3.0. Left for the release: the section "From 1.x to 2.0" of `UPGRADE.md` still gives
 2.0 code (an application on 1.x reads it, then "From 2.0 to 3.0"), the two superseded RFCs to delete, and the
-benchmark figures of the README.
+benchmark figures of the README. Done 2026-11-17 (the README gives no figures): the section opens on a note sending to "From 2.0 to 3.0" for
+the code of 3.0, and the two RFCs are deleted.
 
 ### EJ5 — stories
 

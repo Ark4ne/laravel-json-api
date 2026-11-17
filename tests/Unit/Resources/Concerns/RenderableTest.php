@@ -13,7 +13,7 @@ use Test\app\Revisions\ApiRevision;
 use Test\TestCase;
 
 /**
- * The members of the hooks as the renderer reads them at a revision (docs/rfc/versioned-resources-epics.md US 4.1).
+ * The members of the hooks as the renderer reads them at a revision.
  */
 final class RenderableTest extends TestCase
 {
