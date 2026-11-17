@@ -5,7 +5,7 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [3.0.0] - 2026-11-18
 
 3.0: typed values and revisions move to `ark4ne/laravel-api-revisions` 1.0
 (`docs/rfc/api-revisions-integration.md`). The revisions of 2.1.0 below were never released: what changes here
