@@ -9,19 +9,6 @@ The design behind these changes is `docs/rfc/api-revisions-integration.md`.
 `ark4ne/laravel-api-revisions` `^1.0` is required and installed with the package; `JsonApiServiceProvider` registers its
 provider. An application that declares no revision configures nothing: it keeps one shape, the head.
 
-### Revisions (pre-release 2.1 only)
-
-The revisions of the unreleased 2.1 are replaced by those of `ark4ne/laravel-api-revisions`:
-
-| 2.1 (unreleased) | 3.0 |
-| --- | --- |
-| `enum ApiRevision implements Ark4ne\JsonApi\Definition\Revision`, cases declared oldest first, `description()` | `enum ApiRevision: string implements Ark4ne\ApiRevisions\Revisions\Revision` with `use IsRevision;`, `order()` (oldest first, the last one is the head) and `#[Meta('…')]` on the cases |
-| `->was(X, name: …)`, `->since(X)`, `->until(X)` | unchanged |
-| a middleware of the application calling `JsonApi::useRevision($request, $case)` | `'enum'` and `'resolvers'` in `config/revisions.php`, the `revision` middleware on the routes |
-| `$this->requestedRevision()->atMost(X)`, `JsonApi::revision($request)->atMost(X)` | `ApiRevision::current()->isAtMost(X)` |
-| `JsonApiContext::revisionOf($request)` | `ApiRevision::current()` |
-| no header: the head (`null`) | no header: the head, the last case of `order()` |
-
 ### Values are declared, and rendered by `ark4ne/laravel-api-revisions`
 
 The helpers keep their names and return the descriptors of the base. What changes in a resource:
