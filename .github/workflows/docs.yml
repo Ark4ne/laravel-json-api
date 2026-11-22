@@ -1,0 +1,24 @@
+name: Docs
+
+on:
+  pull_request:
+    paths: ['docs/site/**', 'CHANGELOG.md', 'UPGRADE.md']
+  push:
+    branches: [master]
+    paths: ['docs/site/**', 'CHANGELOG.md', 'UPGRADE.md']
+
+jobs:
+  check:
+    uses: Ark4ne/docs/.github/workflows/check-lib.yml@main
+    with:
+      slug: laravel-json-api
+
+  publish:
+    # Rebuilds the portal when the documentation changes on the default branch.
+    if: github.event_name == 'push'
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - run: gh api repos/Ark4ne/docs/dispatches -f event_type=lib-docs-updated -f "client_payload[slug]=${{ github.event.repository.name }}"
+        env:
+          GH_TOKEN: ${{ secrets.DOCS_DISPATCH_TOKEN }}

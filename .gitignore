@@ -6,3 +6,4 @@ composer.lock
 coverage.xml
 .phpunit.cache
 .phpunit.result.cache
+.claude/
