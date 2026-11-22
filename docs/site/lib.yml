@@ -1,0 +1,14 @@
+# Identity of the library in the ark4ne documentation portal (see .claude/skills/ark4ne-docs).
+name: Laravel JSON:API
+package: ark4ne/laravel-json-api
+tagline: JSON:API 1.1 resources for Laravel, with typed values, validated includes and fieldsets, and API revisions.
+icon: i-lucide-braces
+color: violet
+order: 10
+compatibility:
+  - { version: '3.x', php: '^8.3', laravel: '^12.46 || ^13.0', status: active }
+  - { version: '2.x', php: '^8.3', laravel: '^12.46 || ^13.0', status: eol }
+  - { version: '1.x', php: '^8.1', laravel: '^10.0 || ^11.0 || ^12.0 || ^13.0', status: eol }
+related: [laravel-api-revisions, laravel-openapi-generator]
+links:
+  - { label: JSON:API 1.1, to: 'https://jsonapi.org/format/', icon: i-lucide-book-marked }
